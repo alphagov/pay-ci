@@ -20,5 +20,5 @@ run:
       set -o errexit -o nounset
       cat <<EOF > out/users.csv
       Username,Password,Org,Space,OrgManager,BillingManager,OrgAuditor,SpaceManager,SpaceDeveloper,SpaceAuditor
-      $USER,,$ORG,$SPACE,,,,y,y,y
+      $USER,,$ORG,$SPACE,,,,,y,
       EOF
