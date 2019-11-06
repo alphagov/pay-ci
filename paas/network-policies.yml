@@ -1,0 +1,61 @@
+network-policies:
+  - src: admin-users
+    dest: egress
+    ports: 8080-8080
+  - src: connector
+    dest: egress
+    ports: 8080-8080
+  - src: direct-debit-connector
+    dest: egress
+    ports: 8080-8080
+  - src: frontend
+    dest: connector
+    ports: 8080-8080
+  - src: frontend
+    dest: connector
+    ports: 8080-8080
+  - src: frontend
+    dest: card-id
+    ports: 8080-8080
+  - src: frontend
+    dest: admin-users
+    ports: 8080-8080
+  - src: end-to-end
+    dest: selenium-hub
+    ports: 4444-4444
+
+  - src: chrome
+    dest: selenium-hub
+    ports: 4444-4444
+  - src: selenium-hub
+    dest: chrome
+    ports: 5555-5555
+
+  - src: admin-users
+    dest: postgres
+    ports: 5432-5432
+  - src: connector
+    dest: postgres
+    ports: 5432-5432
+  - src: public-auth
+    dest: postgres
+    ports: 5432-5432
+  - src: direct-debit-connector
+    dest: postgres
+    ports: 5432-5432
+  - src: products
+    dest: postgres
+    ports: 5432-5432
+  - src: ledger
+    dest: postgres
+    ports: 5432-5432
+  - src: end-to-end
+    dest: postgres
+    ports: 5432-5432
+
+  - src: connector
+    dest: sqs
+    ports: 9324-9324
+  - src: ledger
+    dest: sqs
+    ports: 9324-9324
