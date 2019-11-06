@@ -1,0 +1,40 @@
+---
+resource_types:
+  - name: cf-cli
+    type: docker-image
+    source:
+      repository: nulldriver/cf-cli-resource
+
+resources:
+  - name: omnibus
+    type: git
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+  - name: pay-paas
+    type: cf-cli
+    source:
+      api: https://api.london.cloud.service.gov.uk
+      org: govuk-pay
+      username: ((cf-username))
+      password: ((cf-password))
+
+jobs:
+  - name: deploy-dev-env
+    plan:
+      - get: omnibus
+      - put: space
+        resource: pay-paas
+        params:
+          command: create-space
+          space: dev-((developer))
+      - task: create-users
+        file: omnibus/concourse/create-users.yml
+        params:
+          SPACE: dev-((developer))
+          USER: ((user))
+      - put: users
+        resource: pay-paas
+        params:
+          command: create-users-from-file
+          file: out/users.csv

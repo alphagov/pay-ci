@@ -1,0 +1,21 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: { repository: governmentpaas/cf-cli }
+
+params:
+  CF_USERNAME: ((cf-username))
+  CF_PASSWORD: ((cf-password))
+  CF_ORG: ((cf-org))
+  SCRIPT:
+
+run:
+  path: bash
+  args:
+    - |
+      set -o errexit -o nounset
+      cf login -a https://api.london.cloud.service.gov.uk \
+        -u "$CF_USERNAME" -p "$CF_PASSWORD" \
+        -o "$CF_ORG" -s andy
+      . "$SCRIPT"
