@@ -1,0 +1,32 @@
+---
+resource_types:
+  - name: concourse-pipeline
+    type: docker-image
+    source:
+      repository: concourse/concourse-pipeline-resource
+
+resources:
+  - name: omnibus
+    type: git
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+
+  - name: pay-pipelines
+    type: concourse-pipeline
+    source:
+      target: ((concourse-url))
+      insecure: "true"
+      teams:
+        - name: pay
+          username: test
+          password: test
+
+jobs:
+  - name: set-dev-pipelines
+    plan:
+      - get: omnibus
+        trigger: true
+      - put: pay-pipelines
+        params:
+          pipelines_file: omnibus/concourse/dev-pipelines.yml
