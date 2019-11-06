@@ -1,0 +1,24 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: { repository: alpine }
+
+params:
+  SPACE:
+  USER:
+  ORG: govuk-pay
+
+outputs:
+  - name: out
+
+run:
+  path: ash
+  args:
+    - -c
+    - |
+      set -o errexit -o nounset
+      cat <<EOF > out/users.csv
+      Username,Password,Org,Space,OrgManager,BillingManager,OrgAuditor,SpaceManager,SpaceDeveloper,SpaceAuditor
+      $USER,,$ORG,$SPACE,,,,y,y,y
+      EOF
