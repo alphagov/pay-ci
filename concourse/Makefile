@@ -1,10 +1,6 @@
 start-concourse:
 	docker-compose up -d
-	while ! nc -z localhost 8080; \
-		do \
-			echo . \
-			sleep 1; \
-		done; \
+	while ! wget -q http://localhost:8080 -O /dev/null; do sleep 1; done;
 
 login:
 	fly -t ci login --concourse-url=http://localhost:8080 --insecure --username=test --password=test
