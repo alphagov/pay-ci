@@ -9,7 +9,7 @@ create-team:
 	fly -t ci set-team --team-name pay --local-user test --non-interactive
 
 set-pipelines:
-	fly -t ci set-pipeline --pipeline provision-dev-envs --config provision-dev-envs.yml --var concourse-url=http://concourse:8080 --non-interactive
+	fly -t ci set-pipeline --pipeline provision-dev-envs --config concourse/provision-dev-envs.yml --var concourse-url=http://concourse:8080 --non-interactive
 
 setup: start-concourse login create-team set-pipelines
 	
