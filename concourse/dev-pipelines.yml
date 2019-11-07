@@ -7,3 +7,10 @@ pipelines:
     vars:
       developer: anshul
       user: "106981284630415421896"
+  - name: dev-env-richard
+    team: pay
+    config_file: omnibus/concourse/deploy-dev-env.yml
+    unpaused: true
+    vars:
+      developer: richard
+      user: "richard.baker@digital.cabinet-office.org"
