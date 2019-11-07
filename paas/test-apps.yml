@@ -1,0 +1,135 @@
+---
+applications:
+  - name: demo-service
+    health-check-type: process
+    memory: 1G
+    env:
+      NODE_ENV: production
+      DISABLE_SSL: true
+      PAY_API_URL: https://pay-public-api-((developer)).london.cloudapps.digital
+    routes:
+    - route: pay-demo-service-((developer)).london.cloudapps.digital
+  - name: stubs
+    health-check-type: process
+    memory: 1G
+    env:
+      SMARTPAY_EXPECTED_USER: smartpay-user
+      SMARTPAY_EXPECTED_PASSWORD: smartpay-password
+      WORLDPAY_EXPECTED_USER: worldpay-user
+      WORLDPAY_EXPECTED_PASSWORD: worldpay-password
+      CONNECTOR_SANDBOX_NOTIFICATION_URL: https://pay-connector-((developer)).london.cloudapps.digital/v1/api/notifications/sandbox
+      CONNECTOR_WORLDPAY_NOTIFICATION_URL: https://pay-connector-((developer)).london.cloudapps.digital/v1/api/notifications/worldpay
+      CONNECTOR_SMARTPAY_NOTIFICATION_URL: https://pay-connector-((developer)).london.cloudapps.digital/v1/api/notifications/smartpay
+      CONNECTOR_EPDQ_NOTIFICATION_URL: https://pay-connector-((developer)).london.cloudapps.digital/v1/api/notifications/epdq
+      CONNECTOR_DIRECT_DEBIT_SANDBOX_NOTIFICATION_URL: https://direct-debit-connector.london.cloudapps.digital/v1/webhooks/sandbox
+      CONNECTOR_DIRECT_DEBIT_GOCARDLESS_NOTIFICATION_URL: https://direct-debit-connector.london.cloudapps.digital/v1/webhooks/gocardless
+      CONNECTOR_DIRECT_DEBIT_GOCARDLESS_WEBHOOK_SECRET: supersecret
+      EPDQ_SHA_OUT_PASSPHRASE: mysecretpassphrase
+      EXTERNAL_STUBS_URL: https://pay-stubs-((developer)).london.cloudapps.digital/
+      FRONTEND_URL: https://pay-frontend-((developer)).london.cloudapps.digital
+    routes:
+    - route: pay-stubs-((developer)).london.cloudapps.digital
+  - name: end-to-end
+    health-check-type: process
+    disk_quota: 2G
+    memory: 2G
+    env:
+      DB_CONNECTOR_HOST: postgres.apps.internal:5432
+      DB_CONNECTOR_USER: connector
+      DB_DIRECT_DEBIT_CONNECTOR_HOST: postgres.apps.internal:5432
+      DB_DIRECT_DEBIT_CONNECTOR_USER: directdebit_connector
+      DB_PUBLICAUTH_HOST: postgres.apps.internal:5432
+      DB_PUBLICAUTH_USER: publicauth
+      DB_ADMINUSERS_HOST: postgres.apps.internal:5432
+      DB_ADMINUSERS_USER: adminusers
+      DB_PRODUCTS_HOST: postgres.apps.internal:5432
+      DB_PRODUCTS_USER: products
+      DB_PASSWORD: mysecretpassword
+      DB_SSL_OPTS: ssl=none
+      DEMOSERVICE_SERVICE_URL: https://pay-demo-service-((developer)).london.cloudapps.digital/service
+      DEMOSERVICE_PAYSTART_URL: https://pay-demo-service-((developer)).london.cloudapps.digital
+      PUBLICAPI_URL: https://pay-public-api-((developer)).london.cloudapps.digital
+      PUBLIC_AUTH_URL: https://pay-public-auth-((developer)).london.cloudapps.digital
+      TEST_GATEWAY_ACCOUNT_ID: 111
+      CONNECTOR_URL: https://pay-connector-((developer)).london.cloudapps.digital
+      DIRECT_DEBIT_CONNECTOR_URL: https://pay-direct-debit-connector-((developer)).london.cloudapps.digital
+      ADMINUSERS_URL: https://pay-admin-users-((developer)).london.cloudapps.digital
+      SELFSERVICE_URL: https://pay-self-service-((developer)).london.cloudapps.digital
+      SELFSERVICE_USERNAME: alice.111@mail.fake
+      SELFSERVICE_PASSWORD: arandompassword
+      SELFSERVICE_OTP_KEY: 55w7bwl169
+      STUBS_URL: https://pay-stubs-((developer)).london.cloudapps.digital
+      DB_SETUP_FOR_SMOKE: true
+      FRONTEND_URL: https://pay-frontend-((developer)).london.cloudapps.digital
+      ADMIN_USERS_URL: https://pay-admin-users-((developer)).london.cloudapps.digital
+      NOTIFICATIONS_URL: https://pay-connector-((developer)).london.cloudapps.digital
+      PRODUCTS_URL: https://pay-products-((developer)).london.cloudapps.digital
+      PRODUCTS_UI_URL: https://pay-products-ui-((developer)).london.cloudapps.digital
+      PRODUCTS_API_TOKEN: g0nBA5lNzfUalQjk4ZBDy70AikNshxz2G70dA6lg
+      HTTP_ZAP_ENABLED: false
+      HTTP_ZAP_HOST: zap.apps.internal
+      HTTP_ZAP_PORT: 8080
+      HTTP_ZAP_SCHEME: http
+      WEB_DRIVER: CHROME_REMOTE
+      SELENIUM_HUB_URL: http://selenium-hub.apps.internal:4444/wd/hub
+    routes:
+    - route: pay-end-to-end-((developer)).london.cloudapps.digital
+  - name: postgres
+    health-check-type: process
+    memory: 1G
+    command: |
+      echo "CREATE EXTENSION \"uuid-ossp\";
+            CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA pg_catalog;
+            CREATE USER connector WITH password 'mysecretpassword';
+            CREATE DATABASE connector WITH owner=connector TEMPLATE postgres;
+            GRANT ALL PRIVILEGES ON DATABASE connector TO connector;
+            CREATE USER publicauth WITH password 'mysecretpassword';
+            CREATE DATABASE publicauth WITH owner=publicauth TEMPLATE postgres;
+            GRANT ALL PRIVILEGES ON DATABASE publicauth TO publicauth;
+            CREATE USER adminusers WITH password 'mysecretpassword';
+            CREATE DATABASE adminusers WITH owner=adminusers TEMPLATE postgres;
+            GRANT ALL PRIVILEGES ON DATABASE adminusers TO adminusers;
+            CREATE USER products WITH password 'mysecretpassword';
+            CREATE DATABASE products WITH owner=products TEMPLATE postgres;
+            GRANT ALL PRIVILEGES ON DATABASE products TO products;
+            CREATE USER directdebit_connector WITH password 'mysecretpassword';
+            CREATE DATABASE directdebit_connector WITH owner=directdebit_connector TEMPLATE postgres;
+            GRANT ALL PRIVILEGES ON DATABASE directdebit_connector TO directdebit_connector;
+            CREATE USER ledger WITH password 'mysecretpassword';
+            CREATE DATABASE ledger WITH owner=ledger TEMPLATE postgres;
+            GRANT ALL PRIVILEGES ON DATABASE ledger TO ledger;" > /docker-entrypoint-initdb.d/init.sql && \
+      exec docker-entrypoint.sh postgres
+    env:
+      POSTGRES_PASSWORD: mysecretpassword
+    routes:
+    - route: postgres.apps.internal
+  - name: sqs
+    docker:
+      image: roribio16/alpine-sqs@sha256:2651d01db38cc9faa8184a4c87a93d95aa2aa3bb992b9e41ea6b4742dc8893bb
+    command: mkdir /opt/custom && echo "$EMQ_CONFIG" | base64 -d > /opt/custom/elasticmq.conf
+      && /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+    health-check-type: process
+    memory: 1G
+    env:
+      EMQ_CONFIG: bm9kZS1hZGRyZXNzIHsKICBwcm90b2NvbCA9IGh0dHAKICBob3N0ID0gIioiCiAgcG9ydCA9IDkzMjQKICBjb250ZXh0LXBhdGggPSAiIgp9CgpyZXN0LXNxcyB7CiAgZW5hYmxlZCA9IHRydWUKICBiaW5kLXBvcnQgPSA5MzI0CiAgYmluZC1ob3N0bmFtZSA9ICIwLjAuMC4wIgogIC8vIFBvc3NpYmxlIHZhbHVlczogcmVsYXhlZCwgc3RyaWN0CiAgc3FzLWxpbWl0cyA9IHN0cmljdAp9CgpxdWV1ZXMgewogIGRlZmF1bHQgewogICAgZGVmYXVsdFZpc2liaWxpdHlUaW1lb3V0ID0gMTAgc2Vjb25kcwogICAgZGVsYXkgPSA1IHNlY29uZHMKICAgIHJlY2VpdmVNZXNzYWdlV2FpdCA9IDAgc2Vjb25kcwogIH0KCiAgcGF5X2NhcHR1cmVfcXVldWUgewogICAgZGVmYXVsdFZpc2liaWxpdHlUaW1lb3V0ID0gMzYwMCBzZWNvbmRzCiAgICBkZWxheSA9IDAgc2Vjb25kcwogICAgcmVjZWl2ZU1lc3NhZ2VXYWl0ID0gNSBzZWNvbmRzCiAgfQoKICBwYXlfZXZlbnRfcXVldWUgewogICAgZGVmYXVsdFZpc2liaWxpdHlUaW1lb3V0ID0gMzYwMCBzZWNvbmRzCiAgICBkZWxheSA9IDAgc2Vjb25kcwogICAgcmVjZWl2ZU1lc3NhZ2VXYWl0ID0gNSBzZWNvbmRzCiAgfQp9Cgpha2thLmh0dHAuc2VydmVyLnBhcnNpbmcuaWxsZWdhbC1oZWFkZXItd2FybmluZ3MgPSBvZmYKYWtrYS5odHRwLnNlcnZlci5yZXF1ZXN0LXRpbWVvdXQgPSA0MCBzZWNvbmRzCg==
+    routes:
+    - route: sqs.apps.internal
+  - name: selenium-hub
+    health-check-type: process
+    memory: 1G
+    env:
+      GRID_HUB_PORT: 4444
+      GRID_BROWSER_TIMEOUT: 60
+    routes:
+    - route: pay-selenium-hub-((developer)).london.cloudapps.digital
+    - route: selenium-hub.apps.internal
+  - name: chrome
+    health-check-type: process
+    memory: 2G
+    env:
+      HUB_HOST: selenium-hub.apps.internal
+      HUB_PORT: 4444
+      NODE_MAX_INSTANCES: 4
+      NODE_MAX_SESSION: 4
+    routes:
+    - route: chrome.apps.internal
