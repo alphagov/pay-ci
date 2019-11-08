@@ -8,6 +8,8 @@ services:
       POSTGRES_PASSWORD: concourse_pass
       POSTGRES_USER: concourse_user
       PGDATA: /database
+    networks:
+      - concourse
 
   concourse:
     image: concourse/concourse
@@ -30,17 +32,26 @@ services:
       CONCOURSE_AWS_SSM_REGION: us-east-1
     volumes:
       - "./haproxy/fake-aws-ca.pem:/etc/ssl/certs/fake-aws-ca.pem"
-    links:
-      - "fake-aws:ssm.us-east-1.amazonaws.com"
+    networks:
+      - concourse
 
   fake-aws:
     image: haproxy
     depends_on: [localstack]
     volumes:
       - "./haproxy:/usr/local/etc/haproxy"
+    networks:
+      concourse:
+        aliases:
+          - ssm.us-east-1.amazonaws.com
 
   localstack:
     image: localstack/localstack
     ports: ["4583:4583"]
     environment:
       SERVICES: ssm
+    networks:
+      - concourse
+
+networks:
+  concourse:
