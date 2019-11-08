@@ -18,9 +18,9 @@ resources:
       target: ((concourse-url))
       insecure: "true"
       teams:
-        - name: pay
-          username: test
-          password: test
+        - name: ((concourse-team))
+          username: ((concourse-username))
+          password: ((concourse-password))
 
 jobs:
   - name: set-dev-pipelines

@@ -8,6 +8,8 @@ services:
       POSTGRES_PASSWORD: concourse_pass
       POSTGRES_USER: concourse_user
       PGDATA: /database
+    networks:
+      - concourse
 
   concourse:
     image: concourse/concourse
@@ -24,3 +26,32 @@ services:
       CONCOURSE_ADD_LOCAL_USER: test:test
       CONCOURSE_MAIN_TEAM_LOCAL_USER: test
       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
+      CONCOURSE_AWS_SSM_ACCESS_KEY: whatever
+      CONCOURSE_AWS_SSM_SECRET_KEY: dontmatter
+      CONCOURSE_AWS_SSM_SESSION_TOKEN: nada
+      CONCOURSE_AWS_SSM_REGION: us-east-1
+    volumes:
+      - "./haproxy/fake-aws-ca.pem:/etc/ssl/certs/fake-aws-ca.pem"
+    networks:
+      - concourse
+
+  fake-aws:
+    image: haproxy
+    depends_on: [localstack]
+    volumes:
+      - "./haproxy:/usr/local/etc/haproxy"
+    networks:
+      concourse:
+        aliases:
+          - ssm.us-east-1.amazonaws.com
+
+  localstack:
+    image: localstack/localstack
+    ports: ["4583:4583"]
+    environment:
+      SERVICES: ssm
+    networks:
+      - concourse
+
+networks:
+  concourse:
