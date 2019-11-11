@@ -12,6 +12,9 @@ inputs:
 outputs:
   - name: src
 
+caches:
+  - path: .m2
+
 run:
   path: bash
   dir: src
@@ -20,4 +23,4 @@ run:
     - |
       set -o errexit -o nounset -o pipefail
       mvn test
-      mvn -Dmaven.test.skip=true -DskipTests package
+      mvn -Dmaven.repo.local=.m2 -Dmaven.test.skip=true -DskipTests package
