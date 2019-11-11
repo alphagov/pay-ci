@@ -1,0 +1,26 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: node
+    tag: latest
+
+inputs:
+  - name: src
+
+outputs:
+  - name: src
+
+run:
+  path: bash
+  dir: src
+  args:
+    - -c
+    - |
+      set -o errexit -o nounset -o pipefail
+      node --version
+      npm --version
+      npm install
+      npm ci
+      npm run test
