@@ -1,0 +1,40 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: node
+    tag: 8-alpine
+
+inputs:
+  - name: src
+
+outputs:
+  - name: src
+
+run:
+  path: ash
+  dir: src
+  args:
+    - -c
+    - |
+      set -o errexit -o nounset -o pipefail
+
+      node --version
+      npm --version
+
+      apk update
+      apk upgrade
+      apk add --update --virtual build-dependencies build-base
+      apk add --update bash ruby ca-certificates wget
+
+      # For pact
+      wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
+      wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.29-r0/glibc-2.29-r0.apk
+      apk add glibc-2.29-r0.apk
+
+      npm install
+      export LD_LIBRARY_PATH=$PWD/node_modules/appmetrics
+
+      npm run compile
+      npm test -- --forbid-only --forbid-pending

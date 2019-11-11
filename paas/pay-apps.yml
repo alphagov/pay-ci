@@ -1,7 +1,7 @@
 ---
 applications:
   - name: admin-users
-    path: pay-admin-users
+    path: pay-adminusers
     health-check-type: process
     memory: 1G
     env:
@@ -253,7 +253,7 @@ applications:
     routes:
     - route: pay-products-ui-((developer)).london.cloudapps.digital
   - name: public-api
-    path: pay-public-api
+    path: pay-publicapi
     health-check-type: process
     memory: 1G
     env:
@@ -272,7 +272,7 @@ applications:
     routes:
     - route: pay-public-api-((developer)).london.cloudapps.digital
   - name: public-auth
-    path: pay-public-auth
+    path: pay-publicauth
     health-check-type: process
     memory: 1G
     env:

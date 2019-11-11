@@ -1,0 +1,23 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: maven
+    tag: 3.6.1
+
+inputs:
+  - name: src
+
+outputs:
+  - name: src
+
+run:
+  path: bash
+  dir: src
+  args:
+    - -c
+    - |
+      set -o errexit -o nounset -o pipefail
+      mvn test
+      mvn -Dmaven.test.skip=true -DskipTests package
