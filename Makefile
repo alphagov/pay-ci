@@ -23,18 +23,10 @@ set-pipelines:
 	fly -t local-pay unpause-pipeline -p provision-dev-envs
 
 add-creds:
-	 docker-compose exec localstack \
-		 awslocal ssm put-parameter \
-		 --name /concourse/pay/cf-username \
-		 --value $$(env PASSWORD_STORE_DIR=secrets pass paas-london/govuk-pay/org-manager-bot/username) \
-		 --type String \
-		 --overwrite
-	 docker-compose exec localstack \
-		 awslocal ssm put-parameter \
-		 --name /concourse/pay/cf-password \
-		 --value $$(env PASSWORD_STORE_DIR=secrets pass paas-london/govuk-pay/org-manager-bot/password) \
-		 --type String \
-		 --overwrite
+	secrets/local-ssm-add.sh /concourse/pay/cf-username paas-london/govuk-pay/org-manager-bot/username
+	secrets/local-ssm-add.sh /concourse/pay/cf-password paas-london/govuk-pay/org-manager-bot/password
+	secrets/local-ssm-add.sh /concourse/pay/gh-username github/readonly-user/username
+	secrets/local-ssm-add.sh /concourse/pay/gh-password github/readonly-user/password
 
 setup: start-concourse add-creds login create-team login-team set-pipelines
 	

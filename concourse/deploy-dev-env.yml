@@ -11,30 +11,180 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: develop
+
   - name: pay-paas
     type: cf-cli
     source:
       api: https://api.london.cloud.service.gov.uk
       org: govuk-pay
+      space: dev-((developer))
       username: ((cf-username))
       password: ((cf-password))
+
+  - name: pay-admin-users
+    type: git
+    source: &git-source
+      uri: https://github.com/alphagov/pay-adminusers
+      branch: master
+      username: ((gh-username))
+      password: ((gh-password))
+
+  - name: pay-cardid
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-cardid"
+
+  - name: pay-connector
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-connector"
+
+  - name: pay-direct-debit-connector
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-direct-debit-connector"
+
+  - name: pay-direct-debit-frontend
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-direct-debit-frontend" 
+
+  - name: pay-frontend
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-frontend" 
+
+  - name: pay-ledger
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-ledger" 
+
+  - name: pay-products
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-products" 
+
+  - name: pay-products-ui
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-products-ui" 
+
+  - name: pay-public-api
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-publicapi" 
+
+  - name: pay-public-auth
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-publicauth" 
+
+  - name: pay-self-service
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-selfservice" 
+
+  - name: pay-toolbox
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-toolbox" 
+
+  - name: pay-demo-service
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-demo-service" 
+
+  - name: pay-endtoend
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-endtoend" 
+
+  - name: pay-stubs
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-stubs" 
 
 jobs:
   - name: deploy-dev-env
     plan:
       - get: omnibus
-      - put: space
-        resource: pay-paas
-        params:
-          command: create-space
-          space: dev-((developer))
+        trigger: true
       - task: create-users
         file: omnibus/concourse/create-users.yml
         params:
           SPACE: dev-((developer))
           USER: ((user))
-      - put: users
-        resource: pay-paas
+      - put: pay-paas
         params:
-          command: create-users-from-file
-          file: out/users.csv
+          commands:
+            - command: create-space
+            - command: create-users-from-file
+              file: out/users.csv
+
+  - name: deploy-apps
+    plan:
+      - in_parallel:
+          # apps
+          - get: pay-admin-users
+            trigger: true
+          - get: pay-cardid
+            trigger: true
+          - get: pay-connector
+            trigger: true
+          - get: pay-direct-debit-connector
+            trigger: true
+          - get: pay-direct-debit-frontend
+            trigger: true
+          - get: pay-frontend
+            trigger: true
+          - get: pay-ledger
+            trigger: true
+          - get: pay-products
+            trigger: true
+          - get: pay-products-ui
+            trigger: true
+          - get: pay-public-api
+            trigger: true
+          - get: pay-public-auth
+            trigger: true
+          - get: pay-self-service
+            trigger: true
+          - get: pay-toolbox
+            trigger: true
+          # test
+          - get: pay-demo-service
+            trigger: true
+          - get: pay-endtoend
+            trigger: true
+          - get: pay-stubs
+            trigger: true
+      - get: omnibus
+        trigger: true
+        passed: [deploy-dev-env]
+      - get: pay-paas
+        trigger: true
+        passed: [deploy-dev-env]
+      - put: pay-paas
+        params:
+          commands:
+            - command: push
+              manifest: omnibus/paas/pay-apps.yml
+              no_start: true
+            - command: push
+              manifest: omnibus/paas/test-apps.yml
+              no_start: true
