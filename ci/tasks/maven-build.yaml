@@ -12,6 +12,9 @@ inputs:
 outputs:
   - name: src
 
+caches:
+  - path: src/.m2
+
 run:
   path: bash
   dir: src
@@ -19,5 +22,17 @@ run:
     - -c
     - |
       set -o errexit -o nounset -o pipefail
-      mvn test
-      mvn -Dmaven.test.skip=true -DskipTests package
+
+      cat <<'EOF' >settings.xml
+      <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                                https://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <localRepository>${env.MAVEN_REPO}</localRepository>
+      </settings>
+      EOF
+
+      export MAVEN_REPO="$PWD/.m2"
+
+      mvn --global-settings settings.xml test
+      mvn --global-settings settings.xml -Dmaven.test.skip=true -DskipTests package
