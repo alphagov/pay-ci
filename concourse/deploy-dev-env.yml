@@ -150,7 +150,6 @@ jobs:
     serial_groups: [adminusers, michaelangelo]
     plan:
       - get: omnibus
-      - get: paas-space
         passed: [provision-space]
         trigger: true
       - get: pay-adminusers
