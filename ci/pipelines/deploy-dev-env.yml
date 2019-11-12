@@ -60,11 +60,11 @@ resources:
   #    <<: *git-source
   #    uri: "https://github.com/alphagov/pay-direct-debit-frontend" 
 
-  #- name: pay-frontend
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-frontend" 
+  - name: pay-frontend
+    type: git
+    source:
+      <<: *git-source
+      uri: "https://github.com/alphagov/pay-frontend" 
 
   #- name: pay-ledger
   #  type: git
@@ -188,24 +188,24 @@ jobs:
   #        manifest: omnibus/paas/pay-apps.yml
   #        no_start: true
 
-  #- name: deploy-frontend
-  #  serial_groups: [frontend, leonardo]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-frontend
-  #      trigger: true
-  #    - task: test
-  #      file: omnibus/ci/tasks/frontend.yaml
-  #      input_mapping: { src: pay-frontend }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: frontend
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-frontend
+    serial_groups: [frontend, leonardo]
+    plan:
+      - get: omnibus
+      - get: paas
+        passed: [provision-space]
+        trigger: true
+      - get: pay-frontend
+        trigger: true
+      - task: test
+        file: omnibus/ci/tasks/frontend.yaml
+        input_mapping: { src: pay-frontend }
+      - put: paas
+        params:
+          command: push
+          app_name: frontend
+          manifest: omnibus/paas/pay-apps.yml
+          no_start: true
 
   #- name: deploy-toolbox
   #  serial_groups: [toolbox, leonardo]
