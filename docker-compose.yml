@@ -39,7 +39,7 @@ services:
     image: haproxy
     depends_on: [localstack]
     volumes:
-      - "./haproxy:/usr/local/etc/haproxy"
+      - "./concourse/haproxy:/usr/local/etc/haproxy"
     networks:
       concourse:
         aliases:
