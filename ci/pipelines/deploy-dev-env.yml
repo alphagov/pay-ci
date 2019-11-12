@@ -13,7 +13,7 @@ resources:
       branch: develop
 
   - &paas-resource
-    name: paas-space
+    name: paas
     type: cf-cli
     source:
       api: https://api.london.cloud.service.gov.uk
@@ -21,9 +21,6 @@ resources:
       space: dev-((developer))
       username: ((cf-username))
       password: ((cf-password))
-
-  - <<: *paas-resource
-    name: paas-app
 
   - name: pay-adminusers
     type: git
@@ -139,7 +136,8 @@ jobs:
         params:
           SPACE: dev-((developer))
           USER: ((user))
-      - put: paas-space
+      - put: space
+        resource: paas
         params:
           commands:
             - command: create-space
@@ -157,7 +155,8 @@ jobs:
       - task: build
         file: omnibus/ci/tasks/maven-build.yaml
         input_mapping: { src: pay-adminusers }
-      - put: paas-app
+      - put: app
+        resource: paas
         params:
           command: push
           app_name: admin-users
@@ -168,7 +167,7 @@ jobs:
   #  serial_groups: [cardid, leonardo]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-cardid
@@ -182,7 +181,7 @@ jobs:
   #    - task: build
   #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-cardid }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: card-id
@@ -193,7 +192,7 @@ jobs:
   #  serial_groups: [frontend, leonardo]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-frontend
@@ -201,7 +200,7 @@ jobs:
   #    - task: test
   #      file: omnibus/ci/tasks/frontend.yaml
   #      input_mapping: { src: pay-frontend }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: frontend
@@ -212,7 +211,7 @@ jobs:
   #  serial_groups: [toolbox, leonardo]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-toolbox
@@ -234,7 +233,7 @@ jobs:
   #    - task: test
   #      file: omnibus/ci/tasks/node-test.yaml
   #      input_mapping: { src: pay-toolbox }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: toolbox
@@ -245,7 +244,7 @@ jobs:
   #  serial_groups: [connector, michaelangelo]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-connector
@@ -253,7 +252,7 @@ jobs:
   #    - task: build
   #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-connector }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: connector
@@ -264,7 +263,7 @@ jobs:
   #  serial_groups: [ledger, michaelangelo]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-ledger
@@ -272,7 +271,7 @@ jobs:
   #    - task: build
   #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-ledger }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: ledger
@@ -283,7 +282,7 @@ jobs:
   #  serial_groups: [products, donatello]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-products
@@ -291,7 +290,7 @@ jobs:
   #    - task: build
   #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-products }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: products
@@ -302,7 +301,7 @@ jobs:
   #  serial_groups: [products-ui, donatello]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-products-ui
@@ -310,7 +309,7 @@ jobs:
   #    - task: test
   #      file: omnibus/ci/tasks/frontend.yaml
   #      input_mapping: { src: pay-products-ui }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: products-ui
@@ -321,7 +320,7 @@ jobs:
   #  serial_groups: [selfservice, donatello]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-selfservice
@@ -329,7 +328,7 @@ jobs:
   #    - task: test
   #      file: omnibus/ci/tasks/frontend.yaml
   #      input_mapping: { src: pay-selfservice }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: self-service
@@ -340,7 +339,7 @@ jobs:
   #  serial_groups: [publicauth, raphael]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-publicauth
@@ -348,7 +347,7 @@ jobs:
   #    - task: build
   #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-publicauth }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: public-auth
@@ -359,7 +358,7 @@ jobs:
   #  serial_groups: [publicapi, raphael]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-publicapi
@@ -367,7 +366,7 @@ jobs:
   #    - task: build
   #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-publicapi }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: public-api
@@ -378,7 +377,7 @@ jobs:
   #  serial_groups: [dd-connector, raphael]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-direct-debit-connector
@@ -386,7 +385,7 @@ jobs:
   #    - task: build
   #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-direct-debit-connector }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: direct-debit-connector
@@ -397,7 +396,7 @@ jobs:
   #  serial_groups: [dd-frontend, raphael]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-direct-debit-frontend
@@ -405,7 +404,7 @@ jobs:
   #    - task: test
   #      file: omnibus/ci/tasks/frontend.yaml
   #      input_mapping: { src: pay-direct-debit-frontend }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: direct-debit-frontend
@@ -416,7 +415,7 @@ jobs:
   #  serial_groups: [endtoend]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-endtoend
@@ -424,7 +423,7 @@ jobs:
   #    - task: build
   #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-endtoend }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: end-to-end
@@ -435,7 +434,7 @@ jobs:
   #  serial_groups: [stubs]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-stubs
@@ -443,7 +442,7 @@ jobs:
   #    - task: test
   #      file: omnibus/ci/tasks/node-test.yaml
   #      input_mapping: { src: pay-stubs }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: stubs
@@ -454,7 +453,7 @@ jobs:
   #  serial_groups: [demo-service]
   #  plan:
   #    - get: omnibus
-  #    - get: paas-space
+  #    - get: paas
   #      passed: [provision-space]
   #      trigger: true
   #    - get: pay-demo-service
@@ -462,7 +461,7 @@ jobs:
   #    - task: test
   #      file: omnibus/ci/tasks/node-test.yaml
   #      input_mapping: { src: pay-demo-service }
-  #    - put: paas-app
+  #    - put: paas
   #      params:
   #        command: push
   #        app_name: demo-service
