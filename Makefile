@@ -14,7 +14,7 @@ login-team:
 set-pipelines:
 	fly -t local-pay set-pipeline \
 		--pipeline provision-dev-envs \
-		--config concourse/provision-dev-envs.yml \
+		--config ci/pipelines/provision-dev-envs.yml \
 		--var concourse-url=http://concourse:8080 \
 		--var concourse-team=pay \
 		--var concourse-username=test \
@@ -31,6 +31,6 @@ add-creds:
 setup: start-concourse add-creds login create-team login-team set-pipelines
 	
 destroy:
-	docker-compose down
+	docker-compose down --volumes --remove-orphans
 
 .PHONY: setup destroy
