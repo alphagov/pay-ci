@@ -31,7 +31,7 @@ services:
       CONCOURSE_AWS_SSM_SESSION_TOKEN: nada
       CONCOURSE_AWS_SSM_REGION: us-east-1
     volumes:
-      - "./haproxy/fake-aws-ca.pem:/etc/ssl/certs/fake-aws-ca.pem"
+      - "./ci/haproxy/fake-aws-ca.pem:/etc/ssl/certs/fake-aws-ca.pem"
     networks:
       - concourse
 
@@ -39,7 +39,7 @@ services:
     image: haproxy
     depends_on: [localstack]
     volumes:
-      - "./haproxy:/usr/local/etc/haproxy"
+      - "./ci/haproxy:/usr/local/etc/haproxy"
     networks:
       concourse:
         aliases:

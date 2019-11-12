@@ -135,7 +135,7 @@ jobs:
       - get: omnibus
         trigger: true
       - task: create-users
-        file: omnibus/concourse/create-users.yml
+        file: omnibus/ci/tasks/create-users.yml
         params:
           SPACE: dev-((developer))
           USER: ((user))
@@ -155,7 +155,7 @@ jobs:
       - get: pay-adminusers
         trigger: true
       - task: build
-        file: omnibus/concourse/maven-build.yaml
+        file: omnibus/ci/tasks/maven-build.yaml
         input_mapping: { src: pay-adminusers }
       - put: paas-app
         params:
@@ -178,9 +178,9 @@ jobs:
   #    - get: pay-cardid-data
   #      trigger: true
   #    - task: copy-cardid-data
-  #      file: omnibus/concourse/copy-cardid-data.yaml
+  #      file: omnibus/ci/tasks/copy-cardid-data.yaml
   #    - task: build
-  #      file: omnibus/concourse/maven-build.yaml
+  #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-cardid }
   #    - put: paas-app
   #      params:
@@ -199,7 +199,7 @@ jobs:
   #    - get: pay-frontend
   #      trigger: true
   #    - task: test
-  #      file: omnibus/concourse/frontend.yaml
+  #      file: omnibus/ci/tasks/frontend.yaml
   #      input_mapping: { src: pay-frontend }
   #    - put: paas-app
   #      params:
@@ -232,7 +232,7 @@ jobs:
   #          dir: pay-toolbox
   #          args: [ "./scripts/generate-dev-environment" ]
   #    - task: test
-  #      file: omnibus/concourse/node-test.yaml
+  #      file: omnibus/ci/tasks/node-test.yaml
   #      input_mapping: { src: pay-toolbox }
   #    - put: paas-app
   #      params:
@@ -251,7 +251,7 @@ jobs:
   #    - get: pay-connector
   #      trigger: true
   #    - task: build
-  #      file: omnibus/concourse/maven-build.yaml
+  #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-connector }
   #    - put: paas-app
   #      params:
@@ -270,7 +270,7 @@ jobs:
   #    - get: pay-ledger
   #      trigger: true
   #    - task: build
-  #      file: omnibus/concourse/maven-build.yaml
+  #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-ledger }
   #    - put: paas-app
   #      params:
@@ -289,7 +289,7 @@ jobs:
   #    - get: pay-products
   #      trigger: true
   #    - task: build
-  #      file: omnibus/concourse/maven-build.yaml
+  #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-products }
   #    - put: paas-app
   #      params:
@@ -308,7 +308,7 @@ jobs:
   #    - get: pay-products-ui
   #      trigger: true
   #    - task: test
-  #      file: omnibus/concourse/frontend.yaml
+  #      file: omnibus/ci/tasks/frontend.yaml
   #      input_mapping: { src: pay-products-ui }
   #    - put: paas-app
   #      params:
@@ -327,7 +327,7 @@ jobs:
   #    - get: pay-selfservice
   #      trigger: true
   #    - task: test
-  #      file: omnibus/concourse/frontend.yaml
+  #      file: omnibus/ci/tasks/frontend.yaml
   #      input_mapping: { src: pay-selfservice }
   #    - put: paas-app
   #      params:
@@ -346,7 +346,7 @@ jobs:
   #    - get: pay-publicauth
   #      trigger: true
   #    - task: build
-  #      file: omnibus/concourse/maven-build.yaml
+  #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-publicauth }
   #    - put: paas-app
   #      params:
@@ -365,7 +365,7 @@ jobs:
   #    - get: pay-publicapi
   #      trigger: true
   #    - task: build
-  #      file: omnibus/concourse/maven-build.yaml
+  #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-publicapi }
   #    - put: paas-app
   #      params:
@@ -384,7 +384,7 @@ jobs:
   #    - get: pay-direct-debit-connector
   #      trigger: true
   #    - task: build
-  #      file: omnibus/concourse/maven-build.yaml
+  #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-direct-debit-connector }
   #    - put: paas-app
   #      params:
@@ -403,7 +403,7 @@ jobs:
   #    - get: pay-direct-debit-frontend
   #      trigger: true
   #    - task: test
-  #      file: omnibus/concourse/frontend.yaml
+  #      file: omnibus/ci/tasks/frontend.yaml
   #      input_mapping: { src: pay-direct-debit-frontend }
   #    - put: paas-app
   #      params:
@@ -422,7 +422,7 @@ jobs:
   #    - get: pay-endtoend
   #      trigger: true
   #    - task: build
-  #      file: omnibus/concourse/maven-build.yaml
+  #      file: omnibus/ci/tasks/maven-build.yaml
   #      input_mapping: { src: pay-endtoend }
   #    - put: paas-app
   #      params:
@@ -441,7 +441,7 @@ jobs:
   #    - get: pay-stubs
   #      trigger: true
   #    - task: test
-  #      file: omnibus/concourse/node-test.yaml
+  #      file: omnibus/ci/tasks/node-test.yaml
   #      input_mapping: { src: pay-stubs }
   #    - put: paas-app
   #      params:
@@ -460,7 +460,7 @@ jobs:
   #    - get: pay-demo-service
   #      trigger: true
   #    - task: test
-  #      file: omnibus/concourse/node-test.yaml
+  #      file: omnibus/ci/tasks/node-test.yaml
   #      input_mapping: { src: pay-demo-service }
   #    - put: paas-app
   #      params:
