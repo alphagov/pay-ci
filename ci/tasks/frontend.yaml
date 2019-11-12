@@ -12,6 +12,9 @@ inputs:
 outputs:
   - name: src
 
+caches:
+  - path: node_modules
+
 run:
   path: ash
   dir: src
