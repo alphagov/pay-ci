@@ -18,12 +18,15 @@ applicationTemplate: &applicationTemplate
 
 applications:
   - <<: *applicationTemplate
-    name: adminusers
-    docker:
-      <<: *dockerImage
-      image: govukpay/adminusers:latest-master
+    name: admin-users
+    health-check-type: process
+    buildpacks:
+      - java_buildpack
+    memory: 1G
     env:
       <<: *defaultEnvs
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+ } }'
+      JBP_CONFIG_JAVA_MAIN: '{ arguments: "server app/config/config.yml" }'
       ADMIN_PORT: '9701'
       JPA_LOG_LEVEL: ((log_level))
       JPA_SQL_LOG_LEVEL: ((log_level))
@@ -174,6 +177,7 @@ applications:
       <<: *defaultEnvs
       SQUID_CONFIG: YWNsIFNTTF9wb3J0cyBwb3J0IDQ0MwphY2wgU2FmZV9wb3J0cyBwb3J0IDgwCmFjbCBTYWZlX3BvcnRzIHBvcnQgNDQzCmh0dHBfYWNjZXNzIGFsbG93IGFsbApodHRwX3BvcnQgODA4MApjYWNoZSBkZW55IGFsbAphY2Nlc3NfbG9nIG5vbmUKY2FjaGVfbG9nIC9kZXYvbnVsbApjYWNoZV9zdG9yZV9sb2cgbm9uZQpwaWRfZmlsZW5hbWUgbm9uZQo=
     routes:
+<<<<<<< HEAD
     - route: egress-((space)).apps.internal
   - <<: *applicationTemplate
     name: card-frontend
@@ -182,6 +186,19 @@ applications:
       image: govukpay/frontend:latest-master
     env:
       <<: *defaultEnvs
+=======
+    - route: egress-((developer)).apps.internal
+  - name: frontend
+    buildpacks:
+      - nodejs_buildpack
+    health-check-type: process
+    memory: 1G
+    command: node start.js
+    env:
+      npm_config_node_version: 'v8.14.0'
+      NODE_ENV: production
+      DISABLE_APPMETRICS: 'true'
+>>>>>>> WIP Buildpacks
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
       COOKIE_MAX_AGE: '5400000'
       CONNECTOR_TOKEN_URL: http://card-connector-((space)).apps.internal:8080/v1/frontend/tokens/{chargeTokenId}
