@@ -1,13 +1,13 @@
 ---
 pipelines:
   - name: dev-env-anshul
-    team: pay
+    team: pay-deploy
     config_file: omnibus/ci/pipelines/deploy-dev-env.yml
     vars:
       developer: anshul
       user: "106981284630415421896"
   - name: dev-env-richard
-    team: pay
+    team: pay-deploy
     config_file: omnibus/ci/pipelines/deploy-dev-env.yml
     vars:
       developer: richard
