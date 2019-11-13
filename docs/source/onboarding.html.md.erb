@@ -1,0 +1,54 @@
+---
+title: Onboarding
+---
+
+# Onboarding
+
+<%= image_tag 'buses.jpg' %>
+
+Pay's services are deployed to [GOV.UK PaaS][paas] using pipelines on the [GDS shared Concourse][cd].
+The steps on this page should get you ready to start working on deploying Pay's services.
+
+If you find any issues with the information here, please raise an issue or pull request against these docs using the links at the bottom of the page.
+
+## Prepare your laptop
+
+You'll need to install a couple of tools to work with Pay's services.
+If you're a [Homebrew][homebrew] user, you can run the following in the [pay-omnibus repository][this-repo]:
+
+```sh
+brew bundle install
+```
+
+## Get GOV.UK PaaS account
+
+Pay's services are deployed to [GOV.UK PaaS][paas].
+You can learn a bit more about GOV.UK PaaS and Cloud Foundry from the [PaaS technical documentation][paas-docs].
+
+The first thing you should do is ask an org manager on your team to give you access to Pay's organisation on GOV.UK PaaS.
+They can do this by following the [PaaS guidance on adding users][paas-add-users].
+
+Once you've been invited to the organisation, try logging in:
+
+```sh
+cf login -a api.london.cloud.service.gov.uk --sso
+```
+
+You should be able to target the `govuk-pay` organisation and the `sandbox` space.
+
+## Get your own developer environment
+
+Now that you have a PaaS account, you can have your very own Pay developer environment within your own PaaS space.
+Modify the `ci/config/dev-pipelines.yml` file to add your own environment, making sure to change the `name`, `vars.developer` and `vars.user` fields.
+The value for `vars.user` can be found by running
+
+```sh
+cf target
+```
+
+and copying the value displayed after `user:`.
+
+Raise a pull request with your changes and have it reviewed and merged.
+The `provision-dev-envs` Concourse pipeline should pick up the change and roll out a new pipeline to provision your developer environment.
+
+<%= partial 'partials/links' %>
