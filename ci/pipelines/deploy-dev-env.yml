@@ -12,8 +12,7 @@ resources:
       uri: https://github.com/alphagov/pay-omnibus
       branch: develop
 
-  - &paas-resource
-    name: paas
+  - name: paas
     type: cf-cli
     source:
       api: https://api.london.cloud.service.gov.uk
@@ -22,109 +21,79 @@ resources:
       username: ((cf-username))
       password: ((cf-password))
 
-  - name: pay-adminusers
-    type: git
-    source: &git-source
-      uri: https://github.com/alphagov/pay-adminusers
-      branch: master
-      username: ((gh-username))
-      password: ((gh-password))
+  - name: adminusers
+    type: registry-image
+    source: &image-source
+      repository: govukpay/adminusers
+      tag: latest-master
+      username: ((docker-username))
+      password: ((docker-password))
 
-  #- name: pay-cardid
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-cardid"
-
-  #- name: pay-cardid-data
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-cardid-data"
-
-  #- name: pay-connector
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-connector"
-
-  #- name: pay-direct-debit-connector
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-direct-debit-connector"
-
-  #- name: pay-direct-debit-frontend
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-direct-debit-frontend" 
-
-  - name: pay-frontend
-    type: git
+  - name: cardid
+    type: registry-image
     source:
-      <<: *git-source
-      uri: "https://github.com/alphagov/pay-frontend" 
+      <<: *image-source
+      repository: govukpay/cardid
 
-  #- name: pay-ledger
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-ledger" 
+  - name: card-connector
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/connector
 
-  #- name: pay-products
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-products" 
+  - name: directdebit-connector
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-connector
 
-  #- name: pay-products-ui
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-products-ui" 
+  - name: directdebit-frontend
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-frontend
 
-  #- name: pay-publicapi
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-publicapi" 
+  - name: card-frontend
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/frontend
 
-  #- name: pay-publicauth
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-publicauth" 
+  - name: ledger
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/ledger
 
-  #- name: pay-selfservice
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-selfservice" 
+  - name: products
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/products
 
-  #- name: pay-toolbox
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-toolbox" 
+  - name: products-ui
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/products-ui
 
-  #- name: pay-demo-service
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-demo-service" 
+  - name: publicapi
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/publicapi
 
-  #- name: pay-endtoend
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-endtoend" 
+  - name: publicauth
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/publicauth
 
-  #- name: pay-stubs
-  #  type: git
-  #  source:
-  #    <<: *git-source
-  #    uri: "https://github.com/alphagov/pay-stubs" 
+  - name: selfservice
+    type: registry-image
+    source:
+      <<: *image-source
+      repository: govukpay/selfservice
 
 jobs:
   - name: provision-space
@@ -150,320 +119,192 @@ jobs:
       - get: omnibus
         passed: [provision-space]
         trigger: true
-      - get: pay-adminusers
+      - get: adminusers
         trigger: true
-      - task: build
-        file: omnibus/ci/tasks/maven-build.yaml
-        input_mapping: { src: pay-adminusers }
+      - put: app
+        resource: paas
+        params: &paas-app
+          command: push
+          app_name: adminusers
+          manifest: omnibus/paas/pay-apps.yml
+          no_start: true
+          docker_password: ((docker-password))
+          vars:
+            developer: ((developer))
+            docker-username: ((docker-username))
+
+  - name: deploy-cardid
+    serial_groups: [cardid, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: cardid
+        trigger: true
       - put: app
         resource: paas
         params:
-          command: push
-          app_name: admin-users
-          manifest: omnibus/paas/pay-apps.yml
-          no_start: true
+          <<: *paas-app
+          app_name: cardid
 
-  #- name: deploy-cardid
-  #  serial_groups: [cardid, leonardo]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-cardid
-  #      trigger: true
-  #      params:
-  #        submodules: none
-  #    - get: pay-cardid-data
-  #      trigger: true
-  #    - task: copy-cardid-data
-  #      file: omnibus/ci/tasks/copy-cardid-data.yaml
-  #    - task: build
-  #      file: omnibus/ci/tasks/maven-build.yaml
-  #      input_mapping: { src: pay-cardid }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: card-id
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
-
-  - name: deploy-frontend
-    serial_groups: [frontend, leonardo]
+  - name: deploy-card-connector
+    serial_groups: [card-connector, michaelangelo]
     plan:
       - get: omnibus
-      - get: paas
         passed: [provision-space]
         trigger: true
-      - get: pay-frontend
+      - get: card-connector
         trigger: true
-      - task: test
-        file: omnibus/ci/tasks/frontend.yaml
-        input_mapping: { src: pay-frontend }
-      - put: paas
+      - put: app
+        resource: paas
         params:
-          command: push
-          app_name: frontend
-          manifest: omnibus/paas/pay-apps.yml
-          no_start: true
+          <<: *paas-app
+          app_name: card-connector
 
-  #- name: deploy-toolbox
-  #  serial_groups: [toolbox, leonardo]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-toolbox
-  #      trigger: true
-  #    - task: env-file
-  #      config:
-  #        platform: linux
-  #        image_resource:
-  #          type: docker-image
-  #          source: { repository: node }
-  #        inputs:
-  #          - name: pay-toolbox
-  #        outputs:
-  #          - name: pay-toolbox
-  #        run:
-  #          path: bash
-  #          dir: pay-toolbox
-  #          args: [ "./scripts/generate-dev-environment" ]
-  #    - task: test
-  #      file: omnibus/ci/tasks/node-test.yaml
-  #      input_mapping: { src: pay-toolbox }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: toolbox
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-card-frontend
+    serial_groups: [card-frontend, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: card-frontend
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: card-frontend
 
-  #- name: deploy-connector
-  #  serial_groups: [connector, michaelangelo]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-connector
-  #      trigger: true
-  #    - task: build
-  #      file: omnibus/ci/tasks/maven-build.yaml
-  #      input_mapping: { src: pay-connector }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: connector
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-directdebit-connector
+    serial_groups: [directdebit-connector, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: directdebit-connector
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: directdebit-connector
 
-  #- name: deploy-ledger
-  #  serial_groups: [ledger, michaelangelo]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-ledger
-  #      trigger: true
-  #    - task: build
-  #      file: omnibus/ci/tasks/maven-build.yaml
-  #      input_mapping: { src: pay-ledger }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: ledger
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-directdebit-frontend
+    serial_groups: [directdebit-frontend, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: directdebit-frontend
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: directdebit-frontend
 
-  #- name: deploy-products
-  #  serial_groups: [products, donatello]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-products
-  #      trigger: true
-  #    - task: build
-  #      file: omnibus/ci/tasks/maven-build.yaml
-  #      input_mapping: { src: pay-products }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: products
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-ledger
+    serial_groups: [ledger, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: ledger
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: ledger
 
-  #- name: deploy-products-ui
-  #  serial_groups: [products-ui, donatello]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-products-ui
-  #      trigger: true
-  #    - task: test
-  #      file: omnibus/ci/tasks/frontend.yaml
-  #      input_mapping: { src: pay-products-ui }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: products-ui
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-products
+    serial_groups: [products, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: products
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: products
 
-  #- name: deploy-selfservice
-  #  serial_groups: [selfservice, donatello]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-selfservice
-  #      trigger: true
-  #    - task: test
-  #      file: omnibus/ci/tasks/frontend.yaml
-  #      input_mapping: { src: pay-selfservice }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: self-service
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-products-ui
+    serial_groups: [products-ui, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: products-ui
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: products-ui
 
-  #- name: deploy-publicauth
-  #  serial_groups: [publicauth, raphael]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-publicauth
-  #      trigger: true
-  #    - task: build
-  #      file: omnibus/ci/tasks/maven-build.yaml
-  #      input_mapping: { src: pay-publicauth }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: public-auth
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-publicapi
+    serial_groups: [publicapi, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: publicapi
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: publicapi
 
-  #- name: deploy-publicapi
-  #  serial_groups: [publicapi, raphael]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-publicapi
-  #      trigger: true
-  #    - task: build
-  #      file: omnibus/ci/tasks/maven-build.yaml
-  #      input_mapping: { src: pay-publicapi }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: public-api
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-publicauth
+    serial_groups: [publicauth, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: publicauth
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: publicauth
 
-  #- name: deploy-dd-connector
-  #  serial_groups: [dd-connector, raphael]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-direct-debit-connector
-  #      trigger: true
-  #    - task: build
-  #      file: omnibus/ci/tasks/maven-build.yaml
-  #      input_mapping: { src: pay-direct-debit-connector }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: direct-debit-connector
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
+  - name: deploy-selfservice
+    serial_groups: [selfservice, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - get: selfservice
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: selfservice
 
-  #- name: deploy-dd-frontend
-  #  serial_groups: [dd-frontend, raphael]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-direct-debit-frontend
-  #      trigger: true
-  #    - task: test
-  #      file: omnibus/ci/tasks/frontend.yaml
-  #      input_mapping: { src: pay-direct-debit-frontend }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: direct-debit-frontend
-  #        manifest: omnibus/paas/pay-apps.yml
-  #        no_start: true
-
-  #- name: build-endtoend
-  #  serial_groups: [endtoend]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-endtoend
-  #      trigger: true
-  #    - task: build
-  #      file: omnibus/ci/tasks/maven-build.yaml
-  #      input_mapping: { src: pay-endtoend }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: end-to-end
-  #        manifest: omnibus/paas/test-apps.yml
-  #        no_start: true
-
-  #- name: build-stubs
-  #  serial_groups: [stubs]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-stubs
-  #      trigger: true
-  #    - task: test
-  #      file: omnibus/ci/tasks/node-test.yaml
-  #      input_mapping: { src: pay-stubs }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: stubs
-  #        manifest: omnibus/paas/test-apps.yml
-  #        no_start: true
-
-  #- name: build-demo-service
-  #  serial_groups: [demo-service]
-  #  plan:
-  #    - get: omnibus
-  #    - get: paas
-  #      passed: [provision-space]
-  #      trigger: true
-  #    - get: pay-demo-service
-  #      trigger: true
-  #    - task: test
-  #      file: omnibus/ci/tasks/node-test.yaml
-  #      input_mapping: { src: pay-demo-service }
-  #    - put: paas
-  #      params:
-  #        command: push
-  #        app_name: demo-service
-  #        manifest: omnibus/paas/test-apps.yml
-  #        no_start: true
+  - name: deploy-tools
+    serial_groups: [tools, michaelangelo]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - put: egress
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: egress
+      - put: sqs
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: sqs
+      - put: postgres
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: postgres
