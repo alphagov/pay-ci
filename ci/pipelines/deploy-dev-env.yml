@@ -8,12 +8,14 @@ resource_types:
 resources:
   - name: omnibus
     type: git
+    icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: develop
 
   - name: paas
     type: cf-cli
+    icon: cloud-upload-outline
     source:
       api: https://api.london.cloud.service.gov.uk
       org: govuk-pay
@@ -21,76 +23,78 @@ resources:
       username: ((cf-username))
       password: ((cf-password))
 
-  - name: adminusers
+  - &image
+    name: adminusers
     type: registry-image
+    icon: docker
     source: &image-source
       repository: govukpay/adminusers
       tag: latest-master
       username: ((docker-username))
       password: ((docker-password))
 
-  - name: cardid
-    type: registry-image
+  - <<: *image
+    name: cardid
     source:
       <<: *image-source
       repository: govukpay/cardid
 
-  - name: card-connector
-    type: registry-image
+  - <<: *image
+    name: card-connector
     source:
       <<: *image-source
       repository: govukpay/connector
 
-  - name: directdebit-connector
-    type: registry-image
+  - <<: *image
+    name: directdebit-connector
     source:
       <<: *image-source
       repository: govukpay/directdebit-connector
 
-  - name: directdebit-frontend
-    type: registry-image
+  - <<: *image
+    name: directdebit-frontend
     source:
       <<: *image-source
       repository: govukpay/directdebit-frontend
 
-  - name: card-frontend
-    type: registry-image
+  - <<: *image
+    name: card-frontend
     source:
       <<: *image-source
       repository: govukpay/frontend
 
-  - name: ledger
-    type: registry-image
+  - <<: *image
+    name: ledger
     source:
       <<: *image-source
       repository: govukpay/ledger
 
-  - name: products
-    type: registry-image
+  - <<: *image
+    name: products
     source:
       <<: *image-source
       repository: govukpay/products
 
-  - name: products-ui
-    type: registry-image
+  - <<: *image
+    name: products-ui
     source:
       <<: *image-source
       repository: govukpay/products-ui
 
-  - name: publicapi
-    type: registry-image
+  - <<: *image
+    name: publicapi
     source:
       <<: *image-source
       repository: govukpay/publicapi
 
-  - name: publicauth
-    type: registry-image
+  - <<: *image
+    name: publicauth
     source:
       <<: *image-source
       repository: govukpay/publicauth
 
-  - name: selfservice
-    type: registry-image
+  - <<: *image
+    name: selfservice
     source:
       <<: *image-source
       repository: govukpay/selfservice
@@ -308,3 +312,333 @@ jobs:
         params:
           <<: *paas-app
           app_name: postgres
+
+  - name: adminusers-network-policies
+    plan:
+      - get: omnibus
+        passed: [deploy-adminusers, deploy-tools]
+        trigger: true
+      - put: network-policy-egress
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: adminusers
+          destination_app: egress
+          port: 8080
+          protocol: tcp
+      - put: network-policy-postgres
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: adminusers
+          destination_app: postgres
+          port: 5432
+          protocol: tcp
+
+  - name: card-connector-network-policies
+    plan:
+      - get: omnibus
+        passed: [deploy-card-connector, deploy-tools]
+        trigger: true
+      - put: network-policy-egress
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: card-connector
+          destination_app: egress
+          port: 8080
+          protocol: tcp
+      - put: network-policy-postgres
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: card-connector
+          destination_app: postgres
+          port: 5432
+          protocol: tcp
+      - put: network-policy-sqs
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: card-connector
+          destination_app: sqs
+          port: 9324
+          protocol: tcp
+
+  - name: directdebit-frontend-network-policies
+    plan:
+      - get: omnibus
+        passed: [deploy-directdebit-frontend, deploy-directdebit-connector]
+        trigger: true
+      - put: network-policy-egress
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: directdebit-frontend
+          destination_app: directdebit-connector
+          port: 8080
+          protocol: tcp
+      - put: network-policy-egress
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: directdebit-frontend
+          destination_app: adminusers
+          port: 8080
+          protocol: tcp
+
+  - name: directdebit-connector-network-policies
+    plan:
+      - get: omnibus
+        passed: [deploy-directdebit-connector, deploy-tools]
+        trigger: true
+      - put: network-policy-egress
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: directdebit-connector
+          destination_app: egress
+          port: 8080
+          protocol: tcp
+      - put: network-policy-postgres
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: directdebit-connector
+          destination_app: postgres
+          port: 5432
+          protocol: tcp
+
+  - name: card-frontend-network-policies
+    plan:
+      - get: omnibus
+        passed: [deploy-card-frontend, deploy-card-connector, deploy-cardid, deploy-adminusers]
+        trigger: true
+      - put: network-policy-card-connector
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: card-frontend
+          destination_app: card-connector
+          port: 8080
+          protocol: tcp
+      - put: network-policy-cardid
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: card-frontend
+          destination_app: cardid
+          port: 8080
+          protocol: tcp
+      - put: network-policy-adminusers
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: card-frontend
+          destination_app: adminusers
+          port: 8080
+          protocol: tcp
+
+  - name: publicauth-network-policies
+    plan:
+      - get: omnibus
+        passed: [deploy-publicauth, deploy-tools]
+        trigger: true
+      - put: network-policy-postgres
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: publicauth
+          destination_app: postgres
+          port: 5432
+          protocol: tcp
+
+  - name: products-network-policies
+    plan:
+      - get: omnibus
+        passed: [deploy-products, deploy-tools]
+        trigger: true
+      - put: network-policy-postgres
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: products
+          destination_app: postgres
+          port: 5432
+          protocol: tcp
+
+  - name: ledger-network-policies
+    plan:
+      - get: omnibus
+        passed: [deploy-ledger, deploy-tools]
+        trigger: true
+      - put: network-policy-postgres
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: ledger
+          destination_app: postgres
+          port: 5432
+          protocol: tcp
+      - put: network-policy-sqs
+        resource: paas
+        params:
+          command: add-network-policy
+          source_app: ledger
+          destination_app: sqs
+          port: 9324
+          protocol: tcp
+
+  - name: start-adminusers
+    plan:
+      - get: omnibus
+        passed: [deploy-adminusers, adminusers-network-policies]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: adminusers
+
+  - name: start-cardid
+    plan:
+      - get: omnibus
+        passed: [deploy-cardid]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: cardid
+
+  - name: start-card-connector
+    plan:
+      - get: omnibus
+        passed: [deploy-card-connector, card-connector-network-policies]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: card-connector
+
+  - name: start-card-frontend
+    plan:
+      - get: omnibus
+        passed: [deploy-card-frontend, card-frontend-network-policies]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: card-frontend
+
+  - name: start-directdebit-connector
+    plan:
+      - get: omnibus
+        passed: [deploy-directdebit-connector, directdebit-connector-network-policies]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: directdebit-connector
+
+  - name: start-directdebit-frontend
+    plan:
+      - get: omnibus
+        passed: [deploy-directdebit-frontend, directdebit-frontend-network-policies]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: directdebit-frontend
+
+  - name: start-ledger
+    plan:
+      - get: omnibus
+        passed: [deploy-ledger, ledger-network-policies]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: ledger
+
+  - name: start-products
+    plan:
+      - get: omnibus
+        passed: [deploy-products, products-network-policies]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: products
+
+  - name: start-products-ui
+    plan:
+      - get: omnibus
+        passed: [deploy-products-ui]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: products-ui
+
+  - name: start-publicapi
+    plan:
+      - get: omnibus
+        passed: [deploy-publicapi]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: publicapi
+
+  - name: start-publicauth
+    plan:
+      - get: omnibus
+        passed: [deploy-publicauth, publicauth-network-policies]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: publicauth
+
+  - name: start-selfservice
+    plan:
+      - get: omnibus
+        passed: [deploy-selfservice]
+        trigger: true
+      - put: start-app
+        resource: paas
+        params:
+          command: start
+          app_name: selfservice
+
+  - name: start-tools
+    plan:
+      - get: omnibus
+        passed: [deploy-tools]
+        trigger: true
+      - put: start-egress
+        resource: paas
+        params:
+          command: start
+          app_name: egress
+      - put: start-sqs
+        resource: paas
+        params:
+          command: start
+          app_name: sqs
+      - put: start-postgres
+        resource: paas
+        params:
+          command: start
+          app_name: postgres
+
