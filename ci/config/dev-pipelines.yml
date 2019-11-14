@@ -18,3 +18,9 @@ pipelines:
     vars:
       developer: dan
       user: "dan.worth@digital.cabinet-office.org"
+  - name: dev-env-dom
+    team: pay-deploy
+    config_file: omnibus/ci/pipelines/deploy-dev-env.yml
+    vars:
+      developer: dom
+      user: "dominic.jones@digital.cabinet-office.org"
