@@ -26,15 +26,41 @@ jobs:
     plan:
       - get: omnibus
       - in_parallel:
-        - put: cf-push
+        - put: cf-push selenium-hub
           resource: paas-tools
           params:
             command: push
             app_name: selenium-hub
             manifest: omnibus/paas/selenium-apps.yml
-        - put: cf-push
+        - put: cf-push chrome
           resource: paas-tools
           params:
             command: push
             app_name: chrome
             manifest: omnibus/paas/selenium-apps.yml
+  - name: start-selenium
+    plan:
+      - in_parallel:
+        - put: start selenium hub
+          resource: paas-tools
+          params:
+            command: start
+            app_name: selenium-hub
+        - put: start chrome
+          resource: paas-tools
+          params:
+            command: start
+            app_name: chrome
+  - name: stop-selenium
+    plan:
+      - in_parallel:
+        - put: stop selenium hub
+          resource: paas-tools
+          params:
+            command: stop
+            app_name: selenium-hub
+        - put: stop chrome
+          resource: paas-tools
+          params:
+            command: stop
+            app_name: chrome
