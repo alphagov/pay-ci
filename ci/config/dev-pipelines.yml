@@ -11,16 +11,16 @@ pipelines:
     config_file: omnibus/ci/pipelines/deploy-dev-env.yml
     vars:
       developer: richard
-      user: "richard.baker@digital.cabinet-office.org"
+      user: "richard.baker@digital.cabinet-office.gov.uk"
   - name: dev-env-dan
     team: pay-deploy
     config_file: omnibus/ci/pipelines/deploy-dev-env.yml
     vars:
       developer: dan
-      user: "dan.worth@digital.cabinet-office.org"
+      user: "dan.worth@digital.cabinet-office.gov.uk"
   - name: dev-env-dom
     team: pay-deploy
     config_file: omnibus/ci/pipelines/deploy-dev-env.yml
     vars:
       developer: dom
-      user: "dominic.jones@digital.cabinet-office.org"
+      user: "dominic.jones@digital.cabinet-office.gov.uk"
