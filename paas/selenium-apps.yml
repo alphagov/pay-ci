@@ -1,0 +1,32 @@
+---
+applications:
+  - name: selenium-hub
+    docker:
+      image: selenium/hub:3.141.59
+    health-check-type: process
+    memory: 1G
+    instances: 1
+    env:
+      JAVA_OPTS: "-Xmx640M"
+      GRID_HUB_PORT: 4444
+      GRID_BROWSER_TIMEOUT: 60
+      GRID_DEBUG: false
+    routes:
+    - route: pay-selenium-hub.london.cloudapps.digital
+    - route: selenium-hub.apps.internal
+  - name: chrome
+    docker:
+      image: selenium/node-chrome:3.141.59
+    health-check-type: process
+    memory: 2G
+    instances: 1
+    env:
+      HUB_HOST: selenium-hub.apps.internal
+      HUB_PORT: 4444
+      NODE_MAX_INSTANCES: 4
+      NODE_MAX_SESSION: 4
+      START_XVFB: false
+      JAVA_OPTS: "-Xmx1280M"
+      GRID_DEBUG: false
+    routes:
+    - route: chrome.apps.internal
