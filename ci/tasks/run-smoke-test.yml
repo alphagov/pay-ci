@@ -1,0 +1,29 @@
+# Runs smoke tests in a Concourse task using endtoend docker container
+# See: https://github.com/alphagov/pay-scripts/blob/master/jenkins/run-smoke.sh
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: govukpay/endtoend
+    tag: latest-master
+    username: ((dh-username))
+    password: ((dh-password))
+
+params:
+  SMOKE_TEST:
+  PUBLICAPI_URL:
+  SELFSERVICE_URL:
+  SELENIUM_HUB_URL:
+  WEB_DRIVER: CHROME_REMOTE
+  CHROME_DRIVER_PATH: /usr/bin/chromedriver
+  HTTP_ZAP_ENABLED: 'false'
+
+run:
+  path: sh
+  args:
+    - -c
+    - |
+    - set -ue
+    - /app/bin/${SMOKE_TEST}
+  
