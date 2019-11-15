@@ -1,0 +1,40 @@
+---
+resource_types:
+  - name: cf-cli
+    type: docker-image
+    source:
+      repository: nulldriver/cf-cli-resource
+
+resources:
+  - name: omnibus
+    type: git
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: skeleton_smoke_tests
+
+  - name: paas-tools
+    type: cf-cli
+    source:
+      api: https://api.london.cloud.service.gov.uk
+      org: govuk-pay
+      space: tools
+      username: ((cf-username))
+      password: ((cf-password))
+
+jobs:
+  - name: deploy-selenium-hub
+    plan:
+      - get: omnibus
+      - in_parallel:
+        - put: cf-push
+          resource: paas-tools
+          params:
+            command: push
+            app_name: selenium-hub
+            manifest: omnibus/paas/selenium-apps.yml
+        - put: cf-push
+          resource: paas-tools
+          params:
+            command: push
+            app_name: chrome
+            manifest: omnibus/paas/selenium-apps.yml
