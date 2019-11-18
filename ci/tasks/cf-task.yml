@@ -7,15 +7,17 @@ image_resource:
 params:
   CF_USERNAME: ((cf-username))
   CF_PASSWORD: ((cf-password))
-  CF_ORG: ((cf-org))
-  SCRIPT:
+  CF_ORG:
+  CF_SPACE:
+  COMMAND:
 
 run:
   path: bash
   args:
+    - -c
     - |
       set -o errexit -o nounset
       cf login -a https://api.london.cloud.service.gov.uk \
         -u "$CF_USERNAME" -p "$CF_PASSWORD" \
-        -o "$CF_ORG" -s andy
-      . "$SCRIPT"
+        -o "$CF_ORG" -s "$CF_SPACE"
+      $COMMAND
