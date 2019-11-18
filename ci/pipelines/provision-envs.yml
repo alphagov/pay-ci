@@ -16,17 +16,45 @@ resources:
     type: concourse-pipeline
     source:
       target: ((concourse-url))
-      insecure: "true"
       teams:
         - name: ((concourse-team))
           username: ((concourse-username))
           password: ((concourse-password))
 
 jobs:
-  - name: env-pipelines
+  - name: update-pipelines
     plan:
       - get: omnibus
         trigger: true
       - put: pay-pipelines
         params:
-          pipelines_file: omnibus/ci/config/env-pipelines.yml
+          pipelines:
+            - name: provision-envs
+              team: ((concourse-team))
+              config_file: omnibus/ci/pipelines/provision-envs.yml
+            - name: dev-env-anshul
+              team: ((concourse-team))
+              config_file: omnibus/ci/pipelines/deploy-env.yml
+              vars:
+                space: dev-anshul
+            - name: dev-env-richard
+              team: ((concourse-team))
+              config_file: omnibus/ci/pipelines/deploy-env.yml
+              vars:
+                space: dev-richard
+            - name: dev-env-dan
+              team: ((concourse-team))
+              config_file: omnibus/ci/pipelines/deploy-env.yml
+              vars:
+                space: dev-dan
+            - name: dev-env-dom
+              team: ((concourse-team))
+              config_file: omnibus/ci/pipelines/deploy-env.yml
+              vars:
+                space: dev-dom
+            - name: staging
+              team: ((concourse-team))
+              config_file: omnibus/ci/pipelines/deploy-env.yml
+              vars:
+                space: staging
+
