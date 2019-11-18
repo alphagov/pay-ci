@@ -27,6 +27,8 @@ add-creds:
 	secrets/local-ssm-add.sh /concourse/pay-deploy/cf-password paas-london/govuk-pay/org-manager-bot/password
 	secrets/local-ssm-add.sh /concourse/pay-deploy/gh-username github/readonly-user/username
 	secrets/local-ssm-add.sh /concourse/pay-deploy/gh-password github/readonly-user/password
+	secrets/local-ssm-add.sh /concourse/pay-deploy/dh-username docker/readonly-user/username
+	secrets/local-ssm-add.sh /concourse/pay-deploy/dh-password docker/readonly-user/password
 
 setup: start-concourse add-creds login create-team login-team set-pipelines
 	
