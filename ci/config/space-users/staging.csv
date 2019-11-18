@@ -1,5 +1,5 @@
 Username,Password,Org,Space,OrgManager,BillingManager,OrgAuditor,SpaceManager,SpaceDeveloper,SpaceAuditor
-"106981284630415421896",,$ORG,$SPACE,,,,,y,
-dan.worth@digital.cabinet-office.gov.uk,,$ORG,$SPACE,,,,,y,
-dominic.jones@digital.cabinet-office.gov.uk,,$ORG,$SPACE,,,,,y,
-richard.baker@digital.cabinet-office.gov.uk,,$ORG,$SPACE,,,,,y,
+106981284630415421896,,$ORG,$SPACE,,,,,,y
+dan.worth@digital.cabinet-office.gov.uk,,$ORG,$SPACE,,,,,,y
+dominic.jones@digital.cabinet-office.gov.uk,,$ORG,$SPACE,,,,,,y
+richard.baker@digital.cabinet-office.gov.uk,,$ORG,$SPACE,,,,,,y
