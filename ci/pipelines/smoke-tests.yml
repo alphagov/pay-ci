@@ -13,7 +13,7 @@ resources:
     type: git
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: smoke_tests
+      branch: develop
 
 jobs:
   - name: card-smoke-test
@@ -26,8 +26,8 @@ jobs:
         file: omnibus/ci/tasks/run-smoke-test.yml
         params:
           SMOKE_TEST: smoke-card
-          SELENIUM_HUB_URL: https://pay-selenium-hub.london.cloudapps.digital
-          SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: https://products.pymnt.uk/redirect/smoke-test/product-test-environment
+          SELENIUM_HUB_URL: https://pay-selenium-hub.london.cloudapps.digital/wd/hub
+          SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: https://pay-products-staging.london.cloudapps.digital/redirect/smoke-test/product-test-environment
 
 
 

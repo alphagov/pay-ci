@@ -10,7 +10,7 @@ resources:
     type: git
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: smoke_tests
+      branch: develop
 
   - name: paas-tools
     type: cf-cli
