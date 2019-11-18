@@ -5,7 +5,7 @@ applications:
       image: govukpay/adminusers:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       ADMIN_PORT: '9701'
       DB_HOST: postgres-((space)).apps.internal
@@ -46,7 +46,7 @@ applications:
       image: govukpay/cardid:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       ADMIN_PORT: '9801'
       RUN_APP: 'true'
@@ -61,7 +61,7 @@ applications:
       image: govukpay/connector:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       ADMIN_PORT: '9301'
       DB_HOST: postgres-((space)).apps.internal
@@ -122,7 +122,7 @@ applications:
       image: govukpay/directdebit-connector:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       ENVIRONMENT: ((space))
       ADMIN_PORT: '10201'
@@ -160,7 +160,7 @@ applications:
       image: govukpay/directdebit-frontend:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       NODE_WORKER_COUNT: '1'
       COOKIE_MAX_AGE: '5400000'
@@ -174,7 +174,7 @@ applications:
       image: govukpay/egress@sha256:8bf84bc285b5be78a12a1611cfb3521efbdb6c83bd813f902623b01c0e5ad932
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       SQUID_CONFIG: YWNsIFNTTF9wb3J0cyBwb3J0IDQ0MwphY2wgU2FmZV9wb3J0cyBwb3J0IDgwCmFjbCBTYWZlX3BvcnRzIHBvcnQgNDQzCmh0dHBfYWNjZXNzIGFsbG93IGFsbApodHRwX3BvcnQgODA4MApjYWNoZSBkZW55IGFsbAphY2Nlc3NfbG9nIG5vbmUKY2FjaGVfbG9nIC9kZXYvbnVsbApjYWNoZV9zdG9yZV9sb2cgbm9uZQpwaWRfZmlsZW5hbWUgbm9uZQo=
     routes:
@@ -184,7 +184,7 @@ applications:
       image: govukpay/frontend:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
       COOKIE_MAX_AGE: '5400000'
@@ -203,7 +203,7 @@ applications:
       image: govukpay/ledger:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       ADMIN_PORT: '10701'
       DB_HOST: postgres-((space)).apps.internal
@@ -230,7 +230,7 @@ applications:
       image: govukpay/products:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       ADMIN_PORT: '10001'
       DB_HOST: postgres-((space)).apps.internal
@@ -259,7 +259,7 @@ applications:
       image: govukpay/products-ui:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       PUBLICAPI_URL: https://pay-publicapi-((space)).london.cloudapps.digital
       PAY_API_URL: https://pay-publicapi-((space)).london.cloudapps.digital
@@ -276,7 +276,7 @@ applications:
       image: govukpay/publicapi:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       ADMIN_PORT: '9101'
       CONNECTOR_URL: https://pay-card-connector-((space)).london.cloudapps.digital
@@ -297,7 +297,7 @@ applications:
       image: govukpay/publicauth:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       ADMIN_PORT: '9601'
       DB_HOST: postgres-((space)).apps.internal
@@ -318,7 +318,7 @@ applications:
       image: govukpay/selfservice:latest-master
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
       PUBLIC_AUTH_URL: https://pay-publicauth-((space)).london.cloudapps.digital/v1/frontend/auth
@@ -354,7 +354,7 @@ applications:
       image: postgres:latest
       username: ((docker-username))
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     command: |
       echo "CREATE EXTENSION \"uuid-ossp\";
             CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA pg_catalog;
@@ -388,7 +388,7 @@ applications:
     command: mkdir /opt/custom && echo "$EMQ_CONFIG" | base64 -d > /opt/custom/elasticmq.conf
       && /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
     health-check-type: process
-    memory: 1G
+    memory: 1.5G
     env:
       EMQ_CONFIG: bm9kZS1hZGRyZXNzIHsKICBwcm90b2NvbCA9IGh0dHAKICBob3N0ID0gIioiCiAgcG9ydCA9IDkzMjQKICBjb250ZXh0LXBhdGggPSAiIgp9CgpyZXN0LXNxcyB7CiAgZW5hYmxlZCA9IHRydWUKICBiaW5kLXBvcnQgPSA5MzI0CiAgYmluZC1ob3N0bmFtZSA9ICIwLjAuMC4wIgogIC8vIFBvc3NpYmxlIHZhbHVlczogcmVsYXhlZCwgc3RyaWN0CiAgc3FzLWxpbWl0cyA9IHN0cmljdAp9CgpxdWV1ZXMgewogIGRlZmF1bHQgewogICAgZGVmYXVsdFZpc2liaWxpdHlUaW1lb3V0ID0gMTAgc2Vjb25kcwogICAgZGVsYXkgPSA1IHNlY29uZHMKICAgIHJlY2VpdmVNZXNzYWdlV2FpdCA9IDAgc2Vjb25kcwogIH0KCiAgcGF5X2NhcHR1cmVfcXVldWUgewogICAgZGVmYXVsdFZpc2liaWxpdHlUaW1lb3V0ID0gMzYwMCBzZWNvbmRzCiAgICBkZWxheSA9IDAgc2Vjb25kcwogICAgcmVjZWl2ZU1lc3NhZ2VXYWl0ID0gNSBzZWNvbmRzCiAgfQoKICBwYXlfZXZlbnRfcXVldWUgewogICAgZGVmYXVsdFZpc2liaWxpdHlUaW1lb3V0ID0gMzYwMCBzZWNvbmRzCiAgICBkZWxheSA9IDAgc2Vjb25kcwogICAgcmVjZWl2ZU1lc3NhZ2VXYWl0ID0gNSBzZWNvbmRzCiAgfQp9Cgpha2thLmh0dHAuc2VydmVyLnBhcnNpbmcuaWxsZWdhbC1oZWFkZXItd2FybmluZ3MgPSBvZmYKYWtrYS5odHRwLnNlcnZlci5yZXF1ZXN0LXRpbWVvdXQgPSA0MCBzZWNvbmRzCg==
     routes:
