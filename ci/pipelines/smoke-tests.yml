@@ -13,7 +13,7 @@ resources:
     type: git
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: smoke_tests
+      branch: develop
 
 jobs:
   - name: card-smoke-test
