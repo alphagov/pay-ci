@@ -23,10 +23,10 @@ resources:
           password: ((concourse-password))
 
 jobs:
-  - name: set-dev-pipelines
+  - name: env-pipelines
     plan:
       - get: omnibus
         trigger: true
       - put: pay-pipelines
         params:
-          pipelines_file: omnibus/ci/config/dev-pipelines.yml
+          pipelines_file: omnibus/ci/config/env-pipelines.yml

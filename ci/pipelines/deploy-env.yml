@@ -19,7 +19,7 @@ resources:
     source:
       api: https://api.london.cloud.service.gov.uk
       org: govuk-pay
-      space: dev-((developer))
+      space: ((space))
       username: ((cf-username))
       password: ((cf-password))
 
@@ -107,8 +107,7 @@ jobs:
       - task: create-users
         file: omnibus/ci/tasks/create-users.yml
         params:
-          SPACE: dev-((developer))
-          USER: ((user))
+          SPACE: ((space))
       - put: space
         resource: paas
         params:
@@ -140,7 +139,7 @@ jobs:
           no_start: true
           docker_password: ((docker-password))
           vars:
-            developer: ((developer))
+            space: ((space))
             docker-username: ((docker-username))
 
   - name: deploy-cardid

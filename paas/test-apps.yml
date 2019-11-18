@@ -7,9 +7,9 @@ applications:
     env:
       NODE_ENV: production
       DISABLE_SSL: true
-      PAY_API_URL: https://pay-public-api-((developer)).london.cloudapps.digital
+      PAY_API_URL: https://pay-public-api-((space)).london.cloudapps.digital
     routes:
-    - route: pay-demo-service-((developer)).london.cloudapps.digital
+    - route: pay-demo-service-((space)).london.cloudapps.digital
   - name: stubs
     path: pay-stubs
     health-check-type: process
@@ -19,18 +19,18 @@ applications:
       SMARTPAY_EXPECTED_PASSWORD: smartpay-password
       WORLDPAY_EXPECTED_USER: worldpay-user
       WORLDPAY_EXPECTED_PASSWORD: worldpay-password
-      CONNECTOR_SANDBOX_NOTIFICATION_URL: https://pay-connector-((developer)).london.cloudapps.digital/v1/api/notifications/sandbox
-      CONNECTOR_WORLDPAY_NOTIFICATION_URL: https://pay-connector-((developer)).london.cloudapps.digital/v1/api/notifications/worldpay
-      CONNECTOR_SMARTPAY_NOTIFICATION_URL: https://pay-connector-((developer)).london.cloudapps.digital/v1/api/notifications/smartpay
-      CONNECTOR_EPDQ_NOTIFICATION_URL: https://pay-connector-((developer)).london.cloudapps.digital/v1/api/notifications/epdq
+      CONNECTOR_SANDBOX_NOTIFICATION_URL: https://pay-connector-((space)).london.cloudapps.digital/v1/api/notifications/sandbox
+      CONNECTOR_WORLDPAY_NOTIFICATION_URL: https://pay-connector-((space)).london.cloudapps.digital/v1/api/notifications/worldpay
+      CONNECTOR_SMARTPAY_NOTIFICATION_URL: https://pay-connector-((space)).london.cloudapps.digital/v1/api/notifications/smartpay
+      CONNECTOR_EPDQ_NOTIFICATION_URL: https://pay-connector-((space)).london.cloudapps.digital/v1/api/notifications/epdq
       CONNECTOR_DIRECT_DEBIT_SANDBOX_NOTIFICATION_URL: https://direct-debit-connector.london.cloudapps.digital/v1/webhooks/sandbox
       CONNECTOR_DIRECT_DEBIT_GOCARDLESS_NOTIFICATION_URL: https://direct-debit-connector.london.cloudapps.digital/v1/webhooks/gocardless
       CONNECTOR_DIRECT_DEBIT_GOCARDLESS_WEBHOOK_SECRET: supersecret
       EPDQ_SHA_OUT_PASSPHRASE: mysecretpassphrase
-      EXTERNAL_STUBS_URL: https://pay-stubs-((developer)).london.cloudapps.digital/
-      FRONTEND_URL: https://pay-frontend-((developer)).london.cloudapps.digital
+      EXTERNAL_STUBS_URL: https://pay-stubs-((space)).london.cloudapps.digital/
+      FRONTEND_URL: https://pay-frontend-((space)).london.cloudapps.digital
     routes:
-    - route: pay-stubs-((developer)).london.cloudapps.digital
+    - route: pay-stubs-((space)).london.cloudapps.digital
   - name: end-to-end
     path: pay-endtoend
     health-check-type: process
@@ -49,25 +49,25 @@ applications:
       DB_PRODUCTS_USER: products
       DB_PASSWORD: mysecretpassword
       DB_SSL_OPTS: ssl=none
-      DEMOSERVICE_SERVICE_URL: https://pay-demo-service-((developer)).london.cloudapps.digital/service
-      DEMOSERVICE_PAYSTART_URL: https://pay-demo-service-((developer)).london.cloudapps.digital
-      PUBLICAPI_URL: https://pay-public-api-((developer)).london.cloudapps.digital
-      PUBLIC_AUTH_URL: https://pay-public-auth-((developer)).london.cloudapps.digital
+      DEMOSERVICE_SERVICE_URL: https://pay-demo-service-((space)).london.cloudapps.digital/service
+      DEMOSERVICE_PAYSTART_URL: https://pay-demo-service-((space)).london.cloudapps.digital
+      PUBLICAPI_URL: https://pay-public-api-((space)).london.cloudapps.digital
+      PUBLIC_AUTH_URL: https://pay-public-auth-((space)).london.cloudapps.digital
       TEST_GATEWAY_ACCOUNT_ID: 111
-      CONNECTOR_URL: https://pay-connector-((developer)).london.cloudapps.digital
-      DIRECT_DEBIT_CONNECTOR_URL: https://pay-direct-debit-connector-((developer)).london.cloudapps.digital
-      ADMINUSERS_URL: https://pay-admin-users-((developer)).london.cloudapps.digital
-      SELFSERVICE_URL: https://pay-self-service-((developer)).london.cloudapps.digital
+      CONNECTOR_URL: https://pay-connector-((space)).london.cloudapps.digital
+      DIRECT_DEBIT_CONNECTOR_URL: https://pay-direct-debit-connector-((space)).london.cloudapps.digital
+      ADMINUSERS_URL: https://pay-admin-users-((space)).london.cloudapps.digital
+      SELFSERVICE_URL: https://pay-self-service-((space)).london.cloudapps.digital
       SELFSERVICE_USERNAME: alice.111@mail.fake
       SELFSERVICE_PASSWORD: arandompassword
       SELFSERVICE_OTP_KEY: 55w7bwl169
-      STUBS_URL: https://pay-stubs-((developer)).london.cloudapps.digital
+      STUBS_URL: https://pay-stubs-((space)).london.cloudapps.digital
       DB_SETUP_FOR_SMOKE: true
-      FRONTEND_URL: https://pay-frontend-((developer)).london.cloudapps.digital
-      ADMIN_USERS_URL: https://pay-admin-users-((developer)).london.cloudapps.digital
-      NOTIFICATIONS_URL: https://pay-connector-((developer)).london.cloudapps.digital
-      PRODUCTS_URL: https://pay-products-((developer)).london.cloudapps.digital
-      PRODUCTS_UI_URL: https://pay-products-ui-((developer)).london.cloudapps.digital
+      FRONTEND_URL: https://pay-frontend-((space)).london.cloudapps.digital
+      ADMIN_USERS_URL: https://pay-admin-users-((space)).london.cloudapps.digital
+      NOTIFICATIONS_URL: https://pay-connector-((space)).london.cloudapps.digital
+      PRODUCTS_URL: https://pay-products-((space)).london.cloudapps.digital
+      PRODUCTS_UI_URL: https://pay-products-ui-((space)).london.cloudapps.digital
       PRODUCTS_API_TOKEN: g0nBA5lNzfUalQjk4ZBDy70AikNshxz2G70dA6lg
       HTTP_ZAP_ENABLED: false
       HTTP_ZAP_HOST: zap.apps.internal
@@ -76,7 +76,7 @@ applications:
       WEB_DRIVER: CHROME_REMOTE
       SELENIUM_HUB_URL: http://selenium-hub.apps.internal:4444/wd/hub
     routes:
-    - route: pay-end-to-end-((developer)).london.cloudapps.digital
+    - route: pay-end-to-end-((space)).london.cloudapps.digital
   - name: postgres
     docker:
       image: postgres:latest
@@ -128,7 +128,7 @@ applications:
       GRID_HUB_PORT: 4444
       GRID_BROWSER_TIMEOUT: 60
     routes:
-    - route: pay-selenium-hub-((developer)).london.cloudapps.digital
+    - route: pay-selenium-hub-((space)).london.cloudapps.digital
     - route: selenium-hub.apps.internal
   - name: chrome
     docker:
