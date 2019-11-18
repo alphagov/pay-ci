@@ -1,0 +1,34 @@
+---
+groups:
+  - name: Smoke Tests
+    jobs:
+      - card-smoke-test
+
+resources:
+  - name: every-10m
+    type: time
+    source: { interval: 10m }
+
+  - name: omnibus
+    type: git
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: smoke_tests
+
+jobs:
+  - name: card-smoke-test
+    serial: true
+    plan:
+      - get: every-10m
+        trigger: true
+      - get: omnibus
+      - task: test
+        file: omnibus/ci/tasks/run-smoke-test.yml
+        params:
+          SMOKE_TEST: smoke-card
+          SELENIUM_HUB_URL: pay-selenium-hub.london.cloudapps.digital
+          SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: https://products.pymnt.uk/redirect/smoke-test/product-test-environment
+
+
+
+  

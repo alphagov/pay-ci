@@ -24,6 +24,6 @@ run:
   args:
     - -c
     - |
-    - set -ue
-    - /app/bin/${SMOKE_TEST}
+      set -ue
+      /app/bin/${SMOKE_TEST}
   
