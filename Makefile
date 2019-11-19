@@ -3,24 +3,22 @@ start-concourse:
 	while ! wget -q http://localhost:8080 -O /dev/null; do sleep 1; done;
 
 login:
-	fly -t local login --concourse-url=http://localhost:8080 --insecure --username=test --password=test
+	fly -t local login --concourse-url=http://localhost:8080 --insecure --username=pay-deploy --password=test
 
 create-team:
-	fly -t local set-team --team-name pay-deploy --local-user test --non-interactive
+	fly -t local set-team --team-name pay-deploy --local-user pay-deploy --non-interactive
 
 login-team:
-	fly -t local-pay login --concourse-url=http://localhost:8080 --insecure --username=test --password=test -n pay-deploy
+	fly -t local-pay login --concourse-url=http://localhost:8080 --insecure --username=pay-deploy --password=test -n pay-deploy
 
 set-pipelines:
 	fly -t local-pay set-pipeline \
-		--pipeline provision-dev-envs \
-		--config ci/pipelines/provision-dev-envs.yml \
+		--pipeline provision-envs \
+		--config ci/pipelines/provision-envs.yml \
 		--var concourse-url=http://concourse:8080 \
-		--var concourse-team=pay-deploy \
-		--var concourse-username=test \
-		--var concourse-password=test \
+		--var readonly_local_user_password=test \
 		--non-interactive
-	fly -t local-pay unpause-pipeline -p provision-dev-envs
+	fly -t local-pay unpause-pipeline -p provision-envs
 
 add-creds:
 	secrets/local-ssm-add.sh /concourse/pay-deploy/cf-username paas-london/govuk-pay/org-manager-bot/username

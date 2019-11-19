@@ -17,9 +17,9 @@ resources:
     source:
       target: ((concourse-url))
       teams:
-        - name: ((concourse-team))
-          username: ((concourse-username))
-          password: ((concourse-password))
+        - name: pay-deploy
+          username: pay-deploy
+          password: ((readonly_local_user_password))
 
 jobs:
   - name: update-pipelines
@@ -30,30 +30,32 @@ jobs:
         params:
           pipelines:
             - name: provision-envs
-              team: ((concourse-team))
+              team: pay-deploy
               config_file: omnibus/ci/pipelines/provision-envs.yml
+              vars:
+                concourse-url: ((concourse-url))
             - name: dev-env-anshul
-              team: ((concourse-team))
+              team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-anshul
             - name: dev-env-richard
-              team: ((concourse-team))
+              team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-richard
             - name: dev-env-dan
-              team: ((concourse-team))
+              team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-dan
             - name: dev-env-dom
-              team: ((concourse-team))
+              team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-dom
             - name: staging
-              team: ((concourse-team))
+              team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: staging
