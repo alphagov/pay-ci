@@ -22,4 +22,4 @@ run:
         -u "$CF_USERNAME" -p "$CF_PASSWORD" \
         -o "$CF_ORG" -s "$CF_SPACE"
       # check if app exists and create if it doesn't
-      cf app --guid "$APP" || cf v3-create-app "$APP" --app-type "$TYPE"
+      cf app --guid "$APP" || cf push --no-start --no-route --no-manifest --docker-image alpine "$APP"
