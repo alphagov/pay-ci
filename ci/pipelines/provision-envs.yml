@@ -52,9 +52,23 @@ jobs:
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-dom
+            - name: dev-env-nim
+              team: ((concourse-team))
+              config_file: omnibus/ci/pipelines/deploy-env.yml
+              vars:
+                space: dev-nim
+            - name: dev-env-oswald
+              team: ((concourse-team))
+              config_file: omnibus/ci/pipelines/deploy-env.yml
+              vars:
+                space: dev-oswald
+            - name: dev-env-stephen
+              team: ((concourse-team))
+              config_file: omnibus/ci/pipelines/deploy-env.yml
+              vars:
+                space: dev-stephen
             - name: staging
               team: ((concourse-team))
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: staging
-
