@@ -1,0 +1,58 @@
+---
+resource_types:
+  - name: cf-cli
+    type: docker-image
+    source:
+      repository: nulldriver/cf-cli-resource
+
+resources:
+  - name: omnibus-docs
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+      paths:
+        - docs
+
+  - name: paas
+    type: cf-cli
+    icon: cloud-upload-outline
+    source:
+      api: https://api.london.cloud.service.gov.uk
+      org: govuk-pay
+      space: tools
+      username: ((cf-username))
+      password: ((cf-password))
+
+jobs:
+  - name: deploy
+    serial: true
+    plan:
+      - get: omnibus-docs
+        trigger: true
+      - task: build
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: ruby
+              tag: slim
+          inputs:
+            - name: omnibus-docs
+          outputs:
+            - name: omnibus-docs/docs/build
+          run:
+            dir: omnibus-docs/docs
+            path: bash
+            args:
+              - -c
+              - |
+                set -o errexit -o nounset -o pipefail
+                bundle install
+                bundle exec middleman build
+      - put: paas
+        params:
+          command: push
+          path: omnibus-docs/docs/build
