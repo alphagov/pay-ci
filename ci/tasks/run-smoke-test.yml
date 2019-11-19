@@ -5,10 +5,12 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: govukpay/endtoend
-    tag: latest-master
-    username: ((dh-username))
-    password: ((dh-password))
+    repository: amidos/dcind
+    tag: latest
+
+inputs:
+  - name: e2e-runner
+  - name: selenium
 
 params:
   SMOKE_TEST:
@@ -20,10 +22,12 @@ params:
   HTTP_ZAP_ENABLED: 'false'
 
 run:
-  path: sh
+  path: bash
   args:
-    - -c
+    - -exc
     - |
-      set -ue
-      /app/bin/${SMOKE_TEST}
-  
+      source /docker-lib.sh
+      start_docker
+      docker load -i e2e-runner/image
+      docker load -i selenium/image
+      docker images

@@ -13,21 +13,61 @@ resources:
     type: git
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: develop
+      branch: refactor_smoke_tests
+
+  - name: e2e-runner
+    type: docker-image
+    source: 
+      repository: govukpay/endtoend
+      tag: latest-master
+      username: ((dh-username))
+      password: ((dh-password))
+
+  - name: selenium
+    type: docker-image
+    source:
+      repository: selenium/standalone-chrome
+      tag: '3.141.59'
+
+
+x-smoke-test: &smoke-test
+  plan: &smoke-test-plan
+    - get: every-10m
+      trigger: true
+    - in_parallel:
+      - get: e2e-runner
+        params: {save: true}
+      - get: selenium
+        params: {save: true}
+    - &run-smoke-test
+      task: run-smoke-test
+      privilaged: true
+      file: omnibus/ci/tasks/run-smoke-test.yml
+      params: &smoke-test-params
+        SMOKE_TEST:
 
 jobs:
-  - name: card-smoke-test
-    serial: true
-    plan:
-      - get: every-10m
-        trigger: true
-      - get: omnibus
-      - task: test
-        file: omnibus/ci/tasks/run-smoke-test.yml
-        params:
+  - <<: *smoke-test
+    name: card-smoke-test
+    plan: 
+      <<: *smoke-test-plan
+      - <<: *run-smoke-test
+        params: 
+          <<: *smoke-test-params
           SMOKE_TEST: smoke-card
-          SELENIUM_HUB_URL: https://pay-selenium-hub.london.cloudapps.digital/wd/hub
-          SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: https://pay-products-staging.london.cloudapps.digital/redirect/smoke-test/product-test-environment
+        
+
+#  - name: card-smoke-test
+#    serial: true
+#    plan:
+#      - get: every-10m
+#        trigger: true
+#      - get: omnibus
+#      - task: test
+#        file: omnibus/ci/tasks/run-smoke-test.yml
+#        params:
+#          SMOKE_TEST: smoke-card
+#          SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: https://pay-products-staging.london.cloudapps.digital/redirect/smoke-test/product-test-environment
 
 
 
