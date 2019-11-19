@@ -1,0 +1,25 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: { repository: governmentpaas/cf-cli }
+
+params:
+  CF_USERNAME: ((cf-username))
+  CF_PASSWORD: ((cf-password))
+  ORG:
+  SPACE:
+  APP:
+  TYPE: docker
+
+run:
+  path: bash
+  args:
+    - -c
+    - |
+      set -o errexit -o nounset
+      cf login -a https://api.london.cloud.service.gov.uk \
+        -u "$CF_USERNAME" -p "$CF_PASSWORD" \
+        -o "$CF_ORG" -s "$CF_SPACE"
+      # check if app exists and create if it doesn't
+      cf app --guid "$APP" || cf v3-create-app "$APP" --app-type "$TYPE"
