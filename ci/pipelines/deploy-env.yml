@@ -101,6 +101,7 @@ resources:
 
 jobs:
   - name: provision-space
+    serial: true
     plan:
       - get: omnibus
         trigger: true
@@ -193,135 +194,12 @@ jobs:
           params:
             <<: *create-app-params
             APP: sqs
-      - in_parallel:
-        - put: network-policy-adminusers-egress
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: adminusers
-            destination_app: egress
-            port: 8080
-            protocol: tcp
-        - put: network-policy-adminusers-postgres
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: adminusers
-            destination_app: postgres
-            port: 5432
-            protocol: tcp
-        - put: network-policy-card-frontend-card-connector
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: card-frontend
-            destination_app: card-connector
-            port: 8080
-            protocol: tcp
-        - put: network-policy-card-frontend-cardid
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: card-frontend
-            destination_app: cardid
-            port: 8080
-            protocol: tcp
-        - put: network-policy-card-frontend-adminusers
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: card-frontend
-            destination_app: adminusers
-            port: 8080
-            protocol: tcp
-        - put: network-policy-card-connector-egress
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: card-connector
-            destination_app: egress
-            port: 8080
-            protocol: tcp
-        - put: network-policy-card-connector-postgres
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: card-connector
-            destination_app: postgres
-            port: 5432
-            protocol: tcp
-        - put: network-policy-card-connector-sqs
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: card-connector
-            destination_app: sqs
-            port: 9324
-            protocol: tcp
-        - put: network-policy-directdebit-frontend-directdebit-connector
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: directdebit-frontend
-            destination_app: directdebit-connector
-            port: 8080
-            protocol: tcp
-        - put: network-policy-directdebit-frontend-egress
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: directdebit-frontend
-            destination_app: adminusers
-            port: 8080
-            protocol: tcp
-        - put: network-policy-directdebit-connector-egress
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: directdebit-connector
-            destination_app: egress
-            port: 8080
-            protocol: tcp
-        - put: network-policy-directdebit-connector-postgres
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: directdebit-connector
-            destination_app: postgres
-            port: 5432
-            protocol: tcp
-        - put: network-policy-publicauth-postgres
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: publicauth
-            destination_app: postgres
-            port: 5432
-            protocol: tcp
-        - put: network-policy-products-postgres
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: products
-            destination_app: postgres
-            port: 5432
-            protocol: tcp
-        - put: network-policy-ledger-postgres
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: ledger
-            destination_app: postgres
-            port: 5432
-            protocol: tcp
-        - put: network-policy-ledger-sqs
-          resource: paas
-          params:
-            command: add-network-policy
-            source_app: ledger
-            destination_app: sqs
-            port: 9324
-            protocol: tcp
+      - task: apply-network-policies
+        file: omnibus/ci/tasks/apply-network-policies.yml
+        params: &create-app-params
+          CF_ORG: govuk-pay
+          CF_SPACE: ((space))
+          POLICIES_FILE: omnibus/paas/network-policies.yml
 
   - name: delete-space
     plan:
