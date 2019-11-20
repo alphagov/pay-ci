@@ -1,0 +1,9 @@
+---
+default_memory: 500M
+default_disk_quota: 500M
+log_level: WARNING
+http_proxy_enabled: false
+run_migration: true
+http_proxy_port: '8080'
+http_proxy_host: egress-((space)).apps.internal
+disable_internal_https: true

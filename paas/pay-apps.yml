@@ -1,22 +1,37 @@
 ---
+applicationTemplate: &applicationTemplate
+  name: template
+  docker: &dockerImage
+    image: template
+    username: ((docker-username))
+  health-check-type: process
+  memory: ((default_memory))
+  disk_quota: ((default_disk_quota))
+  env: &defaultEnvs
+    HTTP_PROXY_HOST: ((http_proxy_host))
+    HTTP_PROXY_PORT: ((http_proxy_port))
+    HTTP_PROXY_ENABLED: ((http_proxy_enabled))
+    RUN_MIGRATION: ((run_migration))
+    RUN_APP: 'true'
+    DISABLE_INTERNAL_HTTPS: ((disable_internal_https))
+    JAVA_OPTS: -Xms512m -Xmx1G
+
 applications:
-  - name: adminusers
+  - <<: *applicationTemplate
+    name: adminusers
     docker:
+      <<: *dockerImage
       image: govukpay/adminusers:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       ADMIN_PORT: '9701'
+      JPA_LOG_LEVEL: ((log_level))
+      JPA_SQL_LOG_LEVEL: ((log_level))
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
       DB_USER: adminusers
       DB_PASSWORD: mysecretpassword
-      JPA_LOG_LEVEL: WARNING
-      JPA_SQL_LOG_LEVEL: WARNING
       LOGIN_ATTEMPT_CAP: '2'
-      HTTP_PROXY_HOST: egress-((space)).apps.internal
-      HTTP_PROXY_PORT: '8080'
       NOTIFY_SERVICE_ID: pay-notify-service-id
       NOTIFY_SECRET: pay-notify-secret-needs-to-be-32-chars-fsghdngfhmhfkrgsfs
       NOTIFY_API_KEY: api_key-pay-notify-service-id-pay-notify-secret-needs-to-be-32-chars-fsghdngfhmhfkrgsfs
@@ -34,35 +49,28 @@ applications:
       NOTIFY_MANDATE_CANCELLED_EMAIL_TEMPLATE_ID: email-template-id
       SELFSERVICE_URL: https://pay-selfservice-((space)).london.cloudapps.digital
       FORGOTTEN_PASSWORD_EXPIRY_MINUTES: '90'
-      RUN_MIGRATION: 'true'
-      RUN_APP: 'true'
-      DISABLE_INTERNAL_HTTPS: 'true'
-      JAVA_OPTS: -Xms512m -Xmx1G
     routes:
     - route: pay-adminusers-((space)).london.cloudapps.digital
     - route: adminusers-((space)).apps.internal
-  - name: cardid
+  - <<: *applicationTemplate
+    name: cardid
     docker:
+      <<: *dockerImage
       image: govukpay/cardid:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       ADMIN_PORT: '9801'
-      RUN_APP: 'true'
-      DISABLE_INTERNAL_HTTPS: 'true'
-      JAVA_OPTS: -Xms512m -Xmx1G
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-cardid-((space)).london.cloudapps.digital
     - route: cardid-((space)).apps.internal
-  - name: card-connector
+  - <<: *applicationTemplate
+    name: card-connector
     docker:
+      <<: *dockerImage
       image: govukpay/connector:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       ADMIN_PORT: '9301'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=none
@@ -84,11 +92,8 @@ applications:
       GDS_CONNECTOR_SMARTPAY_NOTIFICATION_USER: smartpay-user
       GDS_CONNECTOR_SMARTPAY_NOTIFICATION_PASSWORD: smartpay-password
       STRIPE_TRANSACTION_FEE_PERCENTAGE: '0.1'
-      JPA_LOG_LEVEL: WARNING
-      JPA_SQL_LOG_LEVEL: WARNING
-      HTTP_PROXY_ENABLED: 'false'
-      HTTP_PROXY_HOST: egress-((space)).apps.internal
-      HTTP_PROXY_PORT: '8080'
+      JPA_LOG_LEVEL: ((log_level))
+      JPA_SQL_LOG_LEVEL: ((log_level))
       HTTP_PROXY_SCHEME: http
       AUTH_READ_TIMEOUT_SECONDS: '1'
       NOTIFY_EMAIL_ENABLED: 'true'
@@ -111,35 +116,30 @@ applications:
       EVENT_QUEUE_ENABLED: 'true'
       AWS_SQS_PAYMENT_EVENT_QUEUE_URL: http://sqs-((space)).apps.internal:9324/queue/pay_event_queue
       RUN_MIGRATION: 'true'
-      RUN_APP: 'true'
-      DISABLE_INTERNAL_HTTPS: 'true'
-      JAVA_OPTS: -Xms512m -Xmx1G
     routes:
     - route: pay-card-connector-((space)).london.cloudapps.digital
     - route: card-connector-((space)).apps.internal
-  - name: directdebit-connector
+  - <<: *applicationTemplate
+    name: directdebit-connector
     docker:
+      <<: *dockerImage
       image: govukpay/directdebit-connector:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       ENVIRONMENT: ((space))
       ADMIN_PORT: '10201'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
       DB_USER: directdebit_connector
       DB_PASSWORD: mysecretpassword
-      HTTP_PROXY_HOST: egress-((space)).apps.internal
-      HTTP_PROXY_PORT: '8080'
       FRONTEND_URL: https://pay-card-frontend-((space)).london.cloudapps.digital
       ADMINUSERS_URL: http://pay-adminusers-((space)).london.cloudapps.digital
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_ACCESS_TOKEN: supersecret
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/gocardless/
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_WEBHOOK_SECRET: supersecret
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_ENVIRONMENT: sandbox
-      JPA_LOG_LEVEL: WARNING
-      JPA_SQL_LOG_LEVEL: WARNING
+      JPA_LOG_LEVEL: ((log_level))
+      JPA_SQL_LOG_LEVEL: ((log_level))
       AUTH_READ_TIMEOUT_SECONDS: '1'
       GOCARDLESS_TEST_CLIENT_ID: gocardless-test-oauth-client-id
       GOCARDLESS_TEST_CLIENT_SECRET: gocardless-test-oauth-client-secret
@@ -147,21 +147,17 @@ applications:
       GOCARDLESS_LIVE_CLIENT_SECRET: gocardless-live-oauth-client-secret
       GOCARDLESS_TEST_OAUTH_BASE_URL: https://connect-sandbox.gocardless.com
       GOCARDLESS_LIVE_OAUTH_BASE_URL: https://connect-sandbox.gocardless.com
-      RUN_MIGRATION: 'true'
-      RUN_APP: 'true'
-      DISABLE_INTERNAL_HTTPS: 'true'
-      JAVA_OPTS: -Xms512m -Xmx1G
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
       SENTRY_DSN: noop://localhost
     routes:
     - route: pay-directdebit-connector-((space)).london.cloudapps.digital
-  - name: directdebit-frontend
+  - <<: *applicationTemplate
+    name: directdebit-frontend
     docker:
+      <<: *dockerImage
       image: govukpay/directdebit-frontend:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       NODE_WORKER_COUNT: '1'
       COOKIE_MAX_AGE: '5400000'
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
@@ -169,23 +165,23 @@ applications:
       ADMINUSERS_URL: https://pay-adminusers-((space)).london.cloudapps.digital
     routes:
     - route: pay-directdebit-frontend-((space)).london.cloudapps.digital
-  - name: egress
+  - <<: *applicationTemplate
+    name: egress
     docker:
+      <<: *dockerImage
       image: govukpay/egress@sha256:8bf84bc285b5be78a12a1611cfb3521efbdb6c83bd813f902623b01c0e5ad932
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       SQUID_CONFIG: YWNsIFNTTF9wb3J0cyBwb3J0IDQ0MwphY2wgU2FmZV9wb3J0cyBwb3J0IDgwCmFjbCBTYWZlX3BvcnRzIHBvcnQgNDQzCmh0dHBfYWNjZXNzIGFsbG93IGFsbApodHRwX3BvcnQgODA4MApjYWNoZSBkZW55IGFsbAphY2Nlc3NfbG9nIG5vbmUKY2FjaGVfbG9nIC9kZXYvbnVsbApjYWNoZV9zdG9yZV9sb2cgbm9uZQpwaWRfZmlsZW5hbWUgbm9uZQo=
     routes:
     - route: egress-((space)).apps.internal
-  - name: card-frontend
+  - <<: *applicationTemplate
+    name: card-frontend
     docker:
+      <<: *dockerImage
       image: govukpay/frontend:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
       COOKIE_MAX_AGE: '5400000'
       CONNECTOR_TOKEN_URL: http://card-connector-((space)).apps.internal:8080/v1/frontend/tokens/{chargeTokenId}
@@ -198,13 +194,13 @@ applications:
       ADMINUSERS_URL: http://adminusers-((space)).apps.internal:8080
     routes:
     - route: pay-card-frontend-((space)).london.cloudapps.digital
-  - name: ledger
+  - <<: *applicationTemplate
+    name: ledger
     docker:
+      <<: *dockerImage
       image: govukpay/ledger:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       ADMIN_PORT: '10701'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
@@ -218,49 +214,39 @@ applications:
       AWS_SQS_MESSAGE_MAXIMUM_WAIT_TIME_IN_SECONDS: '20'
       QUEUE_MESSAGE_RECEIVER_THREAD_DELAY_IN_MILLISECONDS: '1000'
       AWS_SQS_PAYMENT_EVENT_QUEUE_URL: http://sqs-((space)).apps.internal:9324/queue/pay_event_queue
-      RUN_MIGRATION: 'true'
-      RUN_APP: 'true'
-      DISABLE_INTERNAL_HTTPS: 'true'
-      JAVA_OPTS: -Xms512m -Xmx1G
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-ledger-((space)).london.cloudapps.digital
-  - name: products
+  - <<: *applicationTemplate
+    name: products
     docker:
+      <<: *dockerImage
       image: govukpay/products:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       ADMIN_PORT: '10001'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
       DB_USER: products
       DB_PASSWORD: mysecretpassword
-      JPA_LOG_LEVEL: WARNING
-      JPA_SQL_LOG_LEVEL: WARNING
+      JPA_LOG_LEVEL: ((log_level))
+      JPA_SQL_LOG_LEVEL: ((log_level))
       PUBLICAPI_URL: https://pay-publicapi-((space)).london.cloudapps.digital
       BASE_URL: https://pay-products-((space)).london.cloudapps.digital
       PRODUCTS_API_TOKEN: g0nBA5lNzfUalQjk4ZBDy70AikNshxz2G70dA6lg
       PRODUCTSUI_PAY_URL: https://pay-products-ui-((space)).london.cloudapps.digital/pay
       PRODUCTSUI_CONFIRMATION_URL: https://pay-products-ui-((space)).london.cloudapps.digital/payment-complete
       PRODUCTS_FRIENDLY_BASE_URI: https://pay-products-ui-((space)).london.cloudapps.digital/redirect
-      HTTP_PROXY_HOST: postgres-((space)).apps.internal
-      HTTP_PROXY_PORT: '8080'
-      RUN_MIGRATION: 'true'
-      RUN_APP: 'true'
-      DISABLE_INTERNAL_HTTPS: 'true'
-      JAVA_OPTS: -Xms512m -Xmx1G
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-products-((space)).london.cloudapps.digital
-  - name: products-ui
+  - <<: *applicationTemplate
+    name: products-ui
     docker:
+      <<: *dockerImage
       image: govukpay/products-ui:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       PUBLICAPI_URL: https://pay-publicapi-((space)).london.cloudapps.digital
       PAY_API_URL: https://pay-publicapi-((space)).london.cloudapps.digital
       SELFSERVICE_TRANSACTIONS_URL: https://pay-selfservice-((space)).london.cloudapps.digital/transactions
@@ -271,13 +257,13 @@ applications:
       COOKIE_MAX_AGE: '3600000'
     routes:
     - route: pay-products-ui-((space)).london.cloudapps.digital
-  - name: publicapi
+  - <<: *applicationTemplate
+    name: publicapi
     docker:
+      <<: *dockerImage
       image: govukpay/publicapi:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       ADMIN_PORT: '9101'
       CONNECTOR_URL: https://pay-card-connector-((space)).london.cloudapps.digital
       CONNECTOR_DD_URL: https://pay-directdebit-connector-((space)).london.cloudapps.digital
@@ -285,20 +271,16 @@ applications:
       TOKEN_API_HMAC_SECRET: qwer9yuhgf
       PUBLICAPI_BASE: https://pay-publicapi-((space)).london.cloudapps.digital
       LEDGER_URL: https://pay-ledger-((space)).london.cloudapps.digital
-      RUN_MIGRATION: 'true'
-      RUN_APP: 'true'
-      DISABLE_INTERNAL_HTTPS: 'true'
-      JAVA_OPTS: -Xms512m -Xmx1G
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-publicapi-((space)).london.cloudapps.digital
-  - name: publicauth
+  - <<: *applicationTemplate
+    name: publicauth
     docker:
+      <<: *dockerImage
       image: govukpay/publicauth:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       ADMIN_PORT: '9601'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
@@ -306,20 +288,16 @@ applications:
       DB_PASSWORD: mysecretpassword
       TOKEN_DB_BCRYPT_SALT: $2a$10$IhaXo6LIBhKIWOiGpbtPOu
       TOKEN_API_HMAC_SECRET: qwer9yuhgf
-      RUN_MIGRATION: 'true'
-      RUN_APP: 'true'
-      DISABLE_INTERNAL_HTTPS: 'true'
-      JAVA_OPTS: -Xms512m -Xmx1G
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-publicauth-((space)).london.cloudapps.digital
-  - name: selfservice
+  - <<: *applicationTemplate
+    name: selfservice
     docker:
+      <<: *dockerImage
       image: govukpay/selfservice:latest-master
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
       PUBLIC_AUTH_URL: https://pay-publicauth-((space)).london.cloudapps.digital/v1/frontend/auth
       CONNECTOR_URL: https://pay-card-connector-((space)).london.cloudapps.digital
@@ -333,7 +311,6 @@ applications:
       COOKIE_MAX_AGE: '10800000'
       NODE_WORKER_COUNT: '1'
       PGSSLMODE: verify-full
-      HTTP_PROXY_ENABLED: 'false'
       AWS_XRAY_DAEMON_ADDRESS: xray:2000
       EPDQ_3DS_ENABLED: 'true'
       SMARTPAY_3DS_ENABLED: 'true'
@@ -342,19 +319,14 @@ applications:
       GOCARDLESS_TEST_OAUTH_BASE_URL: https://connect-sandbox.gocardless.com
       GOCARDLESS_LIVE_OAUTH_BASE_URL: https://connect-sandbox.gocardless.com
       SELFSERVICE_URL: https://pay-selfservice-((space)).london.cloudapps.digital
-      RUN_MIGRATION: 'true'
-      RUN_APP: 'true'
-      DISABLE_INTERNAL_HTTPS: 'true'
-      JAVA_OPTS: -Xms512m -Xmx1G
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-selfservice-((space)).london.cloudapps.digital
-  - name: postgres
+  - <<: *applicationTemplate
+    name: postgres
     docker:
+      <<: *dockerImage
       image: postgres:latest
-      username: ((docker-username))
-    health-check-type: process
-    memory: 1.5G
     command: |
       echo "CREATE EXTENSION \"uuid-ossp\";
             CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA pg_catalog;
@@ -378,18 +350,19 @@ applications:
             GRANT ALL PRIVILEGES ON DATABASE ledger TO ledger;" > /docker-entrypoint-initdb.d/init.sql && \
       exec docker-entrypoint.sh postgres
     env:
+      <<: *defaultEnvs
       POSTGRES_PASSWORD: mysecretpassword
     routes:
     - route: postgres-((space)).apps.internal
-  - name: sqs
+  - <<: *applicationTemplate
+    name: sqs
     docker:
+      <<: *dockerImage
       image: roribio16/alpine-sqs@sha256:2651d01db38cc9faa8184a4c87a93d95aa2aa3bb992b9e41ea6b4742dc8893bb
-      username: ((docker-username))
     command: mkdir /opt/custom && echo "$EMQ_CONFIG" | base64 -d > /opt/custom/elasticmq.conf
       && /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
-    health-check-type: process
-    memory: 1.5G
     env:
+      <<: *defaultEnvs
       EMQ_CONFIG: bm9kZS1hZGRyZXNzIHsKICBwcm90b2NvbCA9IGh0dHAKICBob3N0ID0gIioiCiAgcG9ydCA9IDkzMjQKICBjb250ZXh0LXBhdGggPSAiIgp9CgpyZXN0LXNxcyB7CiAgZW5hYmxlZCA9IHRydWUKICBiaW5kLXBvcnQgPSA5MzI0CiAgYmluZC1ob3N0bmFtZSA9ICIwLjAuMC4wIgogIC8vIFBvc3NpYmxlIHZhbHVlczogcmVsYXhlZCwgc3RyaWN0CiAgc3FzLWxpbWl0cyA9IHN0cmljdAp9CgpxdWV1ZXMgewogIGRlZmF1bHQgewogICAgZGVmYXVsdFZpc2liaWxpdHlUaW1lb3V0ID0gMTAgc2Vjb25kcwogICAgZGVsYXkgPSA1IHNlY29uZHMKICAgIHJlY2VpdmVNZXNzYWdlV2FpdCA9IDAgc2Vjb25kcwogIH0KCiAgcGF5X2NhcHR1cmVfcXVldWUgewogICAgZGVmYXVsdFZpc2liaWxpdHlUaW1lb3V0ID0gMzYwMCBzZWNvbmRzCiAgICBkZWxheSA9IDAgc2Vjb25kcwogICAgcmVjZWl2ZU1lc3NhZ2VXYWl0ID0gNSBzZWNvbmRzCiAgfQoKICBwYXlfZXZlbnRfcXVldWUgewogICAgZGVmYXVsdFZpc2liaWxpdHlUaW1lb3V0ID0gMzYwMCBzZWNvbmRzCiAgICBkZWxheSA9IDAgc2Vjb25kcwogICAgcmVjZWl2ZU1lc3NhZ2VXYWl0ID0gNSBzZWNvbmRzCiAgfQp9Cgpha2thLmh0dHAuc2VydmVyLnBhcnNpbmcuaWxsZWdhbC1oZWFkZXItd2FybmluZ3MgPSBvZmYKYWtrYS5odHRwLnNlcnZlci5yZXF1ZXN0LXRpbWVvdXQgPSA0MCBzZWNvbmRzCg==
     routes:
     - route: sqs-((space)).apps.internal

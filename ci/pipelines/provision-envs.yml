@@ -39,38 +39,46 @@ jobs:
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-anshul
+                environment: dev
             - name: dev-env-richard
               team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-richard
+                environment: dev
             - name: dev-env-dan
               team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-dan
+                environment: dev
             - name: dev-env-dom
               team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-dom
+                environment: dev
             - name: dev-env-nim
               team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-nim
+                environment: dev
             - name: dev-env-oswald
               team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-oswald
+                environment: dev
             - name: dev-env-stephen
               team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: dev-stephen
+                environment: dev
             - name: staging
               team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy-env.yml
               vars:
                 space: staging
+                environment: staging
