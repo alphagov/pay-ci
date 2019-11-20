@@ -18,6 +18,13 @@ set-pipelines:
 		--var concourse-url=http://concourse:8080 \
 		--var readonly_local_user_password=test \
 		--non-interactive
+
+	fly -t local-pay set-pipeline \
+    		--pipeline selenium-hub \
+    		--config ci/pipelines/selenium-hub.yml \
+    		--var concourse-url=http://concourse:8080 \
+    		--var readonly_local_user_password=test \
+    		--non-interactive
 	fly -t local-pay unpause-pipeline -p provision-envs
 
 add-creds:

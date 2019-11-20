@@ -1,0 +1,30 @@
+---
+applications:
+  - name: selenium-hub
+    docker:
+      image: selenium/standalone-chrome:3.141.59
+    health-check-type: process
+    memory: 2G
+    instances: 1
+    env:
+      JAVA_OPTS: "-Xmx1280M"
+    routes:
+    - route: selenium-hub.apps.internal
+
+  - name: endtoend
+    docker:
+      image: govukpay/endtoend:latest-master
+    health-check-type: process
+    memory: 2G
+    disk_quota: 2G
+    instances: 1
+    env:
+      WEB_DRIVER: CHROME_REMOTE
+      SELENIUM_HUB_URL: http://selenium-hub.apps.internal:4444/wd/hub
+      CHROME_DRIVER_PATH: /usr/bin/chromedriver
+      PUBLICAPI_URL: https://pay-publicapi-staging.london.cloudapps.digital
+      CARD_SANDBOX_API_TOKEN: someapitoken
+      SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: https://pay-products-staging.london.cloudapps.digital/redirect/smoke-test/product-test-environment
+      SELFSERVICE_PASSWORD: something
+      SELFSERVICE_OTP_KEY: something
+      SELFSERVICE_URL: something
