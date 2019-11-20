@@ -347,6 +347,8 @@ jobs:
           vars:
             space: ((space))
             docker-username: ((docker-username))
+          vars_files:
+            - omnibus/paas/env_variables/((environment)).yml
 
   - name: deploy-cardid
     serial_groups: [cardid, michaelangelo]

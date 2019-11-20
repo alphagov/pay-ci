@@ -5,13 +5,15 @@ applicationTemplate: &applicationTemplate
     image: template
     username: ((docker-username))
   health-check-type: process
-  memory: 1.5G
+  memory: ((default_memory))
+  disk_quota: ((default_disk_quota))
   env: &defaultEnvs
-    HTTP_PROXY_HOST: egress-((space)).apps.internal
-    HTTP_PROXY_PORT: '8080'
-    RUN_MIGRATION: 'true'
+    HTTP_PROXY_HOST: ((http_proxy_host))
+    HTTP_PROXY_PORT: ((http_proxy_port))
+    HTTP_PROXY_ENABLED: ((http_proxy_enabled))
+    RUN_MIGRATION: ((run_migration))
     RUN_APP: 'true'
-    DISABLE_INTERNAL_HTTPS: 'true'
+    DISABLE_INTERNAL_HTTPS: ((disable_internal_https))
     JAVA_OPTS: -Xms512m -Xmx1G
 
 applications:
@@ -23,8 +25,8 @@ applications:
     env:
       <<: *defaultEnvs
       ADMIN_PORT: '9701'
-      JPA_LOG_LEVEL: WARNING
-      JPA_SQL_LOG_LEVEL: WARNING
+      JPA_LOG_LEVEL: ((log_level))
+      JPA_SQL_LOG_LEVEL: ((log_level))
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
       DB_USER: adminusers
@@ -90,11 +92,8 @@ applications:
       GDS_CONNECTOR_SMARTPAY_NOTIFICATION_USER: smartpay-user
       GDS_CONNECTOR_SMARTPAY_NOTIFICATION_PASSWORD: smartpay-password
       STRIPE_TRANSACTION_FEE_PERCENTAGE: '0.1'
-      JPA_LOG_LEVEL: WARNING
-      JPA_SQL_LOG_LEVEL: WARNING
-      HTTP_PROXY_ENABLED: 'false'
-      HTTP_PROXY_HOST: egress-((space)).apps.internal
-      HTTP_PROXY_PORT: '8080'
+      JPA_LOG_LEVEL: ((log_level))
+      JPA_SQL_LOG_LEVEL: ((log_level))
       HTTP_PROXY_SCHEME: http
       AUTH_READ_TIMEOUT_SECONDS: '1'
       NOTIFY_EMAIL_ENABLED: 'true'
@@ -133,16 +132,14 @@ applications:
       DB_SSL_OPTION: ssl=false
       DB_USER: directdebit_connector
       DB_PASSWORD: mysecretpassword
-      HTTP_PROXY_HOST: egress-((space)).apps.internal
-      HTTP_PROXY_PORT: '8080'
       FRONTEND_URL: https://pay-card-frontend-((space)).london.cloudapps.digital
       ADMINUSERS_URL: http://pay-adminusers-((space)).london.cloudapps.digital
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_ACCESS_TOKEN: supersecret
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/gocardless/
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_WEBHOOK_SECRET: supersecret
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_ENVIRONMENT: sandbox
-      JPA_LOG_LEVEL: WARNING
-      JPA_SQL_LOG_LEVEL: WARNING
+      JPA_LOG_LEVEL: ((log_level))
+      JPA_SQL_LOG_LEVEL: ((log_level))
       AUTH_READ_TIMEOUT_SECONDS: '1'
       GOCARDLESS_TEST_CLIENT_ID: gocardless-test-oauth-client-id
       GOCARDLESS_TEST_CLIENT_SECRET: gocardless-test-oauth-client-secret
@@ -232,16 +229,14 @@ applications:
       DB_SSL_OPTION: ssl=false
       DB_USER: products
       DB_PASSWORD: mysecretpassword
-      JPA_LOG_LEVEL: WARNING
-      JPA_SQL_LOG_LEVEL: WARNING
+      JPA_LOG_LEVEL: ((log_level))
+      JPA_SQL_LOG_LEVEL: ((log_level))
       PUBLICAPI_URL: https://pay-publicapi-((space)).london.cloudapps.digital
       BASE_URL: https://pay-products-((space)).london.cloudapps.digital
       PRODUCTS_API_TOKEN: g0nBA5lNzfUalQjk4ZBDy70AikNshxz2G70dA6lg
       PRODUCTSUI_PAY_URL: https://pay-products-ui-((space)).london.cloudapps.digital/pay
       PRODUCTSUI_CONFIRMATION_URL: https://pay-products-ui-((space)).london.cloudapps.digital/payment-complete
       PRODUCTS_FRIENDLY_BASE_URI: https://pay-products-ui-((space)).london.cloudapps.digital/redirect
-      HTTP_PROXY_HOST: postgres-((space)).apps.internal
-      HTTP_PROXY_PORT: '8080'
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-products-((space)).london.cloudapps.digital
@@ -316,7 +311,6 @@ applications:
       COOKIE_MAX_AGE: '10800000'
       NODE_WORKER_COUNT: '1'
       PGSSLMODE: verify-full
-      HTTP_PROXY_ENABLED: 'false'
       AWS_XRAY_DAEMON_ADDRESS: xray:2000
       EPDQ_3DS_ENABLED: 'true'
       SMARTPAY_3DS_ENABLED: 'true'
