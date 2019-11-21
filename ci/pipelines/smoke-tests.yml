@@ -24,7 +24,7 @@ resources:
     type: git
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: paas_smoke_tests
+      branch: develop
 
   - name: paas-tools
     type: cf-cli
@@ -41,8 +41,8 @@ resources:
     source:
       repository: govukpay/endtoend
       tag: latest-master
-      username: ((dh-username))
-      password: ((dh-password))
+      username: ((docker-username))
+      password: ((docker-password))
 
   - name: every-10m
     type: time
@@ -68,8 +68,8 @@ jobs:
             command: push
             app_name: endtoend
             manifest: omnibus/paas/smoke-test-apps.yml
-            docker_password: ((dh-password))
-            docker_username: ((dh-username))
+            docker_password: ((docker-password))
+            docker_username: ((docker-username))
             docker_image: govukpay/endtoend:latest-master
        
         - put: network-policy-endtoend-selenium-hub
