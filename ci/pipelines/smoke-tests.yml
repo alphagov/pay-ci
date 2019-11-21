@@ -13,6 +13,10 @@ groups:
       - directdebit-smoke-test
       - products-smoke-test
 
+  - name: self-update
+    jobs:
+      - self-update
+
 resource_types:
   - name: cf-cli
     type: docker-image
@@ -20,6 +24,11 @@ resource_types:
       repository: nulldriver/cf-cli-resource
 
 resources:
+  - name: tech-ops
+    type: git
+    source:
+      uri: https://github.com/alphagov/tech-ops.git
+
   - name: omnibus
     type: git
     source:
@@ -49,6 +58,23 @@ resources:
     source: { interval: 10m }
 
 jobs:
+  - name: self-update
+    serial: true
+    plan:
+    - get: tech-ops
+      params:
+        submodules: none
+    - get: omnibus
+      trigger: true
+    - task: set-pipelines
+      file: tech-ops/ci/tasks/self-updating-pipeline.yaml
+      input_mapping: {repository: omnibus}
+      params:
+        CONCOURSE_TEAM: pay-deploy
+        CONCOURSE_PASSWORD: ((readonly_local_user_password))
+        PIPELINE_PATH: ci/pipelines/pr.yml
+        PIPELINE_NAME: acceptance-tests-pr
+
   - name: deploy-selenium-hub
     serial_groups: [selenium-setup]
     serial: true
