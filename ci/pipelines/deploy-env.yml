@@ -330,10 +330,10 @@ jobs:
           command: delete-space
 
   - name: deploy-adminusers
-    serial_groups: [adminusers, michaelangelo]
+    serial_groups: [adminusers]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: adminusers
         trigger: true
@@ -351,10 +351,10 @@ jobs:
             - omnibus/paas/env_variables/((environment)).yml
 
   - name: deploy-cardid
-    serial_groups: [cardid, michaelangelo]
+    serial_groups: [cardid]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: cardid
         trigger: true
@@ -365,10 +365,10 @@ jobs:
           app_name: cardid
 
   - name: deploy-card-connector
-    serial_groups: [card-connector, michaelangelo]
+    serial_groups: [card-connector]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: card-connector
         trigger: true
@@ -379,10 +379,10 @@ jobs:
           app_name: card-connector
 
   - name: deploy-card-frontend
-    serial_groups: [card-frontend, michaelangelo]
+    serial_groups: [card-frontend]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: card-frontend
         trigger: true
@@ -393,10 +393,10 @@ jobs:
           app_name: card-frontend
 
   - name: deploy-directdebit-connector
-    serial_groups: [directdebit-connector, michaelangelo]
+    serial_groups: [directdebit-connector]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: directdebit-connector
         trigger: true
@@ -407,10 +407,10 @@ jobs:
           app_name: directdebit-connector
 
   - name: deploy-directdebit-frontend
-    serial_groups: [directdebit-frontend, michaelangelo]
+    serial_groups: [directdebit-frontend]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: directdebit-frontend
         trigger: true
@@ -421,10 +421,10 @@ jobs:
           app_name: directdebit-frontend
 
   - name: deploy-ledger
-    serial_groups: [ledger, michaelangelo]
+    serial_groups: [ledger]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: ledger
         trigger: true
@@ -435,10 +435,10 @@ jobs:
           app_name: ledger
 
   - name: deploy-products
-    serial_groups: [products, michaelangelo]
+    serial_groups: [products]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: products
         trigger: true
@@ -449,10 +449,10 @@ jobs:
           app_name: products
 
   - name: deploy-products-ui
-    serial_groups: [products-ui, michaelangelo]
+    serial_groups: [products-ui]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: products-ui
         trigger: true
@@ -463,10 +463,10 @@ jobs:
           app_name: products-ui
 
   - name: deploy-publicapi
-    serial_groups: [publicapi, michaelangelo]
+    serial_groups: [publicapi]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: publicapi
         trigger: true
@@ -477,10 +477,10 @@ jobs:
           app_name: publicapi
 
   - name: deploy-publicauth
-    serial_groups: [publicauth, michaelangelo]
+    serial_groups: [publicauth]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: publicauth
         trigger: true
@@ -491,10 +491,10 @@ jobs:
           app_name: publicauth
 
   - name: deploy-selfservice
-    serial_groups: [selfservice, michaelangelo]
+    serial_groups: [selfservice]
     plan:
       - get: omnibus
-        passed: [provision-space]
+        passed: [provision-space, deploy-tools]
         trigger: true
       - get: selfservice
         trigger: true
@@ -505,7 +505,7 @@ jobs:
           app_name: selfservice
 
   - name: deploy-tools
-    serial_groups: [tools, michaelangelo]
+    serial_groups: [tools]
     plan:
       - get: omnibus
         passed: [provision-space]
