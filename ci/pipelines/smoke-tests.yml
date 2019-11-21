@@ -1,34 +1,152 @@
 ---
 groups:
-  - name: Smoke Tests
+  - name: Smoke Test App Setup
+    jobs:
+      - deploy-selenium-hub
+      - start-selenium
+      - stop-selenium
+      - deploy-smoke-test-app
+
+  - name: Staging Smoke Tests
     jobs:
       - card-smoke-test
+      - directdebit-smoke-test
+      - products-smoke-test
+
+resource_types:
+  - name: cf-cli
+    type: docker-image
+    source:
+      repository: nulldriver/cf-cli-resource
 
 resources:
-  - name: every-10m
-    type: time
-    source: { interval: 10m }
-
   - name: omnibus
     type: git
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: develop
 
+  - name: paas-tools
+    type: cf-cli
+    source:
+      api: https://api.london.cloud.service.gov.uk
+      org: govuk-pay
+      space: tools
+      username: ((cf-username))
+      password: ((cf-password))
+
+  - name: endtoend-container
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/endtoend
+      tag: latest-master
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - name: every-10m
+    type: time
+    source: { interval: 10m }
+
 jobs:
+  - name: deploy-selenium-hub
+    serial_groups: [selenium-setup]
+    serial: true
+    plan:
+      - get: omnibus
+      - in_parallel:
+        - put: cf-push selenium-hub
+          resource: paas-tools
+          params:
+            command: push
+            app_name: selenium-hub
+            manifest: omnibus/paas/smoke-test-apps.yml
+        - &deploy-endtoend
+          put: cf-push endtoend
+          resource: paas-tools
+          params:
+            command: push
+            app_name: endtoend
+            manifest: omnibus/paas/smoke-test-apps.yml
+            docker_password: ((docker-password))
+            docker_username: ((docker-username))
+            docker_image: govukpay/endtoend:latest-master
+       
+        - put: network-policy-endtoend-selenium-hub
+          resource: paas-tools
+          params:
+            command: add-network-policy
+            source_app: endtoend
+            destination_app: selenium-hub
+            port: 4444
+            protocol: tcp        
+  
+  - name: start-selenium
+    serial_groups: [selenium-setup]
+    serial: true
+    plan:
+      - in_parallel:
+        - put: start selenium hub
+          resource: paas-tools
+          params:
+            command: start
+            app_name: selenium-hub
+        
+
+  - name: stop-selenium
+    serial_groups: [selenium-setup]
+    serial: true
+    plan:
+      - in_parallel:
+        - put: stop selenium hub
+          resource: paas-tools
+          params:
+            command: stop
+            app_name: selenium-hub
+
+  - name: deploy-smoke-test-app
+    serial: true
+    plan:
+      - get: endtoend-container
+        trigger: true
+      - get: omnibus
+      - <<: *deploy-endtoend
+
   - name: card-smoke-test
     serial: true
     plan:
       - get: every-10m
         trigger: true
       - get: omnibus
-      - task: test
-        file: omnibus/ci/tasks/run-smoke-test.yml
+      - task: run card smoke test
+        file: omnibus/ci/tasks/cf-task.yml
         params:
-          SMOKE_TEST: smoke-card
-          SELENIUM_HUB_URL: https://pay-selenium-hub.london.cloudapps.digital/wd/hub
-          SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: https://pay-products-staging.london.cloudapps.digital/redirect/smoke-test/product-test-environment
+          CF_ORG: govuk-pay
+          CF_SPACE: tools
+          COMMAND: cf ssh endtoend -c /app/bin/smoke-card
 
+  - name: directdebit-smoke-test
+    serial: true
+    plan:
+      - get: every-10m
+        trigger: true
+      - get: omnibus
+      - task: run direct debit smoke test
+        file: omnibus/ci/tasks/cf-task.yml
+        params:
+          CF_ORG: govuk-pay
+          CF_SPACE: tools
+          COMMAND: cf ssh endtoend -c /app/bin/smoke-directdebit
 
-
-  
+  - name: products-smoke-test
+    serial: true
+    plan:
+      - get: every-10m
+        trigger: true
+      - get: omnibus
+      - task: run products smoke test
+        file: omnibus/ci/tasks/cf-task.yml
+        params:
+          CF_ORG: govuk-pay
+          CF_SPACE: tools
+          COMMAND: cf ssh endtoend -c /app/bin/smoke-products

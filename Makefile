@@ -18,6 +18,13 @@ set-pipelines:
 		--var concourse-url=http://concourse:8080 \
 		--var readonly_local_user_password=test \
 		--non-interactive
+
+	fly -t local-pay set-pipeline \
+    		--pipeline smoke-tests \
+    		--config ci/pipelines/smoke-tests.yml \
+    		--var concourse-url=http://concourse:8080 \
+    		--var readonly_local_user_password=test \
+    		--non-interactive
 	fly -t local-pay unpause-pipeline -p provision-envs
 
 add-creds:
