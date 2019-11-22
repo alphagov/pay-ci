@@ -12,6 +12,8 @@ groups:
       - card-smoke-test
       - directdebit-smoke-test
       - products-smoke-test
+      - notifications-card-smoke-test
+      - notifications-directdebit-smoke-test
 
 resource_types:
   - name: cf-cli
@@ -150,3 +152,29 @@ jobs:
           CF_ORG: govuk-pay
           CF_SPACE: tools
           COMMAND: cf ssh endtoend -c /app/bin/smoke-products
+
+  - name: notifications-card-smoke-test
+    serial: true
+    plan:
+      - get: every-10m
+        trigger: true
+      - get: omnibus
+      - task: run notifications card smoke test
+        file: omnibus/ci/tasks/run-notifications-smoke-test.yml
+        params:
+          CF_ORG: govuk-pay
+          CF_SPACE: tools
+          NOTIFICATIONS_URL: ((notifications_smoke_card_url))
+
+  - name: notifications-directdebit-smoke-test
+    serial: true
+    plan:
+      - get: every-10m
+        trigger: true
+      - get: omnibus
+      - task: run notifications direct debit smoke test
+        file: omnibus/ci/tasks/run-notifications-smoke-test.yml
+        params:
+          CF_ORG: govuk-pay
+          CF_SPACE: tools
+          NOTIFICATIONS_URL: ((notifications_smoke_dd_url))
