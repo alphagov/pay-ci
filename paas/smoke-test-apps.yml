@@ -29,5 +29,5 @@ applications:
       SELFSERVICE_PASSWORD: something
       SELFSERVICE_OTP_KEY: something
       SELFSERVICE_URL: something
-      NOTIFICATIONS_URL: https://pay-card-connector-staging.london.cloudapps.digital
+      NOTIFICATIONS_URL: https://pay-directdebit-connector-staging.london.cloudapps.digital
       DIRECT_DEBIT_GOCARDLESS_WEBHOOK_SECRET: supersecret
