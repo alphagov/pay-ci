@@ -8,6 +8,7 @@ applications:
     instances: 1
     env:
       JAVA_OPTS: "-Xmx1280M"
+      START_XVFB: true
     routes:
     - route: selenium-hub.apps.internal
 
