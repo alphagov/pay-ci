@@ -8,6 +8,7 @@ applications:
     instances: 1
     env:
       JAVA_OPTS: "-Xmx1280M"
+      START_XVFB: false
     routes:
     - route: selenium-hub.apps.internal
 
@@ -28,3 +29,5 @@ applications:
       SELFSERVICE_PASSWORD: something
       SELFSERVICE_OTP_KEY: something
       SELFSERVICE_URL: something
+      NOTIFICATIONS_URL: https://pay-card-connector-staging.london.cloudapps.digital
+      DIRECT_DEBIT_GOCARDLESS_WEBHOOK_SECRET: supersecret
