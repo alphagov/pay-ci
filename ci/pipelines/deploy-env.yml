@@ -1,4 +1,38 @@
 ---
+x-templates:
+  x-repo: &repo
+    name: repo
+    type: git
+    icon: github-circle
+    source: &repo-source
+      uri: some-uri
+      branch: master
+      username: ((github-username))
+      password: ((github-password))
+  x-create-app: &create-app
+    task: create-app
+    file: omnibus/ci/tasks/create-app.yml
+    params: &create-app-params
+      CF_ORG: govuk-pay
+      CF_SPACE: ((space))
+      APP: app
+  x-paas-app: &paas-app
+    command: push
+    app_name: adminusers
+    manifest: omnibus/paas/pay-apps.yml
+    docker_password: ((docker-password))
+    vars:
+      space: ((space))
+      docker-username: ((docker-username))
+    vars_files:
+      - omnibus/paas/env_variables/((environment)).yml
+  x-java-app: &java-app
+    <<: *paas-app
+    path: src/target/*-allinone.jar
+  x-node-app: &node-app
+    <<: *paas-app
+    path: src
+
 resource_types:
   - name: cf-cli
     type: docker-image
@@ -23,85 +57,83 @@ resources:
       username: ((cf-username))
       password: ((cf-password))
 
-  - &repo
-    name: card-connector-src
-    type: git
-    icon: github-circle
-    source: &repo-source
-      uri: https://github.com/alphagov/pay-connector
-      branch: master
-      username: ((github-username))
-      password: ((github-password))
+  - <<: *repo
+    name: adminusers
+    source:
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-adminusers
 
   - <<: *repo
-    name: card-frontend-src
+    name: cardid
+    source:
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-cardid
+
+  - <<: *repo
+    name: cardid-data
+    source:
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-cardid-data
+
+  - <<: *repo
+    name: card-connector
+    source:
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-connector
+
+  - <<: *repo
+    name: card-frontend
     source:
       <<: *repo-source
       uri: https://github.com/alphagov/pay-frontend
 
-  - &image
-    name: adminusers
-    type: registry-image
-    icon: docker
-    source: &image-source
-      repository: govukpay/adminusers
-      tag: latest-master
-      username: ((docker-username))
-      password: ((docker-password))
-
-  - <<: *image
-    name: cardid
-    source:
-      <<: *image-source
-      repository: govukpay/cardid
-
-  - <<: *image
+  - <<: *repo
     name: directdebit-connector
     source:
-      <<: *image-source
-      repository: govukpay/directdebit-connector
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-direct-debit-connector
 
-  - <<: *image
+  - <<: *repo
     name: directdebit-frontend
     source:
-      <<: *image-source
-      repository: govukpay/directdebit-frontend
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-direct-debit-frontend
 
-  - <<: *image
+  - <<: *repo
     name: ledger
     source:
-      <<: *image-source
-      repository: govukpay/ledger
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-ledger
 
-  - <<: *image
+  - <<: *repo
     name: products
     source:
-      <<: *image-source
-      repository: govukpay/products
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-products
 
-  - <<: *image
+  - <<: *repo
     name: products-ui
     source:
-      <<: *image-source
-      repository: govukpay/products-ui
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-products-ui
 
-  - <<: *image
+  - <<: *repo
     name: publicapi
     source:
-      <<: *image-source
-      repository: govukpay/publicapi
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-publicapi
 
-  - <<: *image
+  - <<: *repo
     name: publicauth
     source:
-      <<: *image-source
-      repository: govukpay/publicauth
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-publicauth
 
-  - <<: *image
+  - <<: *repo
     name: selfservice
     source:
-      <<: *image-source
-      repository: govukpay/selfservice
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-selfservice
 
 jobs:
   - name: provision-space
@@ -121,12 +153,10 @@ jobs:
             - command: create-users-from-file
               file: out/users.csv
       - in_parallel:
-        - &create-app
+        - <<: *create-app
           task: create-adminusers
-          file: omnibus/ci/tasks/create-app.yml
-          params: &create-app-params
-            CF_ORG: govuk-pay
-            CF_SPACE: ((space))
+          params:
+            <<: *create-app-params
             APP: adminusers
         - <<: *create-app
           task: create-cardid
@@ -188,19 +218,22 @@ jobs:
           params:
             <<: *create-app-params
             APP: egress
+            TYPE: docker
         - <<: *create-app
           task: create-postgres
           params:
             <<: *create-app-params
             APP: postgres
+            TYPE: docker
         - <<: *create-app
           task: create-sqs
           params:
             <<: *create-app-params
             APP: sqs
+            TYPE: docker
       - task: apply-network-policies
         file: omnibus/ci/tasks/apply-network-policies.yml
-        params: &create-app-params
+        params:
           CF_ORG: govuk-pay
           CF_SPACE: ((space))
           POLICIES_FILE: omnibus/paas/network-policies.yml
@@ -217,20 +250,15 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: adminusers
+      - get: src
+        resource: adminusers
         trigger: true
+      - task: build
+        file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
-        params: &paas-app
-          command: push
+        params: &java-app
           app_name: adminusers
-          manifest: omnibus/paas/pay-apps.yml
-          docker_password: ((docker-password))
-          vars:
-            space: ((space))
-            docker-username: ((docker-username))
-          vars_files:
-            - omnibus/paas/env_variables/((environment)).yml
 
   - name: deploy-cardid
     serial_groups: [cardid]
@@ -238,12 +266,21 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: cardid
+      - get: src
+        resource: cardid
         trigger: true
+        params:
+          submodules: none
+      - get: cardid-data
+        trigger: true
+      - task: copy-cardid-data
+        file: omnibus/ci/tasks/copy-cardid-data.yaml
+      - task: build
+        file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *java-app
           app_name: cardid
 
   - name: deploy-card-connector
@@ -253,16 +290,15 @@ jobs:
         passed: [provision-space, deploy-tools]
         trigger: true
       - get: src
-        resource: card-connector-src
+        resource: card-connector
         trigger: true
       - task: build
         file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *java-app
           app_name: card-connector
-          path: src/target/*-allinone.jar
 
   - name: deploy-card-frontend
     serial_groups: [card-frontend]
@@ -271,16 +307,15 @@ jobs:
         passed: [provision-space, deploy-tools]
         trigger: true
       - get: src
-        resource: card-frontend-src
+        resource: card-frontend
         trigger: true
       - task: test
         file: omnibus/ci/tasks/frontend.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *node-app
           app_name: card-frontend
-          path: src
 
   - name: deploy-directdebit-connector
     serial_groups: [directdebit-connector]
@@ -288,12 +323,15 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: directdebit-connector
+      - get: src
+        resource: directdebit-connector
         trigger: true
+      - task: build
+        file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *java-app
           app_name: directdebit-connector
 
   - name: deploy-directdebit-frontend
@@ -302,12 +340,15 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: directdebit-frontend
+      - get: src
+        resource: directdebit-frontend
         trigger: true
+      - task: test
+        file: omnibus/ci/tasks/frontend.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *node-app
           app_name: directdebit-frontend
 
   - name: deploy-ledger
@@ -316,12 +357,15 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: ledger
+      - get: src
+        resource: ledger
         trigger: true
+      - task: build
+        file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *java-app
           app_name: ledger
 
   - name: deploy-products
@@ -330,12 +374,15 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: products
+      - get: src
+        resource: products
         trigger: true
+      - task: build
+        file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *java-app
           app_name: products
 
   - name: deploy-products-ui
@@ -344,12 +391,15 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: products-ui
+      - get: src
+        resource: products-ui
         trigger: true
+      - task: build
+        file: omnibus/ci/tasks/frontend.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *node-app
           app_name: products-ui
 
   - name: deploy-publicapi
@@ -358,12 +408,15 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: publicapi
+      - get: src
+        resource: publicapi
         trigger: true
+      - task: build
+        file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *java-app
           app_name: publicapi
 
   - name: deploy-publicauth
@@ -372,12 +425,15 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: publicauth
+      - get: src
+        resource: publicauth
         trigger: true
+      - task: build
+        file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *java-app
           app_name: publicauth
 
   - name: deploy-selfservice
@@ -386,12 +442,15 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: selfservice
+      - get: src
+        resource: selfservice
         trigger: true
+      - task: build
+        file: omnibus/ci/tasks/frontend.yaml
       - put: app
         resource: paas
         params:
-          <<: *paas-app
+          <<: *node-app
           app_name: selfservice
 
   - name: deploy-tools

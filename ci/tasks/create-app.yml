@@ -10,7 +10,7 @@ params:
   ORG:
   SPACE:
   APP:
-  TYPE: docker
+  TYPE: buildpack
 
 run:
   path: bash
@@ -18,8 +18,23 @@ run:
     - -c
     - |
       set -o errexit -o nounset
+
       cf login -a https://api.london.cloud.service.gov.uk \
         -u "$CF_USERNAME" -p "$CF_PASSWORD" \
         -o "$CF_ORG" -s "$CF_SPACE"
+
       # check if app exists and create if it doesn't
-      cf app --guid "$APP" || cf push --no-start --no-route --no-manifest --docker-image alpine "$APP"
+      cf app --guid "$APP" && exit 0
+
+      case "$TYPE" in
+        buildpack)
+          touch foo
+          cf push --no-route --no-manifest --no-start "$APP"
+          ;;
+        docker)
+          cf push --no-route --no-manifest --no-start --docker-image alpine "$APP"
+          ;;
+        *)
+          echo "$TYPE must be buildpack or docker" >/dev/stderr
+          exit 1
+      esac

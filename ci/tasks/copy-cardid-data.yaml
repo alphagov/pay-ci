@@ -5,11 +5,11 @@ image_resource:
   source: { repository: alpine }
 
 inputs:
-  - name: pay-cardid
-  - name: pay-cardid-data
+  - name: src
+  - name: cardid-data
 
 outputs:
-  - name: pay-cardid
+  - name: src
 
 run:
   path: ash
