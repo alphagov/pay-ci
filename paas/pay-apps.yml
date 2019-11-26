@@ -1,9 +1,6 @@
 ---
 applicationTemplate: &applicationTemplate
   name: template
-  docker: &dockerImage
-    image: template
-    username: ((docker-username))
   health-check-type: process
   memory: ((default_memory))
   disk_quota: ((default_disk_quota))
@@ -14,19 +11,40 @@ applicationTemplate: &applicationTemplate
     RUN_MIGRATION: ((run_migration))
     RUN_APP: 'true'
     DISABLE_INTERNAL_HTTPS: ((disable_internal_https))
+
+dockerApplicationTemplate: &dockerApplicationTemplate
+  <<: *applicationTemplate
+  docker: &dockerImage
+    image: template
+    username: ((docker-username))
+
+javaApplicationTemplate: &javaApplicationTemplate
+  <<: *applicationTemplate
+  buildpacks:
+    - java_buildpack
+  env: &javaDefaultEnvs
+    <<: *defaultEnvs
+    JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+ } }'
+    JBP_CONFIG_JAVA_MAIN: '{ arguments: "server app/config/config.yaml" }'
     JAVA_OPTS: -Xms512m -Xmx1G
 
+nodeApplicationTemplate: &nodeApplicationTemplate
+  <<: *applicationTemplate
+  buildpacks:
+    - nodejs_buildpack
+  env: &nodeDefaultEnvs
+    <<: *defaultEnvs
+    NODE_ENV: production
+
 applications:
-  - <<: *applicationTemplate
+  - <<: *javaApplicationTemplate
     name: admin-users
     health-check-type: process
     buildpacks:
       - java_buildpack
     memory: 1G
     env:
-      <<: *defaultEnvs
-      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+ } }'
-      JBP_CONFIG_JAVA_MAIN: '{ arguments: "server app/config/config.yml" }'
+      <<: *javaDefaultEnvs
       ADMIN_PORT: '9701'
       JPA_LOG_LEVEL: ((log_level))
       JPA_SQL_LOG_LEVEL: ((log_level))
@@ -55,25 +73,21 @@ applications:
     routes:
     - route: pay-adminusers-((space)).london.cloudapps.digital
     - route: adminusers-((space)).apps.internal
-  - <<: *applicationTemplate
+
+  - <<: *javaApplicationTemplate
     name: cardid
-    docker:
-      <<: *dockerImage
-      image: govukpay/cardid:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *javaDefaultEnvs
       ADMIN_PORT: '9801'
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-cardid-((space)).london.cloudapps.digital
     - route: cardid-((space)).apps.internal
-  - <<: *applicationTemplate
+
+  - <<: *javaApplicationTemplate
     name: card-connector
-    docker:
-      <<: *dockerImage
-      image: govukpay/connector:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *javaDefaultEnvs
       ADMIN_PORT: '9301'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=none
@@ -122,13 +136,11 @@ applications:
     routes:
     - route: pay-card-connector-((space)).london.cloudapps.digital
     - route: card-connector-((space)).apps.internal
-  - <<: *applicationTemplate
+
+  - <<: *javaApplicationTemplate
     name: directdebit-connector
-    docker:
-      <<: *dockerImage
-      image: govukpay/directdebit-connector:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *javaDefaultEnvs
       ENVIRONMENT: ((space))
       ADMIN_PORT: '10201'
       DB_HOST: postgres-((space)).apps.internal
@@ -154,13 +166,11 @@ applications:
       SENTRY_DSN: noop://localhost
     routes:
     - route: pay-directdebit-connector-((space)).london.cloudapps.digital
-  - <<: *applicationTemplate
+
+  - <<: *nodeApplicationTemplate
     name: directdebit-frontend
-    docker:
-      <<: *dockerImage
-      image: govukpay/directdebit-frontend:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *nodeDefaultEnvs
       NODE_WORKER_COUNT: '1'
       COOKIE_MAX_AGE: '5400000'
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
@@ -168,7 +178,8 @@ applications:
       ADMINUSERS_URL: https://pay-adminusers-((space)).london.cloudapps.digital
     routes:
     - route: pay-directdebit-frontend-((space)).london.cloudapps.digital
-  - <<: *applicationTemplate
+
+  - <<: *dockerApplicationTemplate
     name: egress
     docker:
       <<: *dockerImage
@@ -177,28 +188,12 @@ applications:
       <<: *defaultEnvs
       SQUID_CONFIG: YWNsIFNTTF9wb3J0cyBwb3J0IDQ0MwphY2wgU2FmZV9wb3J0cyBwb3J0IDgwCmFjbCBTYWZlX3BvcnRzIHBvcnQgNDQzCmh0dHBfYWNjZXNzIGFsbG93IGFsbApodHRwX3BvcnQgODA4MApjYWNoZSBkZW55IGFsbAphY2Nlc3NfbG9nIG5vbmUKY2FjaGVfbG9nIC9kZXYvbnVsbApjYWNoZV9zdG9yZV9sb2cgbm9uZQpwaWRfZmlsZW5hbWUgbm9uZQo=
     routes:
-<<<<<<< HEAD
     - route: egress-((space)).apps.internal
-  - <<: *applicationTemplate
+
+  - <<: *nodeApplicationTemplate
     name: card-frontend
-    docker:
-      <<: *dockerImage
-      image: govukpay/frontend:latest-master
     env:
-      <<: *defaultEnvs
-=======
-    - route: egress-((developer)).apps.internal
-  - name: frontend
-    buildpacks:
-      - nodejs_buildpack
-    health-check-type: process
-    memory: 1G
-    command: node start.js
-    env:
-      npm_config_node_version: 'v8.14.0'
-      NODE_ENV: production
-      DISABLE_APPMETRICS: 'true'
->>>>>>> WIP Buildpacks
+      <<: *nodeDefaultEnvs
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
       COOKIE_MAX_AGE: '5400000'
       CONNECTOR_TOKEN_URL: http://card-connector-((space)).apps.internal:8080/v1/frontend/tokens/{chargeTokenId}
@@ -211,13 +206,11 @@ applications:
       ADMINUSERS_URL: http://adminusers-((space)).apps.internal:8080
     routes:
     - route: pay-card-frontend-((space)).london.cloudapps.digital
-  - <<: *applicationTemplate
+
+  - <<: *javaApplicationTemplate
     name: ledger
-    docker:
-      <<: *dockerImage
-      image: govukpay/ledger:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *javaDefaultEnvs
       ADMIN_PORT: '10701'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
@@ -234,13 +227,11 @@ applications:
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-ledger-((space)).london.cloudapps.digital
-  - <<: *applicationTemplate
+
+  - <<: *javaApplicationTemplate
     name: products
-    docker:
-      <<: *dockerImage
-      image: govukpay/products:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *javaDefaultEnvs
       ADMIN_PORT: '10001'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
@@ -257,13 +248,11 @@ applications:
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-products-((space)).london.cloudapps.digital
-  - <<: *applicationTemplate
+
+  - <<: *nodeApplicationTemplate
     name: products-ui
-    docker:
-      <<: *dockerImage
-      image: govukpay/products-ui:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *nodeDefaultEnvs
       PUBLICAPI_URL: https://pay-publicapi-((space)).london.cloudapps.digital
       PAY_API_URL: https://pay-publicapi-((space)).london.cloudapps.digital
       SELFSERVICE_TRANSACTIONS_URL: https://pay-selfservice-((space)).london.cloudapps.digital/transactions
@@ -274,13 +263,11 @@ applications:
       COOKIE_MAX_AGE: '3600000'
     routes:
     - route: pay-products-ui-((space)).london.cloudapps.digital
-  - <<: *applicationTemplate
+
+  - <<: *javaApplicationTemplate
     name: publicapi
-    docker:
-      <<: *dockerImage
-      image: govukpay/publicapi:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *javaDefaultEnvs
       ADMIN_PORT: '9101'
       CONNECTOR_URL: https://pay-card-connector-((space)).london.cloudapps.digital
       CONNECTOR_DD_URL: https://pay-directdebit-connector-((space)).london.cloudapps.digital
@@ -291,13 +278,11 @@ applications:
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-publicapi-((space)).london.cloudapps.digital
-  - <<: *applicationTemplate
+
+  - <<: *javaApplicationTemplate
     name: publicauth
-    docker:
-      <<: *dockerImage
-      image: govukpay/publicauth:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *javaDefaultEnvs
       ADMIN_PORT: '9601'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
@@ -308,13 +293,11 @@ applications:
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-publicauth-((space)).london.cloudapps.digital
-  - <<: *applicationTemplate
+
+  - <<: *nodeApplicationTemplate
     name: selfservice
-    docker:
-      <<: *dockerImage
-      image: govukpay/selfservice:latest-master
     env:
-      <<: *defaultEnvs
+      <<: *nodeDefaultEnvs
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
       PUBLIC_AUTH_URL: https://pay-publicauth-((space)).london.cloudapps.digital/v1/frontend/auth
       CONNECTOR_URL: https://pay-card-connector-((space)).london.cloudapps.digital
@@ -339,7 +322,8 @@ applications:
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-selfservice-((space)).london.cloudapps.digital
-  - <<: *applicationTemplate
+
+  - <<: *dockerApplicationTemplate
     name: postgres
     docker:
       <<: *dockerImage
@@ -371,7 +355,8 @@ applications:
       POSTGRES_PASSWORD: mysecretpassword
     routes:
     - route: postgres-((space)).apps.internal
-  - <<: *applicationTemplate
+
+  - <<: *dockerApplicationTemplate
     name: sqs
     docker:
       <<: *dockerImage

@@ -11,7 +11,7 @@ resources:
     icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: develop
+      branch: buildpackery
 
   - name: paas
     type: cf-cli
@@ -22,6 +22,22 @@ resources:
       space: ((space))
       username: ((cf-username))
       password: ((cf-password))
+
+  - &repo
+    name: card-connector-src
+    type: git
+    icon: github-circle
+    source: &repo-source
+      uri: https://github.com/alphagov/pay-connector
+      branch: master
+      username: ((github-username))
+      password: ((github-password))
+
+  - <<: *repo
+    name: card-frontend-src
+    source:
+      <<: *repo-source
+      uri: https://github.com/alphagov/pay-frontend
 
   - &image
     name: adminusers
@@ -40,12 +56,6 @@ resources:
       repository: govukpay/cardid
 
   - <<: *image
-    name: card-connector
-    source:
-      <<: *image-source
-      repository: govukpay/connector
-
-  - <<: *image
     name: directdebit-connector
     source:
       <<: *image-source
@@ -56,12 +66,6 @@ resources:
     source:
       <<: *image-source
       repository: govukpay/directdebit-frontend
-
-  - <<: *image
-    name: card-frontend
-    source:
-      <<: *image-source
-      repository: govukpay/frontend
 
   - <<: *image
     name: ledger
@@ -248,13 +252,17 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: card-connector
+      - get: src
+        resource: card-connector-src
         trigger: true
+      - task: build
+        file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
         params:
           <<: *paas-app
           app_name: card-connector
+          path: src/target/*-allinone.jar
 
   - name: deploy-card-frontend
     serial_groups: [card-frontend]
@@ -262,13 +270,17 @@ jobs:
       - get: omnibus
         passed: [provision-space, deploy-tools]
         trigger: true
-      - get: card-frontend
+      - get: src
+        resource: card-frontend-src
         trigger: true
+      - task: test
+        file: omnibus/ci/tasks/frontend.yaml
       - put: app
         resource: paas
         params:
           <<: *paas-app
           app_name: card-frontend
+          path: src
 
   - name: deploy-directdebit-connector
     serial_groups: [directdebit-connector]
