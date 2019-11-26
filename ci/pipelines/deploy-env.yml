@@ -101,9 +101,9 @@ resources:
 
   - <<: *image
     name: notifications
-      source:
-        <<: *image-source
-        repository: govukpay/notifications
+    source:
+      <<: *image-source
+      repository: govukpay/notifications
 
 jobs:
   - name: provision-space
@@ -186,6 +186,11 @@ jobs:
             <<: *create-app-params
             APP: selfservice
         - <<: *create-app
+          task: create-notifications
+          params:
+            <<: *create-app-params
+            APP: notifications
+        - <<: *create-app
           task: create-egress
           params:
             <<: *create-app-params
@@ -200,9 +205,6 @@ jobs:
           params:
             <<: *create-app-params
             APP: sqs
-        - <<: *create-app
-          task: create-notifications
-            APP: notifications
       - task: apply-network-policies
         file: omnibus/ci/tasks/apply-network-policies.yml
         params: &create-app-params
@@ -391,6 +393,20 @@ jobs:
           <<: *paas-app
           app_name: selfservice
 
+  - name: deploy-notifications
+    serial_groups: [notifications]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: notifications
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: notifications
+
   - name: deploy-tools
     serial_groups: [tools]
     plan:
@@ -412,16 +428,5 @@ jobs:
         params:
           <<: *paas-app
           app_name: postgres
-  - name: deploy-notifications
-    serial_groups: [notifications]
-    plan:
-      - get: omnibus
-        passed: [provision-space, deploy-tools]
-        trigger: true
-      - get: notifications
-        trigger: true
-      - put: app
-        resource: paas
-        params:
-          <<: *paas-app
-          app_name: notifications
+
+  
