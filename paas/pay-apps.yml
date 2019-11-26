@@ -323,6 +323,14 @@ applications:
     routes:
     - route: pay-selfservice-((space)).london.cloudapps.digital
   - <<: *applicationTemplate
+    name: notifications
+    docker:
+      <<: *dockerImage
+      image: govukpay/notifications:latest-master
+    env:
+      CONNECTOR_URL: https://card-connector-((space)).apps.internal
+      DD_CONNECTOR_URL: https://directdebit-connector-((space)).apps.internal
+  - <<: *applicationTemplate
     name: postgres
     docker:
       <<: *dockerImage
