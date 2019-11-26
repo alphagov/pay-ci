@@ -25,7 +25,7 @@ javaApplicationTemplate: &javaApplicationTemplate
   env: &javaDefaultEnvs
     <<: *defaultEnvs
     JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+ } }'
-    JBP_CONFIG_JAVA_MAIN: '{ arguments: "server app/config/config.yaml" }'
+    JBP_CONFIG_JAVA_MAIN: '{ arguments: "server /home/vcap/app/config/config.yaml" }'
     JAVA_OPTS: -Xms512m -Xmx1G
 
 nodeApplicationTemplate: &nodeApplicationTemplate
