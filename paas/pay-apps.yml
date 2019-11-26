@@ -331,6 +331,7 @@ applications:
     env:
       CONNECTOR_URL: https://card-connector-((space)).apps.internal
       DD_CONNECTOR_URL: https://directdebit-connector-((space)).apps.internal
+      TINI_SUBREAPER: ''
   - <<: *applicationTemplate
     name: postgres
     docker:
