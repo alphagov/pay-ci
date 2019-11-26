@@ -24,7 +24,7 @@ applications:
       SELENIUM_HUB_URL: http://selenium-hub.apps.internal:4444/wd/hub
       CHROME_DRIVER_PATH: /usr/bin/chromedriver
       PUBLICAPI_URL: https://pay-publicapi-staging.london.cloudapps.digital
-      CARD_SANDBOX_API_TOKEN: someapitoken
+      CARD_SANDBOX_API_TOKEN: ((card_sandbox_api_token))
       SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: https://pay-products-staging.london.cloudapps.digital/redirect/smoke-test/product-test-environment
       SELFSERVICE_PASSWORD: something
       SELFSERVICE_OTP_KEY: something
