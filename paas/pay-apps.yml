@@ -151,6 +151,7 @@ applications:
       SENTRY_DSN: noop://localhost
     routes:
     - route: pay-directdebit-connector-((space)).london.cloudapps.digital
+    - route: directdebit-connector-((space)).apps.internal
   - <<: *applicationTemplate
     name: directdebit-frontend
     docker:
