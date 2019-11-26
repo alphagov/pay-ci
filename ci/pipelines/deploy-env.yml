@@ -244,8 +244,30 @@ jobs:
         params:
           command: delete-space
 
+  - name: deploy-tools
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - put: egress
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: egress
+      - put: sqs
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: sqs
+      - put: postgres
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: postgres
+
   - name: deploy-adminusers
-    serial_groups: [adminusers]
+    serial_groups:
+      - one
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -257,11 +279,13 @@ jobs:
         file: omnibus/ci/tasks/maven-build.yaml
       - put: app
         resource: paas
-        params: &java-app
+        params:
+          <<: *java-app
           app_name: adminusers
 
   - name: deploy-cardid
-    serial_groups: [cardid]
+    serial_groups:
+      - one
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -284,7 +308,8 @@ jobs:
           app_name: cardid
 
   - name: deploy-card-connector
-    serial_groups: [card-connector]
+    serial_groups:
+      - one
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -301,7 +326,8 @@ jobs:
           app_name: card-connector
 
   - name: deploy-card-frontend
-    serial_groups: [card-frontend]
+    serial_groups:
+      - two
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -318,7 +344,8 @@ jobs:
           app_name: card-frontend
 
   - name: deploy-directdebit-connector
-    serial_groups: [directdebit-connector]
+    serial_groups:
+      - two
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -335,7 +362,8 @@ jobs:
           app_name: directdebit-connector
 
   - name: deploy-directdebit-frontend
-    serial_groups: [directdebit-frontend]
+    serial_groups:
+      - two
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -352,7 +380,8 @@ jobs:
           app_name: directdebit-frontend
 
   - name: deploy-ledger
-    serial_groups: [ledger]
+    serial_groups:
+      - three
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -369,7 +398,8 @@ jobs:
           app_name: ledger
 
   - name: deploy-products
-    serial_groups: [products]
+    serial_groups:
+      - three
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -386,7 +416,8 @@ jobs:
           app_name: products
 
   - name: deploy-products-ui
-    serial_groups: [products-ui]
+    serial_groups:
+      - three
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -403,7 +434,8 @@ jobs:
           app_name: products-ui
 
   - name: deploy-publicapi
-    serial_groups: [publicapi]
+    serial_groups:
+      - four
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -420,7 +452,8 @@ jobs:
           app_name: publicapi
 
   - name: deploy-publicauth
-    serial_groups: [publicauth]
+    serial_groups:
+      - four
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -437,7 +470,8 @@ jobs:
           app_name: publicauth
 
   - name: deploy-selfservice
-    serial_groups: [selfservice]
+    serial_groups:
+      - four
     plan:
       - get: omnibus
         passed: [provision-space, deploy-tools]
@@ -452,25 +486,3 @@ jobs:
         params:
           <<: *node-app
           app_name: selfservice
-
-  - name: deploy-tools
-    serial_groups: [tools]
-    plan:
-      - get: omnibus
-        passed: [provision-space]
-        trigger: true
-      - put: egress
-        resource: paas
-        params:
-          <<: *paas-app
-          app_name: egress
-      - put: sqs
-        resource: paas
-        params:
-          <<: *paas-app
-          app_name: sqs
-      - put: postgres
-        resource: paas
-        params:
-          <<: *paas-app
-          app_name: postgres

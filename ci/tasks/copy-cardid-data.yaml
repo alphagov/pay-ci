@@ -17,5 +17,5 @@ run:
     - -c
     - |
       set -o errexit -o xtrace
-      mkdir -p pay-cardid/data
-      cp -r pay-cardid-data/* pay-cardid/data/
+      mkdir -p src/data
+      cp -r cardid-data/* src/data/

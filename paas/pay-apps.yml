@@ -38,7 +38,7 @@ nodeApplicationTemplate: &nodeApplicationTemplate
 
 applications:
   - <<: *javaApplicationTemplate
-    name: admin-users
+    name: adminusers
     health-check-type: process
     buildpacks:
       - java_buildpack
