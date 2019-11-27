@@ -332,6 +332,8 @@ applications:
       CONNECTOR_URL: https://card-connector-((space)).apps.internal
       DD_CONNECTOR_URL: https://directdebit-connector-((space)).apps.internal
       TINI_SUBREAPER: ''
+    routes:
+    - route: pay-notifications-((space)).london.cloudapps.digital
   - <<: *applicationTemplate
     name: postgres
     docker:
