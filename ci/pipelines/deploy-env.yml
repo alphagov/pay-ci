@@ -393,7 +393,7 @@ jobs:
           <<: *paas-app
           app_name: selfservice
 
-  - name: deploy-notificationss
+  - name: deploy-notifications
     serial_groups: [notifications]
     plan:
       - get: omnibus
