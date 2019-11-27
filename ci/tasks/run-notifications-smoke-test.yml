@@ -21,7 +21,7 @@ run:
         -u "$CF_USERNAME" -p "$CF_PASSWORD" \
         -o "$CF_ORG" -s "$CF_SPACE"
 
-      httpcode=$(cf ssh endtoend -c "curl -s --write-out '%{http_code}\n' --fail -X POST -H 'Content-Type: application/json' -d '{"content_for" : "naxsi_rules"}' "${NOTIFICATIONS_URL}"")
+      httpcode=$(cf ssh endtoend -c "curl -s --write-out '%{http_code}\n' --fail -X POST -H 'Content-Type: application/json' -d '{\"content_for\" : \"naxsi_rules\"}' "${NOTIFICATIONS_URL}"")
       echo "$0: $NOTIFICATIONS_URL responded with status code '$httpcode'"
 
       if [ "$httpcode" != 200 ]; then
