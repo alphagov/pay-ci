@@ -329,8 +329,8 @@ applications:
       <<: *dockerImage
       image: govukpaypaas/notifications:latest-master
     env:
-      CONNECTOR_URL: https://card-connector-((space)).apps.internal
-      DD_CONNECTOR_URL: https://directdebit-connector-((space)).apps.internal
+      CONNECTOR_URL: http://card-connector-((space)).apps.internal:8080
+      DD_CONNECTOR_URL: http://directdebit-connector-((space)).apps.internal:8080
       TINI_SUBREAPER: ''
     routes:
     - route: pay-notifications-((space)).london.cloudapps.digital

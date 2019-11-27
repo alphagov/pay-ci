@@ -74,9 +74,9 @@ network-policies:
 
   - src: notifications
     dest: directdebit-connector
-    ports: 443
+    ports: 8080
     protocol: tcp
   - src: notifications
     dest: card-connector
-    ports: 443
+    ports: 8080
     protocol: tcp
