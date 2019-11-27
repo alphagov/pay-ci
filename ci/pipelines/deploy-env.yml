@@ -103,7 +103,7 @@ resources:
     name: notifications
     source:
       <<: *image-source
-      repository: govukpay/notifications
+      repository: govukpaypaas/notifications
 
 jobs:
   - name: provision-space
@@ -393,7 +393,7 @@ jobs:
           <<: *paas-app
           app_name: selfservice
 
-  - name: deploy-notifications
+  - name: deploy-notificationss
     serial_groups: [notifications]
     plan:
       - get: omnibus
