@@ -151,6 +151,7 @@ applications:
       SENTRY_DSN: noop://localhost
     routes:
     - route: pay-directdebit-connector-((space)).london.cloudapps.digital
+    - route: directdebit-connector-((space)).apps.internal
   - <<: *applicationTemplate
     name: directdebit-frontend
     docker:
@@ -322,6 +323,17 @@ applications:
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
     - route: pay-selfservice-((space)).london.cloudapps.digital
+  - <<: *applicationTemplate
+    name: notifications
+    docker:
+      <<: *dockerImage
+      image: govukpaypaas/notifications:latest-master
+    env:
+      CONNECTOR_URL: http://card-connector-((space)).apps.internal:8080
+      DD_CONNECTOR_URL: http://directdebit-connector-((space)).apps.internal:8080
+      TINI_SUBREAPER: ''
+    routes:
+    - route: pay-notifications-((space)).london.cloudapps.digital
   - <<: *applicationTemplate
     name: postgres
     docker:
