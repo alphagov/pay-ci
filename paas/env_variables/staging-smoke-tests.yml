@@ -1,0 +1,10 @@
+---
+selenium_hub_url: http://selenium-hub.apps.internal:4444/wd/hub
+publicapi_url: https://pay-publicapi-staging.london.cloudapps.digital
+card_sandbox_api_token: someapitoken
+smoke_test_product_payment_link_url: https://pay-products-staging.london.cloudapps.digital/redirect/smoke-test/product-test-environment
+selfservice_password: something
+selfservice_otp_key: something
+selfservice_url: something
+notifications_url: https://pay-notifications-staging.london.cloudapps.digital
+direct_debit_gocardless_webhook_secret: supersecret
