@@ -140,7 +140,7 @@ jobs:
         params:
           CF_ORG: govuk-pay
           CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-directdebit
+          COMMAND: cf ssh endtoend -c /app/bin/smoke-directdebitp1
 
   - name: products-smoke-test
     serial: true

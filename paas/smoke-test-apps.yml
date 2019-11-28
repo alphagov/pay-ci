@@ -25,6 +25,7 @@ applications:
       SELENIUM_HUB_URL: ((selenium_hub_url))
       PUBLICAPI_URL: ((publicapi_url))
       CARD_SANDBOX_API_TOKEN: ((card_sandbox_api_token))
+      DIRECT_DEBIT_SANDBOX_API_TOKEN: ((direct_debit_sandbox_api_token))
       SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: ((smoke_test_product_payment_link_url))
       SELFSERVICE_PASSWORD: ((selfservice_password))
       SELFSERVICE_OTP_KEY: ((selfservice_otp_key))
