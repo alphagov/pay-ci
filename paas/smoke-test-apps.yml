@@ -21,13 +21,13 @@ applications:
     instances: 1
     env:
       WEB_DRIVER: CHROME_REMOTE
-      SELENIUM_HUB_URL: http://selenium-hub.apps.internal:4444/wd/hub
       CHROME_DRIVER_PATH: /usr/bin/chromedriver
-      PUBLICAPI_URL: https://pay-publicapi-staging.london.cloudapps.digital
-      CARD_SANDBOX_API_TOKEN: someapitoken
-      SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: https://pay-products-staging.london.cloudapps.digital/redirect/smoke-test/product-test-environment
-      SELFSERVICE_PASSWORD: something
-      SELFSERVICE_OTP_KEY: something
-      SELFSERVICE_URL: something
-      NOTIFICATIONS_URL: https://pay-notifications-staging.london.cloudapps.digital
-      DIRECT_DEBIT_GOCARDLESS_WEBHOOK_SECRET: supersecret
+      SELENIUM_HUB_URL: ((selenium_hub_url))
+      PUBLICAPI_URL: ((publicapi_url))
+      CARD_SANDBOX_API_TOKEN: ((card_sandbox_api_token))
+      SMOKE_TEST_PRODUCT_PAYMENT_LINK_URL: ((smoke_test_product_payment_link_url))
+      SELFSERVICE_PASSWORD: ((selfservice_password))
+      SELFSERVICE_OTP_KEY: ((selfservice_otp_key))
+      SELFSERVICE_URL: ((selfservice_url))
+      NOTIFICATIONS_URL: ((notifications_url))
+      DIRECT_DEBIT_GOCARDLESS_WEBHOOK_SECRET: ((direct_debit_gocardless_webhook_secret))
