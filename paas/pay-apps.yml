@@ -8,6 +8,7 @@ applicationTemplate: &applicationTemplate
   memory: ((default_memory))
   disk_quota: ((default_disk_quota))
   env: &defaultEnvs
+    ENVIRONMENT: ((space))
     HTTP_PROXY_HOST: ((http_proxy_host))
     HTTP_PROXY_PORT: ((http_proxy_port))
     HTTP_PROXY_ENABLED: ((http_proxy_enabled))
@@ -126,7 +127,6 @@ applications:
       image: govukpay/directdebit-connector:latest-master
     env:
       <<: *defaultEnvs
-      ENVIRONMENT: ((space))
       ADMIN_PORT: '10201'
       DB_HOST: postgres-((space)).apps.internal
       DB_SSL_OPTION: ssl=false
