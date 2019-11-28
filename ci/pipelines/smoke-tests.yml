@@ -73,8 +73,9 @@ jobs:
             docker_password: ((docker-password))
             docker_username: ((docker-username))
             docker_image: govukpay/endtoend:latest-master
-          vars_files:
-            - omnibus/paas/env_variables/staging-smoke-tests.yml
+            vars_files:
+              - omnibus/paas/env_variables/staging-smoke-tests.yml
+
         - put: network-policy-endtoend-selenium-hub
           resource: paas-tools
           params:
