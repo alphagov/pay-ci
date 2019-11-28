@@ -110,7 +110,6 @@ jobs:
     serial: true
     plan:
       - get: omnibus
-        trigger: true
       - task: create-users
         file: omnibus/ci/tasks/create-users.yml
         params:
@@ -412,7 +411,6 @@ jobs:
     plan:
       - get: omnibus
         passed: [provision-space]
-        trigger: true
       - put: egress
         resource: paas
         params:
