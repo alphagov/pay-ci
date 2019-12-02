@@ -1,0 +1,25 @@
+---
+resources:
+  - name: pay-connector
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-connector
+      branch: master
+
+  - name: omnibus
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: java_tests
+
+jobs:
+  - name: test-connector
+    plan:
+      - in_parallel:
+        - get: omnibus
+        - get: pay-connector
+      - task: test & build
+        file: omnibus/ci/tasks/maven-build.yml
+        input_mapping: {src: pay-connector}
