@@ -23,6 +23,8 @@ resource "aws_cloudfront_distribution" "main" {
     max_ttl                = 0
     default_ttl            = 0
 
+    field_level_encryption_id = data.external.field_level_encryption_config.result["id"]
+
     forwarded_values {
       headers      = ["Host", "Origin", "Authorization"]
       query_string = true
@@ -54,5 +56,34 @@ resource "aws_cloudfront_distribution" "main" {
     acm_certificate_arn      = aws_acm_certificate.cert.arn
     minimum_protocol_version = "TLSv1.2_2018"
     ssl_support_method       = "sni-only"
+  }
+}
+
+data "pass_password" "frontend_pubkey" {
+  path = "cloudfront/${var.environment}-frontend/pubkey"
+}
+
+resource "aws_cloudfront_public_key" "frontend" {
+  name        = "${var.environment}-frontend"
+  comment     = "Public key for field level encryption"
+  encoded_key = data.pass_password.frontend_pubkey.full
+
+  lifecycle {
+    ignore_changes = ["encoded_key"]
+  }
+}
+
+# 2019-12-6:
+# Currently, the only way of provisioning field level encryption
+# profiles and configurations is through the AWS Console and
+# aws CLI.
+# The provision_fle_config.rb script takes a Cloudfront public key
+# ID and attempts to provision a FLE profile and FLE config before
+# returning the ID of the latter.
+data "external" "field_level_encryption_config" {
+  program = ["ruby", "${path.module}/templates/provision_fle_config.rb"]
+
+  query = {
+    public_key_id = aws_cloudfront_public_key.frontend.id
   }
 }

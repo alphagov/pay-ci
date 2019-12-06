@@ -17,6 +17,11 @@ provider "aws" {
   alias   = "us"
 }
 
+provider "pass" {
+  store_dir     = "../secrets"
+  refresh_store = false
+}
+
 resource "aws_s3_bucket" "tfstate" {
   bucket = "govuk-pay-terraform-state"
   acl    = "private"
