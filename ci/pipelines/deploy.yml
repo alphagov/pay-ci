@@ -1,0 +1,270 @@
+---
+resource_types:
+  - name: cf-cli
+    type: docker-image
+    source:
+      repository: nulldriver/cf-cli-resource
+
+resources:
+  - name: omnibus
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+
+  - name: paas-staging
+    type: cf-cli
+    icon: cloud-upload-outline
+    source:
+      api: https://api.london.cloud.service.gov.uk
+      org: govuk-pay
+      space: staging
+      username: ((cf-username))
+      password: ((cf-password))
+
+  - &image
+    name: adminusers
+    type: registry-image
+    icon: docker
+    source: &image-source
+      repository: govukpay/adminusers
+      tag: latest-master
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - <<: *image
+    name: cardid
+    source:
+      <<: *image-source
+      repository: govukpay/cardid
+
+  - <<: *image
+    name: card-connector
+    source:
+      <<: *image-source
+      repository: govukpay/connector
+
+  - <<: *image
+    name: directdebit-connector
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-connector
+
+  - <<: *image
+    name: directdebit-frontend
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-frontend
+
+  - <<: *image
+    name: card-frontend
+    source:
+      <<: *image-source
+      repository: govukpay/frontend
+
+  - <<: *image
+    name: ledger
+    source:
+      <<: *image-source
+      repository: govukpay/ledger
+
+  - <<: *image
+    name: products
+    source:
+      <<: *image-source
+      repository: govukpay/products
+
+  - <<: *image
+    name: products-ui
+    source:
+      <<: *image-source
+      repository: govukpay/products-ui
+
+  - <<: *image
+    name: publicapi
+    source:
+      <<: *image-source
+      repository: govukpay/publicapi
+
+  - <<: *image
+    name: publicauth
+    source:
+      <<: *image-source
+      repository: govukpay/publicauth
+
+  - <<: *image
+    name: selfservice
+    source:
+      <<: *image-source
+      repository: govukpay/selfservice
+
+  - <<: *image
+    name: notifications
+    source:
+      <<: *image-source
+      repository: govukpaypaas/notifications
+
+jobs:
+  - name: deploy-adminusers-staging
+    serial_groups: [adminusers]
+    plan:
+      - get: omnibus
+      - get: adminusers
+        trigger: true
+      - put: app
+        resource: paas-staging
+        params: &paas-app
+          command: push
+          app_name: adminusers
+          manifest: omnibus/paas/pay-apps.yml
+          docker_password: ((docker-password))
+          vars:
+            space: staging
+            docker-username: ((docker-username))
+          vars_files:
+            - omnibus/paas/env_variables/staging.yml
+
+  - name: deploy-cardid-staging
+    serial_groups: [cardid]
+    plan:
+      - get: omnibus
+      - get: cardid
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: cardid
+
+  - name: deploy-card-connector-staging
+    serial_groups: [card-connector]
+    plan:
+      - get: omnibus
+      - get: card-connector
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: card-connector
+
+  - name: deploy-card-frontend-staging
+    serial_groups: [card-frontend]
+    plan:
+      - get: omnibus
+      - get: card-frontend
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: card-frontend
+
+  - name: deploy-directdebit-connector-staging
+    serial_groups: [directdebit-connector]
+    plan:
+      - get: omnibus
+      - get: directdebit-connector
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: directdebit-connector
+
+  - name: deploy-directdebit-frontend-staging
+    serial_groups: [directdebit-frontend]
+    plan:
+      - get: omnibus
+      - get: directdebit-frontend
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: directdebit-frontend
+
+  - name: deploy-ledger-staging
+    serial_groups: [ledger]
+    plan:
+      - get: omnibus
+      - get: ledger
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: ledger
+
+  - name: deploy-products-staging
+    serial_groups: [products]
+    plan:
+      - get: omnibus
+      - get: products
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: products
+
+  - name: deploy-products-ui-staging
+    serial_groups: [products-ui]
+    plan:
+      - get: omnibus
+      - get: products-ui
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: products-ui
+
+  - name: deploy-publicapi-staging
+    serial_groups: [publicapi]
+    plan:
+      - get: omnibus
+      - get: publicapi
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: publicapi
+
+  - name: deploy-publicauth-staging
+    serial_groups: [publicauth]
+    plan:
+      - get: omnibus
+      - get: publicauth
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: publicauth
+
+  - name: deploy-selfservice-staging
+    serial_groups: [selfservice]
+    plan:
+      - get: omnibus
+      - get: selfservice
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: selfservice
+
+  - name: deploy-notifications-staging
+    serial_groups: [notifications]
+    plan:
+      - get: omnibus
+      - get: notifications
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: notifications
