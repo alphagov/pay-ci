@@ -25,7 +25,7 @@ resources:
 
   - &image
     name: adminusers
-    type: registry-image
+    type: docker-image
     icon: docker
     source: &image-source
       repository: govukpay/adminusers
@@ -107,11 +107,13 @@ resources:
 
 jobs:
   - name: deploy-adminusers-staging
-    serial_groups: [adminusers]
+    serial_groups: [adminusers-stg]
     plan:
       - get: omnibus
       - get: adminusers
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params: &paas-app
@@ -126,11 +128,13 @@ jobs:
             - omnibus/paas/env_variables/staging.yml
 
   - name: deploy-cardid-staging
-    serial_groups: [cardid]
+    serial_groups: [cardid-stg]
     plan:
       - get: omnibus
       - get: cardid
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -138,11 +142,13 @@ jobs:
           app_name: cardid
 
   - name: deploy-card-connector-staging
-    serial_groups: [card-connector]
+    serial_groups: [card-connector-stg]
     plan:
       - get: omnibus
       - get: card-connector
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -150,11 +156,13 @@ jobs:
           app_name: card-connector
 
   - name: deploy-card-frontend-staging
-    serial_groups: [card-frontend]
+    serial_groups: [card-frontend-stg]
     plan:
       - get: omnibus
       - get: card-frontend
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -162,11 +170,13 @@ jobs:
           app_name: card-frontend
 
   - name: deploy-directdebit-connector-staging
-    serial_groups: [directdebit-connector]
+    serial_groups: [directdebit-connector-stg]
     plan:
       - get: omnibus
       - get: directdebit-connector
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -174,11 +184,13 @@ jobs:
           app_name: directdebit-connector
 
   - name: deploy-directdebit-frontend-staging
-    serial_groups: [directdebit-frontend]
+    serial_groups: [directdebit-frontend-stg]
     plan:
       - get: omnibus
       - get: directdebit-frontend
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -186,11 +198,13 @@ jobs:
           app_name: directdebit-frontend
 
   - name: deploy-ledger-staging
-    serial_groups: [ledger]
+    serial_groups: [ledger-stg]
     plan:
       - get: omnibus
       - get: ledger
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -198,11 +212,13 @@ jobs:
           app_name: ledger
 
   - name: deploy-products-staging
-    serial_groups: [products]
+    serial_groups: [products-stg]
     plan:
       - get: omnibus
       - get: products
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -210,11 +226,13 @@ jobs:
           app_name: products
 
   - name: deploy-products-ui-staging
-    serial_groups: [products-ui]
+    serial_groups: [products-ui-stg]
     plan:
       - get: omnibus
       - get: products-ui
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -222,11 +240,13 @@ jobs:
           app_name: products-ui
 
   - name: deploy-publicapi-staging
-    serial_groups: [publicapi]
+    serial_groups: [publicapi-stg]
     plan:
       - get: omnibus
       - get: publicapi
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -234,11 +254,13 @@ jobs:
           app_name: publicapi
 
   - name: deploy-publicauth-staging
-    serial_groups: [publicauth]
+    serial_groups: [publicauth-stg]
     plan:
       - get: omnibus
       - get: publicauth
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -246,11 +268,13 @@ jobs:
           app_name: publicauth
 
   - name: deploy-selfservice-staging
-    serial_groups: [selfservice]
+    serial_groups: [selfservice-stg]
     plan:
       - get: omnibus
       - get: selfservice
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
@@ -258,13 +282,93 @@ jobs:
           app_name: selfservice
 
   - name: deploy-notifications-staging
-    serial_groups: [notifications]
+    serial_groups: [notifications-stg]
     plan:
       - get: omnibus
       - get: notifications
         trigger: true
+        params:
+          skip_download: true
       - put: app
         resource: paas-staging
         params:
           <<: *paas-app
           app_name: notifications
+
+  - name: card-payment-smoke-tests-staging
+    serial_groups: [cardid-stg, card-connector-stg, card-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
+    plan:
+      - get: omnibus
+      - &trigger-test
+        get: cardid
+        passed: [deploy-cardid-staging]
+        trigger: true
+        params:
+          skip_download: true
+      - <<: *trigger-test
+        get: card-connector
+        passed: [deploy-card-connector-staging]
+      - <<: *trigger-test
+        get: card-frontend
+        passed: [deploy-card-frontend-staging]
+      - <<: *trigger-test
+        get: ledger
+        passed: [deploy-ledger-staging]
+      - <<: *trigger-test
+        get: publicapi
+        passed: [deploy-publicapi-staging]
+      - <<: *trigger-test
+        get: publicauth
+        passed: [deploy-publicauth-staging]
+      - task: run card smoke test
+        file: omnibus/ci/tasks/cf-task.yml
+        params:
+          CF_ORG: govuk-pay
+          CF_SPACE: tools
+          COMMAND: cf ssh endtoend -c /app/bin/smoke-cardp1
+
+  - name: direct-debit-smoke-tests-staging
+    serial_groups: [adminusers-stg, directdebit-connector-stg, directdebit-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
+    plan:
+      - get: omnibus
+      - <<: *trigger-test
+        get: adminusers
+        passed: [deploy-adminusers-staging]
+      - <<: *trigger-test
+        get: directdebit-connector
+        passed: [deploy-directdebit-connector-staging]
+      - <<: *trigger-test
+        get: directdebit-frontend
+        passed: [deploy-directdebit-frontend-staging]
+      - <<: *trigger-test
+        get: ledger
+        passed: [deploy-ledger-staging]
+      - <<: *trigger-test
+        get: publicapi
+        passed: [deploy-publicapi-staging]
+      - <<: *trigger-test
+        get: publicauth
+        passed: [deploy-publicauth-staging]
+      - task: run direct debit smoke test
+        file: omnibus/ci/tasks/cf-task.yml
+        params:
+          CF_ORG: govuk-pay
+          CF_SPACE: tools
+          COMMAND: cf ssh endtoend -c /app/bin/smoke-directdebitp1
+
+  - name: products-smoke-test-staging
+    serial_groups: [products-stg, products-ui-stg]
+    plan:
+      - get: omnibus
+      - <<: *trigger-test
+        get: products
+        passed: [deploy-products-staging]
+      - <<: *trigger-test
+        get: products-ui
+        passed: [deploy-products-ui-staging]
+      - task: run products smoke test
+        file: omnibus/ci/tasks/cf-task.yml
+        params:
+          CF_ORG: govuk-pay
+          CF_SPACE: tools
+          COMMAND: cf ssh endtoend -c /app/bin/smoke-products
