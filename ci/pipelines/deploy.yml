@@ -132,7 +132,7 @@ jobs:
       - get: cardid
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: cardid
@@ -144,7 +144,7 @@ jobs:
       - get: card-connector
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: card-connector
@@ -156,7 +156,7 @@ jobs:
       - get: card-frontend
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: card-frontend
@@ -168,7 +168,7 @@ jobs:
       - get: directdebit-connector
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: directdebit-connector
@@ -180,7 +180,7 @@ jobs:
       - get: directdebit-frontend
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: directdebit-frontend
@@ -192,7 +192,7 @@ jobs:
       - get: ledger
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: ledger
@@ -204,7 +204,7 @@ jobs:
       - get: products
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: products
@@ -216,7 +216,7 @@ jobs:
       - get: products-ui
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: products-ui
@@ -228,7 +228,7 @@ jobs:
       - get: publicapi
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: publicapi
@@ -240,7 +240,7 @@ jobs:
       - get: publicauth
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: publicauth
@@ -252,7 +252,7 @@ jobs:
       - get: selfservice
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: selfservice
@@ -264,7 +264,7 @@ jobs:
       - get: notifications
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-staging
         params:
           <<: *paas-app
           app_name: notifications
