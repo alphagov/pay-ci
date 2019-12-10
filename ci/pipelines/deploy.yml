@@ -1,4 +1,46 @@
 ---
+groups:
+  - name: All
+    jobs:
+      - deploy-adminusers-staging
+      - deploy-cardid-staging
+      - deploy-card-connector-staging
+      - deploy-card-frontend-staging
+      - deploy-directdebit-connector-staging
+      - deploy-directdebit-frontend-staging
+      - deploy-ledger-staging
+      - deploy-products-staging
+      - deploy-products-ui-staging
+      - deploy-publicapi-staging
+      - deploy-publicauth-staging
+      - deploy-selfservice-staging
+      - deploy-notifications-staging
+      - card-payment-smoke-tests-staging
+      - direct-debit-smoke-tests-staging
+      - products-smoke-test-staging
+
+  - name: Staging Deploys
+    jobs:
+      - deploy-adminusers-staging
+      - deploy-cardid-staging
+      - deploy-card-connector-staging
+      - deploy-card-frontend-staging
+      - deploy-directdebit-connector-staging
+      - deploy-directdebit-frontend-staging
+      - deploy-ledger-staging
+      - deploy-products-staging
+      - deploy-products-ui-staging
+      - deploy-publicapi-staging
+      - deploy-publicauth-staging
+      - deploy-selfservice-staging
+      - deploy-notifications-staging
+
+  - name: Staging Smoke Tests
+    jobs:
+      - card-payment-smoke-tests-staging
+      - direct-debit-smoke-tests-staging
+      - products-smoke-test-staging
+
 resource_types:
   - name: cf-cli
     type: docker-image
