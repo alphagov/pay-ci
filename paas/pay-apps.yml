@@ -80,6 +80,8 @@ applications:
       <<: *javaDefaultEnvs
       ADMIN_PORT: '9801'
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
+      TEST_CARD_DATA_LOCATION: file:///home/vcap/app/data/test-cards/test-card-bin-ranges.csv
+      WORLDPAY_DATA_LOCATION: file:///home/vcap/app/data/worldpay/GENERIC2ISOCPTISSUERPREPAID.CSV
     routes:
     - route: pay-cardid-((space)).london.cloudapps.digital
     - route: cardid-((space)).apps.internal
@@ -133,6 +135,9 @@ applications:
       EVENT_QUEUE_ENABLED: 'true'
       AWS_SQS_PAYMENT_EVENT_QUEUE_URL: http://sqs-((space)).apps.internal:9324/queue/pay_event_queue
       RUN_MIGRATION: 'true'
+      CLOUDFRONT_PRIVATE_KEY: ((cloudfront-private-key))
+      CLOUDFRONT_KEY_NAME: ((cloudfront-key-name))
+      CLOUDFRONT_KEY_PROVIDER: ((cloudfront-key-provider))
     routes:
     - route: pay-card-connector-((space)).london.cloudapps.digital
     - route: card-connector-((space)).apps.internal

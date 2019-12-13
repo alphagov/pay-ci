@@ -1,6 +1,6 @@
 ---
 default_memory: 500M
-default_disk_quota: 500M
+default_disk_quota: 1G
 log_level: WARNING
 http_proxy_enabled: false
 run_migration: true
