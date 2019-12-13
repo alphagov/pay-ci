@@ -23,7 +23,7 @@ provider "pass" {
 }
 
 module "staging" {
-  source = "../modules/environment"
+  source = "../modules/aws"
 
   providers = {
     aws    = "aws"
