@@ -4,7 +4,7 @@ resource "aws_s3_bucket" "cloudfront_logs" {
 }
 
 resource "aws_cloudfront_distribution" "main" {
-  enabled = "true"
+  enabled = "${var.enable_cloudfront}"
   comment = "cloudfront-${var.environment}"
 
   logging_config {
@@ -23,7 +23,7 @@ resource "aws_cloudfront_distribution" "main" {
     max_ttl                = 0
     default_ttl            = 0
 
-    field_level_encryption_id = data.external.field_level_encryption_config.result["id"]
+    field_level_encryption_id = var.enable_field_level_encryption ? data.external.field_level_encryption_config[0].result["id"] : null
 
     forwarded_values {
       headers      = ["Host", "Origin", "Authorization"]
@@ -60,13 +60,17 @@ resource "aws_cloudfront_distribution" "main" {
 }
 
 data "pass_password" "frontend_pubkey" {
+  count = var.enable_field_level_encryption ? 1 : 0
+
   path = "cloudfront/${var.environment}-frontend/pubkey"
 }
 
 resource "aws_cloudfront_public_key" "frontend" {
+  count = var.enable_field_level_encryption ? 1 : 0
+
   name        = "${var.environment}-frontend"
   comment     = "Public key for field level encryption"
-  encoded_key = data.pass_password.frontend_pubkey.full
+  encoded_key = data.pass_password.frontend_pubkey[0].full
 
   lifecycle {
     ignore_changes = ["encoded_key"]
@@ -81,9 +85,11 @@ resource "aws_cloudfront_public_key" "frontend" {
 # ID and attempts to provision a FLE profile and FLE config before
 # returning the ID of the latter.
 data "external" "field_level_encryption_config" {
+  count = var.enable_field_level_encryption ? 1 : 0
+
   program = ["ruby", "${path.module}/templates/provision_fle_config.rb"]
 
   query = {
-    public_key_id = aws_cloudfront_public_key.frontend.id
+    public_key_id = aws_cloudfront_public_key.frontend[0].id
   }
 }

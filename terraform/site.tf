@@ -47,6 +47,7 @@ module "staging" {
     aws.us = "aws.us"
   }
 
-  environment = "staging"
-  domain_name = "gdspay.uk"
+  environment       = "staging"
+  domain_name       = "gdspay.uk"
+  enable_cloudfront = true
 }
