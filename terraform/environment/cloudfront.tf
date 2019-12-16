@@ -12,7 +12,7 @@ resource "aws_cloudfront_distribution" "main" {
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  aliases = ["*.staging.gdspay.uk"]
+  aliases = ["*.${var.environment}.gdspay.uk"]
 
   default_cache_behavior {
     target_origin_id       = "paas_london"
