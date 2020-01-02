@@ -1,12 +1,21 @@
 language: minimal
 dist: bionic
 
+env:
+  - TERRAFORM_VERSION=0.12.18 CONCOURSE_VERSION=5.7.0
+
 before_install:
   - sudo apt-get update
   - sudo apt-get -y install python3 python3-pip python3-setuptools
+  - mkdir -p ~/bin
+  - curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+  - unzip -d ~/bin /tmp/terraform.zip
+  - curl -sLo /tmp/fly.tgz https://github.com/concourse/concourse/releases/download/v${CONCOURSE_VERSION}/fly-${CONCOURSE_VERSION}-linux-amd64.tgz
+  - tar -C ~/bin -xf /tmp/fly.tgz
+  - export PATH="~/bin:$PATH"
 
 install:
   - sudo python3 -m pip install pre-commit
 
 script:
-  - pre-commit run --source $(git rev-parse $TRAVIS_BRANCH) --origin $TRAVIS_COMMIT
+  - pre-commit run --source $TRAVIS_BRANCH --origin $TRAVIS_COMMIT
