@@ -8,6 +8,6 @@ repos:
         language: system
       - id: terraform-fmt
         name: Run terraform fmt
-        entry: terraform fmt -check -diff
+        entry: .pre-commit/terraform-fmt.sh
         files: \.tf$
-        language: system
+        language: script
