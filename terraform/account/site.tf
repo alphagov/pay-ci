@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket = "govuk-pay-terraform-state"
-    key    = "tfstate"
+    key    = "account"
     region = "eu-west-2"
   }
 }
@@ -9,17 +9,6 @@ terraform {
 provider "aws" {
   version = "~> 2.0"
   region  = "eu-west-2"
-}
-
-provider "aws" {
-  version = "~> 2.0"
-  region  = "us-east-1"
-  alias   = "us"
-}
-
-provider "pass" {
-  store_dir     = "../secrets"
-  refresh_store = false
 }
 
 resource "aws_s3_bucket" "tfstate" {
@@ -37,17 +26,8 @@ resource "aws_s3_bucket" "tfstate" {
       }
     }
   }
-}
 
-module "staging" {
-  source = "./environment"
-
-  providers = {
-    aws    = "aws"
-    aws.us = "aws.us"
+  lifecycle {
+    prevent_destroy = true
   }
-
-  environment       = "staging"
-  domain_name       = "gdspay.uk"
-  enable_cloudfront = true
 }
