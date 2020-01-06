@@ -235,6 +235,14 @@ jobs:
           vars:
             space: ((space))
             docker-username: ((docker-username))
+            http_proxy_host: egress-((space)).apps.internal
+            publicapi_url: pay-publicapi-((space)).london.cloudapps.digital
+            publicauth_url: pay-publicauth-((space)).london.cloudapps.digital
+            selfservice_url: pay-selfservice-((space)).london.cloudapps.digital
+            card_frontend_url: pay-card-frontend-((space)).london.cloudapps.digital
+            directdebit_frontend_url: pay-directdebit-frontend-((space)).london.cloudapps.digital
+            notifications_url: pay-notifications-((space)).london.cloudapps.digital
+            products_ui_url: pay-products-ui-((space)).london.cloudapps.digital
           vars_files:
             - omnibus/paas/env_variables/((environment)).yml
 
