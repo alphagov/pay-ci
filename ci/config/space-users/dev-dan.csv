@@ -1,2 +1,2 @@
 Username,Password,Org,Space,OrgManager,BillingManager,OrgAuditor,SpaceManager,SpaceDeveloper,SpaceAuditor
-dan.worth@digital.cabinet-office.gov.uk,,$ORG,$SPACE,,,,,y,
+dan.worth@digital.cabinet-office.gov.uk,,govuk-pay,dev-dan,,,,y,y,

@@ -1,2 +1,2 @@
 Username,Password,Org,Space,OrgManager,BillingManager,OrgAuditor,SpaceManager,SpaceDeveloper,SpaceAuditor
-oswald.quek@digital.cabinet-office.gov.uk,,$ORG,$SPACE,,,,,y,
+oswald.quek@digital.cabinet-office.gov.uk,,govuk-pay,dev-oswald,,,,y,y,
