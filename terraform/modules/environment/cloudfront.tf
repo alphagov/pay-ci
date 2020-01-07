@@ -15,7 +15,7 @@ resource "aws_cloudfront_distribution" "main" {
   aliases = ["*.${var.environment}.gdspay.uk"]
 
   default_cache_behavior {
-    target_origin_id       = "paas_london"
+    target_origin_id       = "paas"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
@@ -35,8 +35,8 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   origin {
-    origin_id   = "paas_london"
-    domain_name = "london.cloudapps.digital"
+    origin_id   = "paas"
+    domain_name = "${var.paas_domain}"
 
     custom_origin_config {
       http_port              = 80

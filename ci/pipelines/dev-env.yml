@@ -110,112 +110,21 @@ jobs:
     serial: true
     plan:
       - get: omnibus
-      - task: create-users
-        file: omnibus/ci/tasks/create-users.yml
+      - task: provision-space
+        file: omnibus/ci/tasks/cf-task.yml
+        input_mapping:
+          workdir: omnibus
         params:
-          SPACE: ((space))
-      - put: space
-        resource: paas
-        params:
-          commands:
-            - command: create-space
-            - command: create-users-from-file
-              file: out/users.csv
-      - in_parallel:
-        - &create-app
-          task: create-adminusers
-          file: omnibus/ci/tasks/create-app.yml
-          params: &create-app-params
-            CF_ORG: govuk-pay
-            CF_SPACE: ((space))
-            APP: adminusers
-        - <<: *create-app
-          task: create-cardid
-          params:
-            <<: *create-app-params
-            APP: cardid
-        - <<: *create-app
-          task: create-card-frontend
-          params:
-            <<: *create-app-params
-            APP: card-frontend
-        - <<: *create-app
-          task: create-card-connector
-          params:
-            <<: *create-app-params
-            APP: card-connector
-        - <<: *create-app
-          task: create-directdebit-frontend
-          params:
-            <<: *create-app-params
-            APP: directdebit-frontend
-        - <<: *create-app
-          task: create-directdebit-connector
-          params:
-            <<: *create-app-params
-            APP: directdebit-connector
-        - <<: *create-app
-          task: create-ledger
-          params:
-            <<: *create-app-params
-            APP: ledger
-        - <<: *create-app
-          task: create-products
-          params:
-            <<: *create-app-params
-            APP: products
-        - <<: *create-app
-          task: create-products-ui
-          params:
-            <<: *create-app-params
-            APP: products-ui
-        - <<: *create-app
-          task: create-publicapi
-          params:
-            <<: *create-app-params
-            APP: publicapi
-        - <<: *create-app
-          task: create-publicauth
-          params:
-            <<: *create-app-params
-            APP: publicauth
-        - <<: *create-app
-          task: create-selfservice
-          params:
-            <<: *create-app-params
-            APP: selfservice
-        - <<: *create-app
-          task: create-notifications
-          params:
-            <<: *create-app-params
-            APP: notifications
-        - <<: *create-app
-          task: create-egress
-          params:
-            <<: *create-app-params
-            APP: egress
-        - <<: *create-app
-          task: create-postgres
-          params:
-            <<: *create-app-params
-            APP: postgres
-        - <<: *create-app
-          task: create-sqs
-          params:
-            <<: *create-app-params
-            APP: sqs
-      - task: apply-network-policies
-        file: omnibus/ci/tasks/apply-network-policies.yml
-        params: &create-app-params
           CF_ORG: govuk-pay
           CF_SPACE: ((space))
-          POLICIES_FILE: omnibus/paas/network-policies.yml
-
-  - name: delete-space
-    plan:
-      - put: paas
+          COMMAND: workdir/paas/provision_space.sh
+          DEPLOYER_USER: ((cf-username))
+          DOCKER_APPS: 'true'
+      - put: set-permissions
+        resource: paas
         params:
-          command: delete-space
+          command: create-users-from-file
+          file: omnibus/ci/config/space-users/((space)).csv
 
   - name: deploy-adminusers
     serial_groups: [adminusers]
@@ -232,9 +141,18 @@ jobs:
           app_name: adminusers
           manifest: omnibus/paas/pay-apps.yml
           docker_password: ((docker-password))
+          startup_command: 'null'
           vars:
             space: ((space))
             docker-username: ((docker-username))
+            http_proxy_host: egress-((space)).apps.internal
+            publicapi_url: pay-publicapi-((space)).london.cloudapps.digital
+            publicauth_url: pay-publicauth-((space)).london.cloudapps.digital
+            selfservice_url: pay-selfservice-((space)).london.cloudapps.digital
+            card_frontend_url: pay-card-frontend-((space)).london.cloudapps.digital
+            directdebit_frontend_url: pay-directdebit-frontend-((space)).london.cloudapps.digital
+            notifications_url: pay-notifications-((space)).london.cloudapps.digital
+            products_ui_url: pay-products-ui-((space)).london.cloudapps.digital
           vars_files:
             - omnibus/paas/env_variables/((environment)).yml
 

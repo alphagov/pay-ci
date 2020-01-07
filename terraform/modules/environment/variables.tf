@@ -17,3 +17,8 @@ variable "enable_field_level_encryption" {
   description = "Enable Cloudfront field level encryption"
   default     = false
 }
+
+variable "paas_domain" {
+  type        = string
+  description = "PaaS domain for Cloudfront origin"
+}

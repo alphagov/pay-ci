@@ -40,7 +40,7 @@ applications:
       NOTIFY_INVITE_EMAIL_TEMPLATE_ID: pay-notify-invite-email-template-id
       NOTIFY_INVITE_USER_EMAIL_TEMPLATE_ID: pay-notify-invite-user-email-template-id
       NOTIFY_FORGOTTEN_PASSWORD_EMAIL_TEMPLATE_ID: pay-notify-forgotten-password-email-template-id
-      NOTIFY_BASE_URL: https://pay-stubs-((space)).london.cloudapps.digital/notify
+      NOTIFY_BASE_URL: http://stubs-((space)).apps.internal:8080/notify
       NOTIFY_INVITE_SERVICE_EMAIL_TEMPLATE_ID: pay-notify-invite-service-email-template-id
       NOTIFY_INVITE_SERVICE_USER_EXITS_EMAIL_TEMPLATE_ID: pay-notify-invite-service-user-exists-email-template-id
       NOTIFY_DIRECT_DEBIT_API_KEY: api_key-pay-notify-service-id-pay-notify-secret-needs-to-be-32-chars-fsghdngfhmhfkrgsfs
@@ -48,10 +48,9 @@ applications:
       NOTIFY_PAYMENT_FAILED_TEMPLATE_ID: email-template-id
       NOTIFY_MANDATE_FAILED_EMAIL_TEMPLATE_ID: email-template-id
       NOTIFY_MANDATE_CANCELLED_EMAIL_TEMPLATE_ID: email-template-id
-      SELFSERVICE_URL: https://pay-selfservice-((space)).london.cloudapps.digital
+      SELFSERVICE_URL: https://((selfservice_url))
       FORGOTTEN_PASSWORD_EXPIRY_MINUTES: '90'
     routes:
-    - route: pay-adminusers-((space)).london.cloudapps.digital
     - route: adminusers-((space)).apps.internal
   - <<: *applicationTemplate
     name: cardid
@@ -63,7 +62,6 @@ applications:
       ADMIN_PORT: '9801'
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
-    - route: pay-cardid-((space)).london.cloudapps.digital
     - route: cardid-((space)).apps.internal
   - <<: *applicationTemplate
     name: card-connector
@@ -77,19 +75,19 @@ applications:
       DB_SSL_OPTION: ssl=none
       DB_USER: connector
       DB_PASSWORD: mysecretpassword
-      FRONTEND_URL: https://pay-card-frontend-((space)).london.cloudapps.digital
+      FRONTEND_URL: https://((card_frontend_url))
       SECURE_WORLDPAY_NOTIFICATION_ENABLED: 'false'
       SECURE_WORLDPAY_NOTIFICATION_DOMAIN: london.cloudapps.digital
-      GDS_CONNECTOR_WORLDPAY_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/worldpay
-      GDS_CONNECTOR_WORLDPAY_TEST_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/worldpay
-      GDS_CONNECTOR_WORLDPAY_LIVE_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/worldpay
+      GDS_CONNECTOR_WORLDPAY_URL: http://stubs-((space)).apps.internal:8080/stub/worldpay
+      GDS_CONNECTOR_WORLDPAY_TEST_URL: http://stubs-((space)).apps.internal:8080/stub/worldpay
+      GDS_CONNECTOR_WORLDPAY_LIVE_URL: http://stubs-((space)).apps.internal:8080/stub/worldpay
       APPLE_PAY_PAYMENT_PROCESSING_PRIVATE_KEY: MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgOqukXQoQVbg1xvvq/IGLdK0UuJPbbawULTALcuw/Uz2hRANCAAQPjiA1kTEodST2wy5d5kQFrM0D5qBX9Ukry8W6D+vC7OqbMoTm/upRM1GRHeA2LaVTrwAnpGhoO0ETqYF2Nu4V
       APPLE_PAY_PAYMENT_PROCESSING_CERTIFICATE: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVjRENDQkJhZ0F3SUJBZ0lJVXlyRU00SXpCSFF3Q2dZSUtvWkl6ajBFQXdJd2dZQXhOREF5QmdOVkJBTU0KSzBGd2NHeGxJRmR2Y214a2QybGtaU0JFWlhabGJHOXdaWElnVW1Wc1lYUnBiMjV6SUVOQklDMGdSekl4SmpBawpCZ05WQkFzTUhVRndjR3hsSUVObGNuUnBabWxqWVhScGIyNGdRWFYwYUc5eWFYUjVNUk13RVFZRFZRUUtEQXBCCmNIQnNaU0JKYm1NdU1Rc3dDUVlEVlFRR0V3SlZVekFlRncweE5ERXdNall4TWpFd01UQmFGdzB4TmpFeE1qUXgKTWpFd01UQmFNSUdoTVM0d0xBWUtDWkltaVpQeUxHUUJBUXdlYldWeVkyaGhiblF1WTI5dExuTmxZWFJuWldWcgpMbE5sWVhSSFpXVnJNVFF3TWdZRFZRUUREQ3ROWlhKamFHRnVkQ0JKUkRvZ2JXVnlZMmhoYm5RdVkyOXRMbk5sCllYUm5aV1ZyTGxObFlYUkhaV1ZyTVJNd0VRWURWUVFMREFvNVFqTlJXVGxYUWxvMU1SY3dGUVlEVlFRS0RBNVQKWldGMFIyVmxheXdnU1c1akxqRUxNQWtHQTFVRUJoTUNWVk13V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQgpCd05DQUFRUGppQTFrVEVvZFNUMnd5NWQ1a1FGck0wRDVxQlg5VWtyeThXNkQrdkM3T3FiTW9UbS91cFJNMUdSCkhlQTJMYVZUcndBbnBHaG9PMEVUcVlGMk51NFZvNElDVlRDQ0FsRXdSd1lJS3dZQkJRVUhBUUVFT3pBNU1EY0cKQ0NzR0FRVUZCekFCaGl0b2RIUndPaTh2YjJOemNDNWhjSEJzWlM1amIyMHZiMk56Y0RBMExXRndjR3hsZDNkawpjbU5oTWpBeE1CMEdBMVVkRGdRV0JCUVdHZktnUGdWQlg4Sk92ODRxMWMwNEhTaE1tekFNQmdOVkhSTUJBZjhFCkFqQUFNQjhHQTFVZEl3UVlNQmFBRklTMmhNdzZobUp5RmxtVTZCcWp2VWpmT3Q4TE1JSUJIUVlEVlIwZ0JJSUIKRkRDQ0FSQXdnZ0VNQmdrcWhraUc5Mk5rQlFFd2dmNHdnY01HQ0NzR0FRVUZCd0lDTUlHMkRJR3pVbVZzYVdGdQpZMlVnYjI0Z2RHaHBjeUJqWlhKMGFXWnBZMkYwWlNCaWVTQmhibmtnY0dGeWRIa2dZWE56ZFcxbGN5QmhZMk5sCmNIUmhibU5sSUc5bUlIUm9aU0IwYUdWdUlHRndjR3hwWTJGaWJHVWdjM1JoYm1SaGNtUWdkR1Z5YlhNZ1lXNWsKSUdOdmJtUnBkR2x2Ym5NZ2IyWWdkWE5sTENCalpYSjBhV1pwWTJGMFpTQndiMnhwWTNrZ1lXNWtJR05sY25ScApabWxqWVhScGIyNGdjSEpoWTNScFkyVWdjM1JoZEdWdFpXNTBjeTR3TmdZSUt3WUJCUVVIQWdFV0ttaDBkSEE2Ckx5OTNkM2N1WVhCd2JHVXVZMjl0TDJObGNuUnBabWxqWVhSbFlYVjBhRzl5YVhSNUx6QTJCZ05WSFI4RUx6QXQKTUN1Z0thQW5oaVZvZEhSd09pOHZZM0pzTG1Gd2NHeGxMbU52YlM5aGNIQnNaWGQzWkhKallUSXVZM0pzTUE0RwpBMVVkRHdFQi93UUVBd0lES0RCUEJna3Foa2lHOTJOa0JpQUVRZ3hBUmprek9FWTBOalU0UTBFeVF6RkRPVU16Ck9FSTRSRVpEUWpWRVFrSXlRVEl5TkRVMk1EZEVSRVV5UmpFeE5EWXlNRVU0TkRZNFJVWTFNa1F5TURoRFFUQUsKQmdncWhrak9QUVFEQWdOSUFEQkZBaUIrUTR6enBNajJESlRDSWhERkJjbXdLMXpRQUM3MGZZMklzWWQ4K054dQp1d0loQUtqOVJyVE95aWFRbm9UNU1xaTNVSG9wYjZ4VHVnbDNMVURCbG9yYUJIeVAKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ==
-      GDS_CONNECTOR_SMARTPAY_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/smartpay
-      GDS_CONNECTOR_SMARTPAY_TEST_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/smartpay
-      GDS_CONNECTOR_SMARTPAY_LIVE_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/smartpay
-      GDS_CONNECTOR_EPDQ_TEST_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/epdq
-      GDS_CONNECTOR_EPDQ_LIVE_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/epdq
+      GDS_CONNECTOR_SMARTPAY_URL: http://stubs-((space)).apps.internal:8080/stub/smartpay
+      GDS_CONNECTOR_SMARTPAY_TEST_URL: http://stubs-((space)).apps.internal:8080/stub/smartpay
+      GDS_CONNECTOR_SMARTPAY_LIVE_URL: http://stubs-((space)).apps.internal:8080/stub/smartpay
+      GDS_CONNECTOR_EPDQ_TEST_URL: http://stubs-((space)).apps.internal:8080/stub/epdq
+      GDS_CONNECTOR_EPDQ_LIVE_URL: http://stubs-((space)).apps.internal:8080/stub/epdq
       GDS_CONNECTOR_SMARTPAY_NOTIFICATION_USER: smartpay-user
       GDS_CONNECTOR_SMARTPAY_NOTIFICATION_PASSWORD: smartpay-password
       STRIPE_TRANSACTION_FEE_PERCENTAGE: '0.1'
@@ -101,7 +99,7 @@ applications:
       NOTIFY_PAYMENT_RECEIPT_EMAIL_TEMPLATE_ID: email-template-id
       NOTIFY_REFUND_ISSUED_EMAIL_TEMPLATE_ID: email-refund-issued-template-id
       NOTIFY_API_KEY: api_key-pay-notify-service-id-pay-notify-secret-needs-to-be-32-chars-fsghdngfhmhfkrgsfs
-      NOTIFY_BASE_URL: https://pay-stubs-((space)).london.cloudapps.digital/notify
+      NOTIFY_BASE_URL: http://stubs-((space)).apps.internal:8080/notify
       CAPTURE_PROCESS_SCHEDULER_INITIAL_DELAY_SECONDS: '0'
       CAPTURE_PROCESS_SCHEDULER_RANDOM_INTERVAL_MINIMUM_SECONDS: '1'
       CAPTURE_PROCESS_SCHEDULER_RANDOM_INTERVAL_MAXIMUM_SECONDS: '1'
@@ -118,7 +116,6 @@ applications:
       AWS_SQS_PAYMENT_EVENT_QUEUE_URL: http://sqs-((space)).apps.internal:9324/queue/pay_event_queue
       RUN_MIGRATION: 'true'
     routes:
-    - route: pay-card-connector-((space)).london.cloudapps.digital
     - route: card-connector-((space)).apps.internal
   - <<: *applicationTemplate
     name: directdebit-connector
@@ -132,10 +129,10 @@ applications:
       DB_SSL_OPTION: ssl=false
       DB_USER: directdebit_connector
       DB_PASSWORD: mysecretpassword
-      FRONTEND_URL: https://pay-card-frontend-((space)).london.cloudapps.digital
-      ADMINUSERS_URL: http://pay-adminusers-((space)).london.cloudapps.digital
+      FRONTEND_URL: https://((directdebit_frontend_url))
+      ADMINUSERS_URL: http://adminusers-((space)).apps.internal:8080
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_ACCESS_TOKEN: supersecret
-      GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_URL: https://pay-stubs-((space)).london.cloudapps.digital/stub/gocardless/
+      GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_URL: http://stubs-((space)).apps.internal:8080/stub/gocardless/
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_WEBHOOK_SECRET: supersecret
       GDS_DIRECTDEBIT_CONNECTOR_GOCARDLESS_ENVIRONMENT: sandbox
       JPA_LOG_LEVEL: ((log_level))
@@ -150,7 +147,6 @@ applications:
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
       SENTRY_DSN: noop://localhost
     routes:
-    - route: pay-directdebit-connector-((space)).london.cloudapps.digital
     - route: directdebit-connector-((space)).apps.internal
   - <<: *applicationTemplate
     name: directdebit-frontend
@@ -162,10 +158,10 @@ applications:
       NODE_WORKER_COUNT: '1'
       COOKIE_MAX_AGE: '5400000'
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
-      CONNECTOR_URL: https://pay-card-connector-((space)).london.cloudapps.digital
-      ADMINUSERS_URL: https://pay-adminusers-((space)).london.cloudapps.digital
+      CONNECTOR_URL: http://directdebit-connector-((space)).apps.internal:8080
+      ADMINUSERS_URL: http://adminusers-((space)).apps.internal:8080
     routes:
-    - route: pay-directdebit-frontend-((space)).london.cloudapps.digital
+    - route: ((directdebit_frontend_url))
   - <<: *applicationTemplate
     name: egress
     docker:
@@ -191,10 +187,10 @@ applications:
       ANALYTICS_TRACKING_ID: testing-123
       CARDID_HOST: http://cardid-((space)).apps.internal:8080
       NODE_WORKER_COUNT: '1'
-      FRONTEND_URL: https://pay-card-frontend-((space)).london.cloudapps.digital
+      FRONTEND_URL: https://((card_frontend_url))
       ADMINUSERS_URL: http://adminusers-((space)).apps.internal:8080
     routes:
-    - route: pay-card-frontend-((space)).london.cloudapps.digital
+    - route: ((card_frontend_url))
   - <<: *applicationTemplate
     name: ledger
     docker:
@@ -217,7 +213,7 @@ applications:
       AWS_SQS_PAYMENT_EVENT_QUEUE_URL: http://sqs-((space)).apps.internal:9324/queue/pay_event_queue
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
-    - route: pay-ledger-((space)).london.cloudapps.digital
+    - route: ledger-((space)).apps.internal
   - <<: *applicationTemplate
     name: products
     docker:
@@ -232,15 +228,15 @@ applications:
       DB_PASSWORD: mysecretpassword
       JPA_LOG_LEVEL: ((log_level))
       JPA_SQL_LOG_LEVEL: ((log_level))
-      PUBLICAPI_URL: https://pay-publicapi-((space)).london.cloudapps.digital
-      BASE_URL: https://pay-products-((space)).london.cloudapps.digital
+      PUBLICAPI_URL: https://((publicapi_url))
+      BASE_URL: http://products-((space)).apps.internal:8080
       PRODUCTS_API_TOKEN: g0nBA5lNzfUalQjk4ZBDy70AikNshxz2G70dA6lg
-      PRODUCTSUI_PAY_URL: https://pay-products-ui-((space)).london.cloudapps.digital/pay
-      PRODUCTSUI_CONFIRMATION_URL: https://pay-products-ui-((space)).london.cloudapps.digital/payment-complete
-      PRODUCTS_FRIENDLY_BASE_URI: https://pay-products-ui-((space)).london.cloudapps.digital/redirect
+      PRODUCTSUI_PAY_URL: https://((products_ui_url))
+      PRODUCTSUI_CONFIRMATION_URL: https://((products_ui_url))/payment-complete
+      PRODUCTS_FRIENDLY_BASE_URI: https://((products_ui_url))/redirect
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
-    - route: pay-products-((space)).london.cloudapps.digital
+    - route: products-((space)).apps.internal
   - <<: *applicationTemplate
     name: products-ui
     docker:
@@ -248,16 +244,16 @@ applications:
       image: govukpay/products-ui:latest-master
     env:
       <<: *defaultEnvs
-      PUBLICAPI_URL: https://pay-publicapi-((space)).london.cloudapps.digital
-      PAY_API_URL: https://pay-publicapi-((space)).london.cloudapps.digital
-      SELFSERVICE_TRANSACTIONS_URL: https://pay-selfservice-((space)).london.cloudapps.digital/transactions
-      ADMINUSERS_URL: https://pay-adminusers-((space)).london.cloudapps.digital
+      PUBLICAPI_URL: https://((publicapi_url))
+      PAY_API_URL: https://((publicapi_url))
+      SELFSERVICE_TRANSACTIONS_URL: https://((selfservice_url))/transactions
+      ADMINUSERS_URL: http://adminusers-((space)).apps.internal:8080
       PRODUCTS_API_TOKEN: g0nBA5lNzfUalQjk4ZBDy70AikNshxz2G70dA6lg
-      PRODUCTS_URL: https://pay-products-((space)).london.cloudapps.digital
+      PRODUCTS_URL: http://products-((space)).apps.internal:8080
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
       COOKIE_MAX_AGE: '3600000'
     routes:
-    - route: pay-products-ui-((space)).london.cloudapps.digital
+    - route: ((products_ui_url))
   - <<: *applicationTemplate
     name: publicapi
     docker:
@@ -266,15 +262,15 @@ applications:
     env:
       <<: *defaultEnvs
       ADMIN_PORT: '9101'
-      CONNECTOR_URL: https://pay-card-connector-((space)).london.cloudapps.digital
-      CONNECTOR_DD_URL: https://pay-directdebit-connector-((space)).london.cloudapps.digital
-      PUBLIC_AUTH_URL: https://pay-publicauth-((space)).london.cloudapps.digital/v1/api/auth
+      CONNECTOR_URL: http://card-connector-((space)).apps.internal:8080
+      CONNECTOR_DD_URL: http://directdebit-connector-((space)).apps.internal:8080
+      PUBLIC_AUTH_URL: https://((publicauth_url))/v1/api/auth
       TOKEN_API_HMAC_SECRET: qwer9yuhgf
-      PUBLICAPI_BASE: https://pay-publicapi-((space)).london.cloudapps.digital
-      LEDGER_URL: https://pay-ledger-((space)).london.cloudapps.digital
+      PUBLICAPI_BASE: https://((publicapi_url))
+      LEDGER_URL: http://ledger-((space)).apps.internal:8080
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
-    - route: pay-publicapi-((space)).london.cloudapps.digital
+    - route: ((publicapi_url))
   - <<: *applicationTemplate
     name: publicauth
     docker:
@@ -291,7 +287,7 @@ applications:
       TOKEN_API_HMAC_SECRET: qwer9yuhgf
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
-    - route: pay-publicauth-((space)).london.cloudapps.digital
+    - route: ((publicauth_url))
   - <<: *applicationTemplate
     name: selfservice
     docker:
@@ -300,14 +296,14 @@ applications:
     env:
       <<: *defaultEnvs
       SESSION_ENCRYPTION_KEY: asdjhbwefbo23r23rbfik2roiwhefwbqw
-      PUBLIC_AUTH_URL: https://pay-publicauth-((space)).london.cloudapps.digital/v1/frontend/auth
-      CONNECTOR_URL: https://pay-card-connector-((space)).london.cloudapps.digital
-      DIRECT_DEBIT_CONNECTOR_URL: https://pay-directdebit-connector-((space)).london.cloudapps.digital
-      ADMINUSERS_URL: https://pay-adminusers-((space)).london.cloudapps.digital
-      SELFSERVICE_BASE: https://pay-selfservice-((space)).london.cloudapps.digital
-      PRODUCTS_URL: https://pay-products-((space)).london.cloudapps.digital
+      PUBLIC_AUTH_URL: https://((publicauth_url))/v1/frontend/auth
+      CONNECTOR_URL: http://card-connector-((space)).apps.internal:8080
+      DIRECT_DEBIT_CONNECTOR_URL: http://directdebit-connector-((space)).apps.internal:8080
+      ADMINUSERS_URL: http://adminusers-((space)).apps.internal:8080
+      SELFSERVICE_BASE: https://((selfservice_url))
+      PRODUCTS_URL: http://products-((space)).apps.internal:8080
       PRODUCTS_API_TOKEN: g0nBA5lNzfUalQjk4ZBDy70AikNshxz2G70dA6lg
-      PRODUCTS_FRIENDLY_BASE_URI: https://pay-products-ui-((space)).london.cloudapps.digital/redirect
+      PRODUCTS_FRIENDLY_BASE_URI: https://((products_ui_url))/redirect
       LOGIN_ATTEMPT_CAP: '3'
       COOKIE_MAX_AGE: '10800000'
       NODE_WORKER_COUNT: '1'
@@ -319,10 +315,10 @@ applications:
       GOCARDLESS_LIVE_CLIENT_ID: gocardless-live-oauth-client-id
       GOCARDLESS_TEST_OAUTH_BASE_URL: https://connect-sandbox.gocardless.com
       GOCARDLESS_LIVE_OAUTH_BASE_URL: https://connect-sandbox.gocardless.com
-      SELFSERVICE_URL: https://pay-selfservice-((space)).london.cloudapps.digital
+      SELFSERVICE_URL: https://((selfservice_url))
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
     routes:
-    - route: pay-selfservice-((space)).london.cloudapps.digital
+    - route: ((selfservice_url))
   - <<: *applicationTemplate
     name: notifications
     docker:
@@ -333,7 +329,7 @@ applications:
       DD_CONNECTOR_URL: http://directdebit-connector-((space)).apps.internal:8080
       TINI_SUBREAPER: ''
     routes:
-    - route: pay-notifications-((space)).london.cloudapps.digital
+    - route: ((notifications_url))
   - <<: *applicationTemplate
     name: postgres
     docker:

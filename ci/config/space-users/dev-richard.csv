@@ -1,2 +1,2 @@
 Username,Password,Org,Space,OrgManager,BillingManager,OrgAuditor,SpaceManager,SpaceDeveloper,SpaceAuditor
-richard.baker@digital.cabinet-office.gov.uk,,$ORG,$SPACE,,,,,y,
+richard.baker@digital.cabinet-office.gov.uk,,govuk-pay,dev-richard,,,,y,y,

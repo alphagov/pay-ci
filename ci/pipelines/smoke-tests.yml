@@ -1,20 +1,4 @@
 ---
-groups:
-  - name: Smoke Test App Setup
-    jobs:
-      - deploy-selenium-hub
-      - start-selenium
-      - stop-selenium
-      - deploy-smoke-test-app
-
-  - name: Staging Smoke Tests
-    jobs:
-      - card-smoke-test
-      - directdebit-smoke-test
-      - products-smoke-test
-      - notifications-card-smoke-test
-      - notifications-directdebit-smoke-test
-
 resource_types:
   - name: cf-cli
     type: docker-image
@@ -24,18 +8,20 @@ resource_types:
 resources:
   - name: omnibus
     type: git
+    icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: develop
+      branch: paas-provision-space-script
 
-  - name: paas-tools
+  - name: paas-smoke-tests
     type: cf-cli
+    icon: cloud-upload-outline
     source:
-      api: https://api.london.cloud.service.gov.uk
+      api: https://api.cloud.service.gov.uk
       org: govuk-pay
-      space: tools
-      username: ((cf-username))
-      password: ((cf-password))
+      space: smoke-tests
+      username: ((paas-ireland-username))
+      password: ((paas-ireland-password))
 
   - name: endtoend-container
     type: registry-image
@@ -46,138 +32,62 @@ resources:
       username: ((docker-username))
       password: ((docker-password))
 
-  - name: every-10m
-    type: time
-    source: { interval: 10m }
-
 jobs:
   - name: deploy-selenium-hub
     serial_groups: [selenium-setup]
     serial: true
     plan:
       - get: omnibus
-      - in_parallel:
-        - put: cf-push selenium-hub
-          resource: paas-tools
-          params:
-            command: push
-            app_name: selenium-hub
-            manifest: omnibus/paas/smoke-test-apps.yml
-        - &deploy-endtoend
-          put: cf-push endtoend
-          resource: paas-tools
-          params:
-            command: push
-            app_name: endtoend
-            manifest: omnibus/paas/smoke-test-apps.yml
-            docker_password: ((docker-password))
-            docker_username: ((docker-username))
-            docker_image: govukpay/endtoend:latest-master
-            vars_files:
-              - omnibus/paas/env_variables/staging-smoke-tests.yml
+      - put: paas-tools
+        params: &push-app
+          command: push
+          app_name: selenium-hub
+          manifest: omnibus/paas/smoke-test-apps.yml
+          vars_files:
+            - omnibus/paas/env_variables/staging-smoke-tests.yml
 
-        - put: network-policy-endtoend-selenium-hub
-          resource: paas-tools
-          params:
-            command: add-network-policy
-            source_app: endtoend
-            destination_app: selenium-hub
-            port: 4444
-            protocol: tcp        
-  
+  - name: deploy-endtoend
+    plan:
+      - get: omnibus
+      - get: endtoend-container
+        trigger: true
+      - put: paas-tools
+        params:
+          <<: *push-app
+          docker_password: ((docker-password))
+          docker_username: ((docker-username))
+          docker_image: govukpay/endtoend:latest-master
+          app_name: endtoend
+
+  - name: network-policies
+    plan:
+      - get: omnibus
+        passed: [deploy-selenium-hub, deploy-endtoend]
+      - put: network-policy-endtoend-selenium-hub
+        resource: paas-tools
+        params:
+          command: add-network-policy
+          source_app: endtoend
+          destination_app: selenium-hub
+          port: 4444
+          protocol: tcp
+
   - name: start-selenium
     serial_groups: [selenium-setup]
     serial: true
     plan:
-      - in_parallel:
-        - put: start selenium hub
-          resource: paas-tools
-          params:
-            command: start
-            app_name: selenium-hub
-        
+      - put: start selenium hub
+        resource: paas-tools
+        params:
+          command: start
+          app_name: selenium-hub
 
   - name: stop-selenium
     serial_groups: [selenium-setup]
     serial: true
     plan:
-      - in_parallel:
-        - put: stop selenium hub
-          resource: paas-tools
-          params:
-            command: stop
-            app_name: selenium-hub
-
-  - name: deploy-smoke-test-app
-    serial: true
-    plan:
-      - get: endtoend-container
-        trigger: true
-      - get: omnibus
-      - <<: *deploy-endtoend
-
-  - name: card-smoke-test
-    serial: true
-    plan:
-      - get: every-10m
-        trigger: true
-      - get: omnibus
-      - task: run card smoke test
-        file: omnibus/ci/tasks/cf-task.yml
+      - put: stop selenium hub
+        resource: paas-tools
         params:
-          CF_ORG: govuk-pay
-          CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-cardp1
-
-  - name: directdebit-smoke-test
-    serial: true
-    plan:
-      - get: every-10m
-        trigger: true
-      - get: omnibus
-      - task: run direct debit smoke test
-        file: omnibus/ci/tasks/cf-task.yml
-        params:
-          CF_ORG: govuk-pay
-          CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-directdebitp1
-
-  - name: products-smoke-test
-    serial: true
-    plan:
-      - get: every-10m
-        trigger: true
-      - get: omnibus
-      - task: run products smoke test
-        file: omnibus/ci/tasks/cf-task.yml
-        params:
-          CF_ORG: govuk-pay
-          CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-products
-
-  - name: notifications-directdebit-smoke-test
-    serial: true
-    plan:
-      - get: every-10m
-        trigger: true
-      - get: omnibus
-      - task: run direct debit notifications smoke test
-        file: omnibus/ci/tasks/cf-task.yml
-        params:
-          CF_ORG: govuk-pay
-          CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-directdebit-notifications
-
-  # Card notification smoke tests are executed using curl
-  - name: notifications-card-smoke-test
-    serial: true
-    plan:
-      - get: every-10m
-        trigger: true
-      - get: omnibus
-      - task: run notifications card smoke test
-        file: omnibus/ci/tasks/run-notifications-smoke-test.yml
-        params:
-          CF_ORG: govuk-pay
-          CF_SPACE: tools
-          NOTIFICATIONS_URL: ((notifications_smoke_card_url))
+          command: stop
+          app_name: selenium-hub

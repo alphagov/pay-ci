@@ -59,11 +59,11 @@ resources:
     type: cf-cli
     icon: cloud-upload-outline
     source:
-      api: https://api.london.cloud.service.gov.uk
+      api: https://api.cloud.service.gov.uk
       org: govuk-pay
       space: staging
-      username: ((cf-username))
-      password: ((cf-password))
+      username: ((paas-ireland-username))
+      password: ((paas-ireland-password))
 
   - &image
     name: adminusers
@@ -163,6 +163,7 @@ jobs:
           app_name: adminusers
           manifest: omnibus/paas/pay-apps.yml
           docker_password: ((docker-password))
+          startup_command: 'null'
           vars:
             space: staging
             docker-username: ((docker-username))
@@ -182,6 +183,7 @@ jobs:
         params:
           <<: *paas-app
           app_name: cardid
+          space: staging-cde
 
   - name: deploy-card-connector-staging
     serial_groups: [card-connector-stg]
@@ -196,6 +198,7 @@ jobs:
         params:
           <<: *paas-app
           app_name: card-connector
+          space: staging-cde
 
   - name: deploy-card-frontend-staging
     serial_groups: [card-frontend-stg]
@@ -210,6 +213,7 @@ jobs:
         params:
           <<: *paas-app
           app_name: card-frontend
+          space: staging-cde
 
   - name: deploy-directdebit-connector-staging
     serial_groups: [directdebit-connector-stg]
