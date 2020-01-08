@@ -13,7 +13,7 @@ resources:
       uri: https://github.com/alphagov/pay-omnibus
       branch: develop
 
-  - name: paas
+  - name: paas-london
     type: cf-cli
     icon: cloud-upload-outline
     source:
@@ -110,6 +110,11 @@ jobs:
     serial: true
     plan:
       - get: omnibus
+      - put: create-space
+        resource: paas-london
+        params:
+          command: create-space
+          space: ((space))
       - task: provision-space
         file: omnibus/ci/tasks/cf-task.yml
         input_mapping:
@@ -121,7 +126,7 @@ jobs:
           DEPLOYER_USER: ((cf-username))
           DOCKER_APPS: 'true'
       - put: set-permissions
-        resource: paas
+        resource: paas-london
         params:
           command: create-users-from-file
           file: omnibus/ci/config/space-users/((space)).csv
@@ -135,7 +140,7 @@ jobs:
       - get: adminusers
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params: &paas-app
           command: push
           app_name: adminusers
@@ -165,7 +170,7 @@ jobs:
       - get: cardid
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: cardid
@@ -179,7 +184,7 @@ jobs:
       - get: card-connector
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: card-connector
@@ -193,7 +198,7 @@ jobs:
       - get: card-frontend
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: card-frontend
@@ -207,7 +212,7 @@ jobs:
       - get: directdebit-connector
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: directdebit-connector
@@ -221,7 +226,7 @@ jobs:
       - get: directdebit-frontend
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: directdebit-frontend
@@ -235,7 +240,7 @@ jobs:
       - get: ledger
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: ledger
@@ -249,7 +254,7 @@ jobs:
       - get: products
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: products
@@ -263,7 +268,7 @@ jobs:
       - get: products-ui
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: products-ui
@@ -277,7 +282,7 @@ jobs:
       - get: publicapi
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: publicapi
@@ -291,7 +296,7 @@ jobs:
       - get: publicauth
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: publicauth
@@ -305,7 +310,7 @@ jobs:
       - get: selfservice
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: selfservice
@@ -319,7 +324,7 @@ jobs:
       - get: notifications
         trigger: true
       - put: app
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: notifications
@@ -329,18 +334,19 @@ jobs:
     plan:
       - get: omnibus
         passed: [provision-space]
+        trigger: true
       - put: egress
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: egress
       - put: sqs
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: sqs
       - put: postgres
-        resource: paas
+        resource: paas-london
         params:
           <<: *paas-app
           app_name: postgres
