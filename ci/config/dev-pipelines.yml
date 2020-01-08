@@ -1,3 +1,4 @@
+pipelines:
 - name: dev-env-anshul
   team: pay-deploy
   config_file: omnibus/ci/pipelines/dev-env.yml
