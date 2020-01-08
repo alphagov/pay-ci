@@ -67,7 +67,7 @@ applications:
     name: card-connector
     docker:
       <<: *dockerImage
-      image: govukpay/connector:latest-master
+      image: govukpay/connector:de47aa50406d2946c3bfa15a14dcf6695dd7950e-1
     env:
       <<: *defaultEnvs
       ADMIN_PORT: '9301'

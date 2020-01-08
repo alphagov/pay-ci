@@ -1,0 +1,430 @@
+---
+resource_types:
+  - name: cf-cli
+    type: docker-image
+    source:
+      repository: nulldriver/cf-cli-resource
+
+resources:
+  - name: omnibus
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: ivr-demo-spike
+
+  - name: paas
+    type: cf-cli
+    icon: cloud-upload-outline
+    source:
+      api: https://api.london.cloud.service.gov.uk
+      org: govuk-pay
+      space: ((space))
+      username: ((cf-username))
+      password: ((cf-password))
+
+  - &image
+    name: adminusers
+    type: registry-image
+    icon: docker
+    source: &image-source
+      repository: govukpay/adminusers
+      tag: latest-master
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - <<: *image
+    name: cardid
+    source:
+      <<: *image-source
+      repository: govukpay/cardid
+
+  - <<: *image
+    name: card-connector
+    source:
+      <<: *image-source
+      repository: govukpay/connector
+
+  - <<: *image
+    name: directdebit-connector
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-connector
+
+  - <<: *image
+    name: directdebit-frontend
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-frontend
+
+  - <<: *image
+    name: card-frontend
+    source:
+      <<: *image-source
+      repository: govukpay/frontend
+
+  - <<: *image
+    name: ledger
+    source:
+      <<: *image-source
+      repository: govukpay/ledger
+
+  - <<: *image
+    name: products
+    source:
+      <<: *image-source
+      repository: govukpay/products
+
+  - <<: *image
+    name: products-ui
+    source:
+      <<: *image-source
+      repository: govukpay/products-ui
+
+  - <<: *image
+    name: publicapi
+    source:
+      <<: *image-source
+      repository: govukpay/publicapi
+
+  - <<: *image
+    name: publicauth
+    source:
+      <<: *image-source
+      repository: govukpay/publicauth
+
+  - <<: *image
+    name: selfservice
+    source:
+      <<: *image-source
+      repository: govukpay/selfservice
+
+  - <<: *image
+    name: notifications
+    source:
+      <<: *image-source
+      repository: govukpaypaas/notifications
+
+jobs:
+  - name: provision-space
+    serial: true
+    plan:
+      - get: omnibus
+        trigger: true
+      - task: create-users
+        file: omnibus/ci/tasks/create-users.yml
+        params:
+          SPACE: ((space))
+      - put: space
+        resource: paas
+        params:
+          commands:
+            - command: create-space
+            - command: create-users-from-file
+              file: out/users.csv
+      - in_parallel:
+        - &create-app
+          task: create-adminusers
+          file: omnibus/ci/tasks/create-app.yml
+          params: &create-app-params
+            CF_ORG: govuk-pay
+            CF_SPACE: ((space))
+            APP: adminusers
+        - <<: *create-app
+          task: create-cardid
+          params:
+            <<: *create-app-params
+            APP: cardid
+        - <<: *create-app
+          task: create-card-frontend
+          params:
+            <<: *create-app-params
+            APP: card-frontend
+        - <<: *create-app
+          task: create-card-connector
+          params:
+            <<: *create-app-params
+            APP: card-connector
+        - <<: *create-app
+          task: create-directdebit-frontend
+          params:
+            <<: *create-app-params
+            APP: directdebit-frontend
+        - <<: *create-app
+          task: create-directdebit-connector
+          params:
+            <<: *create-app-params
+            APP: directdebit-connector
+        - <<: *create-app
+          task: create-ledger
+          params:
+            <<: *create-app-params
+            APP: ledger
+        - <<: *create-app
+          task: create-products
+          params:
+            <<: *create-app-params
+            APP: products
+        - <<: *create-app
+          task: create-products-ui
+          params:
+            <<: *create-app-params
+            APP: products-ui
+        - <<: *create-app
+          task: create-publicapi
+          params:
+            <<: *create-app-params
+            APP: publicapi
+        - <<: *create-app
+          task: create-publicauth
+          params:
+            <<: *create-app-params
+            APP: publicauth
+        - <<: *create-app
+          task: create-selfservice
+          params:
+            <<: *create-app-params
+            APP: selfservice
+        - <<: *create-app
+          task: create-notifications
+          params:
+            <<: *create-app-params
+            APP: notifications
+        - <<: *create-app
+          task: create-egress
+          params:
+            <<: *create-app-params
+            APP: egress
+        - <<: *create-app
+          task: create-postgres
+          params:
+            <<: *create-app-params
+            APP: postgres
+        - <<: *create-app
+          task: create-sqs
+          params:
+            <<: *create-app-params
+            APP: sqs
+      - task: apply-network-policies
+        file: omnibus/ci/tasks/apply-network-policies.yml
+        params: &create-app-params
+          CF_ORG: govuk-pay
+          CF_SPACE: ((space))
+          POLICIES_FILE: omnibus/paas/network-policies.yml
+
+  - name: delete-space
+    plan:
+      - put: paas
+        params:
+          command: delete-space
+
+  - name: deploy-adminusers
+    serial_groups: [adminusers]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: adminusers
+        trigger: true
+      - put: app
+        resource: paas
+        params: &paas-app
+          command: push
+          app_name: adminusers
+          manifest: omnibus/paas/pay-apps.yml
+          docker_password: ((docker-password))
+          vars:
+            space: ((space))
+            docker-username: ((docker-username))
+          vars_files:
+            - omnibus/paas/env_variables/((environment)).yml
+
+  - name: deploy-cardid
+    serial_groups: [cardid]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: cardid
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: cardid
+
+  - name: deploy-card-connector
+    serial_groups: [card-connector]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: card-connector
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: card-connector
+
+  - name: deploy-card-frontend
+    serial_groups: [card-frontend]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: card-frontend
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: card-frontend
+
+  - name: deploy-directdebit-connector
+    serial_groups: [directdebit-connector]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: directdebit-connector
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: directdebit-connector
+
+  - name: deploy-directdebit-frontend
+    serial_groups: [directdebit-frontend]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: directdebit-frontend
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: directdebit-frontend
+
+  - name: deploy-ledger
+    serial_groups: [ledger]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: ledger
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: ledger
+
+  - name: deploy-products
+    serial_groups: [products]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: products
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: products
+
+  - name: deploy-products-ui
+    serial_groups: [products-ui]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: products-ui
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: products-ui
+
+  - name: deploy-publicapi
+    serial_groups: [publicapi]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: publicapi
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: publicapi
+
+  - name: deploy-publicauth
+    serial_groups: [publicauth]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: publicauth
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: publicauth
+
+  - name: deploy-selfservice
+    serial_groups: [selfservice]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: selfservice
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: selfservice
+
+  - name: deploy-notifications
+    serial_groups: [notifications]
+    plan:
+      - get: omnibus
+        passed: [provision-space, deploy-tools]
+        trigger: true
+      - get: notifications
+        trigger: true
+      - put: app
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: notifications
+
+  - name: deploy-tools
+    serial_groups: [tools]
+    plan:
+      - get: omnibus
+        passed: [provision-space]
+        trigger: true
+      - put: egress
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: egress
+      - put: sqs
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: sqs
+      - put: postgres
+        resource: paas
+        params:
+          <<: *paas-app
+          app_name: postgres
