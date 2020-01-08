@@ -40,3 +40,9 @@
   vars:
     space: dev-stephen
     environment: dev
+- name: dev-env-rory
+  team: pay-deploy
+  config_file: omnibus/ci/pipelines/dev-env.yml
+  vars:
+      space: dev-rory
+      environment: dev
