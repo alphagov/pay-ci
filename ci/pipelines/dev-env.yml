@@ -148,6 +148,14 @@ jobs:
           DOCKER_APPS: 'true'
 
   - name: create-test-user
+    serial_groups:
+      - tools
+      - card-connector
+      - directdebit-connector
+      - publicapi
+      - publicauth
+      - adminusers
+      - products
     plan:
       - get: omnibus
         resource: omnibus-paas
