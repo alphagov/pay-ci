@@ -36,7 +36,7 @@ function create_docker_app {
 
   if ! cf app "$app" | grep -q '^docker image:'; then
     cf delete -f "$app"
-    cf push --no-route --no-manifest --no-start --docker-image alpine -c 'tail -f /dev/null' "$app"
+    cf push --no-route --no-manifest --no-start --docker-image alpine "$app"
   fi
 }
 

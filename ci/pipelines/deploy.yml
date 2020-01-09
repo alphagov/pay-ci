@@ -163,7 +163,6 @@ jobs:
           app_name: adminusers
           manifest: omnibus/paas/pay-apps.yml
           docker_password: ((docker-password))
-          startup_command: 'null'
           vars:
             space: staging
             docker-username: ((docker-username))
