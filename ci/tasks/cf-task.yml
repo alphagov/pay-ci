@@ -9,6 +9,7 @@ inputs:
     optional: true
 
 params:
+  CF_API: https://api.london.cloud.service.gov.uk
   CF_USERNAME: ((cf-username))
   CF_PASSWORD: ((cf-password))
   CF_ORG:
@@ -21,7 +22,7 @@ run:
     - -c
     - |
       set -o errexit -o nounset
-      cf login -a https://api.london.cloud.service.gov.uk \
+      cf login -a "$CF_API" \
         -u "$CF_USERNAME" -p "$CF_PASSWORD" \
         -o "$CF_ORG" -s "$CF_SPACE"
       $COMMAND

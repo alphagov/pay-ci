@@ -81,6 +81,7 @@ function bind_db {
   cf set-env "$app" DB_HOST "$DB_HOST"
   cf set-env "$app" DB_USER "$DB_USER"
   cf set-env "$app" DB_PASSWORD "$DB_PASSWORD"
+  cf restage "$app"
 }
 
 # -- Main

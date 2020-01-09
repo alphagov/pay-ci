@@ -12,7 +12,7 @@ applications:
     routes:
     - route: selenium-hub.apps.internal
 
-  - name: endtoend
+  - name: smoke-tests
     docker:
       image: govukpay/endtoend:latest-master
     health-check-type: process

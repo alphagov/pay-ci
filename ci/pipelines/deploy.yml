@@ -2,6 +2,7 @@
 groups:
   - name: All
     jobs:
+      - update-pipeline
       - deploy-adminusers-staging
       - deploy-cardid-staging
       - deploy-card-connector-staging
@@ -15,6 +16,7 @@ groups:
       - deploy-publicauth-staging
       - deploy-selfservice-staging
       - deploy-notifications-staging
+      - smoke-test-user
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
@@ -37,6 +39,7 @@ groups:
 
   - name: Staging Smoke Tests
     jobs:
+      - smoke-test-user
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
@@ -46,6 +49,10 @@ resource_types:
     type: docker-image
     source:
       repository: nulldriver/cf-cli-resource
+  - name: concourse-pipeline
+    type: docker-image
+    source:
+      repository: concourse/concourse-pipeline-resource
 
 resources:
   - name: omnibus
@@ -53,7 +60,7 @@ resources:
     icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: develop
+      branch: smoke-test-user
 
   - name: paas-staging
     type: cf-cli
@@ -64,6 +71,15 @@ resources:
       space: staging
       username: ((paas-ireland-username))
       password: ((paas-ireland-password))
+
+  - name: deploy-pipeline
+    type: concourse-pipeline
+    icon: pipe
+    source:
+      teams:
+        - name: pay-deploy
+          username: pay-deploy
+          password: ((readonly_local_user_password))
 
   - &image
     name: adminusers
@@ -147,7 +163,24 @@ resources:
       <<: *image-source
       repository: govukpaypaas/notifications
 
+x-cf-creds: &cf-creds
+  CF_API: https://api.cloud.service.gov.uk
+  CF_USERNAME: ((paas-ireland-username))
+  CF_PASSWORD: ((paas-ireland-password))
+  CF_ORG: govuk-pay
+
 jobs:
+  - name: update-pipeline
+    plan:
+      - get: omnibus
+        trigger: true
+      - put: deploy-pipeline
+        params:
+          pipelines:
+            - name: deploy
+              team: pay-deploy
+              config_file: omnibus/ci/pipelines/deploy.yml
+
   - name: deploy-adminusers-staging
     serial_groups: [adminusers-stg]
     plan:
@@ -168,6 +201,15 @@ jobs:
             docker-username: ((docker-username))
           vars_files:
             - omnibus/paas/env_variables/staging.yml
+      - &bind-db
+        task: bind-db
+        file: omnibus/ci/tasks/cf-task.yml
+        input_mapping: { workdir: omnibus }
+        params: &bind-db-params
+          <<: *cf-creds
+          CF_SPACE: staging
+          CF_SPACE_CDE: staging-cde
+          COMMAND: bind_db adminusers adminusers-db
 
   - name: deploy-cardid-staging
     serial_groups: [cardid-stg]
@@ -198,6 +240,11 @@ jobs:
           <<: *paas-app
           app_name: card-connector
           space: staging-cde
+      - <<: *bind-db
+        params:
+          <<: *bind-db-params
+          CF_SPACE: staging-cde
+          COMMAND: bind_db card-connector card-connector-db
 
   - name: deploy-card-frontend-staging
     serial_groups: [card-frontend-stg]
@@ -227,6 +274,10 @@ jobs:
         params:
           <<: *paas-app
           app_name: directdebit-connector
+      - <<: *bind-db
+        params:
+          <<: *bind-db-params
+          COMMAND: bind_db directdebit-connector directdebit-connector-db
 
   - name: deploy-directdebit-frontend-staging
     serial_groups: [directdebit-frontend-stg]
@@ -255,6 +306,10 @@ jobs:
         params:
           <<: *paas-app
           app_name: ledger
+      - <<: *bind-db
+        params:
+          <<: *bind-db-params
+          COMMAND: bind_db ledger ledger-db
 
   - name: deploy-products-staging
     serial_groups: [products-stg]
@@ -269,6 +324,10 @@ jobs:
         params:
           <<: *paas-app
           app_name: products
+      - <<: *bind-db
+        params:
+          <<: *bind-db-params
+          COMMAND: bind_db products products-db
 
   - name: deploy-products-ui-staging
     serial_groups: [products-ui-stg]
@@ -311,6 +370,10 @@ jobs:
         params:
           <<: *paas-app
           app_name: publicauth
+      - <<: *bind-db
+        params:
+          <<: *bind-db-params
+          COMMAND: bind_db publicauth publicauth-db
 
   - name: deploy-selfservice-staging
     serial_groups: [selfservice-stg]
@@ -340,10 +403,29 @@ jobs:
           <<: *paas-app
           app_name: notifications
 
+  - name: smoke-test-user
+    serial_groups:
+      - card-connector-stg
+      - directdebit-connector-stg
+      - publicapi-stg
+      - publicauth-stg
+      - adminusers-stg
+      - products-stg
+    plan:
+      - get: omnibus
+      - task: create-service
+        file: omnibus/ci/tasks/smoke-test-user.yml
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          CF_SPACE_CDE: staging-cde
+          SERVICE_NAME: smoke-test-user
+
   - name: card-payment-smoke-tests-staging
     serial_groups: [cardid-stg, card-connector-stg, card-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     plan:
       - get: omnibus
+        passed: [smoke-test-user]
       - &trigger-test
         get: cardid
         passed: [deploy-cardid-staging]
@@ -367,15 +449,16 @@ jobs:
         passed: [deploy-publicauth-staging]
       - task: run card smoke test
         file: omnibus/ci/tasks/cf-task.yml
-        params:
-          CF_ORG: govuk-pay
+        params: &smoke-test-params
+          <<: *cf-creds
           CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-cardp1
+          COMMAND: cf ssh smoke-tests -c /app/bin/smoke-cardp1
 
   - name: direct-debit-smoke-tests-staging
     serial_groups: [adminusers-stg, directdebit-connector-stg, directdebit-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     plan:
       - get: omnibus
+        passed: [smoke-test-user]
       - <<: *trigger-test
         get: adminusers
         passed: [deploy-adminusers-staging]
@@ -397,14 +480,14 @@ jobs:
       - task: run direct debit smoke test
         file: omnibus/ci/tasks/cf-task.yml
         params:
-          CF_ORG: govuk-pay
-          CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-directdebitp1
+          <<: *smoke-test-params
+          COMMAND: cf ssh smoke-tests -c /app/bin/smoke-directdebitp1
 
   - name: products-smoke-test-staging
     serial_groups: [products-stg, products-ui-stg]
     plan:
       - get: omnibus
+        passed: [smoke-test-user]
       - <<: *trigger-test
         get: products
         passed: [deploy-products-staging]
@@ -414,6 +497,5 @@ jobs:
       - task: run products smoke test
         file: omnibus/ci/tasks/cf-task.yml
         params:
-          CF_ORG: govuk-pay
-          CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-products
+          <<: *smoke-test-params
+          COMMAND: cf ssh smoke-tests -c /app/bin/smoke-products

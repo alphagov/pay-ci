@@ -1,0 +1,52 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: { repository: governmentpaas/cf-cli }
+
+inputs:
+  - name: omnibus
+
+params:
+  CF_API: https://api.london.cloud.service.gov.uk
+  CF_USERNAME: ((cf-username))
+  CF_PASSWORD: ((cf-password))
+  CF_ORG:
+  CF_SPACE:
+  CF_SPACE_CDE:
+  CF_SPACE_TOOLS: tools
+  SERVICE_NAME: test-user
+
+run:
+  path: bash
+  dir: omnibus/client
+  args:
+    - -c
+    - |
+      set -o errexit -o nounset
+
+      cf login -a "$CF_API" \
+        -u "$CF_USERNAME" -p "$CF_PASSWORD" \
+        -o "$CF_ORG" -s "$CF_SPACE"
+
+      if cf service "$SERVICE_NAME"; then
+        echo "Service $SERVICE_NAME already exists, exiting"
+        exit 0
+      fi
+
+      gem install bundler
+      bundle install
+
+      data=$(bundle exec ./client user)
+
+      # Export as environment variables
+      eval $(echo "$data" | jq -r 'to_entries | map("export \(.key|ascii_upcase)=\(.value)") | .[]')
+
+      cf target -s "$CF_SPACE_TOOLS"
+      cf create-user-provided-service "$SERVICE_NAME" -p "$data"
+      cf set-env smoke-tests SELFSERVICE_USERNAME "$SELFSERVICE_USERNAME"
+      cf set-env smoke-tests SELFSERVICE_PASSWORD "$SELFSERVICE_PASSWORD"
+      cf set-env smoke-tests SELFSERVICE_OTP_KEY "$SELFSERVICE_OTP_KEY"
+      cf set-env smoke-tests CARD_SANDBOX_API_TOKEN "$CARD_SANDBOX_API_TOKEN"
+      cf set-env smoke-tests DIRECT_DEBIT_SANDBOX_API_TOKEN "$DIRECT_DEBIT_SANDBOX_API_TOKEN"
+      cf restage smoke-tests

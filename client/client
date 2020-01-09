@@ -17,6 +17,10 @@ LOCAL_PORTS = {
   'products' => 9896,
 }
 
+CDE_APPS = [
+  'card-connector',
+]
+
 class AppClient
   def self.user(options = { create_payments: true })
     STDERR.puts '🏗️🏗  Constructing useful things for you...'
@@ -66,16 +70,16 @@ class AppClient
        ['🎟  Direct Debit API token', dd_token]
     ]).render(:unicode, padding: 1, multiline: true)
 
-    puts JSON.dump({
-       'email' => user[:email],
-       'password' => user[:password],
-       'otp_key' => otp_key,
+    JSON.dump({
+       'selfservice_username' => user[:email],
+       'selfservice_password' => user[:password],
+       'selfservice_otp_key' => otp_key,
        'otp_token' => generate_otp_token(otp_key),
        'service_id' => service_id,
        'card_gateway_account_id' => card_gateway_account_id,
-       'card_api_token' => card_token,
-       'dd_gateway_account_id' => dd_gateway_account_id,
-       'dd_api_token' => dd_token,
+       'card_sandbox_api_token' => card_token,
+       'direct_debit_gateway_account_id' => dd_gateway_account_id,
+       'direct_debit_sandbox_api_token' => dd_token,
     })
   end
 
@@ -287,22 +291,39 @@ private
   end
 end
 
-puts("Forwarding apps:")
-LOCAL_PORTS.each do |app, port|
+def forward_app(app, port)
   pid = Process.spawn("cf ssh #{app} -L #{port}:localhost:8080 --skip-remote-execution")
   at_exit { Process.kill('INT', pid) }
   Process.detach(pid)
-  print("#{app}[#{port}] ")
-  while true
+  STDERR.puts("#{app}[#{port}]: waiting")
+  tries = 0
+  while tries <= 5
     begin
-      break if AppClient.is_app_up?(app)
+      if AppClient.is_app_up?(app)
+        STDERR.puts("#{app}[#{port}]: up")
+        return
+      end
     rescue
     end
-    print('.')
-    sleep(0.5)
+    tries += 1
+    sleep(1)
   end
-  puts(" up")
+  abort("#{app}[#{port}]: timed out")
+end
+
+STDERR.puts("Forwarding apps:")
+
+cde_ports, ports = LOCAL_PORTS.partition { |app, _| CDE_APPS.include?(app) }
+
+`cf target -s #{ENV['CF_SPACE']}` if ENV.key?('CF_SPACE')
+ports.each do |app, port|
+  forward_app(app, port)
+end
+
+`cf target -s #{ENV['CF_SPACE_CDE']}` if ENV.key?('CF_SPACE_CDE')
+cde_ports.each do |app, port|
+  forward_app(app, port)
 end
 
 command = ARGV[0]
-puts AppClient.send(command.to_sym, *ARGV[1..]).inspect
+puts AppClient.send(command.to_sym, *ARGV[1..])

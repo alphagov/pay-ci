@@ -11,9 +11,9 @@ resources:
     icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: paas-provision-space-script
+      branch: smoke-test-user
 
-  - name: paas-smoke-tests
+  - name: paas-tools
     type: cf-cli
     icon: cloud-upload-outline
     source:
@@ -46,7 +46,7 @@ jobs:
           vars_files:
             - omnibus/paas/env_variables/staging-smoke-tests.yml
 
-  - name: deploy-endtoend
+  - name: deploy-smoke-tests
     plan:
       - get: omnibus
       - get: endtoend-container
@@ -57,17 +57,17 @@ jobs:
           docker_password: ((docker-password))
           docker_username: ((docker-username))
           docker_image: govukpay/endtoend:latest-master
-          app_name: endtoend
+          app_name: smoke-tests
 
   - name: network-policies
     plan:
       - get: omnibus
-        passed: [deploy-selenium-hub, deploy-endtoend]
-      - put: network-policy-endtoend-selenium-hub
+        passed: [deploy-selenium-hub, deploy-smoke-tests]
+      - put: network-policy-smoke-tests-selenium-hub
         resource: paas-tools
         params:
           command: add-network-policy
-          source_app: endtoend
+          source_app: smoke-tests
           destination_app: selenium-hub
           port: 4444
           protocol: tcp
