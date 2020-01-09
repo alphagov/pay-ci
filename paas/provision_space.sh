@@ -25,7 +25,7 @@ function create_buildpack_app {
 
   mkdir -p /tmp/placeholder
   touch /tmp/placeholder/empty
-  if ! cf app "$app" | grep -q '^buildpacks:'; then
+  if cf app "$app" | grep -qv 'buildpacks:'; then
     cf delete -f "$app"
     cf push --no-route --no-manifest --no-start -p /tmp/placeholder "$app"
   fi
@@ -34,7 +34,7 @@ function create_buildpack_app {
 function create_docker_app {
   local app="$1"
 
-  if ! cf app "$app" | grep -q '^docker image:'; then
+  if cf app "$app" | grep -qv 'docker image:'; then
     cf delete -f "$app"
     cf push --no-route --no-manifest --no-start --docker-image alpine "$app"
   fi
