@@ -1,0 +1,308 @@
+#!/usr/bin/env ruby
+
+require 'yaml'
+require 'json'
+require 'net/http'
+require 'uri'
+require 'tty-table'
+require 'rotp'
+require 'base32'
+
+LOCAL_PORTS = {
+  'card-connector' => 9891,
+  'directdebit-connector' => 9892,
+  'publicapi' => 9893,
+  'publicauth' => 9894,
+  'adminusers' => 9895,
+  'products' => 9896,
+}
+
+class AppClient
+  def self.user(options = { create_payments: true })
+    STDERR.puts '🏗️🏗  Constructing useful things for you...'
+    gateway_account_ids = []
+    if is_app_up?('card-connector')
+      STDERR.puts '💳  Card connector is up, creating card gateway account and API Token'
+      card_account = create_account('card')
+      card_gateway_account_id = extract_gateway_account_id(card_account)
+      card_token = create_token(card_gateway_account_id, 'card')
+      gateway_account_ids.push(card_gateway_account_id)
+      if options[:create_payments] and is_app_up? 'publicapi'
+        STDERR.puts '💸  Creating payments in card sandbox gateway account'
+        (1..11).to_a.each  do
+          sleep 1
+          (1..5).to_a.each {create_payment card_token}
+        end
+      end
+    end
+
+    if is_app_up?('directdebit-connector')
+      STDERR.puts "🏦  Direct Debit connector is up, creating Direct Debit gateway account and API Token"
+      dd_account = create_account('direct_debit')
+      dd_gateway_account_id = extract_gateway_account_id(dd_account)
+      dd_token = create_token(dd_gateway_account_id, 'direct_debit')
+      gateway_account_ids.push(dd_gateway_account_id)
+    end
+
+    service = create_service(gateway_account_ids)
+    service_id = service.fetch('external_id')
+
+    STDERR.puts '🤓  Creating admin user for service'
+    user = create_user(gateway_account_ids: gateway_account_ids)
+    STDERR.puts '😎  Creating read only user for service'
+    create_user(gateway_account_ids: gateway_account_ids, role_name: 'view-only')
+
+    otp_key = user['otp_key']
+
+    STDERR.puts TTY::Table.new([
+       ['📧  Email', user[:email]],
+       ['🛂  Password', user[:password]],
+       ['🔑  OTP key', otp_key],
+       ['📱  OTP token', generate_otp_token(otp_key)],
+       ['💁  Service ID', service_id],
+       ['💳  Card gateway account ID', card_gateway_account_id],
+       ['🎫  Card API token', card_token],
+       ['🏦  Direct Debit gateway account ID', dd_gateway_account_id],
+       ['🎟  Direct Debit API token', dd_token]
+    ]).render(:unicode, padding: 1, multiline: true)
+
+    puts JSON.dump({
+       'email' => user[:email],
+       'password' => user[:password],
+       'otp_key' => otp_key,
+       'otp_token' => generate_otp_token(otp_key),
+       'service_id' => service_id,
+       'card_gateway_account_id' => card_gateway_account_id,
+       'card_api_token' => card_token,
+       'dd_gateway_account_id' => dd_gateway_account_id,
+       'dd_api_token' => dd_token,
+    })
+  end
+
+  def self.create_account(type, email_settings = { email_collection_mode: 'MANDATORY' })
+    gateway_account_data = {
+        payment_provider: 'sandbox',
+        service_name: 'My service',
+        type: 'test'
+    }
+
+    patch_email_collection_mode_data = {
+        op: 'replace',
+        path: 'email_collection_mode',
+        value: email_settings[:email_collection_mode]
+    }
+
+    case type
+      when 'card'
+        gateway_account_provider = 'card-connector'
+      when 'direct_debit'
+        gateway_account_provider = 'directdebit-connector'
+      else
+        STDERR.puts "Unrecognised account type #{type}. Options are card, direct_debit"
+    end
+
+    account = post("#{base_url(gateway_account_provider)}/v1/api/accounts", gateway_account_data)
+
+    if type == 'card'
+      patch("#{base_url(gateway_account_provider)}/v1/api/accounts/#{account["gateway_account_id"]}", patch_email_collection_mode_data)
+    end
+
+    return account
+
+  end
+
+  def self.create_token(gateway_account_id, token_type)
+    token_data = {
+        account_id: gateway_account_id,
+        description: 'my token',
+        created_by: 'system generated',
+        token_type: token_type.upcase
+    }
+
+    post("#{base_url('publicauth')}/v1/frontend/auth", token_data)
+        .fetch('token')
+  end
+
+  def self.create_payment(api_token)
+    payment_data = {
+        amount: 1000,
+        description: 'my payment',
+        reference: 'my payment reference',
+        return_url: 'https://www.payments.service.gov.uk'
+    }
+
+    post_with_token("#{base_url('publicapi')}/v1/payments", payment_data, api_token)
+  end
+
+  def self.create_user(gateway_account_ids: [], role_name: 'admin')
+    username = SecureRandom.hex
+    user_data = {
+        gateway_account_ids: gateway_account_ids,
+        email: "#{username}@example.com",
+        password: 'aaaaaaaaaa',
+        telephone_number: '01134960000',
+        role_name: role_name,
+        username: "#{username}@example.com"
+    }
+
+    post("#{base_url('adminusers')}/v1/api/users", user_data)
+        .merge(user_data)
+  end
+
+  def self.create_payment_link(api_token)
+    product_data = {
+        pay_api_token: api_token,
+        name: 'exampleName',
+        price: 100,
+        gateway_account_id: 1,
+        return_url: 'https://test.test/some_reference',
+        service_name: 'aServiceName',
+        type: 'ADHOC',
+        service_name_path: 'aServiceNamePath',
+        product_name_path: SecureRandom.hex,
+        reference_enabled: false
+    }
+
+    post("#{base_url('products')}/v1/api/products/", product_data)
+  end
+
+  def self.create_service(gateway_account_ids)
+    service_data = {
+        service_name: 'My service',
+        gateway_account_ids: gateway_account_ids
+    }
+
+    post("#{base_url('adminusers')}/v1/api/services", service_data)
+  end
+
+  def self.post(url, data, custom_headers={}, exit_on_error = true)
+    uri = URI.parse(url)
+    headers = {'Content-Type' => 'application/json', 'Accept' => 'application/json'}.merge(custom_headers)
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Post.new(uri.request_uri, headers)
+    request.body = data.to_json
+    begin
+      JSON.load http.request(request).body
+    rescue => e
+      begin
+        STDERR.puts "😬  Calling #{url} got error #{e.response}... sssorry about that"
+      rescue
+        STDERR.puts "🤔  Hmm, seems we cannot connect to #{url}. Here is what's up at the moment:"
+        report_state Config::all, false
+      end
+      exit 1 if exit_on_error
+    end
+  end
+
+  def self.patch(url, data, custom_headers={}, exit_on_error = true)
+    uri = URI.parse(url)
+    headers = {'Content-Type' => 'application/json', 'Accept' => 'application/json'}.merge(custom_headers)
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Patch.new(uri.request_uri, headers)
+    request.body = data.to_json
+    begin
+      JSON.load http.request(request).body
+    rescue => e
+      begin
+        STDERR.puts "😬  Calling #{url} got error #{e.response}... sssorry about that"
+      rescue
+        STDERR.puts "🤔  Hmm, seems we cannot connect to #{url}. Here is what's up at the moment:"
+        report_state Config::all, false
+      end
+      exit 1 if exit_on_error
+    end
+  end
+
+  def self.wait_for_apps(apps)
+    timeout = 0
+    app_states = list_app_states apps
+
+    until all_up_states?(app_states) || timeout > 60 do
+      STDERR.print [
+         '🙄  Waiting for',
+         app_states
+             .reject {|app_state| app_state[:healthy]}
+             .map {|app_state| ' ' + app_state[:app_name]}.join(','),
+         + "                              \r"
+      ].join('')
+
+      $stdout.flush
+      timeout += 1
+      app_states = list_app_states apps
+      sleep 1
+    end
+    STDERR.puts "\n\n"
+  end
+
+  def self.report_state(apps, summarise = true)
+    app_states = list_app_states apps
+    STDERR.puts app_states.map {|app_state| "#{app_state[:healthy] ? '✅' : '🔴'}      #{app_state[:app_name]}"}
+    if all_up_states?(app_states)
+      STDERR.puts "\n🎉  Ready to roll\n\n"
+    else
+      STDERR.puts "\n💥  Hmmm, something not quite right"
+    end if summarise
+  end
+
+  def self.get(url)
+    uri = URI.parse(url)
+    headers = {'Accept' => 'application/json'}
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Get.new(uri.request_uri, headers)
+    http.request(request)
+  end
+
+  def self.post_with_token(url, data, token, exit_on_error = true)
+    post(url, data, {authorization: "Bearer #{token}"}, exit_on_error)
+  end
+
+  def self.is_app_up?(app_name)
+    get("#{base_url(app_name)}/healthcheck").code == '200'
+  end
+
+  def self.all_up?(apps)
+    all_up_states? list_app_states apps
+  end
+
+  def self.all_up_states?(app_states)
+    app_states.reject {|app| app[:healthy]}.length.equal? 0
+  end
+
+  def self.list_app_states(apps)
+    apps.map {|app| {app_name: app[:name], healthy: is_app_up?(app[:name])}}
+  end
+
+  def self.base_url(app_name)
+    "http://localhost:#{LOCAL_PORTS.fetch(app_name)}"
+  end
+
+private
+
+  def self.generate_otp_token(otp_key)
+    /[A-Z2-7]+/.match(otp_key) ? ROTP::TOTP.new(Base32.encode(otp_key)).now : ROTP::TOTP.new(otp_key).now
+  end
+
+  def self.extract_gateway_account_id(account)
+    account.fetch('gateway_account_external_id', account.fetch('gateway_account_id'))
+  end
+end
+
+puts("Forwarding apps:")
+LOCAL_PORTS.each do |app, port|
+  pid = Process.spawn("cf ssh #{app} -L #{port}:localhost:8080 --skip-remote-execution")
+  at_exit { Process.kill('INT', pid) }
+  Process.detach(pid)
+  print("#{app}[#{port}] ")
+  while true
+    begin
+      break if AppClient.is_app_up?(app)
+    rescue
+    end
+    print('.')
+    sleep(0.5)
+  end
+  puts(" up")
+end
+
+command = ARGV[0]
+puts AppClient.send(command.to_sym, *ARGV[1..]).inspect

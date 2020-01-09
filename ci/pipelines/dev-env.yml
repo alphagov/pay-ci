@@ -131,6 +131,16 @@ jobs:
           command: create-users-from-file
           file: omnibus/ci/config/space-users/((space)).csv
 
+  - name: create-test-user
+    plan:
+      - get: omnibus
+      - task: run-client
+        file: omnibus/ci/tasks/test-client.yml
+        params:
+          CF_ORG: govuk-pay
+          CF_SPACE: ((space))
+          ARGS: user
+
   - name: deploy-adminusers
     serial_groups: [adminusers]
     plan:
