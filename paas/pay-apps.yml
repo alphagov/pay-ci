@@ -317,6 +317,7 @@ applications:
       GOCARDLESS_LIVE_OAUTH_BASE_URL: https://connect-sandbox.gocardless.com
       SELFSERVICE_URL: https://((selfservice_url))
       AWS_XRAY_CONTEXT_MISSING: LOG_ERROR
+      LEDGER_URL: http://ledger-((space)).apps.internal:8080
     routes:
     - route: ((selfservice_url))
   - <<: *applicationTemplate
