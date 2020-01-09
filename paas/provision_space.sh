@@ -158,6 +158,10 @@ cf  add-network-policy  notifications          --destination-app  directdebit-co
 cf  add-network-policy  products               --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
 cf  add-network-policy  publicapi              --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
 cf  add-network-policy  publicauth             --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
+cf  add-network-policy  selfservice            --destination-app  adminusers             -s "$CF_SPACE"     --protocol  tcp  --port  8080
+cf  add-network-policy  selfservice            --destination-app  ledger                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
+cf  add-network-policy  selfservice            --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
+cf  add-network-policy  selfservice            --destination-app  directdebit-connector  -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
 
 cf target -s "$CF_SPACE_CDE"
 cf  add-network-policy  card-connector         --destination-app  egress                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
