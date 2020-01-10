@@ -36,12 +36,6 @@ function create_docker_app {
   fi
 }
 
-function create_db {
-  local name="$1"
-
-  cf service "$name" || cf create-service postgres tiny-unencrypted-11 "$name"
-}
-
 function write_space_permissions {
   local org="$1"
   local space="$2"
@@ -63,12 +57,18 @@ function default_space_permissions {
   cf set-space-role "$deployer" "$org" "$space" SpaceDeveloper
 }
 
+function create_db {
+  local name="$1"
+
+  cf service "$name" || cf create-service postgres tiny-unencrypted-11 "$name" -c '{"enable_extensions": ["pg_trgm"]}'
+}
+
 function bind_db {
   local app="$1"
   local service="$2"
 
   echo -n "Waiting for $service to be created "
-  until cf service "$service" | grep -q "create succeeded"; do
+  until cf service "$service" | grep -q "status is 'available'"; do
     echo -n .
     sleep 5
   done
@@ -76,9 +76,10 @@ function bind_db {
 
   cf bind-service "$app" "$service"
 
-  eval $(cf curl /v2/apps/$(cf app --guid "$app")/env | jq -r '.system_env_json.VCAP_SERVICES.postgres[0].credentials | {DB_HOST: .host, DB_USER: .username, DB_PASSWORD: .password} | to_entries | map("\(.key)=\(.value)")[]')
+  eval $(cf curl /v2/apps/$(cf app --guid "$app")/env | jq -r '.system_env_json.VCAP_SERVICES.postgres[0].credentials | {DB_HOST: .host, DB_USER: .username, DB_PASSWORD: .password, DB_NAME: .name} | to_entries | map("\(.key)=\(.value)")[]')
 
   cf set-env "$app" DB_HOST "$DB_HOST"
+  cf set-env "$app" DB_NAME "$DB_NAME"
   cf set-env "$app" DB_USER "$DB_USER"
   cf set-env "$app" DB_PASSWORD "$DB_PASSWORD"
   cf restage "$app"

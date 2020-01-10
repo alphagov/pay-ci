@@ -2,11 +2,11 @@
 default_memory: 500M
 default_disk_quota: 500M
 log_level: WARNING
-http_proxy_enabled: true
-run_migration: true
+http_proxy_enabled: 'true'
+run_migration: 'true'
 http_proxy_port: '8080'
 http_proxy_host: egress-staging.apps.internal
-disable_internal_https: true
+disable_internal_https: 'true'
 publicapi_url: publicapi.staging.gdspay.uk
 publicauth_url: publicauth.staging.gdspay.uk
 selfservice_url: selfservice.staging.gdspay.uk
@@ -14,3 +14,4 @@ card_frontend_url: card-frontend.staging.gdspay.uk
 directdebit_frontend_url: directdebit-frontend.staging.gdspay.uk
 notifications_url: notifications.staging.gdspay.uk
 products_ui_url: products.staging.gdspay.uk
+db_ssl: 'true'

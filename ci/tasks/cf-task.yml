@@ -25,4 +25,6 @@ run:
       cf login -a "$CF_API" \
         -u "$CF_USERNAME" -p "$CF_PASSWORD" \
         -o "$CF_ORG" -s "$CF_SPACE"
+      # Get useful provision_space functions
+      source workdir/paas/provision_space.sh
       $COMMAND

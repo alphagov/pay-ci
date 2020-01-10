@@ -16,6 +16,8 @@ applicationTemplate: &applicationTemplate
     RUN_APP: 'true'
     DISABLE_INTERNAL_HTTPS: ((disable_internal_https))
     JAVA_OPTS: -Xms512m -Xmx1G
+    TINI_SUBREAPER: ''
+    DB_SSL_OPTION: ssl=((db_ssl))
 
 applications:
   - <<: *applicationTemplate
@@ -29,7 +31,6 @@ applications:
       JPA_LOG_LEVEL: ((log_level))
       JPA_SQL_LOG_LEVEL: ((log_level))
       DB_HOST: postgres-((space)).apps.internal
-      DB_SSL_OPTION: ssl=false
       DB_USER: adminusers
       DB_PASSWORD: mysecretpassword
       LOGIN_ATTEMPT_CAP: '2'
@@ -72,7 +73,6 @@ applications:
       <<: *defaultEnvs
       ADMIN_PORT: '9301'
       DB_HOST: postgres-((space)).apps.internal
-      DB_SSL_OPTION: ssl=none
       DB_USER: connector
       DB_PASSWORD: mysecretpassword
       FRONTEND_URL: https://((card_frontend_url))
@@ -126,7 +126,6 @@ applications:
       <<: *defaultEnvs
       ADMIN_PORT: '10201'
       DB_HOST: postgres-((space)).apps.internal
-      DB_SSL_OPTION: ssl=false
       DB_USER: directdebit_connector
       DB_PASSWORD: mysecretpassword
       FRONTEND_URL: https://((directdebit_frontend_url))
@@ -200,7 +199,6 @@ applications:
       <<: *defaultEnvs
       ADMIN_PORT: '10701'
       DB_HOST: postgres-((space)).apps.internal
-      DB_SSL_OPTION: ssl=false
       DB_USER: ledger
       DB_PASSWORD: mysecretpassword
       AWS_SQS_REGION: region-1
@@ -223,7 +221,6 @@ applications:
       <<: *defaultEnvs
       ADMIN_PORT: '10001'
       DB_HOST: postgres-((space)).apps.internal
-      DB_SSL_OPTION: ssl=false
       DB_USER: products
       DB_PASSWORD: mysecretpassword
       JPA_LOG_LEVEL: ((log_level))
@@ -280,7 +277,6 @@ applications:
       <<: *defaultEnvs
       ADMIN_PORT: '9601'
       DB_HOST: postgres-((space)).apps.internal
-      DB_SSL_OPTION: ssl=false
       DB_USER: publicauth
       DB_PASSWORD: mysecretpassword
       TOKEN_DB_BCRYPT_SALT: $2a$10$IhaXo6LIBhKIWOiGpbtPOu
@@ -328,7 +324,6 @@ applications:
     env:
       CONNECTOR_URL: http://card-connector-((space)).apps.internal:8080
       DD_CONNECTOR_URL: http://directdebit-connector-((space)).apps.internal:8080
-      TINI_SUBREAPER: ''
     routes:
     - route: ((notifications_url))
   - <<: *applicationTemplate
