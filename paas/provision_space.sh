@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # provision_space.sh - Provisions a PaaS space suitable for production.
 
-set -o errexit \
-    -o nounset \
-    -o pipefail
-
 # -- Functions
 function usage {
 cat <<EOF
@@ -67,143 +63,175 @@ function default_space_permissions {
   cf set-space-role "$deployer" "$org" "$space" SpaceDeveloper
 }
 
+function bind_db {
+  local app="$1"
+  local service="$2"
+
+  echo -n "Waiting for $service to be created "
+  until cf service "$service" | grep -q "create succeeded"; do
+    echo -n .
+    sleep 5
+  done
+  echo " done"
+
+  cf bind-service "$app" "$service"
+
+  eval $(cf curl /v2/apps/$(cf app --guid "$app")/env | jq -r '.system_env_json.VCAP_SERVICES.postgres[0].credentials | {DB_HOST: .host, DB_USER: .username, DB_PASSWORD: .password} | to_entries | map("\(.key)=\(.value)")[]')
+
+  cf set-env "$app" DB_HOST "$DB_HOST"
+  cf set-env "$app" DB_USER "$DB_USER"
+  cf set-env "$app" DB_PASSWORD "$DB_PASSWORD"
+}
+
 # -- Main
-case "${1:-}" in
-  -h|--help)
-    usage
-    exit 1
-    ;;
-esac
+if test "$0" == "$BASH_SOURCE"; then # script is being run
+  set -o errexit \
+      -o nounset \
+      -o pipefail
 
-# -- Environment variables
-# PaaS organisation and space name
-: ${CF_ORG:?Need to set CF_ORG (--help for more info)}
-: ${CF_SPACE:?Need to set CF_SPACE (--help for more info)}
-export CF_SPACE_CDE="$CF_SPACE"
+  case "${1:-}" in
+    -h|--help)
+      usage
+      exit 1
+      ;;
+  esac
 
-# If set to 'true', create a separate CDE space, otherwise default blank
-: ${SEPARATE_CDE:=}
+  # -- Environment variables
+  # PaaS organisation and space name
+  : ${CF_ORG:?Need to set CF_ORG (--help for more info)}
+  : ${CF_SPACE:?Need to set CF_SPACE (--help for more info)}
+  export CF_SPACE_CDE="$CF_SPACE"
 
-# Name of user which will get SpaceDeveloper powers in this space
-: ${DEPLOYER_USER:?Need to set DEPLOYER_USER (--help for more info)}
+  # If set to 'true', create a separate CDE space, otherwise default blank
+  : ${SEPARATE_CDE:=}
 
-# Public domain name to attach to this space
-: ${DOMAIN:=}
+  # Name of user which will get SpaceDeveloper powers in this space
+  : ${DEPLOYER_USER:?Need to set DEPLOYER_USER (--help for more info)}
 
-# If set to 'true', create docker image based apps
-: ${DOCKER_APPS:=}
+  # Public domain name to attach to this space
+  : ${DOMAIN:=}
 
-# If set to 'true', create database service instances
-: ${CREATE_DBS:=}
+  # If set to 'true', create docker image based apps
+  : ${DOCKER_APPS:=}
 
-# -- Create spaces
-cf target -o "$CF_ORG" -s sandbox
-cf space "$CF_SPACE" >/dev/null || cf create-space "$CF_SPACE"
+  # If set to 'true', create database service instances
+  : ${CREATE_DBS:=}
 
-if test "$SEPARATE_CDE" = true; then
-  export CF_SPACE_CDE="${CF_SPACE}-cde"
-  cf space "$CF_SPACE_CDE" >/dev/null || cf create-space "$CF_SPACE_CDE"
-fi
+  # -- Set cleanup
+  function cleanup {
+    default_space_permissions "$CF_ORG" "$CF_SPACE" "$DEPLOYER_USER"
+    if test "$SEPARATE_CDE" = true; then
+      default_space_permissions "$CF_ORG" "$CF_SPACE_CDE" "$DEPLOYER_USER"
+    fi
+  }
+  trap cleanup EXIT
 
-# -- Temporarily grant write permissions
-write_space_permissions "$CF_ORG" "$CF_SPACE"
-write_space_permissions "$CF_ORG" "$CF_SPACE_CDE"
+  # -- Create spaces
+  cf target -o "$CF_ORG" -s sandbox
+  cf space "$CF_SPACE" >/dev/null || cf create-space "$CF_SPACE"
 
-# -- Create placeholder apps
-apps=(
-adminusers
-directdebit-connector
-directdebit-frontend
-egress
-ledger
-products
-products-ui
-publicapi
-publicauth
-selfservice
-toolbox
-notifications
-postgres # remove
-sqs      # remove
-)
+  if test "$SEPARATE_CDE" = true; then
+    export CF_SPACE_CDE="${CF_SPACE}-cde"
+    cf space "$CF_SPACE_CDE" >/dev/null || cf create-space "$CF_SPACE_CDE"
+  fi
 
-cde_apps=(
-cardid
-card-connector
-card-frontend
-)
+  # -- Temporarily grant write permissions
+  write_space_permissions "$CF_ORG" "$CF_SPACE"
+  write_space_permissions "$CF_ORG" "$CF_SPACE_CDE"
 
-cf target -s "$CF_SPACE"
-for app in ${apps[@]}; do
-  test "$DOCKER_APPS" = true && create_docker_app "$app" || create_buildpack_app "$app"
-done
+  # -- Create placeholder apps
+  apps=(
+  adminusers
+  directdebit-connector
+  directdebit-frontend
+  egress
+  ledger
+  products
+  products-ui
+  publicapi
+  publicauth
+  selfservice
+  toolbox
+  notifications
+  postgres # remove
+  sqs      # remove
+  )
 
-cf target -s "$CF_SPACE_CDE"
-for app in ${cde_apps[@]}; do
-  test "$DOCKER_APPS" = true && create_docker_app "$app" || create_buildpack_app "$app"
-done
+  cde_apps=(
+  cardid
+  card-connector
+  card-frontend
+  )
 
-# -- Apply network policies
-cf target -s "$CF_SPACE"
-cf  add-network-policy  adminusers             --destination-app  egress                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
-cf  add-network-policy  adminusers             --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
-cf  add-network-policy  directdebit-connector  --destination-app  egress                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
-cf  add-network-policy  directdebit-connector  --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
-cf  add-network-policy  directdebit-frontend   --destination-app  adminusers             -s "$CF_SPACE"     --protocol  tcp  --port  8080
-cf  add-network-policy  directdebit-frontend   --destination-app  directdebit-connector  -s "$CF_SPACE"     --protocol  tcp  --port  8080
-cf  add-network-policy  ledger                 --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
-cf  add-network-policy  ledger                 --destination-app  sqs                    -s "$CF_SPACE"     --protocol  tcp  --port  9324
-cf  add-network-policy  notifications          --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
-cf  add-network-policy  notifications          --destination-app  directdebit-connector  -s "$CF_SPACE"     --protocol  tcp  --port  8080
-cf  add-network-policy  products               --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
-cf  add-network-policy  publicapi              --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
-cf  add-network-policy  publicauth             --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
-cf  add-network-policy  selfservice            --destination-app  adminusers             -s "$CF_SPACE"     --protocol  tcp  --port  8080
-cf  add-network-policy  selfservice            --destination-app  ledger                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
-cf  add-network-policy  selfservice            --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
-cf  add-network-policy  selfservice            --destination-app  directdebit-connector  -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
-
-cf target -s "$CF_SPACE_CDE"
-cf  add-network-policy  card-connector         --destination-app  egress                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
-cf  add-network-policy  card-connector         --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
-cf  add-network-policy  card-connector         --destination-app  sqs                    -s "$CF_SPACE"     --protocol  tcp  --port  9324
-cf  add-network-policy  card-frontend          --destination-app  adminusers             -s "$CF_SPACE"     --protocol  tcp  --port  8080
-cf  add-network-policy  card-frontend          --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
-cf  add-network-policy  card-frontend          --destination-app  cardid                 -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
-
-# -- Create databases
-db_apps=(
-publicauth
-adminusers
-products
-directdebit-connector
-ledger
-)
-
-cde_db_apps=(
-card-connector
-)
-
-if test "$CREATE_DBS" = true; then
   cf target -s "$CF_SPACE"
-  for app in ${db_apps[@]}; do
-    create_db "${app}-db"
+  for app in ${apps[@]}; do
+    test "$DOCKER_APPS" = true && create_docker_app "$app" || create_buildpack_app "$app"
   done
 
   cf target -s "$CF_SPACE_CDE"
-  for app in ${db_apps[@]}; do
-    create_db "${app}-db"
+  for app in ${cde_apps[@]}; do
+    test "$DOCKER_APPS" = true && create_docker_app "$app" || create_buildpack_app "$app"
   done
-fi
 
-# -- Create domain
-if test -n "$DOMAIN"; then
-  cf domains | grep -q "$DOMAIN" || cf create-domain "$CF_ORG" "$DOMAIN"
-fi
+  # -- Apply network policies
+  cf target -s "$CF_SPACE"
+  cf  add-network-policy  adminusers             --destination-app  egress                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  adminusers             --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
+  cf  add-network-policy  directdebit-connector  --destination-app  egress                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  directdebit-connector  --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
+  cf  add-network-policy  directdebit-frontend   --destination-app  adminusers             -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  directdebit-frontend   --destination-app  directdebit-connector  -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  ledger                 --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
+  cf  add-network-policy  ledger                 --destination-app  sqs                    -s "$CF_SPACE"     --protocol  tcp  --port  9324
+  cf  add-network-policy  notifications          --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
+  cf  add-network-policy  notifications          --destination-app  directdebit-connector  -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  products               --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
+  cf  add-network-policy  publicapi              --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
+  cf  add-network-policy  publicauth             --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
+  cf  add-network-policy  selfservice            --destination-app  adminusers             -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  selfservice            --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
+  cf  add-network-policy  selfservice            --destination-app  directdebit-connector  -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  selfservice            --destination-app  ledger                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
 
-# -- Set deployer user to SpaceDeveloper and give us only SpaceAuditor permissions
-default_space_permissions "$CF_ORG" "$CF_SPACE" "$DEPLOYER_USER"
+  cf target -s "$CF_SPACE_CDE"
+  cf  add-network-policy  card-connector         --destination-app  egress                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  card-connector         --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
+  cf  add-network-policy  card-connector         --destination-app  sqs                    -s "$CF_SPACE"     --protocol  tcp  --port  9324
+  cf  add-network-policy  card-frontend          --destination-app  adminusers             -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  card-frontend          --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
+  cf  add-network-policy  card-frontend          --destination-app  cardid                 -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
 
-if test "$SEPARATE_CDE" = true; then
-  default_space_permissions "$CF_ORG" "$CF_SPACE_CDE" "$DEPLOYER_USER"
+  # -- Create databases
+  db_apps=(
+  publicauth
+  adminusers
+  products
+  directdebit-connector
+  ledger
+  )
+
+  cde_db_apps=(
+  card-connector
+  )
+
+  if test "$CREATE_DBS" = true; then
+    cf target -s "$CF_SPACE"
+    for app in ${db_apps[@]}; do
+      create_db "${app}-db"
+      bind_db "$app" "${app}-db"
+    done
+
+    cf target -s "$CF_SPACE_CDE"
+    for app in ${cde_db_apps[@]}; do
+      create_db "${app}-db"
+      bind_db "$app" "${app}-db"
+    done
+  fi
+
+  # -- Create domain
+  if test -n "$DOMAIN"; then
+    cf domains | grep -q "$DOMAIN" || cf create-domain "$CF_ORG" "$DOMAIN"
+  fi
+
+  exit 0
 fi
