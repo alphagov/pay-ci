@@ -192,6 +192,7 @@ if test "$0" == "$BASH_SOURCE"; then # script is being run
   cf  add-network-policy  selfservice            --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
   cf  add-network-policy  selfservice            --destination-app  directdebit-connector  -s "$CF_SPACE"     --protocol  tcp  --port  8080
   cf  add-network-policy  selfservice            --destination-app  ledger                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
+  cf  add-network-policy  selfservice            --destination-app  products               -s "$CF_SPACE"     --protocol  tcp  --port  8080
 
   cf target -s "$CF_SPACE_CDE"
   cf  add-network-policy  card-connector         --destination-app  egress                 -s "$CF_SPACE"     --protocol  tcp  --port  8080
