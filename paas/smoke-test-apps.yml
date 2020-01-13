@@ -12,7 +12,8 @@ applications:
     routes:
     - route: selenium-hub.apps.internal
 
-  - name: smoke-tests
+  - &smoke-test-app
+    name: smoke-tests-staging
     docker:
       image: govukpay/endtoend:latest-master
     health-check-type: process
@@ -32,3 +33,6 @@ applications:
       SELFSERVICE_URL: ((selfservice_url))
       NOTIFICATIONS_URL: ((notifications_url))
       DIRECT_DEBIT_GOCARDLESS_WEBHOOK_SECRET: ((direct_debit_gocardless_webhook_secret))
+
+  - <<: *smoke-test-app
+    name: smoke-tests-production

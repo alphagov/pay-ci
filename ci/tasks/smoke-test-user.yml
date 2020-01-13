@@ -15,6 +15,7 @@ params:
   CF_SPACE:
   CF_SPACE_CDE:
   CF_SPACE_TOOLS: tools
+  SMOKE_TEST_APP: smoke-tests
   SERVICE_NAME: test-user
 
 run:
@@ -27,26 +28,38 @@ run:
 
       cf login -a "$CF_API" \
         -u "$CF_USERNAME" -p "$CF_PASSWORD" \
-        -o "$CF_ORG" -s "$CF_SPACE"
+        -o "$CF_ORG" -s "$CF_SPACE_TOOLS"
 
       if cf service "$SERVICE_NAME"; then
-        echo "Service $SERVICE_NAME already exists, exiting"
+        echo "Service $SERVICE_NAME already exists, setting env"
+        cf bind-service "$SMOKE_TEST_APP" "$SERVICE_NAME"
+        eval $(cf curl /v2/apps/$(cf app --guid "$SMOKE_TEST_APP")/env | jq --arg svc "$SERVICE_NAME" -r '.system_env_json.VCAP_SERVICES."user-provided"[] | select(.name == $svc).credentials | to_entries | map("export \(.key|ascii_upcase)=\(.value)") | .[]')
+        cf set-env "$SMOKE_TEST_APP" SELFSERVICE_USERNAME "$SELFSERVICE_USERNAME"
+        cf set-env "$SMOKE_TEST_APP" SELFSERVICE_PASSWORD "$SELFSERVICE_PASSWORD"
+        cf set-env "$SMOKE_TEST_APP" SELFSERVICE_OTP_KEY "$SELFSERVICE_OTP_KEY"
+        cf set-env "$SMOKE_TEST_APP" CARD_SANDBOX_API_TOKEN "$CARD_SANDBOX_API_TOKEN"
+        cf set-env "$SMOKE_TEST_APP" DIRECT_DEBIT_SANDBOX_API_TOKEN "$DIRECT_DEBIT_SANDBOX_API_TOKEN"
+        cf restage "$SMOKE_TEST_APP"
         exit 0
       fi
 
       gem install bundler
       bundle install
 
-      data=$(bundle exec ./client user)
+      data=$(bundle exec ./client user smoke-test 'Smoke Test')
 
       # Export as environment variables
       eval $(echo "$data" | jq -r 'to_entries | map("export \(.key|ascii_upcase)=\(.value)") | .[]')
 
+      # Create a product for smoke tests
+      bundle exec ./client create_product "$CARD_SANDBOX_API_TOKEN" "Smoke Test" "smoke-test" "product-test-environment"
+
       cf target -s "$CF_SPACE_TOOLS"
       cf create-user-provided-service "$SERVICE_NAME" -p "$data"
-      cf set-env smoke-tests SELFSERVICE_USERNAME "$SELFSERVICE_USERNAME"
-      cf set-env smoke-tests SELFSERVICE_PASSWORD "$SELFSERVICE_PASSWORD"
-      cf set-env smoke-tests SELFSERVICE_OTP_KEY "$SELFSERVICE_OTP_KEY"
-      cf set-env smoke-tests CARD_SANDBOX_API_TOKEN "$CARD_SANDBOX_API_TOKEN"
-      cf set-env smoke-tests DIRECT_DEBIT_SANDBOX_API_TOKEN "$DIRECT_DEBIT_SANDBOX_API_TOKEN"
-      cf restage smoke-tests
+      cf set-env "$SMOKE_TEST_APP" SELFSERVICE_USERNAME "$SELFSERVICE_USERNAME"
+      cf set-env "$SMOKE_TEST_APP" SELFSERVICE_PASSWORD "$SELFSERVICE_PASSWORD"
+      cf set-env "$SMOKE_TEST_APP" SELFSERVICE_OTP_KEY "$SELFSERVICE_OTP_KEY"
+      cf set-env "$SMOKE_TEST_APP" CARD_SANDBOX_API_TOKEN "$CARD_SANDBOX_API_TOKEN"
+      cf set-env "$SMOKE_TEST_APP" DIRECT_DEBIT_SANDBOX_API_TOKEN "$DIRECT_DEBIT_SANDBOX_API_TOKEN"
+      cf bind-service "$SMOKE_TEST_APP" "$SERVICE_NAME"
+      cf restage "$SMOKE_TEST_APP"

@@ -22,7 +22,7 @@ CDE_APPS = [
 ]
 
 class AppClient
-  def self.user(options = { create_payments: true })
+  def self.user(user_name, service_name)
     STDERR.puts '🏗️🏗  Constructing useful things for you...'
     gateway_account_ids = []
     if is_app_up?('card-connector')
@@ -31,13 +31,6 @@ class AppClient
       card_gateway_account_id = extract_gateway_account_id(card_account)
       card_token = create_token(card_gateway_account_id, 'card')
       gateway_account_ids.push(card_gateway_account_id)
-      if options[:create_payments] and is_app_up? 'publicapi'
-        STDERR.puts '💸  Creating payments in card sandbox gateway account'
-        (1..11).to_a.each  do
-          sleep 1
-          (1..5).to_a.each {create_payment card_token}
-        end
-      end
     end
 
     if is_app_up?('directdebit-connector')
@@ -48,11 +41,11 @@ class AppClient
       gateway_account_ids.push(dd_gateway_account_id)
     end
 
-    service = create_service(gateway_account_ids)
+    service = create_service(service_name, *gateway_account_ids)
     service_id = service.fetch('external_id')
 
     STDERR.puts '🤓  Creating admin user for service'
-    user = create_user(gateway_account_ids: gateway_account_ids)
+    user = create_user(username: user_name, gateway_account_ids: gateway_account_ids)
     STDERR.puts '😎  Creating read only user for service'
     create_user(gateway_account_ids: gateway_account_ids, role_name: 'view-only')
 
@@ -138,8 +131,8 @@ class AppClient
     post_with_token("#{base_url('publicapi')}/v1/payments", payment_data, api_token)
   end
 
-  def self.create_user(gateway_account_ids: [], role_name: 'admin')
-    username = SecureRandom.hex
+  def self.create_user(username: nil, gateway_account_ids: [], role_name: 'admin')
+    username ||= SecureRandom.hex
     user_data = {
         gateway_account_ids: gateway_account_ids,
         email: "#{username}@example.com",
@@ -153,26 +146,26 @@ class AppClient
         .merge(user_data)
   end
 
-  def self.create_payment_link(api_token)
+  def self.create_product(api_token, service_name, service_name_path, product_name)
     product_data = {
         pay_api_token: api_token,
         name: 'exampleName',
         price: 100,
         gateway_account_id: 1,
-        return_url: 'https://test.test/some_reference',
-        service_name: 'aServiceName',
+        return_url: 'https://www.payments.service.gov.uk',
+        service_name: service_name,
         type: 'ADHOC',
-        service_name_path: 'aServiceNamePath',
-        product_name_path: SecureRandom.hex,
+        service_name_path: service_name_path,
+        product_name_path: product_name,
         reference_enabled: false
     }
 
     post("#{base_url('products')}/v1/api/products/", product_data)
   end
 
-  def self.create_service(gateway_account_ids)
+  def self.create_service(service_name, *gateway_account_ids)
     service_data = {
-        service_name: 'My service',
+        service_name: service_name,
         gateway_account_ids: gateway_account_ids
     }
 

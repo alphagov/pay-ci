@@ -3,20 +3,6 @@ groups:
   - name: All
     jobs:
       - update-pipeline
-      - deploy-adminusers-staging
-      - deploy-cardid-staging
-      - deploy-card-connector-staging
-      - deploy-card-frontend-staging
-      - deploy-directdebit-connector-staging
-      - deploy-directdebit-frontend-staging
-      - deploy-ledger-staging
-      - deploy-products-staging
-      - deploy-products-ui-staging
-      - deploy-publicapi-staging
-      - deploy-publicauth-staging
-      - deploy-selfservice-staging
-      - deploy-notifications-staging
-      - smoke-test-user
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
@@ -37,9 +23,12 @@ groups:
       - deploy-selfservice-staging
       - deploy-notifications-staging
 
-  - name: Staging Smoke Tests
+  - name: Smoke Tests
     jobs:
-      - smoke-test-user
+      - deploy-selenium-hub
+      - deploy-smoke-tests-staging
+      - smoke-tests-staging-network-policies
+      - smoke-test-user-staging
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
@@ -162,6 +151,25 @@ resources:
     source:
       <<: *image-source
       repository: govukpaypaas/notifications
+
+  - name: paas-smoke-tests
+    type: cf-cli
+    icon: cloud-upload-outline
+    source:
+      api: https://api.cloud.service.gov.uk
+      org: govuk-pay
+      space: smoke-tests
+      username: ((paas-ireland-username))
+      password: ((paas-ireland-password))
+
+  - name: endtoend-container
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/endtoend
+      tag: latest-master
+      username: ((docker-username))
+      password: ((docker-password))
 
 x-cf-creds: &cf-creds
   CF_API: https://api.cloud.service.gov.uk
@@ -403,7 +411,51 @@ jobs:
           <<: *paas-app
           app_name: notifications
 
-  - name: smoke-test-user
+  - name: deploy-selenium-hub
+    serial_groups: [selenium-stg]
+    serial: true
+    plan:
+      - get: omnibus
+      - put: paas-smoke-tests
+        params: &push-app
+          command: push
+          app_name: selenium-hub
+          manifest: omnibus/paas/smoke-test-apps.yml
+          vars_files:
+            - omnibus/paas/env_variables/staging-smoke-tests.yml
+
+  - name: deploy-smoke-tests-staging
+    serial_groups: [smoke-tests-stg]
+    plan:
+      - get: omnibus
+      - get: endtoend-container
+        trigger: true
+      - put: paas-smoke-tests
+        params:
+          <<: *push-app
+          docker_password: ((docker-password))
+          docker_username: ((docker-username))
+          docker_image: govukpay/endtoend:latest-master
+          app_name: smoke-tests-staging
+
+  - name: smoke-tests-staging-network-policies
+    serial_groups: [selenium-stg, smoke-tests-stg]
+    plan:
+      - get: omnibus
+        passed: [deploy-selenium-hub, deploy-smoke-tests-staging]
+      - get: endtoend-container
+        passed: [deploy-smoke-tests-staging]
+        trigger: true
+      - put: apply-network-policies
+        resource: paas-smoke-tests
+        params:
+          command: add-network-policy
+          source_app: smoke-tests-staging
+          destination_app: selenium-hub
+          port: 4444
+          protocol: tcp
+
+  - name: smoke-test-user-staging
     serial_groups:
       - card-connector-stg
       - directdebit-connector-stg
@@ -411,21 +463,29 @@ jobs:
       - publicauth-stg
       - adminusers-stg
       - products-stg
+      - smoke-tests-stg
     plan:
       - get: omnibus
+      - get: endtoend-container
+        passed: [deploy-smoke-tests-staging]
+        trigger: true
       - task: create-service
         file: omnibus/ci/tasks/smoke-test-user.yml
         params:
           <<: *cf-creds
           CF_SPACE: staging
           CF_SPACE_CDE: staging-cde
-          SERVICE_NAME: smoke-test-user
+          CF_SPACE_TOOLS: smoke-tests
+          SMOKE_TEST_APP: smoke-tests-staging
+          SERVICE_NAME: smoke-test-user-staging
 
   - name: card-payment-smoke-tests-staging
     serial_groups: [cardid-stg, card-connector-stg, card-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     plan:
       - get: omnibus
-        passed: [smoke-test-user]
+      - get: endtoend-container
+        passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
+        trigger: true
       - &trigger-test
         get: cardid
         passed: [deploy-cardid-staging]
@@ -451,14 +511,16 @@ jobs:
         file: omnibus/ci/tasks/cf-task.yml
         params: &smoke-test-params
           <<: *cf-creds
-          CF_SPACE: tools
-          COMMAND: cf ssh smoke-tests -c /app/bin/smoke-cardp1
+          CF_SPACE: smoke-tests
+          COMMAND: cf ssh smoke-tests-staging -c /app/bin/smoke-cardp1
 
   - name: direct-debit-smoke-tests-staging
     serial_groups: [adminusers-stg, directdebit-connector-stg, directdebit-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     plan:
       - get: omnibus
-        passed: [smoke-test-user]
+      - get: endtoend-container
+        passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
+        trigger: true
       - <<: *trigger-test
         get: adminusers
         passed: [deploy-adminusers-staging]
@@ -481,13 +543,15 @@ jobs:
         file: omnibus/ci/tasks/cf-task.yml
         params:
           <<: *smoke-test-params
-          COMMAND: cf ssh smoke-tests -c /app/bin/smoke-directdebitp1
+          COMMAND: cf ssh smoke-tests-staging -c /app/bin/smoke-directdebitp1
 
   - name: products-smoke-test-staging
     serial_groups: [products-stg, products-ui-stg]
     plan:
       - get: omnibus
-        passed: [smoke-test-user]
+      - get: endtoend-container
+        passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
+        trigger: true
       - <<: *trigger-test
         get: products
         passed: [deploy-products-staging]
@@ -498,4 +562,4 @@ jobs:
         file: omnibus/ci/tasks/cf-task.yml
         params:
           <<: *smoke-test-params
-          COMMAND: cf ssh smoke-tests -c /app/bin/smoke-products
+          COMMAND: cf ssh smoke-tests-staging -c /app/bin/smoke-products
