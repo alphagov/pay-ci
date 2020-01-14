@@ -22,6 +22,7 @@ groups:
       - deploy-publicauth-staging
       - deploy-selfservice-staging
       - deploy-notifications-staging
+      - deploy-sqs-staging
 
   - name: Smoke Tests
     jobs:
@@ -410,6 +411,15 @@ jobs:
         params:
           <<: *paas-app
           app_name: notifications
+
+  - name: deploy-sqs-staging
+    plan:
+      - get: omnibus
+      - put: app
+        resource: paas-staging
+        params:
+          <<: *paas-app
+          app_name: sqs
 
   - name: deploy-selenium-hub
     serial_groups: [selenium-stg]
