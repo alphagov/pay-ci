@@ -186,6 +186,7 @@ if test "$0" == "$BASH_SOURCE"; then # script is being run
   cf  add-network-policy  notifications          --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
   cf  add-network-policy  notifications          --destination-app  directdebit-connector  -s "$CF_SPACE"     --protocol  tcp  --port  8080
   cf  add-network-policy  products               --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
+  cf  add-network-policy  products-ui            --destination-app  products               -s "$CF_SPACE"     --protocol  tcp  --port  8080
   cf  add-network-policy  publicapi              --destination-app  card-connector         -s "$CF_SPACE_CDE" --protocol  tcp  --port  8080
   cf  add-network-policy  publicapi              --destination-app  directdebit-connector  -s "$CF_SPACE"     --protocol  tcp  --port  8080
   cf  add-network-policy  publicauth             --destination-app  postgres               -s "$CF_SPACE"     --protocol  tcp  --port  5432
