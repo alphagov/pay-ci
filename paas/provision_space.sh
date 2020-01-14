@@ -21,18 +21,22 @@ function create_buildpack_app {
 
   mkdir -p /tmp/placeholder
   touch /tmp/placeholder/empty
-  if cf app "$app" | grep -qv 'buildpacks:'; then
+  if ! { cf app "$app" || true; } | grep -q 'buildpacks:'; then
     cf delete -f "$app"
     cf push --no-route --no-manifest --no-start -p /tmp/placeholder "$app"
+  else
+    echo "$app already exists as a buildpack app"
   fi
 }
 
 function create_docker_app {
   local app="$1"
 
-  if cf app "$app" | grep -qv 'docker image:'; then
+  if ! { cf app "$app" || true; } | grep -q 'docker image:'; then
     cf delete -f "$app"
     cf push --no-route --no-manifest --no-start --docker-image alpine "$app"
+  else
+    echo "$app already exists as a docker app"
   fi
 }
 
@@ -58,21 +62,20 @@ function default_space_permissions {
 }
 
 function create_db {
-  local name="$1"
+  local service="$1"
 
-  cf service "$name" || cf create-service postgres tiny-unencrypted-11 "$name" -c '{"enable_extensions": ["pg_trgm"]}'
+  cf service "$service" >/dev/null || cf create-service postgres tiny-unencrypted-11 "$service" -c '{"enable_extensions": ["pg_trgm"]}'
+
+  until cf service "$service" | grep -q "status is 'available'"; do
+    echo "$service: waiting for service to be available"
+    sleep 5
+  done
+  echo "$service: available"
 }
 
 function bind_db {
   local app="$1"
   local service="$2"
-
-  echo -n "Waiting for $service to be created "
-  until cf service "$service" | grep -q "status is 'available'"; do
-    echo -n .
-    sleep 5
-  done
-  echo " done"
 
   cf bind-service "$app" "$service"
 
@@ -129,7 +132,7 @@ if test "$0" == "$BASH_SOURCE"; then # script is being run
   trap cleanup EXIT
 
   # -- Create spaces
-  cf target -o "$CF_ORG" -s sandbox
+  cf target -o "$CF_ORG"
   cf space "$CF_SPACE" >/dev/null || cf create-space "$CF_SPACE"
 
   if test "$SEPARATE_CDE" = true; then
@@ -222,15 +225,17 @@ if test "$0" == "$BASH_SOURCE"; then # script is being run
   if test "$CREATE_DBS" = true; then
     cf target -s "$CF_SPACE"
     for app in ${db_apps[@]}; do
-      create_db "${app}-db"
-      bind_db "$app" "${app}-db"
+      create_db "${app}-db" &
     done
+
+    wait
 
     cf target -s "$CF_SPACE_CDE"
     for app in ${cde_db_apps[@]}; do
-      create_db "${app}-db"
-      bind_db "$app" "${app}-db"
+      create_db "${app}-db" &
     done
+
+    wait
   fi
 
   # -- Create domain
