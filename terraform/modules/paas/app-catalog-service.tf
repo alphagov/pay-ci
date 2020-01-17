@@ -3,6 +3,7 @@ resource "cloudfoundry_user_provided_service" "app_catalog" {
   space = data.cloudfoundry_space.space.id
   credentials = {
     "adminusers_url"            = "http://${cloudfoundry_route.adminusers.endpoint}:8080"
+    "cardid_url"                = "http://${cloudfoundry_route.cardid.endpoint}:8080"
     "card_connector_url"        = "http://${cloudfoundry_route.card_connector.endpoint}:8080"
     "card_frontend_url"         = "https://${cloudfoundry_route.card_frontend.endpoint}"
     "directdebit_connector_url" = "http://${cloudfoundry_route.directdebit_connector.endpoint}:8080"

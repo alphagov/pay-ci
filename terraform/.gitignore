@@ -1,4 +1,3 @@
 .terraform
-.cf-tokens
 *.tmp
 *.tfstate*
