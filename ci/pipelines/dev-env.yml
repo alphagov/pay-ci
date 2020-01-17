@@ -4,6 +4,10 @@ resource_types:
     type: docker-image
     source:
       repository: nulldriver/cf-cli-resource
+  - name: terraform
+    type: docker-image
+    source:
+      repository: ljfranklin/terraform-resource
 
 resources:
   - name: omnibus
@@ -20,6 +24,8 @@ resources:
       uri: https://github.com/alphagov/pay-omnibus
       branch: develop
       paths:
+        - terraform/dev-paas
+        - terraform/modules/paas
         - paas
 
   - name: paas-london
@@ -31,6 +37,20 @@ resources:
       space: ((space))
       username: ((cf-username))
       password: ((cf-password))
+
+  - name: tf-paas-dev
+    type: terraform
+    source:
+      env_name: ((space))
+      backend_type: s3
+      backend_config:
+        bucket: ((readonly_private_bucket_name))
+        region: eu-west-2
+      vars:
+        space: ((space))
+      env:
+        CF_USER: ((cf-username))
+        CF_PASSWORD: ((cf-password))
 
   - &image
     name: adminusers
