@@ -11,7 +11,7 @@ resources:
     icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: smoke-test-user
+      branch: develop
 
   - name: paas-tools
     type: cf-cli
