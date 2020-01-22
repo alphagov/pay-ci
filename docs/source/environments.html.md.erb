@@ -1,0 +1,42 @@
+---
+title: Environments
+---
+
+# Environments
+
+## Environment architecture
+
+A production-like Pay environment is made up of apps deployed on GOV.UK PaaS and some components on AWS.
+Production-like refers to an environment that will accept real traffic or a staging environment that will be part of the deploy pipeline.
+
+The PaaS components consist of:
+
+- A cardholder data environment (CDE) space
+- A non-CDE space
+
+Spaces encapsulate apps and services.
+We use user-provided service instances to store and pass credentials to apps.
+Some service instances are provided by PaaS, for example the Postgres databases.
+
+The AWS components are:
+
+- Route53 DNS management
+- A Cloudfront distribution
+
+## Building a new environment
+
+To build an entirely new production-like environment from scratch you'll need admin access to the AWS account and the `OrgManager` role for the `govuk-pay` organisation in [PaaS Ireland][paas-ie].
+
+Environment configuration is defined using Terraform modules.
+The AWS configuration is in `terraform/modules/aws` and the PaaS configuration is in `terraform/modules/paas`.
+
+The Terraform for provisioning the AWS components needs to be run manually.
+
+
+## Environment provisioning
+
+A separate deployment needs to be defined for each environment and platform, for example `terraform/staging-paas` defines a deployment of the `staging` PaaS environment.
+
+Once an environment has been created using the steps above, you should use a Concourse pipeline to run Terraform to provision the rest of the PaaS components.
+
+[paas-ie]: https://admin.cloud.service.gov.uk
