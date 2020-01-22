@@ -1,0 +1,109 @@
+resource_types:
+- name: travis
+  type: docker-image
+  source:
+    repository: rbakergds/travis-resource
+    tag: latest
+
+resources:
+- name: card-frontend-ci-build
+  type: travis
+  icon: sync
+  source:
+    repository: alphagov/pay-frontend
+    travis-token: ((travis-api-token))
+    branch: master
+    pro: true
+
+- name: card-frontend-source
+  type: git
+  icon: github-circle
+  source:
+      uri: https://github.com/alphagov/pay-frontend
+      branch: master
+
+- name: card-frontend-pre-release
+  type: github-release
+  icon: github-circle
+  source:
+    owner: alphagov
+    repository: pay-frontend
+    access_token: ((github-release-token))
+
+jobs:
+  - name: build-card-frontend
+    plan:
+      - get: card-frontend-ci-build
+        trigger: true
+      - get: card-frontend-source
+      - task: checkout-build-commit
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine/git
+              tag: 1.0.7
+          inputs:
+            - name: card-frontend-ci-build
+            - name: card-frontend-source
+          outputs:
+            - name: card-frontend-source
+            - name: card-frontend-release
+          run:
+            path: sh
+            dir: card-frontend-source
+            args: 
+              - -ec
+              - |
+                set -o errexit -o nounset -o pipefail
+                commit_ref=$(cat ../card-frontend-ci-build/commit-ref)
+                git checkout ${commit_ref}
+
+                # calculate next release number
+                set -e
+                latest_release_number=$(git describe --abbrev=0 --match "paas_release-*" | cut -d "-" -f 2 || true)
+                number_regex='^[0-9]+$'
+                if ! [[ ${latest_release_number} =~ $number_regex ]]; then
+                  latest_release_number=0
+                fi
+                new_release_number=$((latest_release_number + 1))
+                echo ${new_release_number} > ../card-frontend-release/number
+
+      - task: build-node-app
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: node
+              tag: 12.11.1-alpine
+          inputs:
+            - name: card-frontend-source
+            - name: card-frontend-release
+          outputs:
+            - name: card-frontend-build-output
+              path: build-output
+          caches:
+            - path: card-frontend-source/node_modules
+          params:
+            LD_LIBRARY_PATH: /card-frontend-source/node_modules/appmetrics
+          run:
+            dir: card-frontend-source
+            path: sh
+            args: 
+              - -ec
+              - |
+                set -o errexit -o nounset -o pipefail
+                apk add --virtual build-dependencies --update python build-base libexecinfo-dev
+                npm rebuild node-sass
+                npm install
+                npm run compile
+                npm install --only=prod
+
+                release_number="$(cat ../card-frontend-release/number)"
+                archive_path="../build-output/pay-frontend-${release_number}.tar.gz"
+
+                echo "Creating build archive in: ${archive_path}"
+                tar -czf "$archive_path" --exclude .git .
+                
