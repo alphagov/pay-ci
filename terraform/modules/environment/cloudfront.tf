@@ -4,8 +4,11 @@ resource "aws_s3_bucket" "cloudfront_logs" {
 }
 
 resource "aws_cloudfront_distribution" "main" {
-  enabled = "${var.enable_cloudfront}"
-  comment = "cloudfront-${var.environment}"
+  enabled    = "${var.enable_cloudfront}"
+  comment    = "cloudfront-${var.environment}"
+  depends_on = [
+    "${aws_acm_certificate_validation.cert}",
+  ]
 
   logging_config {
     include_cookies = false
