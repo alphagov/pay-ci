@@ -11,6 +11,12 @@ pipelines:
   vars:
     space: dev-richard
     environment: dev
+- name: dev-env-towers
+  team: pay-deploy
+  config_file: omnibus/ci/pipelines/dev-env.yml
+  vars:
+    space: dev-towers
+    environment: dev
 - name: dev-env-dan
   team: pay-deploy
   config_file: omnibus/ci/pipelines/dev-env.yml
