@@ -1,0 +1,58 @@
+resources:
+  - name: git_release
+    type: github-release
+    source:
+      owner: ((git_owner))
+      repository: ((git_repo))
+      access-token: ((git_access_token))
+      tag_filter: "paas_release-(.*)"
+      order_by: version
+  - name: cf
+    type: cf
+    source:
+      api: ((paas_api))
+      username: ((paas_username))
+      password: ((paas_password))
+      organization: ((paas_org))
+      space: ((paas_space))
+      skip_cert_check: false
+
+jobs:
+  - name: push_app
+    plan:
+      - get: git_release
+        trigger: true
+      - task: download_deployment_artifact
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          inputs:
+            - name: git_release
+          outputs:
+            - name: artifact
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                tar -C artifact -xf git_release/pay-frontend-*.tar.gz
+
+      - put: cf
+        params:
+          manifest: artifact/manifest.yml
+          path: artifact
+          vars:
+            memory: ((memory))
+            disk_quota: ((disk_quota))
+            space: ((paas_space))
+            card_frontend_session_encryption_key: ((card_frontend_session_encryption_key))
+            card_connector_analytics_tracking_id: ((card_connector_analytics_tracking_id))
+            adminusers_url: ((adminusers_url))
+            card_connector_url: ((card_connector_url))
+            card_frontend_url: ((card_frontend_url))
+            cardid_url: ((cardid_url))
+
+
