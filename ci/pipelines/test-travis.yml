@@ -28,7 +28,9 @@ resources:
   source:
     owner: alphagov
     repository: pay-frontend
-    access_token: ((github-release-token))
+    access_token: ((github-access-token))
+    pre_release: true
+    tag_filter: "paas_release-(.*)"
 
 jobs:
   - name: build-card-frontend
@@ -62,14 +64,19 @@ jobs:
 
                 # calculate next release number
                 set -e
-                latest_release_number=$(git describe --abbrev=0 --match "paas_release-*" | cut -d "-" -f 2 || true)
+                latest_release_number=$(git describe --tags --abbrev=0 --match "paas_release-* | cut -d "-" -f 2 || true)
                 number_regex='^[0-9]+$'
                 if ! [[ ${latest_release_number} =~ $number_regex ]]; then
                   latest_release_number=0
                 fi
-                new_release_number=$((latest_release_number + 1))
-                echo ${new_release_number} > ../card-frontend-release/number
 
+                new_release_number=$((latest_release_number + 1))
+                new_release_name="paas_release-${new_release_number}"
+
+                echo "Calculated release number: ${new_release_number}"
+                echo ${new_release_number} > ../card-frontend-release/number
+                echo "Created release name: ${new_release_name}"
+                echo ${new_release_name} > ../card-frontend-release/name
       - task: build-node-app
         config:
           platform: linux
@@ -106,4 +113,11 @@ jobs:
 
                 echo "Creating build archive in: ${archive_path}"
                 tar -czf "$archive_path" --exclude .git .
-                
+      - put: card-frontend-pre-release
+        params:
+          name: card-frontend-release/number
+          tag: card-frontend-release/number
+          commitish: card-frontend-ci-build/commit-ref
+          globs:
+            - card-frontend-build-output/*
+  
