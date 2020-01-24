@@ -1,0 +1,42 @@
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine/git
+    tag: 1.0.7
+
+inputs:
+  - name: build-info
+  - name: src
+
+outputs:
+  - name: src
+  - name: release-info
+
+run:
+  path: sh
+  dir: src
+  args:
+    - -ec
+    - |
+      set -o errexit -o nounset -o pipefail
+      # check out the commit to be built
+      commit_ref=$(cat ../build-info/commit-ref)
+      git checkout ${commit_ref}
+
+      # calculate next release number
+      set -e
+      latest_release_number=$(git describe --tags --abbrev=0 --match "paas_release-* | cut -d "-" -f 2 || true)
+      number_regex='^[0-9]+$'
+      if ! [[ ${latest_release_number} =~ $number_regex ]]; then
+        latest_release_number=0
+      fi
+
+      new_release_number=$((latest_release_number + 1))
+      new_release_name="paas_release-${new_release_number}"
+
+      echo "Calculated release number: ${new_release_number}"
+      echo ${new_release_number} > ../release-info/number
+      echo "Created release name: ${new_release_name}"
+      echo ${new_release_name} > ../release-info/name

@@ -1,0 +1,222 @@
+resource_types:
+- name: travis
+  type: docker-image
+  source:
+    repository: rbakergds/travis-resource
+    tag: latest
+
+resources:
+  - name: omnibus
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+
+  # Successful Travis master branch builds
+  - &travis-build
+    name: card-frontend-ci-build
+    type: travis
+    icon: sync
+    source: &travis-build-source
+      repository: alphagov/pay-frontend
+      travis-token: ((travis-api-token))
+      branch: master
+      pro: true
+
+  - <<: *travis-build
+    name: toolbox-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-toolbox
+
+  - <<: *travis-build
+    name: products-ui-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-products-ui
+
+  - <<: *travis-build
+    name: selfservice-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-selfservice
+
+  - <<: *travis-build
+    name: dd-frontend-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-direct-debit-frontend
+  
+      
+
+
+# Source Code Resources
+  - &git-repo
+    name: card-frontend-source
+    type: git
+    icon: github-circle
+    source: &git-repo-source
+      uri: https://github.com/alphagov/pay-frontend
+      branch: master
+
+  - <<: *git-repo
+    name: toolbox-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-toolbox
+
+  - <<: *git-repo
+    name: products-ui-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-products-ui
+
+  - <<: *git-repo
+    name: selfservice-source
+    source: 
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-selfservice
+
+  - <<: *git-repo
+    name: dd-frontend-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-direct-debit-frontend
+
+# Github Release Resources
+  - &github-release
+    name: card-frontend-pre-release
+    type: github-release
+    icon: github-circle
+    source: &github-release-source
+      owner: alphagov
+      repository: pay-frontend
+      access_token: ((github-access-token))
+      pre_release: true
+      release: false
+      tag_filter: "paas_release-(.*)"
+
+  - <<: *github-release
+    name: toolbox-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-toolbox
+
+  - <<: *github-release
+    name: products-ui-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-products-ui
+
+  - <<: *github-release
+    name: selfservice-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-selfservice
+
+  - <<: *github-release
+    name: dd-frontend-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-direct-debit-frontend
+
+jobs:
+  - name: build-card-frontend
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: card-frontend-ci-build
+        trigger: true
+      - get: src
+        resource: card-frontend-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-frontend
+      - put: release
+        resource: card-frontend-pre-release
+        params: &release-params
+          name: release-info/name
+          tag: release-info/name
+          globs:
+            - build-output/*
+          commitish: build-info/commit-ref
+
+  - name: build-toolbox
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: toolbox-ci-build
+        trigger: true
+      - get: src
+        resource: toolbox-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-toolbox
+      - put: release
+        resource: toolbox-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-products-ui
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: products-ui-ci-build
+        trigger: true
+      - get: src
+        resource: products-ui-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-products-ui
+      - put: release
+        resource: products-ui-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-selfservice
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: selfservice-ci-build
+        trigger: true
+      - get: src
+        resource: selfservice-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-selfservice
+      - put: release
+        resource: selfservice-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-dd-frontend
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: dd-frontend-ci-build
+        trigger: true
+      - get: src
+        resource: dd-frontend-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-direct-debit-frontend
+      - put: release
+        resource: dd-frontend-pre-release
+        params: 
+          <<: *release-params
