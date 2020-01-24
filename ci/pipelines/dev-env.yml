@@ -42,10 +42,8 @@ resources:
     type: terraform
     source:
       env_name: ((space))
-      backend_type: s3
-      backend_config:
-        bucket: ((readonly_private_bucket_name))
-        region: eu-west-2
+      backend_type: local
+      backend_config: {}
       vars:
         space: ((space))
       env:
@@ -157,15 +155,9 @@ jobs:
         passed: [create-space]
       - get: omnibus-paas
         trigger: true
-      - task: provision-space
-        file: omnibus/ci/tasks/cf-task.yml
-        input_mapping: { workdir: omnibus-paas }
+      - put: tf-paas-dev
         params:
-          CF_ORG: govuk-pay
-          CF_SPACE: ((space))
-          COMMAND: workdir/paas/provision_space.sh
-          DEPLOYER_USER: ((cf-username))
-          DOCKER_APPS: 'true'
+          terraform_source: omnibus/terraform/dev-paas
 
   - name: create-test-user
     serial_groups:
