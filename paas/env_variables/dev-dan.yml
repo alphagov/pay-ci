@@ -1,0 +1,9 @@
+memory: 1G
+disk_quota: 1G
+card_frontend_session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
+card_connector_analytics_tracking_id: testing-123
+adminusers_url: adminusers-dev-dan.apps.internal
+card_connector_url: card-connector-dev-dan.apps.internal
+card_frontend_url: pay-card-frontend-dev-dan.london.cloudapps.digital
+cardid_url: cardid-dev-dan.apps.internal
+

@@ -38,20 +38,11 @@ jobs:
         file: omnibus/ci/tasks/download_deployment_artifact.yml
         input_mapping: { git_release: git_test_frontend_release }
         output_mapping: { artifact: frontend_artifact }
-
       - put: cf
         params:
-          manifest: frontend_artifact/manifest.yml
           path: frontend_artifact
-          vars:
-            memory: ((memory))
-            disk_quota: ((disk_quota))
-            space: ((paas_space))
-            card_frontend_session_encryption_key: ((card_frontend_session_encryption_key))
-            card_connector_analytics_tracking_id: ((card_connector_analytics_tracking_id))
-            adminusers_url: ((adminusers_url))
-            card_connector_url: ((card_connector_url))
-            card_frontend_url: ((card_frontend_url))
-            cardid_url: ((cardid_url))
+          manifest: frontend_artifact/manifest.yml
+          vars_files: # when providing `path` the vars_file is relative to it.
+            - ../omnibus/paas/env_variables/dev-dan.yml
 
 
