@@ -29,7 +29,7 @@ run:
       set -e
       latest_release_number=$(git describe --tags --abbrev=0 --match "paas_release-*" | cut -d "-" -f 2 || true)
       number_regex='^[0-9]+$'
-      if ! [[ ${latest_release_number} =~ $number_regex ]]; then
+      if ! [[ echo ${latest_release_number} | egrep -q '^[0-9]+$'; ]]; then
         latest_release_number=0
       fi
 
