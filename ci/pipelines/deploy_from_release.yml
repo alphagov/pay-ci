@@ -1,12 +1,15 @@
+source: &git_test_release_source
+    owner: ((git_owner))
+    access-token: ((git_access_token))
+    tag_filter: "paas_release-(.*)"
+    order_by: version
+
 resources:
-  - name: git_release
+  - name: git_test_frontend_release
     type: github-release
     source:
-      owner: ((git_owner))
+      <<: *git_test_release_source
       repository: ((git_repo))
-      access-token: ((git_access_token))
-      tag_filter: "paas_release-(.*)"
-      order_by: version
   - name: cf
     type: cf
     source:
@@ -20,7 +23,7 @@ resources:
 jobs:
   - name: push_app
     plan:
-      - get: git_release
+      - get: git_test_frontend_release
         trigger: true
       - task: download_deployment_artifact
         config:
@@ -30,7 +33,7 @@ jobs:
             source:
               repository: alpine
           inputs:
-            - name: git_release
+            - name: git_test_frontend_release
           outputs:
             - name: artifact
           run:
@@ -38,7 +41,7 @@ jobs:
             args:
               - -c
               - |
-                tar -C artifact -xf git_release/pay-frontend-*.tar.gz
+                tar -C artifact -xf git_test_frontend_release/pay-frontend-*.tar.gz
 
       - put: cf
         params:
