@@ -10,6 +10,7 @@ resources:
     source:
       <<: *git_test_release_source
       repository: ((git_repo))
+
   - name: cf
     type: cf
     source:
@@ -20,33 +21,28 @@ resources:
       space: ((paas_space))
       skip_cert_check: false
 
+  - name: omnibus
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: deploy_from_git_release
+
 jobs:
   - name: push_app
     plan:
+      - get: omnibus
       - get: git_test_frontend_release
         trigger: true
-      - task: download_deployment_artifact
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          inputs:
-            - name: git_test_frontend_release
-          outputs:
-            - name: artifact
-          run:
-            path: sh
-            args:
-              - -c
-              - |
-                tar -C artifact -xf git_test_frontend_release/pay-frontend-*.tar.gz
+      - task: download_frontend_artifact
+        file: omnibus/ci/tasks/download_deployment_artifact.yml
+        input_mapping: { git_release: git_test_frontend_release }
+        output_mapping: { artifact: frontend_artifact }
 
       - put: cf
         params:
-          manifest: artifact/manifest.yml
-          path: artifact
+          manifest: frontend_artifact/manifest.yml
+          path: frontend_artifact
           vars:
             memory: ((memory))
             disk_quota: ((disk_quota))
