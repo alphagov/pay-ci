@@ -1,0 +1,42 @@
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: node
+    tag: 12.11.1-alpine
+
+inputs:
+  - name: src
+  - name: release-info
+
+outputs:
+  - name: build-output
+
+caches:
+  - path: src/node_modules
+
+params:
+  LD_LIBRARY_PATH: /src/node_modules/appmetrics
+  APP_NAME: app
+
+run:
+  path: sh
+  dir: src
+  args:
+    - -ec
+    - |
+      set -o errexit -o nounset -o pipefail
+      node --version
+      npm --version
+      apk add --virtual build-dependencies --update python build-base libexecinfo-dev
+      npm rebuild node-sass
+      npm install
+      npm run compile
+      npm install --only=prod
+
+      release_number="$(cat ../release-info/number)"
+      archive_path="../build-output/${APP_NAME}-${release_number}.tar.gz"
+
+      echo "Creating build archive in: ${archive_path}"
+      tar -czf "$archive_path" --exclude .git .
