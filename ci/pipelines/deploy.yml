@@ -272,6 +272,7 @@ jobs:
         output_mapping: { artifact: card-frontend-artifact }
       - put: paas-staging
         params:
+          space: staging-cde
           command: push
           path: card-frontend-artifact
           manifest: card-frontend-artifact/manifest.yml
