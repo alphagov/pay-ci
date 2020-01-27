@@ -15,3 +15,8 @@ directdebit_frontend_url: directdebit-frontend.staging.gdspay.uk
 notifications_url: notifications.staging.gdspay.uk
 products_ui_url: products.staging.gdspay.uk
 db_ssl: 'true'
+card_connector_analytics_tracking_id: testing-123
+adminusers_url: adminusers-staging.apps.internal
+card_connector_url: card-connector-staging.apps.internal
+cardid_url: cardid-staging.apps.internal
+card_frontend_session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw

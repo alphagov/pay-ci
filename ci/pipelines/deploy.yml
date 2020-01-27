@@ -71,6 +71,17 @@ resources:
           username: pay-deploy
           password: ((readonly_local_user_password))
 
+  - name: git-card-frontend-pre-release
+    type: github-release
+    source:
+      owner: alphagov
+      access-token: ((github-access-token))
+      tag_filter: "paas_release-(.*)"
+      order_by: version
+      repository: pay-frontend
+      pre_release: true
+      release: false
+
   - &image
     name: adminusers
     type: docker-image
@@ -104,12 +115,6 @@ resources:
     source:
       <<: *image-source
       repository: govukpay/directdebit-frontend
-
-  - <<: *image
-    name: card-frontend
-    source:
-      <<: *image-source
-      repository: govukpay/frontend
 
   - <<: *image
     name: ledger
@@ -259,16 +264,22 @@ jobs:
     serial_groups: [card-frontend-stg]
     plan:
       - get: omnibus
-      - get: card-frontend
+      - get: git-card-frontend-pre-release
         trigger: true
+      - task: download-card-frontend-artifact
+        file: omnibus/ci/tasks/download-deployment-artifact.yml
+        input_mapping: { git-release: git-card-frontend-pre-release }
+        output_mapping: { artifact: card-frontend-artifact }
+      - put: cf-cli
         params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: card-frontend
-          space: staging-cde
+          command: push
+          path: card-frontend-artifact
+          manifest: card-frontend-artifact/manifest.yml
+          vars_files:
+            - omnibus/paas/env_variables/staging.yml
+          vars:
+            memory: 1G
+            disk_quota: 1G
 
   - name: deploy-directdebit-connector-staging
     serial_groups: [directdebit-connector-stg]
