@@ -73,7 +73,7 @@ resources:
 
   - name: git-card-frontend-pre-release
     type: github-release
-    source:
+    source: &github-release-source
       owner: alphagov
       access-token: ((github-access-token))
       tag_filter: "paas_release-(.*)"
@@ -81,6 +81,24 @@ resources:
       repository: pay-frontend
       pre_release: true
       release: false
+
+  - name: git-directdebit-frontend-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-direct-debit-frontend
+
+  - name: git-selfservice-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-selfservice
+
+  - name: git-products-ui-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-products-ui
 
   - &image
     name: adminusers
@@ -111,12 +129,6 @@ resources:
       repository: govukpay/directdebit-connector
 
   - <<: *image
-    name: directdebit-frontend
-    source:
-      <<: *image-source
-      repository: govukpay/directdebit-frontend
-
-  - <<: *image
     name: ledger
     source:
       <<: *image-source
@@ -129,12 +141,6 @@ resources:
       repository: govukpay/products
 
   - <<: *image
-    name: products-ui
-    source:
-      <<: *image-source
-      repository: govukpay/products-ui
-
-  - <<: *image
     name: publicapi
     source:
       <<: *image-source
@@ -145,12 +151,6 @@ resources:
     source:
       <<: *image-source
       repository: govukpay/publicauth
-
-  - <<: *image
-    name: selfservice
-    source:
-      <<: *image-source
-      repository: govukpay/selfservice
 
   - <<: *image
     name: notifications
@@ -260,27 +260,38 @@ jobs:
           CF_SPACE: staging-cde
           COMMAND: bind_db card-connector card-connector-db
 
+  - name: deploy-directdebit-frontend-staging
+    serial_groups: [directdebit-frontend-stg]
+    plan:
+      - get: omnibus
+      - get: git-directdebit-frontend-pre-release
+        trigger: true
+      - task: extract-directdebit-frontend-artefact
+        file: omnibus/ci/tasks/extract-archive.yml
+        input_mapping: { git-release: git-directdebit-frontend-pre-release }
+      - put: paas-staging
+        params: &push-app-config
+          command: push
+          path: artefact
+          vars_files:
+            - omnibus/paas/env_variables/staging.yml
+          vars:
+            memory: 1G
+            disk_quota: 1G
+
   - name: deploy-card-frontend-staging
     serial_groups: [card-frontend-stg]
     plan:
       - get: omnibus
       - get: git-card-frontend-pre-release
         trigger: true
-      - task: download-card-frontend-artifact
-        file: omnibus/ci/tasks/download-deployment-artifact.yml
+      - task: extract-card-frontend-artefact
+        file: omnibus/ci/tasks/extract-archive.yml
         input_mapping: { git-release: git-card-frontend-pre-release }
-        output_mapping: { artifact: card-frontend-artifact }
       - put: paas-staging
         params:
+          <<: *push-app-config
           space: staging-cde
-          command: push
-          path: card-frontend-artifact
-          manifest: card-frontend-artifact/manifest.yml
-          vars_files:
-            - omnibus/paas/env_variables/staging.yml
-          vars:
-            memory: 1G
-            disk_quota: 1G
 
   - name: deploy-directdebit-connector-staging
     serial_groups: [directdebit-connector-stg]
@@ -300,19 +311,6 @@ jobs:
           <<: *bind-db-params
           COMMAND: bind_db directdebit-connector directdebit-connector-db
 
-  - name: deploy-directdebit-frontend-staging
-    serial_groups: [directdebit-frontend-stg]
-    plan:
-      - get: omnibus
-      - get: directdebit-frontend
-        trigger: true
-        params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: directdebit-frontend
 
   - name: deploy-ledger-staging
     serial_groups: [ledger-stg]
@@ -354,15 +352,14 @@ jobs:
     serial_groups: [products-ui-stg]
     plan:
       - get: omnibus
-      - get: products-ui
+      - get: git-products-ui-pre-release
         trigger: true
+      - task: extract-products-ui-artefact
+        file: omnibus/ci/tasks/extract-archive.yml
+        input_mapping: { git-release: git-products-ui-pre-release }
+      - put: paas-staging
         params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: products-ui
+          <<: *push-app-config
 
   - name: deploy-publicapi-staging
     serial_groups: [publicapi-stg]
@@ -400,15 +397,14 @@ jobs:
     serial_groups: [selfservice-stg]
     plan:
       - get: omnibus
-      - get: selfservice
+      - get: git-selfservice-pre-release
         trigger: true
+      - task: download-selfservice-artefact
+        file: omnibus/ci/tasks/extract-archive.yml
+        input_mapping: { git-release: git-selfservice-pre-release }
+      - put: paas-staging
         params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: selfservice
+          <<: *push-app-config
 
   - name: deploy-notifications-staging
     serial_groups: [notifications-stg]
@@ -550,7 +546,7 @@ jobs:
         get: directdebit-connector
         passed: [deploy-directdebit-connector-staging]
       - <<: *trigger-test
-        get: directdebit-frontend
+        get: git-directdebit-frontend-pre-release
         passed: [deploy-directdebit-frontend-staging]
       - <<: *trigger-test
         get: ledger
@@ -578,7 +574,7 @@ jobs:
         get: products
         passed: [deploy-products-staging]
       - <<: *trigger-test
-        get: products-ui
+        get: git-products-ui-pre-release
         passed: [deploy-products-ui-staging]
       - task: run products smoke test
         file: omnibus/ci/tasks/cf-task.yml

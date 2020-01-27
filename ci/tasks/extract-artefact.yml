@@ -10,11 +10,11 @@ inputs:
     optional: false
 
 outputs:
-  - name: artifact
+  - name: artefact
 
 run:
   path: sh
   args:
     - -c
     - |
-      tar -C artifact -xf git-release/pay-*-*.tar.gz
+      tar -C artefact -xf git-release/pay-*-*.tar.gz
