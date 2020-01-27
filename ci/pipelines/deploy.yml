@@ -270,7 +270,7 @@ jobs:
         file: omnibus/ci/tasks/download-deployment-artifact.yml
         input_mapping: { git-release: git-card-frontend-pre-release }
         output_mapping: { artifact: card-frontend-artifact }
-      - put: cf-cli
+      - put: paas-staging
         params:
           command: push
           path: card-frontend-artifact
@@ -517,7 +517,7 @@ jobs:
         get: card-connector
         passed: [deploy-card-connector-staging]
       - <<: *trigger-test
-        get: card-frontend
+        get: git-card-frontend-pre-release
         passed: [deploy-card-frontend-staging]
       - <<: *trigger-test
         get: ledger
