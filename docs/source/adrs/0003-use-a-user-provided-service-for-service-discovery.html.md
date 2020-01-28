@@ -42,7 +42,7 @@ cf create-user-provided-service app-catalog -p '{
 }'
 ```
 
-Assuming we use terraform to manage application routes (see [ADR 0002](0002-use-terraform-to-manage-the-environment-skeleton)),
+Assuming we use terraform to manage application routes (see [ADR 0002](0002-use-terraform-to-manage-the-environment-skeleton.html)),
 we can create the user provided service as part of the terraform, meaning
 terraform should be the only system that needs to know about application
 routes.
