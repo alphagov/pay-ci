@@ -17,4 +17,4 @@ run:
   args:
     - -c
     - |
-      tar -C artefact -xf git-release/pay-*-*.tar.gz
+      tar -C artefact -xf git-release/pay-*.tar.gz
