@@ -32,7 +32,7 @@ metrics_host: https://test.test
 products_ui_route: products.staging.gdspay.uk
 direct_debit_connector_url: http://directdebit-connector-staging.apps.internal:8080
 ledger_url: http://ledger-staging.apps.internal:8080
-products_friendly_base_url: https://products.staging.gdspay.uk/redirect
+products_friendly_base_uri: https://products.staging.gdspay.uk/redirect
 selfservice_analytics_tracking_id: test123
 selfservice_analytics_tracking_id_xgov: test123
 selfservice_gocardless_live_client_id: testing
