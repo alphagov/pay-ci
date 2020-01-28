@@ -8,9 +8,10 @@ image_resource:
 
 inputs:
   - name: src
+  - name: release-info
 
 outputs:
-  - name: src
+  - name: build-output
 
 caches:
   - path: src/.m2
@@ -34,5 +35,10 @@ run:
 
       export MAVEN_REPO="$PWD/.m2"
 
-      mvn --global-settings settings.xml test
       mvn --global-settings settings.xml -Dmaven.test.skip=true -DskipTests package
+
+      release_number="$(cat ../release-info/number)"
+      archive_path="../build-output/${APP_NAME}-${release_number}.tar.gz"
+
+      echo "Creating build archive in: ${archive_path}"
+      tar -czf "$archive_path" ./target/pay-*-allinone.jar ./target/*.yaml

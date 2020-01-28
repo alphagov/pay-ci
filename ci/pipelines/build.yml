@@ -47,11 +47,44 @@ resources:
     source:
       <<: *travis-build-source
       repository: alphagov/pay-direct-debit-frontend
-  
-      
 
+  - <<: *travis-build
+    name: dd-connector-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-direct-debit-connector
 
-# Source Code Resources
+  - <<: *travis-build
+    name: card-connector-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-connector
+
+  - <<: *travis-build
+    name: publicapi-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-publicapi
+
+  - <<: *travis-build
+    name: adminusers-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-adminusers
+
+  - <<: *travis-build
+    name: products-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-products
+
+  - <<: *travis-build
+    name: ledger-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-ledger
+
+  # Source Code Resources
   - &git-repo
     name: card-frontend-source
     type: git
@@ -83,6 +116,42 @@ resources:
     source:
       <<: *git-repo-source
       uri: https://github.com/alphagov/pay-direct-debit-frontend
+
+  - <<: *git-repo
+    name: dd-connector-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-direct-debit-connector
+
+  - <<: *git-repo
+    name: card-connector-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-connector
+
+  - <<: *git-repo
+    name: publicapi-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-publicapi
+
+  - <<: *git-repo
+    name: adminusers-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-adminusers
+
+  - <<: *git-repo
+    name: products-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-products
+
+  - <<: *git-repo
+    name: ledger-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-ledger
 
 # Github Release Resources
   - &github-release
@@ -120,6 +189,42 @@ resources:
     source:
       <<: *github-release-source
       repository: pay-direct-debit-frontend
+
+  - <<: *github-release
+    name: dd-connector-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-direct-debit-connector
+
+  - <<: *github-release
+    name: card-connector-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-connector
+
+  - <<: *github-release
+    name: publicapi-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-publicapi
+
+  - <<: *github-release
+    name: adminusers-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-adminusers
+
+  - <<: *github-release
+    name: products-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-products
+
+  - <<: *github-release
+    name: ledger-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-ledger
 
 jobs:
   - name: build-card-frontend
@@ -218,5 +323,119 @@ jobs:
           APP_NAME: pay-direct-debit-frontend
       - put: release
         resource: dd-frontend-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-dd-connector
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: dd-connector-ci-build
+        trigger: true
+      - get: src
+        resource: dd-connector-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-direct-debit-connector
+      - put: release
+        resource: dd-connector-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-card-connector
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: card-connector-ci-build
+        trigger: true
+      - get: src
+        resource: card-connector-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-connector
+      - put: release
+        resource: card-connector-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-publicapi-connector
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: publicapi-ci-build
+        trigger: true
+      - get: src
+        resource: publicapi-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-publicapi
+      - put: release
+        resource: publicapi-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-adminusers-connector
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: adminusers-ci-build
+        trigger: true
+      - get: src
+        resource: adminusers-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-adminusers
+      - put: release
+        resource: adminusers-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-products-connector
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: products-ci-build
+        trigger: true
+      - get: src
+        resource: products-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-products
+      - put: release
+        resource: products-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-ledger-connector
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: ledger-ci-build
+        trigger: true
+      - get: src
+        resource: ledger-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-ledger
+      - put: release
+        resource: ledger-pre-release
         params: 
           <<: *release-params
