@@ -75,7 +75,7 @@ resources:
     type: github-release
     source: &github-release-source
       owner: alphagov
-      access-token: ((github-access-token))
+      access_token: ((github-access-token))
       tag_filter: "paas_release-(.*)"
       order_by: version
       repository: pay-frontend
