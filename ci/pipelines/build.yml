@@ -364,7 +364,7 @@ jobs:
         params: 
           <<: *release-params
 
-  - name: build-publicapi-connector
+  - name: build-publicapi
     plan:
       - get: omnibus
       - get: build-info
@@ -383,7 +383,7 @@ jobs:
         params: 
           <<: *release-params
 
-  - name: build-adminusers-connector
+  - name: build-adminusers
     plan:
       - get: omnibus
       - get: build-info
@@ -402,7 +402,7 @@ jobs:
         params: 
           <<: *release-params
 
-  - name: build-products-connector
+  - name: build-products
     plan:
       - get: omnibus
       - get: build-info
@@ -421,7 +421,7 @@ jobs:
         params: 
           <<: *release-params
 
-  - name: build-ledger-connector
+  - name: build-ledger
     plan:
       - get: omnibus
       - get: build-info
