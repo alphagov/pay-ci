@@ -215,15 +215,6 @@ jobs:
             docker-username: ((docker-username))
           vars_files:
             - omnibus/paas/env_variables/staging.yml
-      - &bind-db
-        task: bind-db
-        file: omnibus/ci/tasks/cf-task.yml
-        input_mapping: { workdir: omnibus }
-        params: &bind-db-params
-          <<: *cf-creds
-          CF_SPACE: staging
-          CF_SPACE_CDE: staging-cde
-          COMMAND: bind_db adminusers adminusers-db
 
   - name: deploy-cardid-staging
     serial_groups: [cardid-stg]
@@ -254,11 +245,6 @@ jobs:
           <<: *paas-app
           app_name: card-connector
           space: staging-cde
-      - <<: *bind-db
-        params:
-          <<: *bind-db-params
-          CF_SPACE: staging-cde
-          COMMAND: bind_db card-connector card-connector-db
 
   - name: deploy-directdebit-frontend-staging
     serial_groups: [directdebit-frontend-stg]
@@ -307,11 +293,6 @@ jobs:
         params:
           <<: *paas-app
           app_name: directdebit-connector
-      - <<: *bind-db
-        params:
-          <<: *bind-db-params
-          COMMAND: bind_db directdebit-connector directdebit-connector-db
-
 
   - name: deploy-ledger-staging
     serial_groups: [ledger-stg]
@@ -326,10 +307,6 @@ jobs:
         params:
           <<: *paas-app
           app_name: ledger
-      - <<: *bind-db
-        params:
-          <<: *bind-db-params
-          COMMAND: bind_db ledger ledger-db
 
   - name: deploy-products-staging
     serial_groups: [products-stg]
@@ -344,10 +321,6 @@ jobs:
         params:
           <<: *paas-app
           app_name: products
-      - <<: *bind-db
-        params:
-          <<: *bind-db-params
-          COMMAND: bind_db products products-db
 
   - name: deploy-products-ui-staging
     serial_groups: [products-ui-stg]
@@ -389,10 +362,6 @@ jobs:
         params:
           <<: *paas-app
           app_name: publicauth
-      - <<: *bind-db
-        params:
-          <<: *bind-db-params
-          COMMAND: bind_db publicauth publicauth-db
 
   - name: deploy-selfservice-staging
     serial_groups: [selfservice-stg]
