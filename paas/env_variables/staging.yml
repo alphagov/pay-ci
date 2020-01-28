@@ -25,3 +25,9 @@ products_url: http://products-staging.apps.internal:8080
 selfservice_transactions_url: https://selfservice.staging.gdspay.uk/transactions
 session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
 selfservice_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
+analytics_tracking_id: testing-123
+disable_appmetrics: true
+disable_request_logging: false
+metrics_host: https://test.test
+products_ui_route: products.staging.gdspay.uk
+
