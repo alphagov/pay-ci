@@ -34,5 +34,4 @@ run:
 
       export MAVEN_REPO="$PWD/.m2"
 
-      mvn --global-settings settings.xml test
       mvn --global-settings settings.xml -Dmaven.test.skip=true -DskipTests package
