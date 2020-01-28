@@ -42,7 +42,7 @@ selfservice_gocardless_test_oauth_base_url: https://connect-sandbox.gocardless.c
 selfservice_session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
 direct_debit_frontend_analytics_tracking_id: test123
 direct_debit_frontend_analytics_tracking_id_xgov: test123
-direct_debit_frontend_sentry_dsn: test123
+direct_debit_frontend_sentry_dsn: ''
 direct_debit_frontend_session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
 direct_debit_frontend_url: directdebit-frontend.staging.gdspay.uk
 space: staging
