@@ -26,8 +26,9 @@ run:
       git checkout ${commit_ref}
 
       # calculate next release number
-      set -e
+      set +e
       latest_release_number=$(git describe --tags --abbrev=0 --match "paas_release-*" | cut -d "-" -f 2 || true)
+      set -e
       is_numeric=$(echo ${latest_release_number} | egrep -E '^[0-9]+$')
 
       if ! [ is_numeric ]; then
