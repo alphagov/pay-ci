@@ -30,4 +30,19 @@ disable_appmetrics: true
 disable_request_logging: false
 metrics_host: https://test.test
 products_ui_route: products.staging.gdspay.uk
-
+direct_debit_connector_url: http://directdebit-connector-staging.apps.internal:8080
+ledger_url: http://ledger-staging.apps.internal:8080
+products_friendly_base_url: https://products.staging.gdspay.uk/redirect
+selfservice_analytics_tracking_id: test123
+selfservice_analytics_tracking_id_xgov: test123
+selfservice_gocardless_live_client_id: testing
+selfservice_gocardless_live_oauth_base_url: https://connect-sandbox.gocardless.com
+selfservice_gocardless_test_client_id: testing
+selfservice_gocardless_test_oauth_base_url: https://connect-sandbox.gocardless.com
+selfservice_session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
+direct_debit_frontend_analytics_tracking_id: test123
+direct_debit_frontend_analytics_tracking_id_xgov: test123
+direct_debit_frontend_sentry_dsn: test123
+direct_debit_frontend_session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
+direct_debit_frontend_url: directdebit-frontend.staging.gdspay.uk
+space: staging
