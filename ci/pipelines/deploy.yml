@@ -267,7 +267,7 @@ jobs:
       - get: git-directdebit-frontend-pre-release
         trigger: true
       - task: extract-directdebit-frontend-artefact
-        file: omnibus/ci/tasks/extract-archive.yml
+        file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-directdebit-frontend-pre-release }
       - put: paas-staging
         params: &push-app-config
@@ -286,7 +286,7 @@ jobs:
       - get: git-card-frontend-pre-release
         trigger: true
       - task: extract-card-frontend-artefact
-        file: omnibus/ci/tasks/extract-archive.yml
+        file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-card-frontend-pre-release }
       - put: paas-staging
         params:
@@ -355,7 +355,7 @@ jobs:
       - get: git-products-ui-pre-release
         trigger: true
       - task: extract-products-ui-artefact
-        file: omnibus/ci/tasks/extract-archive.yml
+        file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-products-ui-pre-release }
       - put: paas-staging
         params:
@@ -400,7 +400,7 @@ jobs:
       - get: git-selfservice-pre-release
         trigger: true
       - task: download-selfservice-artefact
-        file: omnibus/ci/tasks/extract-archive.yml
+        file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-selfservice-pre-release }
       - put: paas-staging
         params:
