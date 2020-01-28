@@ -273,6 +273,7 @@ jobs:
         params: &push-app-config
           command: push
           path: artefact
+          manifest: artefact/manifest.yml
           vars_files:
             - omnibus/paas/env_variables/staging.yml
           vars:
