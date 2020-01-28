@@ -3,6 +3,20 @@ groups:
   - name: All
     jobs:
       - update-pipeline
+      - deploy-adminusers-staging
+      - deploy-cardid-staging
+      - deploy-card-connector-staging
+      - deploy-card-frontend-staging
+      - deploy-directdebit-connector-staging
+      - deploy-directdebit-frontend-staging
+      - deploy-ledger-staging
+      - deploy-products-staging
+      - deploy-products-ui-staging
+      - deploy-publicapi-staging
+      - deploy-publicauth-staging
+      - deploy-selfservice-staging
+      - deploy-notifications-staging
+      - deploy-sqs-staging
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
