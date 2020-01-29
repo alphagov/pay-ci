@@ -32,6 +32,5 @@ module "staging" {
 
   environment       = "staging"
   domain_name       = "gdspay.uk"
-  enable_cloudfront = true
   paas_domain       = "cloudapps.digital"
 }
