@@ -120,57 +120,57 @@ resources:
       <<: *github-release-source
       repository: pay-connector
 
+  - name: git-publicauth-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-publicauth
+
+  - name: git-publicapi-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-publicapi
+
+  - name: git-cardid-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-cardid
+
+  - name: git-directdebit-connector-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-direct-debit-connector
+
+  - name: git-ledger-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-ledger
+
+  - name: git-products-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-products
+
+  - name: git-adminusers-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-adminusers
+
   - &image
-    name: adminusers
+    name: notifications
     type: docker-image
     icon: docker
     source: &image-source
-      repository: govukpay/adminusers
+      repository: govukpay/notifications
       tag: latest-master
       username: ((docker-username))
       password: ((docker-password))
-
-  - <<: *image
-    name: cardid
-    source:
-      <<: *image-source
-      repository: govukpay/cardid
-
-  - <<: *image
-    name: directdebit-connector
-    source:
-      <<: *image-source
-      repository: govukpay/directdebit-connector
-
-  - <<: *image
-    name: ledger
-    source:
-      <<: *image-source
-      repository: govukpay/ledger
-
-  - <<: *image
-    name: products
-    source:
-      <<: *image-source
-      repository: govukpay/products
-
-  - <<: *image
-    name: publicapi
-    source:
-      <<: *image-source
-      repository: govukpay/publicapi
-
-  - <<: *image
-    name: publicauth
-    source:
-      <<: *image-source
-      repository: govukpay/publicauth
-
-  - <<: *image
-    name: notifications
-    source:
-      <<: *image-source
-      repository: govukpaypaas/notifications
 
   - name: paas-smoke-tests
     type: cf-cli
@@ -213,38 +213,35 @@ jobs:
     serial_groups: [adminusers-stg]
     plan:
       - get: omnibus
-      - get: adminusers
+      - get: git-adminusers-pre-release
         trigger: true
-        params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params: &paas-app
+      - task: extract-adminusers-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-adminusers-pre-release }
+      - put: paas-staging
+        params: &push-app-config
           command: push
-          app_name: adminusers
-          manifest: omnibus/paas/pay-apps.yml
-          docker_password: ((docker-password))
-          vars:
-            space: staging
-            docker-username: ((docker-username))
+          path: artefact
+          manifest: artefact/manifest.yml
           vars_files:
             - omnibus/paas/env_variables/staging.yml
+          vars:
+            db_name: adminusers
+            db_user: adminusers
 
   - name: deploy-cardid-staging
     serial_groups: [cardid-stg]
     plan:
       - get: omnibus
-      - get: cardid
+      - get: git-cardid-pre-release
         trigger: true
+      - task: extract-cardid-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-cardid-pre-release }
+      - put: paas-staging
         params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: cardid
+          <<: *push-app-config
           space: staging-cde
-
 
   - name: deploy-directdebit-frontend-staging
     serial_groups: [directdebit-frontend-stg]
@@ -256,15 +253,8 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-directdebit-frontend-pre-release }
       - put: paas-staging
-        params: &push-app-config
-          command: push
-          path: artefact
-          manifest: artefact/manifest.yml
-          vars_files:
-            - omnibus/paas/env_variables/staging.yml
-          vars:
-            memory: 1G
-            disk_quota: 1G
+        params:
+          <<: *push-app-config
 
   - name: deploy-card-connector-staging
     serial_groups: [card-connector-stg]
@@ -279,6 +269,9 @@ jobs:
         params:
           <<: *push-app-config
           space: staging-cde
+          vars:
+            db_name: connector
+            db_user: connector
 
   - name: deploy-card-frontend-staging
     serial_groups: [card-frontend-stg]
@@ -298,43 +291,46 @@ jobs:
     serial_groups: [directdebit-connector-stg]
     plan:
       - get: omnibus
-      - get: directdebit-connector
+      - get: git-directdebit-connector-pre-release
         trigger: true
+      - task: extract-directdebit-connector-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-directdebit-connector-pre-release }
+      - put: paas-staging
         params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: directdebit-connector
+          <<: *push-app-config
 
   - name: deploy-ledger-staging
     serial_groups: [ledger-stg]
     plan:
       - get: omnibus
-      - get: ledger
+      - get: git-ledger-pre-release
         trigger: true
+      - task: extract-ledger-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-ledger-pre-release }
+      - put: paas-staging
         params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: ledger
+          <<: *push-app-config
+          vars:
+            db_name: ledger
+            db_user: ledger
 
   - name: deploy-products-staging
     serial_groups: [products-stg]
     plan:
       - get: omnibus
-      - get: products
+      - get: git-products-pre-release
         trigger: true
+      - task: extract-products-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-products-pre-release }
+      - put: paas-staging
         params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: products
+          <<: *push-app-config
+          vars:
+            db_name: products
+            db_user: products
 
   - name: deploy-products-ui-staging
     serial_groups: [products-ui-stg]
@@ -353,29 +349,27 @@ jobs:
     serial_groups: [publicapi-stg]
     plan:
       - get: omnibus
-      - get: publicapi
+      - get: git-publicapi-pre-release
         trigger: true
+      - task: extract-publicapi-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-publicapi-pre-release }
+      - put: paas-staging
         params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: publicapi
+          <<: *push-app-config
 
   - name: deploy-publicauth-staging
     serial_groups: [publicauth-stg]
     plan:
       - get: omnibus
-      - get: publicauth
+      - get: git-publicauth-pre-release
         trigger: true
+      - task: extract-publicauth-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-publicauth-pre-release }
+      - put: paas-staging
         params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: publicauth
+          <<: *push-app-config
 
   - name: deploy-selfservice-staging
     serial_groups: [selfservice-stg]
@@ -400,9 +394,16 @@ jobs:
           skip_download: true
       - put: app
         resource: paas-staging
-        params:
-          <<: *paas-app
+        params: &docker-app
+          command: push
           app_name: notifications
+          manifest: omnibus/paas/pay-apps.yml
+          docker_password: ((docker-password))
+          vars:
+            space: staging
+            docker-username: ((docker-username))
+          vars_files:
+            - omnibus/paas/env_variables/staging.yml
 
   - name: deploy-sqs-staging
     plan:
@@ -410,7 +411,7 @@ jobs:
       - put: app
         resource: paas-staging
         params:
-          <<: *paas-app
+          <<: *docker-app
           app_name: sqs
 
   - name: deploy-selenium-hub
@@ -489,7 +490,7 @@ jobs:
         passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
         trigger: true
       - &trigger-test
-        get: cardid
+        get: git-cardid-pre-release
         passed: [deploy-cardid-staging]
         trigger: true
         params:
@@ -501,13 +502,13 @@ jobs:
         get: git-card-frontend-pre-release
         passed: [deploy-card-frontend-staging]
       - <<: *trigger-test
-        get: ledger
+        get: git-ledger-pre-release
         passed: [deploy-ledger-staging]
       - <<: *trigger-test
-        get: publicapi
+        get: git-publicapi-pre-release
         passed: [deploy-publicapi-staging]
       - <<: *trigger-test
-        get: publicauth
+        get: git-publicauth-pre-release
         passed: [deploy-publicauth-staging]
       - task: run card smoke test
         file: omnibus/ci/tasks/cf-task.yml
@@ -524,22 +525,22 @@ jobs:
         passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
         trigger: true
       - <<: *trigger-test
-        get: adminusers
+        get: git-adminusers-pre-release
         passed: [deploy-adminusers-staging]
       - <<: *trigger-test
-        get: directdebit-connector
+        get: git-directdebit-connector-pre-release
         passed: [deploy-directdebit-connector-staging]
       - <<: *trigger-test
         get: git-directdebit-frontend-pre-release
         passed: [deploy-directdebit-frontend-staging]
       - <<: *trigger-test
-        get: ledger
+        get: git-ledger-pre-release
         passed: [deploy-ledger-staging]
       - <<: *trigger-test
-        get: publicapi
+        get: git-publicapi-pre-release
         passed: [deploy-publicapi-staging]
       - <<: *trigger-test
-        get: publicauth
+        get: git-publicauth-pre-release
         passed: [deploy-publicauth-staging]
       - task: run direct debit smoke test
         file: omnibus/ci/tasks/cf-task.yml
@@ -555,7 +556,7 @@ jobs:
         passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
         trigger: true
       - <<: *trigger-test
-        get: products
+        get: git-products-pre-release
         passed: [deploy-products-staging]
       - <<: *trigger-test
         get: git-products-ui-pre-release
