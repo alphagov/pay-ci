@@ -178,7 +178,10 @@ jobs:
         params:
           CF_ORG: govuk-pay
           CF_SPACE: ((space))
-          ARGS: user a-test-user 'Pay for a thing'
+          ARGS:
+            - user
+            - a-test-user
+            - "Pay for a thing"
 
   - name: deploy-adminusers
     serial_groups: [adminusers]
