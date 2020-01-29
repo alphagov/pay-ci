@@ -1,22 +1,32 @@
-resource "aws_s3_bucket" "cloudfront_logs" {
-  bucket = "govuk-pay-cloudfront-logs-${var.environment}"
-  acl    = "private"
+locals {
+  name = "card-frontend"
 }
 
-resource "aws_cloudfront_distribution" "main" {
+resource "aws_route53_record" "card_frontend" {
+  zone_id = data.aws_route53_zone.root.zone_id
+  name    = "${local.name}.${local.subdomain}"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.card_frontend.domain_name
+    zone_id                = aws_cloudfront_distribution.card_frontend.hosted_zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_cloudfront_distribution" "card_frontend" {
   depends_on = [
     aws_acm_certificate_validation.cert,
   ]
 
-  enabled = "${var.enable_cloudfront}"
-  comment = "cloudfront-${var.environment}"
+  comment = "${var.environment}-${local.name}"
 
   logging_config {
     include_cookies = false
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  aliases = ["*.${var.environment}.gdspay.uk"]
+  aliases = ["${local.name}.${var.environment}.${var.domain_name}"]
 
   default_cache_behavior {
     target_origin_id       = "paas"
@@ -27,7 +37,7 @@ resource "aws_cloudfront_distribution" "main" {
     max_ttl                = 0
     default_ttl            = 0
 
-    field_level_encryption_id = var.enable_field_level_encryption ? data.external.field_level_encryption_config[0].result["id"] : null
+    field_level_encryption_id = data.external.card_frontend_fle_config.result["id"]
 
     forwarded_values {
       headers      = ["Host", "Origin", "Authorization"]
@@ -63,18 +73,14 @@ resource "aws_cloudfront_distribution" "main" {
   }
 }
 
-data "pass_password" "frontend_pubkey" {
-  count = var.enable_field_level_encryption ? 1 : 0
-
+data "pass_password" "card_frontend_pubkey" {
   path = "cloudfront/${var.environment}-frontend/pubkey"
 }
 
-resource "aws_cloudfront_public_key" "frontend" {
-  count = var.enable_field_level_encryption ? 1 : 0
-
-  name        = "${var.environment}-frontend"
+resource "aws_cloudfront_public_key" "card_frontend" {
+  name        = "${var.environment}-${local.name}-fle-pubkey"
   comment     = "Public key for field level encryption"
-  encoded_key = data.pass_password.frontend_pubkey[0].full
+  encoded_key = data.pass_password.card_frontend_pubkey.full
 
   lifecycle {
     ignore_changes = ["encoded_key"]
@@ -88,12 +94,10 @@ resource "aws_cloudfront_public_key" "frontend" {
 # The provision_fle_config.rb script takes a Cloudfront public key
 # ID and attempts to provision a FLE profile and FLE config before
 # returning the ID of the latter.
-data "external" "field_level_encryption_config" {
-  count = var.enable_field_level_encryption ? 1 : 0
-
-  program = ["ruby", "${path.module}/templates/provision_fle_config.rb"]
+data "external" "card_frontend_fle_config" {
+  program = ["ruby", "${path.module}/cloudfront/provision_fle_config.rb"]
 
   query = {
-    public_key_id = aws_cloudfront_public_key.frontend[0].id
+    public_key_id = aws_cloudfront_public_key.card_frontend.id
   }
 }
