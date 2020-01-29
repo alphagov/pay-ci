@@ -1,32 +1,29 @@
-locals {
-  name = "directdebit-frontend"
-}
-
-resource "aws_route53_record" "directdebit_frontend" {
+resource "aws_route53_record" "selfservice" {
   zone_id = data.aws_route53_zone.root.zone_id
-  name    = "${local.name}.${local.subdomain}"
+  name    = "selfservice.${local.subdomain}"
   type    = "A"
 
   alias {
-    name                   = aws_cloudfront_distribution.directdebit_frontend.domain_name
-    zone_id                = aws_cloudfront_distribution.directdebit_frontend.hosted_zone_id
+    name                   = aws_cloudfront_distribution.selfservice.domain_name
+    zone_id                = aws_cloudfront_distribution.selfservice.hosted_zone_id
     evaluate_target_health = true
   }
 }
 
-resource "aws_cloudfront_distribution" "directdebit_frontend" {
+resource "aws_cloudfront_distribution" "selfservice" {
   depends_on = [
     aws_acm_certificate_validation.cert,
   ]
 
-  comment = "${var.environment}-${local.name}"
+  enabled = true
+  comment = "${var.environment}-selfservice"
 
   logging_config {
     include_cookies = false
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  aliases = ["${local.name}.${var.environment}.${var.domain_name}"]
+  aliases = ["selfservice.${var.environment}.${var.domain_name}"]
 
   default_cache_behavior {
     target_origin_id       = "paas"

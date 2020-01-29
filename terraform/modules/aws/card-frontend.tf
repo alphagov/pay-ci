@@ -1,10 +1,6 @@
-locals {
-  name = "card-frontend"
-}
-
 resource "aws_route53_record" "card_frontend" {
   zone_id = data.aws_route53_zone.root.zone_id
-  name    = "${local.name}.${local.subdomain}"
+  name    = "card-frontend.${local.subdomain}"
   type    = "A"
 
   alias {
@@ -19,14 +15,15 @@ resource "aws_cloudfront_distribution" "card_frontend" {
     aws_acm_certificate_validation.cert,
   ]
 
-  comment = "${var.environment}-${local.name}"
+  enabled = true
+  comment = "${var.environment}-card-frontend"
 
   logging_config {
     include_cookies = false
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  aliases = ["${local.name}.${var.environment}.${var.domain_name}"]
+  aliases = ["card-frontend.${var.environment}.${var.domain_name}"]
 
   default_cache_behavior {
     target_origin_id       = "paas"
@@ -78,7 +75,7 @@ data "pass_password" "card_frontend_pubkey" {
 }
 
 resource "aws_cloudfront_public_key" "card_frontend" {
-  name        = "${var.environment}-${local.name}-fle-pubkey"
+  name        = "${var.environment}-card-frontend-fle-pubkey"
   comment     = "Public key for field level encryption"
   encoded_key = data.pass_password.card_frontend_pubkey.full
 

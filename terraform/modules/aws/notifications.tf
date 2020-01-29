@@ -1,10 +1,6 @@
-locals {
-  name = "notifications"
-}
-
 resource "aws_route53_record" "notifications" {
   zone_id = data.aws_route53_zone.root.zone_id
-  name    = "${local.name}.${local.subdomain}"
+  name    = "notifications.${local.subdomain}"
   type    = "A"
 
   alias {
@@ -19,14 +15,15 @@ resource "aws_cloudfront_distribution" "notifications" {
     aws_acm_certificate_validation.cert,
   ]
 
-  comment = "${var.environment}-${local.name}"
+  enabled = true
+  comment = "${var.environment}-notifications"
 
   logging_config {
     include_cookies = false
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  aliases = ["${local.name}.${var.environment}.${var.domain_name}"]
+  aliases = ["notifications.${var.environment}.${var.domain_name}"]
 
   default_cache_behavior {
     target_origin_id       = "paas"

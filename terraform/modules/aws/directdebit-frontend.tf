@@ -1,32 +1,29 @@
-locals {
-  name = "products-ui"
-}
-
-resource "aws_route53_record" "products_ui" {
+resource "aws_route53_record" "directdebit_frontend" {
   zone_id = data.aws_route53_zone.root.zone_id
-  name    = "${local.name}.${local.subdomain}"
+  name    = "directdebit-frontend.${local.subdomain}"
   type    = "A"
 
   alias {
-    name                   = aws_cloudfront_distribution.products_ui.domain_name
-    zone_id                = aws_cloudfront_distribution.products_ui.hosted_zone_id
+    name                   = aws_cloudfront_distribution.directdebit_frontend.domain_name
+    zone_id                = aws_cloudfront_distribution.directdebit_frontend.hosted_zone_id
     evaluate_target_health = true
   }
 }
 
-resource "aws_cloudfront_distribution" "products_ui" {
+resource "aws_cloudfront_distribution" "directdebit_frontend" {
   depends_on = [
     aws_acm_certificate_validation.cert,
   ]
 
-  comment = "${var.environment}-${local.name}"
+  enabled = true
+  comment = "${var.environment}-directdebit-frontend"
 
   logging_config {
     include_cookies = false
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  aliases = ["${local.name}.${var.environment}.gdspay.uk"]
+  aliases = ["directdebit-frontend.${var.environment}.${var.domain_name}"]
 
   default_cache_behavior {
     target_origin_id       = "paas"

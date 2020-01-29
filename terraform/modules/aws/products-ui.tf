@@ -1,32 +1,29 @@
-locals {
-  name = "selfservice"
-}
-
-resource "aws_route53_record" "selfservice" {
+resource "aws_route53_record" "products_ui" {
   zone_id = data.aws_route53_zone.root.zone_id
-  name    = "${local.name}.${local.subdomain}"
+  name    = "products-ui.${local.subdomain}"
   type    = "A"
 
   alias {
-    name                   = aws_cloudfront_distribution.selfservice.domain_name
-    zone_id                = aws_cloudfront_distribution.selfservice.hosted_zone_id
+    name                   = aws_cloudfront_distribution.products_ui.domain_name
+    zone_id                = aws_cloudfront_distribution.products_ui.hosted_zone_id
     evaluate_target_health = true
   }
 }
 
-resource "aws_cloudfront_distribution" "selfservice" {
+resource "aws_cloudfront_distribution" "products_ui" {
   depends_on = [
     aws_acm_certificate_validation.cert,
   ]
 
-  comment = "${var.environment}-${local.name}"
+  enabled = true
+  comment = "${var.environment}-products-ui"
 
   logging_config {
     include_cookies = false
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  aliases = ["${local.name}.${var.environment}.${var.domain_name}"]
+  aliases = ["products-ui.${var.environment}.gdspay.uk"]
 
   default_cache_behavior {
     target_origin_id       = "paas"
