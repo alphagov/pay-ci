@@ -41,5 +41,8 @@ run:
       archive_path="../../build-output/${APP_NAME}-${release_number}.tar.gz"
 
       echo "Creating build archive in: ${archive_path}"
-      cd target
-      tar -czf "$archive_path" pay-*-allinone.jar *.y*l
+
+      mkdir archive
+      cp target/pay-*-allinone.jar manifest.yml archive
+
+      tar -C archive -cz -f "$archive_path" .
