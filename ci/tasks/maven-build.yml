@@ -41,4 +41,4 @@ run:
       archive_path="../build-output/${APP_NAME}-${release_number}.tar.gz"
 
       echo "Creating build archive in: ${archive_path}"
-      tar -czf "$archive_path" ./target/pay-*-allinone.jar ./target/*.yaml
+      tar -czf "$archive_path" ./target/pay-*-allinone.jar ./target/*.yml
