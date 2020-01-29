@@ -38,7 +38,7 @@ run:
       mvn --global-settings settings.xml -Dmaven.test.skip=true -DskipTests package
 
       release_number="$(cat ../release-info/number)"
-      archive_path="../../build-output/${APP_NAME}-${release_number}.tar.gz"
+      archive_path="../build-output/${APP_NAME}-${release_number}.tar.gz"
 
       echo "Creating build archive in: ${archive_path}"
 
