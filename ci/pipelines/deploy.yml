@@ -114,6 +114,12 @@ resources:
       <<: *github-release-source
       repository: pay-products-ui
 
+  - name: git-card-connector-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-connector
+
   - &image
     name: adminusers
     type: docker-image
@@ -129,12 +135,6 @@ resources:
     source:
       <<: *image-source
       repository: govukpay/cardid
-
-  - <<: *image
-    name: card-connector
-    source:
-      <<: *image-source
-      repository: govukpay/connector
 
   - <<: *image
     name: directdebit-connector
@@ -245,20 +245,6 @@ jobs:
           app_name: cardid
           space: staging-cde
 
-  - name: deploy-card-connector-staging
-    serial_groups: [card-connector-stg]
-    plan:
-      - get: omnibus
-      - get: card-connector
-        trigger: true
-        params:
-          skip_download: true
-      - put: app
-        resource: paas-staging
-        params:
-          <<: *paas-app
-          app_name: card-connector
-          space: staging-cde
 
   - name: deploy-directdebit-frontend-staging
     serial_groups: [directdebit-frontend-stg]
@@ -279,6 +265,20 @@ jobs:
           vars:
             memory: 1G
             disk_quota: 1G
+
+  - name: deploy-card-connector-staging
+    serial_groups: [card-connector-stg]
+    plan:
+      - get: omnibus
+      - get: git-card-connector-pre-release
+        trigger: true
+      - task: extract-card-connector-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-card-connector-pre-release }
+      - put: paas-staging
+        params:
+          <<: *push-app-config
+          space: staging-cde
 
   - name: deploy-card-frontend-staging
     serial_groups: [card-frontend-stg]
@@ -495,7 +495,7 @@ jobs:
         params:
           skip_download: true
       - <<: *trigger-test
-        get: card-connector
+        get: git-card-connector-pre-release
         passed: [deploy-card-connector-staging]
       - <<: *trigger-test
         get: git-card-frontend-pre-release
