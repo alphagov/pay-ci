@@ -50,6 +50,10 @@ stores etc.) to support cardid.
 The build artefact in GitHub releases will not be a full representation of
 the deployed artefact.
 
+It will be more difficult to `cf push` a working version of cardid locally
+(for example to a dev environment), because locally built .jar files will not
+contain the cardid-data.
+
 The deployed package and droplet in GOV.UK PaaS will contain the pay-cardid-data.
 The package and droplet are created as part of
 [the cloudfoundry application staging process](https://docs.cloudfoundry.org/concepts/how-applications-are-staged.html),
