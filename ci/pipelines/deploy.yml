@@ -221,7 +221,7 @@ jobs:
       - put: paas-staging
         params: &push-app-config
           command: push
-          path: artefact
+          path: artefact/target/pay-*-allinone.jar
           manifest: artefact/manifest.yml
           vars_files:
             - omnibus/paas/env_variables/staging.yml
@@ -255,6 +255,7 @@ jobs:
       - put: paas-staging
         params:
           <<: *push-app-config
+          path: artefact
 
   - name: deploy-card-connector-staging
     serial_groups: [card-connector-stg]
@@ -286,6 +287,7 @@ jobs:
         params:
           <<: *push-app-config
           space: staging-cde
+          path: artefact
 
   - name: deploy-directdebit-connector-staging
     serial_groups: [directdebit-connector-stg]
@@ -299,6 +301,9 @@ jobs:
       - put: paas-staging
         params:
           <<: *push-app-config
+          vars:
+            db_name: directdebit-connector
+            db_user: directdebit-connector
 
   - name: deploy-ledger-staging
     serial_groups: [ledger-stg]
@@ -344,6 +349,7 @@ jobs:
       - put: paas-staging
         params:
           <<: *push-app-config
+          path: artefact
 
   - name: deploy-publicapi-staging
     serial_groups: [publicapi-stg]
@@ -383,6 +389,7 @@ jobs:
       - put: paas-staging
         params:
           <<: *push-app-config
+          path: artefact
 
   - name: deploy-notifications-staging
     serial_groups: [notifications-stg]
