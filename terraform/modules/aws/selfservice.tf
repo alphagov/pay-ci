@@ -12,11 +12,13 @@ resource "aws_route53_record" "selfservice" {
 
 resource "aws_cloudfront_distribution" "selfservice" {
   depends_on = [
+    aws_acm_certificate.cert,
     aws_acm_certificate_validation.cert,
   ]
 
-  enabled = true
-  comment = "${var.environment}-selfservice"
+  enabled             = true
+  wait_for_deployment = false
+  comment             = "${var.environment}-selfservice"
 
   logging_config {
     include_cookies = false

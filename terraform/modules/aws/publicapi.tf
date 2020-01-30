@@ -12,11 +12,13 @@ resource "aws_route53_record" "publicapi" {
 
 resource "aws_cloudfront_distribution" "publicapi" {
   depends_on = [
+    aws_acm_certificate.cert,
     aws_acm_certificate_validation.cert,
   ]
 
-  enabled = true
-  comment = "${var.environment}-publicapi"
+  enabled             = true
+  wait_for_deployment = false
+  comment             = "${var.environment}-publicapi"
 
   logging_config {
     include_cookies = false

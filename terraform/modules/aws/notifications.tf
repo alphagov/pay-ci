@@ -12,11 +12,13 @@ resource "aws_route53_record" "notifications" {
 
 resource "aws_cloudfront_distribution" "notifications" {
   depends_on = [
+    aws_acm_certificate.cert,
     aws_acm_certificate_validation.cert,
   ]
 
-  enabled = true
-  comment = "${var.environment}-notifications"
+  enabled             = true
+  wait_for_deployment = false
+  comment             = "${var.environment}-notifications"
 
   logging_config {
     include_cookies = false

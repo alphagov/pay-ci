@@ -12,11 +12,13 @@ resource "aws_route53_record" "card_frontend" {
 
 resource "aws_cloudfront_distribution" "card_frontend" {
   depends_on = [
+    aws_acm_certificate.cert,
     aws_acm_certificate_validation.cert,
   ]
 
-  enabled = true
-  comment = "${var.environment}-card-frontend"
+  enabled             = true
+  wait_for_deployment = false
+  comment             = "${var.environment}-card-frontend"
 
   logging_config {
     include_cookies = false
@@ -92,7 +94,7 @@ resource "aws_cloudfront_public_key" "card_frontend" {
 # ID and attempts to provision a FLE profile and FLE config before
 # returning the ID of the latter.
 data "external" "card_frontend_fle_config" {
-  program = ["ruby", "${path.module}/cloudfront/provision_fle_config.rb"]
+  program = ["ruby", "${path.module}/provision_fle_config.rb"]
 
   query = {
     public_key_id = aws_cloudfront_public_key.card_frontend.id

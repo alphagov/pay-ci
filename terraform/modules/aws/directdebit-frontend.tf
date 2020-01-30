@@ -12,11 +12,13 @@ resource "aws_route53_record" "directdebit_frontend" {
 
 resource "aws_cloudfront_distribution" "directdebit_frontend" {
   depends_on = [
+    aws_acm_certificate.cert,
     aws_acm_certificate_validation.cert,
   ]
 
-  enabled = true
-  comment = "${var.environment}-directdebit-frontend"
+  enabled             = true
+  wait_for_deployment = false
+  comment             = "${var.environment}-directdebit-frontend"
 
   logging_config {
     include_cookies = false

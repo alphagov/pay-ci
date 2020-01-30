@@ -12,6 +12,7 @@ resource "aws_route53_record" "publicauth" {
 
 resource "aws_cloudfront_distribution" "publicauth" {
   depends_on = [
+    aws_acm_certificate.cert,
     aws_acm_certificate_validation.cert,
   ]
 
@@ -22,8 +23,9 @@ resource "aws_cloudfront_distribution" "publicauth" {
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  enabled = true
-  aliases = ["publicauth.${var.environment}.${var.domain_name}"]
+  enabled             = true
+  wait_for_deployment = false
+  aliases             = ["publicauth.${var.environment}.${var.domain_name}"]
 
   default_cache_behavior {
     target_origin_id       = "paas"

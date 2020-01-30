@@ -12,11 +12,13 @@ resource "aws_route53_record" "products_ui" {
 
 resource "aws_cloudfront_distribution" "products_ui" {
   depends_on = [
+    aws_acm_certificate.cert,
     aws_acm_certificate_validation.cert,
   ]
 
-  enabled = true
-  comment = "${var.environment}-products-ui"
+  enabled             = true
+  wait_for_deployment = false
+  comment             = "${var.environment}-products-ui"
 
   logging_config {
     include_cookies = false
