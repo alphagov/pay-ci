@@ -54,15 +54,15 @@ products_api_token: g0nBA5lNzfUalQjk4ZBDy70AikNshxz2G70dA6lg
 
 # publicapi
 publicapi_route: publicapi.staging.gdspay.uk
-rate_limiter_elevated_accounts: ''
-rate_limiter_elevated_value_get: ''
-rate_limiter_elevated_value_post: ''
-rate_limiter_req_node_post: ''
-rate_limiter_reqs_node: ''
-rate_limiter_value: ''
-rate_limiter_value_post: ''
-redis_url: ''
-token_api_hmac_secret: qwer9yuhgf
+rate_limiter_value: 200
+rate_limiter_value_post: 100
+rate_limiter_reqs_node: 200
+rate_limiter_req_node_post: 100
+rate_limiter_elevated_value_get: 100
+rate_limiter_elevated_value_post: 200
+rate_limiter_elevated_accounts: 31
+redis_url: none
+token_api_hmac_secret: something
 
 # adminusers
 adminusers_route: adminusers-staging.apps.internal
