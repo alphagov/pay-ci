@@ -42,4 +42,4 @@ run:
 
       echo "Creating build archive in: ${archive_path}"
 
-      tar -czv -f "$archive_path" target/pay-*-allinone.jar manifest.yml
+      tar -czv -f "$archive_path" target/pay-*-allinone.jar manifest.yml env-map.yml
