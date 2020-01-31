@@ -8,7 +8,7 @@ Date: 2020-01-30
 
 ## Status
 
-Accepted
+Superceded by [ADR 6: serve cardid data from an internal http static file server](0006-serve-cardid-data-from-an-internal-http-static-file-server.html)
 
 ## Context
 
