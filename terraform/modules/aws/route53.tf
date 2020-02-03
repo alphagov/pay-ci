@@ -32,15 +32,3 @@ resource "aws_acm_certificate_validation" "cert" {
   certificate_arn         = aws_acm_certificate.cert.arn
   validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]
 }
-
-resource "aws_route53_record" "cloudfront" {
-  zone_id = data.aws_route53_zone.root.zone_id
-  name    = "*.${local.subdomain}"
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.main.domain_name
-    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
-    evaluate_target_health = true
-  }
-}
