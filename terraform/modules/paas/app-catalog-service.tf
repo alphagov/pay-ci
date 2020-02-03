@@ -1,7 +1,5 @@
-resource "cloudfoundry_user_provided_service" "app_catalog" {
-  name  = "app-catalog"
-  space = data.cloudfoundry_space.space.id
-  credentials = {
+locals {
+  app_catalog_urls = {
     "adminusers_url"            = "http://${cloudfoundry_route.adminusers.endpoint}:8080"
     "cardid_url"                = "http://${cloudfoundry_route.cardid.endpoint}:8080"
     "card_connector_url"        = "http://${cloudfoundry_route.card_connector.endpoint}:8080"
@@ -15,6 +13,19 @@ resource "cloudfoundry_user_provided_service" "app_catalog" {
     "publicapi_url"             = "https://${cloudfoundry_route.publicapi.endpoint}"
     "publicauth_url"            = "https://${cloudfoundry_route.publicauth.endpoint}"
     "selfservice_url"           = "https://${cloudfoundry_route.selfservice.endpoint}"
+    "selfservice_transactions_url" = "https://${cloudfoundry_route.selfservice.endpoint}/transactions"
     "toolbox_url"               = "https://${cloudfoundry_route.toolbox.endpoint}"
   }
+}
+
+resource "cloudfoundry_user_provided_service" "app_catalog" {
+  name  = "app-catalog"
+  space = data.cloudfoundry_space.space.id
+  credentials = local.app_catalog_urls
+}
+
+resource "cloudfoundry_user_provided_service" "app_catalog_cde" {
+  name  = "app-catalog"
+  space = data.cloudfoundry_space.cde_space.id
+  credentials = local.app_catalog_urls
 }
