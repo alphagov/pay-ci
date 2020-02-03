@@ -1,5 +1,5 @@
 provider "cloudfoundry" {
-  version = "0.10.0"
+  version = "0.11.0"
   api_url = "https://api.cloud.service.gov.uk"
 }
 
