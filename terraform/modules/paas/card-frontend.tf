@@ -4,7 +4,7 @@ resource "cloudfoundry_app" "card_frontend" {
   stopped = true
 
   lifecycle {
-    ignore_changes = [stopped]
+    ignore_changes = [stopped, health_check_type]
   }
 }
 
