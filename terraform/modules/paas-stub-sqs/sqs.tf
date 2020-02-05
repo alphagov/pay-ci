@@ -37,11 +37,8 @@ resource "cloudfoundry_network_policy" "sqs" {
   }
 }
 
-resource "cloudfoundry_user_provided_service" "sqs" {
-  name  = "sqs"
-  space = data.cloudfoundry_space.space.id
-
-  credentials = {
+locals {
+  sqs_credentials = {
     access_key                    = "x"
     secret_key                    = "x"
     non_standard_service_endpoint = "true"
@@ -51,3 +48,18 @@ resource "cloudfoundry_user_provided_service" "sqs" {
     event_queue_url               = "http://${cloudfoundry_route.sqs.endpoint}:9324/queue/pay_event_queue"
   }
 }
+
+resource "cloudfoundry_user_provided_service" "sqs-cde" {
+  name  = "sqs"
+  space = data.cloudfoundry_space.cde_space.id
+
+  credentials = local.sqs_credentials
+}
+
+resource "cloudfoundry_user_provided_service" "sqs" {
+  name  = "sqs"
+  space = data.cloudfoundry_space.space.id
+
+  credentials = local.sqs_credentials
+}
+
