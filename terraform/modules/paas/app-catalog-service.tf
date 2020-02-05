@@ -13,8 +13,12 @@ locals {
     "publicapi_url"                = "https://${cloudfoundry_route.publicapi.endpoint}"
     "publicauth_url"               = "https://${cloudfoundry_route.publicauth.endpoint}"
     "selfservice_url"              = "https://${cloudfoundry_route.selfservice.endpoint}"
-    "selfservice_transactions_url" = "https://${cloudfoundry_route.selfservice.endpoint}/transactions"
     "toolbox_url"                  = "https://${cloudfoundry_route.toolbox.endpoint}"
+    // @todo Fix these by configuring in the application(s). They should not be needed here.
+    "selfservice_transactions_url" = "https://${cloudfoundry_route.selfservice.endpoint}/transactions"
+    "products_ui_redirect_url"     = "https://${cloudfoundry_route.products_ui.endpoint}/redirect"
+    "products_ui_pay_url"          = "https://${cloudfoundry_route.products_ui.endpoint}/pay"
+    "products_ui_confirmation_url" = "https://${cloudfoundry_route.products_ui.endpoint}/payment-complete"
   }
 }
 
