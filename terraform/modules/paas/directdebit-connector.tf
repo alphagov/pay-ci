@@ -4,7 +4,7 @@ resource "cloudfoundry_app" "directdebit_connector" {
   stopped = true
 
   lifecycle {
-    ignore_changes = [stopped]
+    ignore_changes = [stopped, health_check_type]
   }
 }
 
