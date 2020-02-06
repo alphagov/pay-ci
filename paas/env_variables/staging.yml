@@ -49,6 +49,9 @@ rate_limiter_elevated_accounts: 31
 redis_url: none
 token_api_hmac_secret: something
 
+# publicauth
+token_db_bcrypt_salt: something
+
 # adminusers
 adminusers_route: adminusers-staging.apps.internal
 metrics_port: '8092'
