@@ -67,6 +67,12 @@ resources:
       repository: alphagov/pay-publicapi
 
   - <<: *travis-build
+    name: publicauth-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-publicauth
+
+  - <<: *travis-build
     name: adminusers-ci-build
     source:
       <<: *travis-build-source
@@ -134,6 +140,12 @@ resources:
     source:
       <<: *git-repo-source
       uri: https://github.com/alphagov/pay-publicapi
+
+  - <<: *git-repo
+    name: publicauth-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-publicauth
 
   - <<: *git-repo
     name: adminusers-source
@@ -207,6 +219,12 @@ resources:
     source:
       <<: *github-release-source
       repository: pay-publicapi
+
+  - <<: *github-release
+    name: publicauth-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-publicauth
 
   - <<: *github-release
     name: adminusers-pre-release
@@ -380,6 +398,25 @@ jobs:
           APP_NAME: pay-publicapi
       - put: release
         resource: publicapi-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-publicauth
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: publicauth-ci-build
+        trigger: true
+      - get: src
+        resource: publicauth-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-publicauth
+      - put: release
+        resource: publicauth-pre-release
         params: 
           <<: *release-params
 
