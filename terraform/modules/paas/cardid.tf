@@ -17,3 +17,11 @@ resource "cloudfoundry_route" "cardid" {
     app = cloudfoundry_app.cardid.id
   }
 }
+
+resource "cloudfoundry_network_policy" "cardid" {
+  policy {
+    source_app      = cloudfoundry_app.cardid.id
+    destination_app = cloudfoundry_app.cardid_data.id
+    port            = "8080"
+  }
+}
