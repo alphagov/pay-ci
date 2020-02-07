@@ -14,6 +14,6 @@ resource "cloudfoundry_route" "cardid_data" {
   space    = data.cloudfoundry_space.space.id
 
   target {
-    app = cloudfoundry_app.cardid.id
+    app = cloudfoundry_app.cardid_data.id
   }
 }
