@@ -4,6 +4,7 @@ groups:
     jobs:
       - update-pipeline
       - deploy-adminusers-staging
+      - deploy-cardid-data-staging
       - deploy-cardid-staging
       - deploy-card-connector-staging
       - deploy-card-frontend-staging
@@ -24,6 +25,7 @@ groups:
   - name: Staging Deploys
     jobs:
       - deploy-adminusers-staging
+      - deploy-cardid-data-staging
       - deploy-cardid-staging
       - deploy-card-connector-staging
       - deploy-card-frontend-staging
@@ -132,6 +134,15 @@ resources:
       <<: *github-release-source
       repository: pay-publicapi
 
+  - name: cardid-data-source
+    type: git
+    icon: github-circle
+    source:
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+      uri: https://github.com/alphagov/pay-cardid-data
+      branch: master
+
   - name: git-cardid-pre-release
     type: github-release
     source:
@@ -229,10 +240,25 @@ jobs:
             db_name: adminusers
             db_user: adminusers
 
+  - name: deploy-cardid-data-staging
+    serial_groups: [cardid-data-stg]
+    plan:
+      - get: cardid-data-source
+        trigger: true
+      - put: paas-staging
+        params:
+          command: push
+          path: cardid-data-source/sources
+          manifest: cardid-data-source/manifest.yml
+          space: staging
+
   - name: deploy-cardid-staging
     serial_groups: [cardid-stg]
     plan:
       - get: omnibus
+      - get: cardid-data-source
+        passed: [deploy-cardid-data-staging]
+        trigger: true
       - get: git-cardid-pre-release
         trigger: true
       - task: extract-cardid-artefact

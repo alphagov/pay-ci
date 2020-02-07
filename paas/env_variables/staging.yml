@@ -107,6 +107,11 @@ gds_directdebit_connector_gocardless_url: https://example.com
 gds_directdebit_connector_gocardless_webhook_secret: supersecret
 gds_directdebit_connector_gocardless_environment: sandbox
 
+# Cardid data locations
+test_card_data_location: http://cardid-data-stg.apps.internal:8080/test-cards/test-card-bin-ranges.csv
+worldpay_data_location: http://cardid-data-stg.apps.internal:8080/worldpay/GENERIC2ISOCPTISSUERPREPAID.CSV
+discover_data_location: http://cardid-data-stg.apps.internal:8080/discover/Merchant_Marketing.csv
+
 # General
 memory: 1G
 disk_quota: 1G
