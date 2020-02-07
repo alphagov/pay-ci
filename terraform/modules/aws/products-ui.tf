@@ -1,6 +1,6 @@
 resource "aws_route53_record" "products_ui" {
   zone_id = data.aws_route53_zone.root.zone_id
-  name    = "products-ui.${local.subdomain}"
+  name    = "products.${local.subdomain}"
   type    = "A"
 
   alias {
@@ -18,14 +18,14 @@ resource "aws_cloudfront_distribution" "products_ui" {
 
   enabled             = true
   wait_for_deployment = false
-  comment             = "${var.environment}-products-ui"
+  comment             = "${var.environment}-products"
 
   logging_config {
     include_cookies = false
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  aliases = ["products-ui.${var.environment}.gdspay.uk"]
+  aliases = ["products.${var.environment}.gdspay.uk"]
 
   default_cache_behavior {
     target_origin_id       = "paas"
