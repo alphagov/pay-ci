@@ -68,6 +68,12 @@ resources:
       uri: https://github.com/alphagov/pay-omnibus
       branch: develop
 
+  - name: every-10-minutes
+    type: time
+    icon: clock-outline
+    source:
+      interval: 10m
+
   - name: paas-staging
     type: cf-cli
     icon: cloud-upload-outline
@@ -522,6 +528,8 @@ jobs:
       - get: endtoend-container
         passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
         trigger: true
+      - get: every-10-minutes
+        trigger: true
       - &trigger-test
         get: git-cardid-pre-release
         passed: [deploy-cardid-staging]
@@ -557,6 +565,8 @@ jobs:
       - get: endtoend-container
         passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
         trigger: true
+      - get: every-10-minutes
+        trigger: true
       - <<: *trigger-test
         get: git-adminusers-pre-release
         passed: [deploy-adminusers-staging]
@@ -587,6 +597,8 @@ jobs:
       - get: omnibus
       - get: endtoend-container
         passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
+        trigger: true
+      - get: every-10-minutes
         trigger: true
       - <<: *trigger-test
         get: git-products-pre-release
