@@ -90,6 +90,12 @@ resources:
       <<: *travis-build-source
       repository: alphagov/pay-ledger
 
+  - <<: *travis-build
+    name: cardid-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-cardid
+
   # Source Code Resources
   - &git-repo
     name: card-frontend-source
@@ -164,6 +170,12 @@ resources:
     source:
       <<: *git-repo-source
       uri: https://github.com/alphagov/pay-ledger
+
+  - <<: *git-repo
+    name: cardid-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-cardid
 
 # Github Release Resources
   - &github-release
@@ -243,6 +255,12 @@ resources:
     source:
       <<: *github-release-source
       repository: pay-ledger
+
+  - <<: *github-release
+    name: cardid-pre-release
+    source:
+      <<: *github-release-source
+      repository: pay-cardid
 
 jobs:
   - name: build-card-frontend
@@ -475,4 +493,25 @@ jobs:
       - put: release
         resource: ledger-pre-release
         params: 
+          <<: *release-params
+
+  - name: build-cardid
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: cardid-ci-build
+        trigger: true
+      - get: src
+        resource: cardid-source
+        params:
+          submodules: none
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-cardid
+      - put: release
+        resource: cardid-pre-release
+        params:
           <<: *release-params
