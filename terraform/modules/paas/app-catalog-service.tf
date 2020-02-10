@@ -19,6 +19,9 @@ locals {
     "products_ui_redirect_url"     = "https://${cloudfoundry_route.products_ui.endpoint}/redirect"
     "products_ui_pay_url"          = "https://${cloudfoundry_route.products_ui.endpoint}/pay"
     "products_ui_confirmation_url" = "https://${cloudfoundry_route.products_ui.endpoint}/payment-complete"
+    // Some apps require FQP. These are mapped in env-map.yml in respective app repos.
+    "publicauth_api_path_url"      = "https://${cloudfoundry_route.publicauth.endpoint}/v1/api/auth"
+    "publicauth_frontend_path_url" = "https://${cloudfoundry_route.publicauth.endpoint}/v1/frontend/auth"
   }
 }
 
