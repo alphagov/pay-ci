@@ -50,7 +50,7 @@ redis_url: none
 token_api_hmac_secret: something
 
 # publicauth
-token_db_bcrypt_salt: something
+token_db_bcrypt_salt: $2a$12$ObOCg5Vq4gkz7XE6STcnae
 
 # adminusers
 adminusers_route: adminusers-staging.apps.internal
