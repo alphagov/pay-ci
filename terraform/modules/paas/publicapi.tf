@@ -29,4 +29,9 @@ resource "cloudfoundry_network_policy" "publicapi" {
     destination_app = cloudfoundry_app.directdebit_connector.id
     port            = "8080"
   }
+  policy {
+    source_app      = cloudfoundry_app.publicapi.id
+    destination_app = cloudfoundry_app.publicauth.id
+    port            = "8080"
+  }
 }

@@ -44,4 +44,9 @@ resource "cloudfoundry_network_policy" "selfservice" {
     destination_app = cloudfoundry_app.products.id
     port            = "8080"
   }
+  policy {
+    source_app      = cloudfoundry_app.selfservice.id
+    destination_app = cloudfoundry_app.publicauth.id
+    port            = "8080"
+  }
 }
