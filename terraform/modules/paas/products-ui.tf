@@ -24,4 +24,9 @@ resource "cloudfoundry_network_policy" "products_ui" {
     destination_app = cloudfoundry_app.products.id
     port            = "8080"
   }
+  policy {
+    source_app      = cloudfoundry_app.products_ui.id
+    destination_app = cloudfoundry_app.adminusers.id
+    port            = "8080"
+  }
 }
