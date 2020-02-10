@@ -11,7 +11,7 @@ locals {
     "products_ui_url"              = "https://${cloudfoundry_route.products_ui.endpoint}"
     "products_url"                 = "http://${cloudfoundry_route.products.endpoint}:8080"
     "publicapi_url"                = "https://${cloudfoundry_route.publicapi.endpoint}"
-    "publicauth_url"               = "https://${cloudfoundry_route.publicauth.endpoint}"
+    "publicauth_url"               = "http://${cloudfoundry_route.publicauth.endpoint}:8080"
     "selfservice_url"              = "https://${cloudfoundry_route.selfservice.endpoint}"
     "toolbox_url"                  = "https://${cloudfoundry_route.toolbox.endpoint}"
     // @todo Fix these by configuring in the application(s). They should not be needed here.
@@ -20,8 +20,8 @@ locals {
     "products_ui_pay_url"          = "https://${cloudfoundry_route.products_ui.endpoint}/pay"
     "products_ui_confirmation_url" = "https://${cloudfoundry_route.products_ui.endpoint}/payment-complete"
     // Some apps require FQP. These are mapped in env-map.yml in respective app repos.
-    "publicauth_api_path_url"      = "https://${cloudfoundry_route.publicauth.endpoint}/v1/api/auth"
-    "publicauth_frontend_path_url" = "https://${cloudfoundry_route.publicauth.endpoint}/v1/frontend/auth"
+    "publicauth_api_path_url"      = "http://${cloudfoundry_route.publicauth.endpoint}:8080/v1/api/auth"
+    "publicauth_frontend_path_url" = "http://${cloudfoundry_route.publicauth.endpoint}:8080/v1/frontend/auth"
   }
 }
 
