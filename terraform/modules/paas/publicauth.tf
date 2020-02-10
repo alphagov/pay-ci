@@ -9,8 +9,8 @@ resource "cloudfoundry_app" "publicauth" {
 }
 
 resource "cloudfoundry_route" "publicauth" {
-  domain   = data.cloudfoundry_domain.external.id
-  hostname = "publicauth${var.external_hostname_suffix}"
+  domain   = data.cloudfoundry_domain.internal.id
+  hostname = "publicauth${var.internal_hostname_suffix}"
   space    = data.cloudfoundry_space.space.id
 
   target {
