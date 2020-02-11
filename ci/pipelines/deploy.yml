@@ -474,6 +474,7 @@ jobs:
         params:
           <<: *docker-app
           app_name: sqs
+          manifest: omnibus/paas/fake-sqs.yml
 
   - name: deploy-selenium-hub
     serial_groups: [selenium-stg]
