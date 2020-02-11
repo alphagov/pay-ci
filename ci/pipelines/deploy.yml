@@ -557,14 +557,12 @@ jobs:
       - &trigger-test
         get: git-card-connector-pre-release
         passed: [deploy-card-connector-staging]
-        #get: git-cardid-pre-release
-        #passed: [deploy-cardid-staging]
         trigger: true
         params:
           skip_download: true
-      #- <<: *trigger-test
-      #  get: git-card-connector-pre-release
-      #  passed: [deploy-card-connector-staging]
+      - <<: *trigger-test
+        get: git-cardid-pre-release
+        passed: [deploy-cardid-staging]
       - <<: *trigger-test
         get: git-card-frontend-pre-release
         passed: [deploy-card-frontend-staging]
