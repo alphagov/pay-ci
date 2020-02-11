@@ -473,6 +473,7 @@ jobs:
         resource: paas-staging
         params:
           <<: *docker-app
+          docker-username: ((docker-username))
           app_name: sqs
           manifest: omnibus/paas/fake-sqs.yml
 

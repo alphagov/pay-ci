@@ -3,10 +3,9 @@ applications:
   - name: sqs
     docker:
       image: roribio16/alpine-sqs@sha256:2651d01db38cc9faa8184a4c87a93d95aa2aa3bb992b9e41ea6b4742dc8893bb
-      username: ((docker-username))
       healthcheck: process
-      memory: ((default_memory))
-     disk_quota: ((default_disk_quota))
+      memory: 500M
+      disk_quota: 500M
     command: mkdir /opt/custom && echo "$EMQ_CONFIG" | base64 -d > /opt/custom/elasticmq.conf
       && /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
     env:
