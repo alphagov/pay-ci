@@ -117,7 +117,7 @@ toolbox_disable_request_logging: false
 toolbox_cookie_session_encryption_secret: fewfewf3f3edp3oiof34f34mfo34fmo4i3i
 toolbox_sentry_dsn: noop
 toolbox_auth_github_enabled: true
-toolbox_auth_github_team_id: something
+toolbox_auth_github_team_id: 123456789
 toolbox_auth_github_admin_team_id: something
 toolbox_auth_github_client_id: something
 toolbox_auth_github_client_secret: something
