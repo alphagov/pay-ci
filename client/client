@@ -146,11 +146,10 @@ class AppClient
         .merge(user_data)
   end
 
-  def self.create_product(api_token, service_name, service_name_path, product_name)
+  def self.create_adhoc_product(api_token, service_name, service_name_path, product_name)
     product_data = {
         pay_api_token: api_token,
         name: 'exampleName',
-        price: 100,
         gateway_account_id: 1,
         return_url: 'https://www.payments.service.gov.uk',
         service_name: service_name,
