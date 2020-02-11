@@ -17,6 +17,7 @@ groups:
       - deploy-publicauth-staging
       - deploy-selfservice-staging
       - deploy-notifications-staging
+      - deploy-toolbox-staging
       - deploy-sqs-staging
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
@@ -38,6 +39,7 @@ groups:
       - deploy-publicauth-staging
       - deploy-selfservice-staging
       - deploy-notifications-staging
+      - deploy-toolbox-staging
       - deploy-sqs-staging
 
   - name: Smoke Tests
@@ -178,6 +180,12 @@ resources:
     source:
       <<: *github-release-source
       repository: pay-adminusers
+
+  - name: git-toolbox-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-toolbox
 
   - &image
     name: notifications
@@ -418,6 +426,20 @@ jobs:
       - task: download-selfservice-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-selfservice-pre-release }
+      - put: paas-staging
+        params:
+          <<: *push-app-config
+          path: artefact
+
+  - name: deploy-toolbox-staging
+    serial_groups: [toolbox-stg]
+    plan:
+      - get: omnibus
+      - get: git-toolbox-pre-release
+        trigger: true
+      - task: download-toolbox-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-toolbox-pre-release }
       - put: paas-staging
         params:
           <<: *push-app-config
