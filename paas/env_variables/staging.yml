@@ -112,6 +112,17 @@ test_card_data_location: http://cardid-data-stg.apps.internal:8080/test-cards/te
 worldpay_data_location: http://cardid-data-stg.apps.internal:8080/worldpay/GENERIC2ISOCPTISSUERPREPAID.CSV
 discover_data_location: http://cardid-data-stg.apps.internal:8080/discover/Merchant_Marketing.csv
 
+# Toolbox
+toolbox_disable_request_logging: false
+toolbox_cookie_session_encryption_secret: fewfewf3f3edp3oiof34f34mfo34fmo4i3i
+toolbox_sentry_dsn: noop
+toolbox_auth_github_enabled: true
+toolbox_auth_github_team_id: something
+toolbox_auth_github_admin_team_id: something
+toolbox_auth_github_client_id: something
+toolbox_auth_github_client_secret: something
+toolbox_stripe_account_api_key: something
+
 # General
 memory: 1G
 disk_quota: 1G
