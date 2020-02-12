@@ -24,3 +24,8 @@ variable "external_hostname_suffix" {
   description = "Suffix to avoid route collisions when multiple spaces share the same domain (for example, -bob would give card-frontend-bob.cloudapps.digital and so on)"
   default     = ""
 }
+
+variable "publicapi_credentials" {
+  type        = map(map(string))
+  description = "credential for publicapi"
+}
