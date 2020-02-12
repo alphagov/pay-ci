@@ -42,7 +42,7 @@ module "publicapi_credentials" {
 }
 
 resource "cloudfoundry_user_provided_service" "publicapi_secret_service" {
-  name        = "publicapi-serect-service"
+  name        = "publicapi-secret-service"
   space       = data.cloudfoundry_space.space.id
   credentials = merge(module.publicapi_credentials.secrets, lookup(var.publicapi_credentials, "static_values"))
 }
