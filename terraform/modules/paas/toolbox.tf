@@ -9,8 +9,8 @@ resource "cloudfoundry_app" "toolbox" {
 }
 
 resource "cloudfoundry_route" "toolbox" {
-  domain   = data.cloudfoundry_domain.external.id
-  hostname = "toolbox${var.external_hostname_suffix}"
+  domain   = data.cloudfoundry_domain.paas_external.id
+  hostname = "toolbox${var.internal_hostname_suffix}"
   space    = data.cloudfoundry_space.space.id
 
   target {

@@ -19,3 +19,7 @@ data "cloudfoundry_domain" "internal" {
 data "cloudfoundry_domain" "external" {
   name = var.external_domain
 }
+
+data "cloudfoundry_domain" "paas_external" {
+  name = "cloudapps.digital"
+}
