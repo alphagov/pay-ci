@@ -25,6 +25,7 @@ module "paas" {
   external_domain          = "staging.gdspay.uk"
   external_hostname_suffix = ""
   internal_hostname_suffix = "-stg"
+  publicapi_credentials = var.publicapi_credentials
 }
 
 module "paas_postgres" {
