@@ -48,4 +48,14 @@ credentials = {
     static_values = {
     }
   }
+  publicauth = {
+    pay_low_pass_secrets = {
+      sentry_dsn = "sentry/publicauth_dsn"
+    }
+    static_values = {
+      // @todo move these to secret store (placeholder for now)
+      token_db_bcrypt_salt = "$2a$12$ZqrGf7v9uNXR6htsfz4k2u"
+      token_api_hmac_secret = "something"
+    }
+  }
 }
