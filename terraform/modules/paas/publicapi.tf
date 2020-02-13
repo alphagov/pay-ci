@@ -1,3 +1,7 @@
+locals {
+  publicapi_credentials = lookup(var.credentials, "publicapi")
+}
+
 resource "cloudfoundry_app" "publicapi" {
   name    = "publicapi"
   space   = data.cloudfoundry_space.space.id
@@ -38,11 +42,11 @@ resource "cloudfoundry_network_policy" "publicapi" {
 
 module "publicapi_credentials" {
   source = "../credentials"
-  pay_low_pass_secrets = lookup(var.publicapi_credentials, "pay_low_pass_secrets")
+  pay_low_pass_secrets = lookup(local.publicapi_credentials, "pay_low_pass_secrets")
 }
 
 resource "cloudfoundry_user_provided_service" "publicapi_secret_service" {
   name        = "publicapi-secret-service"
   space       = data.cloudfoundry_space.space.id
-  credentials = merge(module.publicapi_credentials.secrets, lookup(var.publicapi_credentials, "static_values"))
+  credentials = merge(module.publicapi_credentials.secrets, lookup(local.publicapi_credentials, "static_values"))
 }
