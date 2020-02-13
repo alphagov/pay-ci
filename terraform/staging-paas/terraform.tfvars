@@ -101,4 +101,14 @@ credentials = {
       products_api_token = "something"
     }
   }
+  products_ui = {
+    pay_low_pass_secrets = {
+      sentry_dsn = "sentry/products_ui_dsn"
+    }
+    static_values = {
+      // @todo add this placeholder to secrets
+      session_encryption_key = "asdjhbwefbo23r23rbfik2roiwhefwbqw"
+      analytics_tracking_id = "testing-123"
+    }
+  }
 }
