@@ -17,11 +17,16 @@ credentials = {
   }
   card_connector = {
     pay_low_pass_secrets = {
+      sentry_dsn = "sentry/connector_dsn"
       apple_pay_certificate = "apple_pay/staging/payment-processing-certificate"
       apple_pay_key = "apple_pay/staging/payment-processing-private-key"
-      smartpay_notification_password = "smartpay/notifications/dcotest/password"
-      smartpay_notification_user = "smartpay/notifications/dcotest/username"
-      notify_api_key = "notify/api_key/staging"
+      smartpay_notification_password = "smartpay/staging/password"
+      smartpay_notification_user = "smartpay/staging/username"
+      notify_api_key = "notify/api_key/deploy/staging.connector.notify_api_key"
+      stripe_auth_token = "stripe/staging/test/account-api-key"
+      stripe_auth_live_token = "stripe/staging/test/account-api-key"
+      stripe_webhook_sign_secret = "stripe/staging/test/webhook-secret"
+      stripe_webhook_live_sign_secret = "stripe/staging/test/webhook-secret"
     }
     static_values = {
       aws_access_key = "x"
