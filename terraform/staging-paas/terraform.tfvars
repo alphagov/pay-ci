@@ -125,4 +125,15 @@ credentials = {
     static_values = {
     }
   }
+  directdebit_frontend = {
+    pay_low_pass_secrets = {
+      sentry_dsn = "sentry/directdebit_frontend_dsn"
+    }
+    static_values = {
+      // @todo add this placeholder to secrets
+      session_encryption_key = "asdjhbwefbo23r23rbfik2roiwhefwbqw"
+      analytics_tracking_id = "testing-123"
+      analytics_tracking_id_xgov = "testing-123"
+    }
+  }
 }
