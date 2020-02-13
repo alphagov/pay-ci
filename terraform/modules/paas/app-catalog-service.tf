@@ -22,6 +22,10 @@ locals {
     // Some apps require FQP. These are mapped in env-map.yml in respective app repos.
     "publicauth_api_path_url"      = "http://${cloudfoundry_route.publicauth.endpoint}:8080/v1/api/auth"
     "publicauth_frontend_path_url" = "http://${cloudfoundry_route.publicauth.endpoint}:8080/v1/frontend/auth"
+    "cardid_data_test_card_data_location" = "http://${cloudfoundry_route.cardid_data.endpoint}:8080/test-cards/test-card-bin-ranges.csv"
+    "cardid_data_worldpay_data_location"  = "http://${cloudfoundry_route.cardid_data.endpoint}:8080/worldpay/GENERIC2ISOCPTISSUERPREPAID.CSV"
+    "cardid_data_discover_data_location"  = "http://${cloudfoundry_route.cardid_data.endpoint}:8080/discover/Merchant_Marketing.csv"
+
   }
 }
 

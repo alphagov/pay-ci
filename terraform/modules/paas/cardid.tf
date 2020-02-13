@@ -1,3 +1,7 @@
+locals {
+  cardid_credentials = lookup(var.credentials, "cardid")
+}
+
 resource "cloudfoundry_app" "cardid" {
   name    = "cardid"
   space   = data.cloudfoundry_space.cde_space.id
@@ -24,4 +28,15 @@ resource "cloudfoundry_network_policy" "cardid" {
     destination_app = cloudfoundry_app.cardid_data.id
     port            = "8080"
   }
+}
+
+module "cardid_credentials" {
+  source = "../credentials"
+  pay_low_pass_secrets = lookup(local.cardid_credentials, "pay_low_pass_secrets")
+}
+
+resource "cloudfoundry_user_provided_service" "cardid_secret_service" {
+  name        = "cardid-secret-service"
+  space       = data.cloudfoundry_space.cde_space.id
+  credentials = merge(module.cardid_credentials.secrets, lookup(local.cardid_credentials, "static_values"))
 }
