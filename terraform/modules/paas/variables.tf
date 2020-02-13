@@ -25,7 +25,7 @@ variable "external_hostname_suffix" {
   default     = ""
 }
 
-variable "publicapi_credentials" {
-  type        = map(map(string))
-  description = "credential for publicapi"
+variable "credentials" {
+  type        = map(map(map(string)))
+  description = "credential for the apps"
 }

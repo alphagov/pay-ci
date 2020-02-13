@@ -1,3 +1,3 @@
-variable "publicapi_credentials" {
-  type = map(map(string))
+variable "credentials" {
+  type = map(map(map(string)))
 }
