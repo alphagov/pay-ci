@@ -111,4 +111,13 @@ credentials = {
       analytics_tracking_id = "testing-123"
     }
   }
+  adminusers = {
+    pay_low_pass_secrets = {
+      sentry_dsn = "sentry/adminusers_dsn"
+      notify_api_key = "notify/api_key/deploy/staging.adminusers.notify_api_key"
+      notify_direct_debit_api_key = "notify/api_key/deploy/staging.adminusers.notify_direct_debit_api_key"
+    }
+    static_values = {
+    }
+  }
 }
