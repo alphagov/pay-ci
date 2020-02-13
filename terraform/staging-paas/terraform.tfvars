@@ -41,4 +41,11 @@ credentials = {
       stripe_transaction_fee_percentage = "0.1"
     }
   }
+  cardid = {
+    pay_low_pass_secrets = {
+      sentry_dsn = "sentry/cardid_dsn"
+    }
+    static_values = {
+    }
+  }
 }
