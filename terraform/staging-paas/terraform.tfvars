@@ -58,4 +58,12 @@ credentials = {
       token_api_hmac_secret = "something"
     }
   }
+  card_frontend = {
+    pay_low_pass_secrets = {
+    }
+    static_values = {
+      card_frontend_session_encryption_key = "asdjhbwefbo23r23rbfik2roiwhefwbqw"
+      card_frontend_analytics_tracking_id  = "testing-123"
+    }
+  }
 }
