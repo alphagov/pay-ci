@@ -83,4 +83,13 @@ credentials = {
       cookie_session_encryption_secret = "something"
     }
   }
+  ledger = {
+    pay_low_pass_secrets = {
+      sentry_dsn = "sentry/ledger_dsn"
+    }
+    static_values = {
+      aws_access_key = "x"
+      aws_secret_key = "x"
+    }
+  }
 }
