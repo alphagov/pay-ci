@@ -13,8 +13,8 @@ login-team:
 
 set-pipelines:
 	fly -t local-pay set-pipeline \
-		--pipeline provision-envs \
-		--config ci/pipelines/provision-envs.yml \
+		--pipeline dev-pipelines \
+		--config ci/pipelines/dev-pipelines.yml \
 		--var concourse-url=http://concourse:8080 \
 		--var readonly_local_user_password=test \
 		--non-interactive
@@ -25,7 +25,7 @@ set-pipelines:
     		--var concourse-url=http://concourse:8080 \
     		--var readonly_local_user_password=test \
     		--non-interactive
-	fly -t local-pay unpause-pipeline -p provision-envs
+	fly -t local-pay unpause-pipeline -p dev-pipelines
 
 add-creds:
 	secrets/local-ssm-add.sh /concourse/pay-deploy/cf-username paas-london/govuk-pay/org-manager-bot/username

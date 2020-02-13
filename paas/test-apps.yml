@@ -30,7 +30,7 @@ applications:
       EXTERNAL_STUBS_URL: https://pay-stubs-((space)).london.cloudapps.digital/
       FRONTEND_URL: https://pay-frontend-((space)).london.cloudapps.digital
     routes:
-    - route: pay-stubs-((space)).london.cloudapps.digital
+    - route: pay-card-frontend-dev-dom.london.cloudapps.digital
   - name: end-to-end
     path: pay-endtoend
     health-check-type: process

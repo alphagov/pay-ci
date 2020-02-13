@@ -1,0 +1,88 @@
+---
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
+
+resources:
+  - name: endtoend
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-accept
+
+  - name: analysis-suite
+    type: s3
+    source:
+      bucket: firebreak-cypress-e2e-videos
+      region_name: eu-west-1
+      regexp: (.*).mp4
+
+  - name: slack-alert
+    type: slack-notification
+    source:
+      url: https://hooks.slack.com/services/((slack_url))
+
+
+jobs:
+  - name: run-tests
+    plan:
+      - get: endtoend
+      - task: endtoend-tests
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: { repository: cypress/included, tag: "3.8.1" }
+          inputs:
+            - name: endtoend
+          outputs:
+            - name: video
+              path: endtoend/cypress/videos
+          params:
+            CYPRESS_PASSWORD: ((password))
+            CYPRESS_USERNAME: ((username))
+            CYPRESS_OTP_SECRET: ((otp_secret))
+          run:
+            path: /bin/bash
+            args:
+              - -c
+              - |
+                cd endtoend
+                npm install
+                cypress run --spec cypress/integration/*
+
+      - put: analysis-suite
+        inputs:
+          - video
+        params:
+          file: video/*.mp4
+          acl: public-read
+      - task: create-message
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: alpine
+          inputs:
+            - name: video
+          outputs:
+            - name: message
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                echo "https://firebreak-cypress-e2e-videos.s3-eu-west-1.amazonaws.com/$(ls video | head -1)" > message/text.txt
+
+      - put: slack-alert
+        inputs:
+          - message
+        params:
+          channel: '#quantum-badgers'
+          text_file: message/text.txt
+
+
