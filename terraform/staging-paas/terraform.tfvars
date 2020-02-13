@@ -62,8 +62,25 @@ credentials = {
     pay_low_pass_secrets = {
     }
     static_values = {
+      // @todo add this placeholder to secrets
       card_frontend_session_encryption_key = "asdjhbwefbo23r23rbfik2roiwhefwbqw"
       card_frontend_analytics_tracking_id  = "testing-123"
+    }
+  }
+  toolbox = {
+    pay_low_pass_secrets = {
+      auth_github_client_id = "pay-toolbox/staging/github_client_id"
+      auth_github_client_secret = "pay-toolbox/staging/github_client_secret"
+      stripe_account_api_key = "stripe/staging/test/account-api-key"
+      sentry_dsn = "sentry/toolbox_dsn"
+    }
+    static_values = {
+      auth_github_enabled = "true"
+      auth_github_team_id = "3304500"
+      auth_github_admin_team_id = "3304500"
+      disable_request_logging = "false"
+      // @todo add this placeholder to secrets
+      cookie_session_encryption_secret = "something"
     }
   }
 }

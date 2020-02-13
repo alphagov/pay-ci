@@ -1,3 +1,7 @@
+locals {
+  toolbox_credentials = lookup(var.credentials, "toolbox")
+}
+
 resource "cloudfoundry_app" "toolbox" {
   name    = "toolbox"
   space   = data.cloudfoundry_space.space.id
@@ -49,4 +53,15 @@ resource "cloudfoundry_network_policy" "toolbox" {
     destination_app = cloudfoundry_app.publicauth.id
     port            = "8080"
   }
+}
+
+module "toolbox_credentials" {
+  source = "../credentials"
+  pay_low_pass_secrets = lookup(local.toolbox_credentials, "pay_low_pass_secrets")
+}
+
+resource "cloudfoundry_user_provided_service" "toolbox_secret_service" {
+  name        = "toolbox-secret-service"
+  space       = data.cloudfoundry_space.space.id
+  credentials = merge(module.toolbox_credentials.secrets, lookup(local.toolbox_credentials, "static_values"))
 }
