@@ -1,3 +1,7 @@
+locals {
+  ledger_credentials = lookup(var.credentials, "ledger")
+}
+
 resource "cloudfoundry_app" "ledger" {
   name    = "ledger"
   space   = data.cloudfoundry_space.space.id
@@ -16,4 +20,15 @@ resource "cloudfoundry_route" "ledger" {
   target {
     app = cloudfoundry_app.ledger.id
   }
+}
+
+module "ledger_credentials" {
+  source = "../credentials"
+  pay_low_pass_secrets = lookup(local.ledger_credentials, "pay_low_pass_secrets")
+}
+
+resource "cloudfoundry_user_provided_service" "ledger_secret_service" {
+  name        = "ledger-secret-service"
+  space       = data.cloudfoundry_space.space.id
+  credentials = merge(module.ledger_credentials.secrets, lookup(local.ledger_credentials, "static_values"))
 }
