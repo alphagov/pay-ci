@@ -17,8 +17,6 @@ credentials = {
   }
   card_connector = {
     pay_low_pass_secrets = {
-      #aws_access_key = "not sure what these are"
-      #aws_secret_key = "not sure what these are"
       apple_pay_certificate = "apple_pay/staging/payment-processing-certificate"
       apple_pay_key = "apple_pay/staging/payment-processing-private-key"
       smartpay_notification_password = "smartpay/notifications/dcotest/password"
@@ -26,6 +24,8 @@ credentials = {
       notify_api_key = "notify/api_key/staging"
     }
     static_values = {
+      aws_access_key = "x"
+      aws_secret_key = "x"
       secure_worldpay_notification_domain = "london.cloudapps.digital"
       secure_worldpay_notification_enabled = "false"
       worldpay_live_url = "https://example.com/stub/worldpay"
