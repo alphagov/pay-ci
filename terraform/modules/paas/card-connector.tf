@@ -29,6 +29,6 @@ module "card_connector_credentials" {
 
 resource "cloudfoundry_user_provided_service" "card_connector_secret_service" {
   name        = "card-connector-secret-service"
-  space       = data.cloudfoundry_space.space.id
+  space       = data.cloudfoundry_space.cde_space.id
   credentials = merge(module.card_connector_credentials.secrets, lookup(local.card_connector_credentials, "static_values"))
 }
