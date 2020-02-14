@@ -1,0 +1,5 @@
+applications:
+  - name: fluentbit
+    docker:
+      image: dmworth/pay-fluent-bit:tcp
+    health-check-type: process

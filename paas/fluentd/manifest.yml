@@ -1,0 +1,9 @@
+applications:
+  - name: fluentd
+    docker:
+      image: dmworth/pay-fluentd
+    health-check-type: process
+    env:
+      SPLUNK_HEC_API_KEY: ((splunk_hec_api_key))
+    routes:
+      - route: pay_fluentd.cloudapps.digital
