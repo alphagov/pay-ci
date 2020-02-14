@@ -136,4 +136,21 @@ credentials = {
       analytics_tracking_id_xgov = "testing-123"
     }
   }
+  directdebit_connector = {
+    pay_dev_pass_secrets = {
+      gds_directdebit_connector_gocardless_access_token = "gocardless/sandbox-access-tokens/staging/gocardless_sandbox_staging_readwrite_access_token"
+      gds_directdebit_connector_gocardless_webhook_secret = "gocardless/sandbox-webhook-endpoint-secrets/staging/gocardless_sandbox_staging_webhook_secret"
+      gocardless_test_client_secret = "gocardless/sandbox/partner-apps/staging/client-secret"
+      gocardless_live_client_secret = "gocardless/sandbox/partner-apps/staging/client-secret"
+    }
+    pay_low_pass_secrets = {
+      sentry_dsn = "sentry/directdebit_connector_dsn"
+    }
+    static_values = {
+      gocardless_test_oauth_base_url = "https://connect-sandbox.gocardless.com"
+      gocardless_live_oauth_base_url = "https://connect-sandbox.gocardless.com"
+      gds_directdebit_connector_gocardless_url = "https://api-sandbox.gocardless.com/"
+      gds_directdebit_connector_gocardless_environment = "sandbox"
+    }
+  }
 }

@@ -1,3 +1,7 @@
+locals {
+  directdebit_connector_credentials = lookup(var.credentials, "directdebit_connector")
+}
+
 resource "cloudfoundry_app" "directdebit_connector" {
   name    = "directdebit-connector"
   space   = data.cloudfoundry_space.space.id
@@ -16,4 +20,16 @@ resource "cloudfoundry_route" "directdebit_connector" {
   target {
     app = cloudfoundry_app.directdebit_connector.id
   }
+}
+
+module "directdebit_connector_credentials" {
+  source = "../credentials"
+  pay_low_pass_secrets = lookup(local.directdebit_connector_credentials, "pay_low_pass_secrets")
+  pay_dev_pass_secrets = lookup(local.directdebit_connector_credentials, "pay_dev_pass_secrets")
+}
+
+resource "cloudfoundry_user_provided_service" "directdebit_connector_secret_service" {
+  name        = "directdebit-connector-secret-service"
+  space       = data.cloudfoundry_space.space.id
+  credentials = merge(module.directdebit_connector_credentials.secrets, lookup(local.directdebit_connector_credentials, "static_values"))
 }
