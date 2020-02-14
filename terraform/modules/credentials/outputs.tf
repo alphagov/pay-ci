@@ -1,4 +1,4 @@
 output "secrets" {
   sensitive = true
-  value = local.low_pass_values
+  value = merge(local.low_pass_values, local.dev_pass_values)
 }
