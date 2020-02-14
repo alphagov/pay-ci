@@ -69,7 +69,7 @@ credentials = {
     static_values = {
       // @todo add this placeholder to secrets
       card_frontend_session_encryption_key = "asdjhbwefbo23r23rbfik2roiwhefwbqw"
-      card_frontend_analytics_tracking_id  = "testing-123"
+      card_frontend_analytics_tracking_id = "testing-123"
     }
   }
   toolbox = {
@@ -153,4 +153,29 @@ credentials = {
       gds_directdebit_connector_gocardless_environment = "sandbox"
     }
   }
+  selfservice = {
+    pay_low_pass_secrets = {
+      sentry_dsn = "sentry/selfservice_dsn"
+      stripe_account_api_key = "stripe/staging/test/account-api-key"
+    }
+
+    pay_dev_pass_secrets = {
+      gocardless_test_oauth_client_id = "gocardless/sandbox/partner-apps/staging/client-id"
+      gocardless_live_oauth_client_id = "gocardless/sandbox/partner-apps/staging/client-id"
+    }
+
+    static_values = {
+      // @todo add this placeholder to secrets
+      session_encryption_key = "asdjhbwefbo23r23rbfik2roiwhefwbqw"
+      analytics_tracking_id = "testing-123"
+      analytics_tracking_id_xgov = "testing-123"
+
+      zendesk_api_key = "fake_key"
+      zendesk_user = "fake_user"
+
+      gocardless_test_oauth_url = "https://connect-sandbox.gocardless.com"
+      gocardless_live_oauth_url = "https://connect-sandbox.gocardless.com"
+    }
+  }
 }
+
