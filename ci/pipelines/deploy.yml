@@ -22,6 +22,12 @@ groups:
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
+      - migrate-adminusers-db-staging
+      - migrate-card-connector-db-staging
+      - migrate-directdebit-connector-db-staging
+      - migrate-ledger-db-staging
+      - migrate-products-db-staging
+      - migrate-publicauth-db-staging
 
   - name: Staging Deploys
     jobs:
@@ -41,6 +47,12 @@ groups:
       - deploy-notifications-staging
       - deploy-toolbox-staging
       - deploy-sqs-staging
+      - migrate-adminusers-db-staging
+      - migrate-card-connector-db-staging
+      - migrate-directdebit-connector-db-staging
+      - migrate-ledger-db-staging
+      - migrate-products-db-staging
+      - migrate-publicauth-db-staging
 
   - name: Smoke Tests
     jobs:
@@ -648,6 +660,7 @@ jobs:
   - name: migrate-adminusers-db-staging
     plan:
       - get: omnibus
+      - get: git-adminusers-pre-release
         passed: [deploy-adminusers-staging]
         trigger: true
       - &run-migration
@@ -664,6 +677,7 @@ jobs:
   - name: migrate-card-connector-db-staging
     plan:
       - get: omnibus
+      - get: git-card-connector-pre-release
         passed: [deploy-card-connector-staging]
         trigger: true
       - <<: *run-migration
@@ -677,6 +691,7 @@ jobs:
   - name: migrate-directdebit-connector-db-staging
     plan:
       - get: omnibus
+      - get: git-directdebit-connector-pre-release
         passed: [deploy-directdebit-connector-staging]
         trigger: true
       - <<: *run-migration
@@ -690,6 +705,7 @@ jobs:
   - name: migrate-ledger-db-staging
     plan:
       - get: omnibus
+      - get: git-ledger-pre-release
         passed: [deploy-ledger-staging]
         trigger: true
       - <<: *run-migration
@@ -703,6 +719,7 @@ jobs:
   - name: migrate-products-db-staging
     plan:
       - get: omnibus
+      - get: git-products-pre-release
         passed: [deploy-products-staging]
         trigger: true
       - <<: *run-migration
@@ -716,6 +733,7 @@ jobs:
   - name: migrate-publicauth-db-staging
     plan:
       - get: omnibus
+      - get: git-publicauth-pre-release
         passed: [deploy-publicauth-staging]
         trigger: true
       - <<: *run-migration
