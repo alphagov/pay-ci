@@ -714,7 +714,7 @@ jobs:
           CF_SPACE: staging
           COMMAND: workdir/ci/scripts/migrate_database.sh
           APP_NAME: ledger
-          APP_PACKAGE: uk.gov.pay.ledger.LedgerApp
+          APP_PACKAGE: uk.gov.pay.ledger.app.LedgerApp
   
   - name: migrate-products-db-staging
     plan:
