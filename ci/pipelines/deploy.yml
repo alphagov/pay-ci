@@ -668,6 +668,7 @@ jobs:
         file: omnibus/ci/tasks/cf-task.yml
         input_mapping: { workdir: omnibus }
         params:
+          &migration-params
           <<: *cf-creds
           CF_SPACE: staging
           COMMAND: workdir/ci/scripts/migrate_database.sh
@@ -682,9 +683,8 @@ jobs:
         trigger: true
       - <<: *run-migration
         params:
-          <<: *cf-creds
+          <<: *migration-params
           CF_SPACE: staging-cde
-          COMMAND: workdir/ci/scripts/migrate_database.sh
           APP_NAME: card-connector
           APP_PACKAGE: uk.gov.pay.connector.app.ConnectorApp
 
@@ -696,9 +696,7 @@ jobs:
         trigger: true
       - <<: *run-migration
         params:
-          <<: *cf-creds
-          CF_SPACE: staging
-          COMMAND: workdir/ci/scripts/migrate_database.sh
+          <<: *migration-params
           APP_NAME: directdebit-connector
           APP_PACKAGE: uk.gov.pay.directdebit.DirectDebitConnectorApp
 
@@ -710,9 +708,7 @@ jobs:
         trigger: true
       - <<: *run-migration
         params:
-          <<: *cf-creds
-          CF_SPACE: staging
-          COMMAND: workdir/ci/scripts/migrate_database.sh
+          <<: *migration-params
           APP_NAME: ledger
           APP_PACKAGE: uk.gov.pay.ledger.app.LedgerApp
   
@@ -724,9 +720,7 @@ jobs:
         trigger: true
       - <<: *run-migration
         params:
-          <<: *cf-creds
-          CF_SPACE: staging
-          COMMAND: workdir/ci/scripts/migrate_database.sh
+          <<: *migration-params
           APP_NAME: products
           APP_PACKAGE: uk.gov.pay.products.ProductsApplication
 
@@ -738,9 +732,7 @@ jobs:
         trigger: true
       - <<: *run-migration
         params:
-          <<: *cf-creds
-          CF_SPACE: staging
-          COMMAND: workdir/ci/scripts/migrate_database.sh
+          <<: *migration-params
           APP_NAME: publicauth
           APP_PACKAGE: uk.gov.pay.publicauth.app.PublicAuthApp
                 
