@@ -22,6 +22,12 @@ groups:
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
+      - migrate-adminusers-db-staging
+      - migrate-card-connector-db-staging
+      - migrate-directdebit-connector-db-staging
+      - migrate-ledger-db-staging
+      - migrate-products-db-staging
+      - migrate-publicauth-db-staging
 
   - name: Staging Deploys
     jobs:
@@ -41,6 +47,12 @@ groups:
       - deploy-notifications-staging
       - deploy-toolbox-staging
       - deploy-sqs-staging
+      - migrate-adminusers-db-staging
+      - migrate-card-connector-db-staging
+      - migrate-directdebit-connector-db-staging
+      - migrate-ledger-db-staging
+      - migrate-products-db-staging
+      - migrate-publicauth-db-staging
 
   - name: Smoke Tests
     jobs:
@@ -51,6 +63,15 @@ groups:
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
+
+  - name: Staging DB Migrations
+    jobs:
+      - migrate-adminusers-db-staging
+      - migrate-card-connector-db-staging
+      - migrate-directdebit-connector-db-staging
+      - migrate-ledger-db-staging
+      - migrate-products-db-staging
+      - migrate-publicauth-db-staging
 
 resource_types:
   - name: cf-cli
@@ -635,3 +656,91 @@ jobs:
         params:
           <<: *smoke-test-params
           COMMAND: cf ssh smoke-tests-staging -c /app/bin/smoke-products
+
+  - name: migrate-adminusers-db-staging
+    plan:
+      - get: omnibus
+      - get: git-adminusers-pre-release
+        passed: [deploy-adminusers-staging]
+        trigger: true
+      - &run-migration
+        task: run-migration
+        file: omnibus/ci/tasks/cf-task.yml
+        input_mapping: { workdir: omnibus }
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: adminusers
+          APP_PACKAGE: uk.gov.pay.adminusers.app.AdminUsersApp
+    
+  - name: migrate-card-connector-db-staging
+    plan:
+      - get: omnibus
+      - get: git-card-connector-pre-release
+        passed: [deploy-card-connector-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging-cde
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: card-connector
+          APP_PACKAGE: uk.gov.pay.connector.app.ConnectorApp
+
+  - name: migrate-directdebit-connector-db-staging
+    plan:
+      - get: omnibus
+      - get: git-directdebit-connector-pre-release
+        passed: [deploy-directdebit-connector-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: directdebit-connector
+          APP_PACKAGE: uk.gov.pay.directdebit.DirectDebitConnectorApp
+
+  - name: migrate-ledger-db-staging
+    plan:
+      - get: omnibus
+      - get: git-ledger-pre-release
+        passed: [deploy-ledger-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: ledger
+          APP_PACKAGE: uk.gov.pay.ledger.LedgerApp
+  
+  - name: migrate-products-db-staging
+    plan:
+      - get: omnibus
+      - get: git-products-pre-release
+        passed: [deploy-products-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: products
+          APP_PACKAGE: uk.gov.pay.products.ProductsApplication
+
+  - name: migrate-publicauth-db-staging
+    plan:
+      - get: omnibus
+      - get: git-publicauth-pre-release
+        passed: [deploy-publicauth-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: publicauth
+          APP_PACKAGE: uk.gov.pay.publicauth.app.PublicAuthApp
+                
