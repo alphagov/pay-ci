@@ -568,6 +568,8 @@ jobs:
 
   - name: card-payment-smoke-tests-staging
     serial_groups: [cardid-stg, card-connector-stg, card-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
+    build_log_retention:
+      builds: 1000
     plan:
       - get: omnibus
       - get: endtoend-container
@@ -605,6 +607,8 @@ jobs:
 
   - name: direct-debit-smoke-tests-staging
     serial_groups: [adminusers-stg, directdebit-connector-stg, directdebit-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
+    build_log_retention:
+      builds: 1000
     plan:
       - get: omnibus
       - get: endtoend-container
@@ -638,6 +642,8 @@ jobs:
 
   - name: products-smoke-test-staging
     serial_groups: [products-stg, products-ui-stg]
+    build_log_retention:
+      builds: 1000
     plan:
       - get: omnibus
       - get: endtoend-container
