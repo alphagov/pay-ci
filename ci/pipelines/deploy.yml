@@ -54,7 +54,12 @@ groups:
 
   - name: Staging DB Migrations
     jobs:
+      - migrate-adminusers-db-staging
+      - migrate-card-connector-db-staging
+      - migrate-directdebit-connector-db-staging
+      - migrate-ledger-db-staging
       - migrate-products-db-staging
+      - migrate-publicauth-db-staging
 
 resource_types:
   - name: cf-cli
@@ -640,39 +645,84 @@ jobs:
           <<: *smoke-test-params
           COMMAND: cf ssh smoke-tests-staging -c /app/bin/smoke-products
 
-  - name: migrate-products-db-staging
+  - name: migrate-adminusers-db-staging
     plan:
       - get: omnibus
-      - task: run-migration
+        passed: [deploy-adminusers-staging]
+        trigger: true
+      - &run-migration
+        task: run-migration
+        file: omnibus/ci/tasks/cf-task.yml
+        input_mapping: { workdir: omnibus }
         params:
           <<: *cf-creds
           CF_SPACE: staging
-          CF_SPACE_CDE: staging-cde
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: adminusers
+          APP_PACKAGE: uk.gov.pay.adminusers.app.AdminUsersApp
+    
+  - name: migrate-card-connector-db-staging
+    plan:
+      - get: omnibus
+        passed: [deploy-card-connector-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging-cde
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: card-connector
+          APP_PACKAGE: uk.gov.pay.connector.app.ConnectorApp
+
+  - name: migrate-directdebit-connector-db-staging
+    plan:
+      - get: omnibus
+        passed: [deploy-directdebit-connector-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: directdebit-connector
+          APP_PACKAGE: uk.gov.pay.directdebit.DirectDebitConnectorApp
+
+  - name: migrate-ledger-db-staging
+    plan:
+      - get: omnibus
+        passed: [deploy-ledger-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: ledger
+          APP_PACKAGE: uk.gov.pay.ledger.LedgerApp
+  
+  - name: migrate-products-db-staging
+    plan:
+      - get: omnibus
+        passed: [deploy-products-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          COMMAND: workdir/ci/scripts/migrate_database.sh
           APP_NAME: products
           APP_PACKAGE: uk.gov.pay.products.ProductsApplication
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source:
-              repository: governmentpaas/cf-cli 
-          run:
-            path: bash
-            args:
-              - -c
-              - |
-                set -o errexit -o nounset
-                cf login -a "$CF_API" \
-                  -u "$CF_USERNAME" -p "$CF_PASSWORD" \
-                  -o "$CF_ORG" -s "$CF_SPACE"
-                cf run-task ${APP_NAME} '/home/vcap/app/.java-buildpack/open_jdk_jre/bin/java -Djava.security.properties=/home/vcap/app/.java-buildpack/java_security/java.security -Xms512m -Xmx1G -cp /home/vcap/app/.:/home/vcap/app/.java-buildpack/client_certificate_mapper/client_certificate_mapper-1.11.0_RELEASE.jar:/home/vcap/app/.java-buildpack/postgresql_jdbc/postgresql_jdbc-42.2.9.jar:/home/vcap/app/.java-buildpack/container_security_provider/container_security_provider-1.16.0_RELEASE.jar uk.gov.pay.products.ProductsApplication db migrate /home/vcap/app/config/config.yaml' --name "${APP_NAME}-db-migration"
-                echo "You can view the raw logs using: cf logs ${APP_NAME} --recent"
-                echo "Fetching task logs:"
-                cf logs ${APP_NAME} | sed '/Exit status/q' > migration.log
-                EXIT_CODE=$(cat migration.log | sed -En 's/.*Exit status ([0-9]*)/\1/p')
-                cat migration.log | awk '$4 ~ /(\[APP\/TASK\/)*/' | grep -o '{.*}' | jq '.message' -r
-                if [ $EXIT_CODE != 0 ]
-                then
-                  exit 1
-                fi
+
+  - name: migrate-publicauth-db-staging
+    plan:
+      - get: omnibus
+        passed: [deploy-publicauth-staging]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *cf-creds
+          CF_SPACE: staging
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: publicauth
+          APP_PACKAGE: uk.gov.pay.publicauth.app.PublicAuthApp
                 
