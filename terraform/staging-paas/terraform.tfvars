@@ -65,6 +65,8 @@ credentials = {
   }
   card_frontend = {
     pay_low_pass_secrets = {
+      // @todo make this a real thing in pay-low-pass
+      field_level_encryption_private_key = "field_level_encryption_key/staging/frontend"
     }
     static_values = {
       // @todo add this placeholder to secrets

@@ -98,18 +98,20 @@ resources:
 
   # Source Code Resources
   - &git-repo
-    name: card-frontend-source
+    name: toolbox-source
     type: git
     icon: github-circle
     source: &git-repo-source
-      uri: https://github.com/alphagov/pay-frontend
+      uri: https://github.com/alphagov/pay-toolbox
       branch: master
 
   - <<: *git-repo
-    name: toolbox-source
+    name: card-frontend-source
     source:
       <<: *git-repo-source
-      uri: https://github.com/alphagov/pay-toolbox
+      uri: https://github.com/alphagov/pay-frontend
+      # TODO: remove this once https://github.com/alphagov/pay-frontend/pull/1388 is merged
+      branch: PP-6147-decrypt-field-level-encryption-fields
 
   - <<: *git-repo
     name: products-ui-source
