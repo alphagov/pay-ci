@@ -36,7 +36,7 @@ resource "aws_cloudfront_distribution" "card_frontend" {
     max_ttl                = 0
     default_ttl            = 0
 
-    #field_level_encryption_id = data.external.card_frontend_fle_config.result["id"]
+    field_level_encryption_id = data.external.card_frontend_fle_config.result["id"]
 
     forwarded_values {
       headers      = ["Host", "Origin", "Authorization"]

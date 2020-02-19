@@ -32,7 +32,6 @@ PROFILE_JSON = <<EOS
                     "Items": [
                         "cvc",
                         "cardNo",
-                        "addressPostcode",
                         "expiryYear",
                         "expiryMonth"
                     ]
