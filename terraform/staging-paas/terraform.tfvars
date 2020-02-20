@@ -72,6 +72,8 @@ credentials = {
       // @todo add this placeholder to secrets
       card_frontend_session_encryption_key = "asdjhbwefbo23r23rbfik2roiwhefwbqw"
       card_frontend_analytics_tracking_id = "testing-123"
+      field_level_encryption_key_name = "staging-card-frontend-fle-pubkey"
+      field_level_encryption_key_namespace = "frontend"
     }
   }
   toolbox = {
