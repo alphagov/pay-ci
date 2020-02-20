@@ -28,7 +28,7 @@ PROFILE_JSON = <<EOS
                 "PublicKeyId": "",
                 "ProviderId": "frontend",
                 "FieldPatterns": {
-                    "Quantity": 5,
+                    "Quantity": 4,
                     "Items": [
                         "cvc",
                         "cardNo",
