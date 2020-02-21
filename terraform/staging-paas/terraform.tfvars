@@ -74,8 +74,8 @@ credentials = {
   }
   toolbox = {
     pay_low_pass_secrets = {
-      auth_github_client_id = "pay-toolbox/staging/github_client_id"
-      auth_github_client_secret = "pay-toolbox/staging/github_client_secret"
+      auth_github_client_id = "pay-toolbox/paas_staging/github_client_id"
+      auth_github_client_secret = "pay-toolbox/paas_staging/github_client_secret"
       stripe_account_api_key = "stripe/staging/test/account-api-key"
       sentry_dsn = "sentry/toolbox_dsn"
     }
