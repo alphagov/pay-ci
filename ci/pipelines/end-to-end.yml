@@ -1,0 +1,297 @@
+---
+resources:
+  - name: pay-scripts
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-scripts
+      branch: e2e_on_concourse
+      username: ((github-readonly-username))
+      password: ((github-readonly-password))
+
+  - &image
+    name: adminusers
+    type: registry-image
+    icon: docker
+    source: &image-source
+      repository: govukpay/adminusers
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
+
+  - <<: *image
+    name: cardid
+    source:
+      <<: *image-source
+      repository: govukpay/cardid
+
+  - <<: *image
+    name: card-connector
+    source:
+      <<: *image-source
+      repository: govukpay/connector
+
+  - <<: *image
+    name: directdebit-connector
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-connector
+
+  - <<: *image
+    name: directdebit-frontend
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-frontend
+
+  - <<: *image
+    name: card-frontend
+    source:
+      <<: *image-source
+      repository: govukpay/frontend
+
+  - <<: *image
+    name: ledger
+    source:
+      <<: *image-source
+      repository: govukpay/ledger
+
+  - <<: *image
+    name: products
+    source:
+      <<: *image-source
+      repository: govukpay/products
+
+  - <<: *image
+    name: products-ui
+    source:
+      <<: *image-source
+      repository: govukpay/products-ui
+
+  - <<: *image
+    name: publicapi
+    source:
+      <<: *image-source
+      repository: govukpay/publicapi
+
+  - <<: *image
+    name: publicauth
+    source:
+      <<: *image-source
+      repository: govukpay/publicauth
+
+  - <<: *image
+    name: selfservice
+    source:
+      <<: *image-source
+      repository: govukpay/selfservice
+
+  - <<: *image
+    name: reverse_proxy
+    source:
+      <<: *image-source
+      repository: govukpay/reverse-proxy
+
+  - <<: *image
+    name: stubs
+    source:
+      <<: *image-source
+      repository: govukpay/stubs
+
+  - <<: *image
+    name: demoservice
+    source:
+      <<: *image-source
+      repository: govukpay/demo-service
+
+  - <<: *image
+    name: sqs
+    source:
+      <<: *image-source
+      repository: roribio16/alpine-sqs
+      tag: latest
+
+  - <<: *image
+    name: postgres
+    source:
+      <<: *image-source
+      repository: postgres
+      tag: 11-alpine
+
+  - <<: *image
+    name: chrome
+    source:
+      <<: *image-source
+      repository: selenium/node-chrome
+      tag: 3.141.59
+
+  - <<: *image
+    name: selenium-hub
+    source:
+      <<: *image-source
+      repository: selenium/hub
+      tag: 3.141.59
+  
+  - <<: *image
+    name: endtoend
+    source:
+      <<: *image-source
+      repository: govukpay/endtoend
+
+jobs:
+  - name: end-to-end
+    serial: true
+    plan:
+      - in_parallel:
+          fail_fast: true
+          steps:
+            - get: pay-scripts
+            - get: docker/publicapi
+              resource: publicapi
+              params:
+                format: oci
+            - get: docker/frontend
+              resource: card-frontend
+              params:
+                format: oci
+            - get: docker/frontend_proxy
+              resource: reverse_proxy
+              params:
+                format: oci
+            - get: docker/postgres
+              resource: postgres
+              params:
+                format: oci
+            - get: docker/sqs
+              resource: sqs
+              params:
+                format: oci
+            - get: docker/adminusers
+              resource: adminusers
+              params:
+                format: oci
+            - get: docker/selfservice
+              resource: selfservice
+              params:
+                format: oci
+            - get: docker/selfservice_proxy
+              resource: reverse_proxy
+              params:
+                format: oci
+            - get: docker/directdebitfrontend
+              resource: directdebit-frontend
+              params:
+                format: oci
+            - get: docker/connector
+              resource: card-connector
+              params:
+                format: oci
+            - get: docker/ledger
+              resource: ledger
+              params:
+                format: oci
+            - get: docker/directdebitconnector
+              resource: directdebit-connector
+              params:
+                format: oci
+            - get: docker/publicauth
+              resource: publicauth
+              params:
+                format: oci
+            - get: docker/demoservice
+              resource: demoservice
+              params:
+                format: oci
+            - get: docker/stubs
+              resource: stubs
+              params:
+                format: oci
+            - get: docker/stubs_proxy
+              resource: reverse_proxy
+              params:
+                format: oci
+            - get: docker/cardid
+              resource: cardid
+              params:
+                format: oci
+            - get: docker/products
+              resource: products
+              params:
+                format: oci
+            - get: docker/productsui
+              resource: products-ui
+              params:
+                format: oci
+            - get: docker/endtoend
+              resource: endtoend
+              params:
+                format: oci
+            - get: docker/chrome
+              resource: chrome
+              params:
+                format: oci
+            - get: docker/selenium-hub
+              resource: selenium-hub
+              params:
+                format: oci
+
+      - task: end-to-end
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: amidos/dcind
+          inputs:
+            - name: pay-scripts
+            - name: docker/publicapi
+            - name: docker/frontend
+            - name: docker/frontend_proxy
+            - name: docker/postgres
+            - name: docker/sqs
+            - name: docker/adminusers
+            - name: docker/selfservice
+            - name: docker/selfservice_proxy
+            - name: docker/directdebitfrontend
+            - name: docker/connector
+            - name: docker/ledger
+            - name: docker/directdebitconnector
+            - name: docker/publicauth
+            - name: docker/demoservice
+            - name: docker/stubs
+            - name: docker/stubs_proxy
+            - name: docker/cardid
+            - name: docker/products
+            - name: docker/productsui
+            - name: docker/chrome
+            - name: docker/selenium-hub
+            - name: docker/endtoend
+          run:
+            path: bash
+            args:
+              - -exc
+              - |
+                ls -la
+                source /docker-lib.sh
+                start_docker
+
+                pids=
+                index=0
+                for image_dir in docker/*/; do
+                  docker load -qi "${image_dir}image.tar" & pids[${index}]=$!
+                  index="$(( "${index}" + 1 ))"
+                done
+
+                for pid in ${pids[*]}; do
+                  wait "$pid"
+                done
+
+                docker images
+
+                ./pay-scripts/all.sh master up --no-recreate
+
+                container=$(docker ps -aqf "name=endtoend")
+                echo "E2E container id: ${container}"
+                docker exec ${container} /app/bin/e2e-card
+                docker exec ${container} /app/bin/e2e-products
+                docker exec ${container} /app/bin/e2e-directdebit
