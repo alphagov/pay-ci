@@ -28,11 +28,10 @@ PROFILE_JSON = <<EOS
                 "PublicKeyId": "",
                 "ProviderId": "frontend",
                 "FieldPatterns": {
-                    "Quantity": 5,
+                    "Quantity": 4,
                     "Items": [
                         "cvc",
                         "cardNo",
-                        "addressPostcode",
                         "expiryYear",
                         "expiryMonth"
                     ]
@@ -55,7 +54,7 @@ CONFIG_JSON = <<EOS
         }
     },
     "ContentTypeProfileConfig": {
-        "ForwardWhenContentTypeIsUnknown": false,
+        "ForwardWhenContentTypeIsUnknown": true,
         "ContentTypeProfiles": {
             "Quantity": 1,
             "Items": [

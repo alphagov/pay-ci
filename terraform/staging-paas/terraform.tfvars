@@ -65,11 +65,15 @@ credentials = {
   }
   card_frontend = {
     pay_low_pass_secrets = {
+      // @todo make this a real thing in pay-low-pass
+      field_level_encryption_private_key = "field_level_encryption_key/staging/frontend"
     }
     static_values = {
       // @todo add this placeholder to secrets
       card_frontend_session_encryption_key = "asdjhbwefbo23r23rbfik2roiwhefwbqw"
       card_frontend_analytics_tracking_id = "testing-123"
+      field_level_encryption_key_name = "staging-card-frontend-fle-pubkey"
+      field_level_encryption_key_namespace = "frontend"
     }
   }
   toolbox = {
