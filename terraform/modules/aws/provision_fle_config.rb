@@ -54,7 +54,7 @@ CONFIG_JSON = <<EOS
         }
     },
     "ContentTypeProfileConfig": {
-        "ForwardWhenContentTypeIsUnknown": false,
+        "ForwardWhenContentTypeIsUnknown": true,
         "ContentTypeProfiles": {
             "Quantity": 1,
             "Items": [
