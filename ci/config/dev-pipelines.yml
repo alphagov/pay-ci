@@ -53,3 +53,9 @@ pipelines:
   vars:
       space: dev-steven
       environment: dev
+- name: dev-env-user-research
+  team: pay-deploy
+  config_file: omnibus/ci/pipelines/dev-env.yml
+  vars:
+      space: dev-user-research
+      environment: dev
