@@ -118,28 +118,21 @@ resources:
       tag: 11-alpine
 
   - <<: *image
-    name: chrome
-    source:
-      <<: *image-source
-      repository: selenium/node-chrome
-      tag: 3.141.59
-
-  - <<: *image
     name: selenium-hub
     source:
       <<: *image-source
-      repository: selenium/hub
-      tag: 3.141.59
+      repository: selenium/standalone-chrome
+      tag: 3.141.59-iron
   
   - <<: *image
     name: endtoend
     source:
       <<: *image-source
       repository: govukpay/endtoend
+      tag: a0808667555d678a18304e0767c55f42d43c9354
 
 jobs:
   - name: end-to-end
-    serial: true
     plan:
       - in_parallel:
           fail_fast: true
@@ -153,7 +146,7 @@ jobs:
               resource: card-frontend
               params:
                 format: oci
-            - get: docker/frontend_proxy
+            - get: docker/reverse_proxy
               resource: reverse_proxy
               params:
                 format: oci
@@ -171,10 +164,6 @@ jobs:
                 format: oci
             - get: docker/selfservice
               resource: selfservice
-              params:
-                format: oci
-            - get: docker/selfservice_proxy
-              resource: reverse_proxy
               params:
                 format: oci
             - get: docker/directdebitfrontend
@@ -205,10 +194,6 @@ jobs:
               resource: stubs
               params:
                 format: oci
-            - get: docker/stubs_proxy
-              resource: reverse_proxy
-              params:
-                format: oci
             - get: docker/cardid
               resource: cardid
               params:
@@ -223,10 +208,6 @@ jobs:
                 format: oci
             - get: docker/endtoend
               resource: endtoend
-              params:
-                format: oci
-            - get: docker/chrome
-              resource: chrome
               params:
                 format: oci
             - get: docker/selenium-hub
@@ -246,12 +227,11 @@ jobs:
             - name: pay-scripts
             - name: docker/publicapi
             - name: docker/frontend
-            - name: docker/frontend_proxy
+            - name: docker/reverse_proxy
             - name: docker/postgres
             - name: docker/sqs
             - name: docker/adminusers
             - name: docker/selfservice
-            - name: docker/selfservice_proxy
             - name: docker/directdebitfrontend
             - name: docker/connector
             - name: docker/ledger
