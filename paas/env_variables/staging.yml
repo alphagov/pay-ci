@@ -1,128 +1,21 @@
 ---
-default_memory: 500M
-default_disk_quota: 500M
-log_level: WARNING
-http_proxy_enabled: 'true'
-run_migration: 'true'
-http_proxy_port: '8080'
-http_proxy_host: egress-staging.apps.internal
-disable_internal_https: 'true'
-db_ssl: 'true'
-card_connector_analytics_tracking_id: testing-123
-
-card_frontend_session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
-session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
-selfservice_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
 analytics_tracking_id: testing-123
-disable_appmetrics: true
-disable_request_logging: false
-metrics_host: localhost
-products_ui_route: products.staging.gdspay.uk
-products_friendly_base_uri: https://products.staging.gdspay.uk/redirect
-selfservice_analytics_tracking_id: test123
-selfservice_analytics_tracking_id_xgov: test123
-selfservice_gocardless_live_client_id: testing
-selfservice_gocardless_live_oauth_base_url: https://connect-sandbox.gocardless.com
-selfservice_gocardless_test_client_id: testing
-selfservice_gocardless_test_oauth_base_url: https://connect-sandbox.gocardless.com
-selfservice_session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
-direct_debit_frontend_analytics_tracking_id: test123
-direct_debit_frontend_analytics_tracking_id_xgov: test123
-direct_debit_frontend_sentry_dsn: ''
-direct_debit_frontend_session_encryption_key: asdjhbwefbo23r23rbfik2roiwhefwbqw
-space: staging
-db_password: mysecretpassword
+db_ssl: 'true'
 db_ssl_option: ssl=false
-ledger_route: ledger-staging.apps.internal
-products_route: products-staging.apps.internal
-products_api_token: g0nBA5lNzfUalQjk4ZBDy70AikNshxz2G70dA6lg
-
-# publicapi
-publicapi_route: publicapi.staging.gdspay.uk
-rate_limiter_value: 200
-rate_limiter_value_post: 100
-rate_limiter_reqs_node: 200
-rate_limiter_req_node_post: 100
-rate_limiter_elevated_value_get: 100
-rate_limiter_elevated_value_post: 200
-rate_limiter_elevated_accounts: 31
-redis_url: none
-token_api_hmac_secret: something
-
-# publicauth
-token_db_bcrypt_salt: something
-
-# adminusers
-adminusers_route: adminusers-staging.apps.internal
-metrics_port: '8092'
-notify_api_key: api_key-pay-notify-service-id-pay-notify-secret-needs-to-be-32-chars-fsghdngfhmhfkrgsfs
-notify_base_url: http://stubs-((space)).apps.internal:8080/notify
-support_url: ''
-
-# card-connector
-card_connector_route: card-connector-staging.apps.internal
-db_ssl_option: ssl=none
+default_disk_quota: 500M
+default_memory: 500M
+disable_appmetrics: true
 disable_internal_https: 'true'
-run_migration: 'true'
-secure_worldpay_notification_enabled: 'false'
-sqs_enabled: 'false'
-stripe_transaction_fee_percentage: '0.1'
-
-# Stub services
-apple_pay_key: MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgOqukXQoQVbg1xvvq/IGLdK0UuJPbbawULTALcuw/Uz2hRANCAAQPjiA1kTEodST2wy5d5kQFrM0D5qBX9Ukry8W6D+vC7OqbMoTm/upRM1GRHeA2LaVTrwAnpGhoO0ETqYF2Nu4V
-apple_pay_certificate: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVjRENDQkJhZ0F3SUJBZ0lJVXlyRU00SXpCSFF3Q2dZSUtvWkl6ajBFQXdJd2dZQXhOREF5QmdOVkJBTU0KSzBGd2NHeGxJRmR2Y214a2QybGtaU0JFWlhabGJHOXdaWElnVW1Wc1lYUnBiMjV6SUVOQklDMGdSekl4SmpBawpCZ05WQkFzTUhVRndjR3hsSUVObGNuUnBabWxqWVhScGIyNGdRWFYwYUc5eWFYUjVNUk13RVFZRFZRUUtEQXBCCmNIQnNaU0JKYm1NdU1Rc3dDUVlEVlFRR0V3SlZVekFlRncweE5ERXdNall4TWpFd01UQmFGdzB4TmpFeE1qUXgKTWpFd01UQmFNSUdoTVM0d0xBWUtDWkltaVpQeUxHUUJBUXdlYldWeVkyaGhiblF1WTI5dExuTmxZWFJuWldWcgpMbE5sWVhSSFpXVnJNVFF3TWdZRFZRUUREQ3ROWlhKamFHRnVkQ0JKUkRvZ2JXVnlZMmhoYm5RdVkyOXRMbk5sCllYUm5aV1ZyTGxObFlYUkhaV1ZyTVJNd0VRWURWUVFMREFvNVFqTlJXVGxYUWxvMU1SY3dGUVlEVlFRS0RBNVQKWldGMFIyVmxheXdnU1c1akxqRUxNQWtHQTFVRUJoTUNWVk13V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQgpCd05DQUFRUGppQTFrVEVvZFNUMnd5NWQ1a1FGck0wRDVxQlg5VWtyeThXNkQrdkM3T3FiTW9UbS91cFJNMUdSCkhlQTJMYVZUcndBbnBHaG9PMEVUcVlGMk51NFZvNElDVlRDQ0FsRXdSd1lJS3dZQkJRVUhBUUVFT3pBNU1EY0cKQ0NzR0FRVUZCekFCaGl0b2RIUndPaTh2YjJOemNDNWhjSEJzWlM1amIyMHZiMk56Y0RBMExXRndjR3hsZDNkawpjbU5oTWpBeE1CMEdBMVVkRGdRV0JCUVdHZktnUGdWQlg4Sk92ODRxMWMwNEhTaE1tekFNQmdOVkhSTUJBZjhFCkFqQUFNQjhHQTFVZEl3UVlNQmFBRklTMmhNdzZobUp5RmxtVTZCcWp2VWpmT3Q4TE1JSUJIUVlEVlIwZ0JJSUIKRkRDQ0FSQXdnZ0VNQmdrcWhraUc5Mk5rQlFFd2dmNHdnY01HQ0NzR0FRVUZCd0lDTUlHMkRJR3pVbVZzYVdGdQpZMlVnYjI0Z2RHaHBjeUJqWlhKMGFXWnBZMkYwWlNCaWVTQmhibmtnY0dGeWRIa2dZWE56ZFcxbGN5QmhZMk5sCmNIUmhibU5sSUc5bUlIUm9aU0IwYUdWdUlHRndjR3hwWTJGaWJHVWdjM1JoYm1SaGNtUWdkR1Z5YlhNZ1lXNWsKSUdOdmJtUnBkR2x2Ym5NZ2IyWWdkWE5sTENCalpYSjBhV1pwWTJGMFpTQndiMnhwWTNrZ1lXNWtJR05sY25ScApabWxqWVhScGIyNGdjSEpoWTNScFkyVWdjM1JoZEdWdFpXNTBjeTR3TmdZSUt3WUJCUVVIQWdFV0ttaDBkSEE2Ckx5OTNkM2N1WVhCd2JHVXVZMjl0TDJObGNuUnBabWxqWVhSbFlYVjBhRzl5YVhSNUx6QTJCZ05WSFI4RUx6QXQKTUN1Z0thQW5oaVZvZEhSd09pOHZZM0pzTG1Gd2NHeGxMbU52YlM5aGNIQnNaWGQzWkhKallUSXVZM0pzTUE0RwpBMVVkRHdFQi93UUVBd0lES0RCUEJna3Foa2lHOTJOa0JpQUVRZ3hBUmprek9FWTBOalU0UTBFeVF6RkRPVU16Ck9FSTRSRVpEUWpWRVFrSXlRVEl5TkRVMk1EZEVSRVV5UmpFeE5EWXlNRVU0TkRZNFJVWTFNa1F5TURoRFFUQUsKQmdncWhrak9QUVFEQWdOSUFEQkZBaUIrUTR6enBNajJESlRDSWhERkJjbXdLMXpRQUM3MGZZMklzWWQ4K054dQp1d0loQUtqOVJyVE95aWFRbm9UNU1xaTNVSG9wYjZ4VHVnbDNMVURCbG9yYUJIeVAKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ==
-
-aws_access_key: x
-aws_secret_key: x
-
-epdq_live_url: https://example.com/stub/epdq
-epdq_test_url: https://example.com/stub/epdq
-
-smartpay_live_url: https://example.com/stub/smartpay
-smartpay_test_url: https://example.com/stub/smartpay
-smartpay_notification_password: smartpay-password
-smartpay_notification_user: smartpay-user
-
-worldpay_live_url: https://example.com/stub/worldpay
-worldpay_test_url: https://example.com/stub/worldpay
-secure_worldpay_notification_domain: london.cloudapps.digital
-secure_worldpay_notification_enabled: 'false'
-
-notify_api_key: api_key-pay-notify-service-id-pay-notify-secret-needs-to-be-32-chars-fsghdngfhmhfkrgsfs
-notify_base_url: https://example.com/notify
-notify_receipt_email_template_id: email-template-id
-notify_refund_email_template_id: email-refund-issued-template-id
-
-# DD-Connector
-directdebit_connector_route: directdebit-connector-staging.apps.internal
-gocardless_test_client_id: gocardless-test-oauth-client-id
-gocardless_test_client_secret: gocardless-test-oauth-client-secret
-gocardless_live_client_id: gocardless-live-oauth-client-id
-gocardless_live_client_secret: gocardless-live-oauth-client-secret
-gocardless_test_oauth_base_url: https://connect-sandbox.gocardless.com
-gocardless_live_oauth_base_url: https://connect-sandbox.gocardless.com
-
-gds_directdebit_connector_gocardless_acccess_token: supersecret
-gds_directdebit_connector_gocardless_url: https://example.com
-gds_directdebit_connector_gocardless_webhook_secret: supersecret
-gds_directdebit_connector_gocardless_environment: sandbox
-
-# Cardid data locations
-test_card_data_location: http://cardid-data-stg.apps.internal:8080/test-cards/test-card-bin-ranges.csv
-worldpay_data_location: http://cardid-data-stg.apps.internal:8080/worldpay/GENERIC2ISOCPTISSUERPREPAID.CSV
-discover_data_location: http://cardid-data-stg.apps.internal:8080/discover/Merchant_Marketing.csv
-
-# Toolbox
-toolbox_disable_request_logging: false
-toolbox_cookie_session_encryption_secret: fewfewf3f3edp3oiof34f34mfo34fmo4i3i
-toolbox_sentry_dsn: noop
-toolbox_auth_github_enabled: true
-toolbox_auth_github_team_id: 123456789
-toolbox_auth_github_admin_team_id: something
-toolbox_auth_github_client_id: something
-toolbox_auth_github_client_secret: something
-toolbox_stripe_account_api_key: something
-
-# General
-memory: 1G
+disable_request_logging: false
 disk_quota: 1G
+http_proxy_enabled: 'true'
+http_proxy_host: egress-staging.apps.internal
+http_proxy_port: '8080'
+log_level: WARNING
+memory: 1G
+metrics_host: localhost
+metrics_port: '8092'
+notify_base_url: http://stubs-((space)).apps.internal:8080/notify
+run_migration: 'true'
+space: staging
+support_url: ''

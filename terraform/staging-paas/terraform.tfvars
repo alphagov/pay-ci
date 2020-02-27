@@ -44,6 +44,7 @@ credentials = {
       notify_receipt_email_template_id = "email-template-id"
       notify_refund_email_template_id = "email-refund-issued-template-id"
       stripe_transaction_fee_percentage = "0.1"
+      card_connector_analytics_tracking_id = "testing-123"
     }
   }
   cardid = {
@@ -146,6 +147,8 @@ credentials = {
       gds_directdebit_connector_gocardless_webhook_secret = "gocardless/sandbox-webhook-endpoint-secrets/staging/gocardless_sandbox_staging_webhook_secret"
       gocardless_test_client_secret = "gocardless/sandbox/partner-apps/staging/client-secret"
       gocardless_live_client_secret = "gocardless/sandbox/partner-apps/staging/client-secret"
+      gocardless_test_client_id = "gocardless/sandbox/partner-apps/staging/client-id"
+      gocardless_live_client_id = "gocardless/sandbox/partner-apps/staging/client-id"
     }
     pay_low_pass_secrets = {
       sentry_dsn = "sentry/directdebit_connector_dsn"
@@ -164,8 +167,6 @@ credentials = {
     }
 
     pay_dev_pass_secrets = {
-      gocardless_test_oauth_client_id = "gocardless/sandbox/partner-apps/staging/client-id"
-      gocardless_live_oauth_client_id = "gocardless/sandbox/partner-apps/staging/client-id"
     }
 
     static_values = {
@@ -173,12 +174,8 @@ credentials = {
       session_encryption_key = "asdjhbwefbo23r23rbfik2roiwhefwbqw"
       analytics_tracking_id = "testing-123"
       analytics_tracking_id_xgov = "testing-123"
-
       zendesk_api_key = "fake_key"
       zendesk_user = "fake_user"
-
-      gocardless_test_oauth_url = "https://connect-sandbox.gocardless.com"
-      gocardless_live_oauth_url = "https://connect-sandbox.gocardless.com"
     }
   }
 }
