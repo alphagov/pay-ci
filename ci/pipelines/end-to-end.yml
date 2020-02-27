@@ -239,25 +239,30 @@ jobs:
             - name: docker/publicauth
             - name: docker/demoservice
             - name: docker/stubs
-            - name: docker/stubs_proxy
             - name: docker/cardid
             - name: docker/products
             - name: docker/productsui
-            - name: docker/chrome
             - name: docker/selenium-hub
             - name: docker/endtoend
           run:
             path: bash
             args:
-              - -exc
+              - -ec
               - |
                 ls -la
                 
                 source /docker-lib.sh
                 start_docker
 
-                trap "docker stop $(docker ps -a -q); docker rm $(docker ps -a -q); docker rmi $(docker images -a -q); stop_docker" EXIT
+                function cleanup {
+                  ./pay-scripts/all.sh master down;
+                  docker rmi $(docker images -a -q);
+                  stop_docker
+                }
 
+                trap cleanup EXIT
+
+                echo "Loading Docker images..."
                 pids=
                 index=0
                 for image_dir in docker/*/; do
@@ -280,5 +285,7 @@ jobs:
                 
                 echo "E2E container id: ${endtoend}"
                 docker exec ${endtoend} /app/bin/e2e-card
-                #docker exec ${endtoend} /app/bin/e2e-products
-                #docker exec ${endtoend} /app/bin/e2e-directdebit
+                docker exec ${endtoend} /app/bin/e2e-products
+                docker exec ${endtoend} /app/bin/e2e-directdebit
+
+                exit 0
