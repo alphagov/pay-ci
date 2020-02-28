@@ -19,3 +19,4 @@ notify_base_url: http://stubs-((space)).apps.internal:8080/notify
 run_migration: 'true'
 space: staging
 support_url: ''
+notifications_url: https://notifications.staging.gdspay.uk
