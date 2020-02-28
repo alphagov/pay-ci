@@ -110,8 +110,6 @@ resources:
     source:
       <<: *git-repo-source
       uri: https://github.com/alphagov/pay-frontend
-      # TODO: remove this once https://github.com/alphagov/pay-frontend/pull/1388 is merged
-      branch: PP-6147-decrypt-field-level-encryption-fields
 
   - <<: *git-repo
     name: products-ui-source
