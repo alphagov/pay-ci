@@ -45,6 +45,7 @@ class AppClient
     service_id = service.fetch('external_id')
 
     STDERR.puts '🤓  Creating admin user for service'
+    user_name += SecureRandom.hex
     user = create_user(username: user_name, gateway_account_ids: gateway_account_ids)
     STDERR.puts '😎  Creating read only user for service'
     create_user(gateway_account_ids: gateway_account_ids, role_name: 'view-only')
