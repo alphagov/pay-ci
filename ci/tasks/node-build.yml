@@ -33,6 +33,7 @@ run:
       npm rebuild node-sass
       npm install
       npm run compile
+      rm -rf ./node_modules
       npm install --only=prod
 
       release_number="$(cat ../release-info/number)"
