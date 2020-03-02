@@ -1,10 +1,11 @@
 resource "cloudfoundry_app" "notifications" {
-  name    = "notifications"
-  space   = data.cloudfoundry_space.space.id
-  stopped = true
+  name         = "notifications"
+  space        = data.cloudfoundry_space.space.id
+  stopped      = true
+  docker_image = "alpine:latest"
 
   lifecycle {
-    ignore_changes = [stopped, health_check_type]
+    ignore_changes = [stopped, health_check_type, docker_image]
   }
 }
 
