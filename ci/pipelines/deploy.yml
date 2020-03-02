@@ -29,6 +29,36 @@ groups:
       - migrate-products-db-staging
       - migrate-publicauth-db-staging
 
+  - name: Adminusers
+    jobs:
+      - deploy-adminusers-staging
+      - migrate-adminusers-db-staging
+      - card-payment-smoke-tests-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: Card Connector
+    jobs:
+      - deploy-card-connector-staging
+      - migrate-card-connector-db-staging
+      - card-payment-smoke-tests-staging
+
+  - name: Card ID
+    jobs:
+      - deploy-cardid-staging
+      - deploy-cardid-data-staging
+      - card-payment-smoke-tests-staging
+
+  - name: Card Frontend
+    jobs:
+      - deploy-card-frontend-staging
+      - card-payment-smoke-tests-staging
+
+  - name: Direct Debit Connector
+    jobs:
+      - deploy-directdebit-connector-staging
+      - migrate-directdebit-connector-db-staging
+      - direct-debit-smoke-tests-staging
+
   - name: Staging Deploys
     jobs:
       - deploy-adminusers-staging
@@ -579,10 +609,13 @@ jobs:
         trigger: true
       - &trigger-test
         get: git-card-connector-pre-release
-        passed: [deploy-card-connector-staging]
+        passed: [migrate-card-connector-db-staging]
         trigger: true
         params:
           skip_download: true
+      - <<: *trigger-test
+        get: git-adminusers-pre-release
+        passed: [migrate-adminusers-db-staging]
       - <<: *trigger-test
         get: git-cardid-pre-release
         passed: [deploy-cardid-staging]
@@ -618,10 +651,10 @@ jobs:
         trigger: true
       - <<: *trigger-test
         get: git-adminusers-pre-release
-        passed: [deploy-adminusers-staging]
+        passed: [migrate-adminusers-db-staging]
       - <<: *trigger-test
         get: git-directdebit-connector-pre-release
-        passed: [deploy-directdebit-connector-staging]
+        passed: [migrate-directdebit-connector-db-staging]
       - <<: *trigger-test
         get: git-directdebit-frontend-pre-release
         passed: [deploy-directdebit-frontend-staging]
@@ -634,7 +667,8 @@ jobs:
       - <<: *trigger-test
         get: git-publicauth-pre-release
         passed: [deploy-publicauth-staging]
-      - task: run direct debit smoke test
+      - &direct-debit-smoke-test-task
+        task: run direct debit smoke test
         file: omnibus/ci/tasks/cf-task.yml
         params:
           <<: *smoke-test-params
