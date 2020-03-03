@@ -1,58 +1,91 @@
 ---
 groups:
-  - name: All
+  - name: Adminusers
     jobs:
-      - update-pipeline
+      - build-adminusers
       - deploy-adminusers-staging
-      - deploy-cardid-data-staging
-      - deploy-cardid-staging
-      - deploy-card-connector-staging
-      - deploy-card-frontend-staging
-      - deploy-directdebit-connector-staging
-      - deploy-directdebit-frontend-staging
-      - deploy-ledger-staging
-      - deploy-products-staging
-      - deploy-products-ui-staging
-      - deploy-publicapi-staging
-      - deploy-publicauth-staging
-      - deploy-selfservice-staging
-      - deploy-notifications-staging
-      - deploy-toolbox-staging
-      - deploy-sqs-staging
+      - migrate-adminusers-db-staging
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
-      - products-smoke-test-staging
-      - migrate-adminusers-db-staging
-      - migrate-card-connector-db-staging
-      - migrate-directdebit-connector-db-staging
-      - migrate-ledger-db-staging
-      - migrate-products-db-staging
-      - migrate-publicauth-db-staging
 
-  - name: Staging Deploys
+  - name: Card Connector
     jobs:
-      - deploy-adminusers-staging
-      - deploy-cardid-data-staging
-      - deploy-cardid-staging
+      - build-card-connector
       - deploy-card-connector-staging
+      - migrate-card-connector-db-staging
+      - card-payment-smoke-tests-staging
+
+  - name: Card ID
+    jobs:
+      - build-cardid
+      - deploy-cardid-staging
+      - deploy-cardid-data-staging
+      - card-payment-smoke-tests-staging
+
+  - name: Card Frontend
+    jobs:
+      - build-card-frontend
       - deploy-card-frontend-staging
+      - card-payment-smoke-tests-staging
+
+  - name: Direct Debit Connector
+    jobs:
+      - build-directdebit-connector
       - deploy-directdebit-connector-staging
+      - migrate-directdebit-connector-db-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: Direct Debit Frontend
+    jobs:
+      - build-directdebit-frontend
       - deploy-directdebit-frontend-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: Ledger
+    jobs:
+      - build-ledger
       - deploy-ledger-staging
+      - migrate-ledger-db-staging
+      - card-payment-smoke-tests-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: Products
+    jobs:
+      - build-products
       - deploy-products-staging
+      - migrate-products-db-staging
+      - products-smoke-test-staging
+
+  - name: Products UI
+    jobs:
+      - build-products-ui
       - deploy-products-ui-staging
+      - products-smoke-test-staging
+
+  - name: Public API
+    jobs:
+      - build-publicapi
       - deploy-publicapi-staging
+      - card-payment-smoke-tests-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: PublicAuth
+    jobs:
+      - build-publicauth
       - deploy-publicauth-staging
+      - migrate-publicauth-db-staging
+      - card-payment-smoke-tests-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: Other Services
+    jobs:
+      - build-toolbox
+      - build-selfservice
       - deploy-selfservice-staging
       - deploy-notifications-staging
       - deploy-toolbox-staging
       - deploy-sqs-staging
-      - migrate-adminusers-db-staging
-      - migrate-card-connector-db-staging
-      - migrate-directdebit-connector-db-staging
-      - migrate-ledger-db-staging
-      - migrate-products-db-staging
-      - migrate-publicauth-db-staging
+      - update-pipeline
 
   - name: Smoke Tests
     jobs:
@@ -64,15 +97,6 @@ groups:
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
 
-  - name: Staging DB Migrations
-    jobs:
-      - migrate-adminusers-db-staging
-      - migrate-card-connector-db-staging
-      - migrate-directdebit-connector-db-staging
-      - migrate-ledger-db-staging
-      - migrate-products-db-staging
-      - migrate-publicauth-db-staging
-
 resource_types:
   - name: cf-cli
     type: docker-image
@@ -82,6 +106,11 @@ resource_types:
     type: docker-image
     source:
       repository: concourse/concourse-pipeline-resource
+  - name: travis
+    type: docker-image
+    source:
+      repository: rbakergds/travis-resource
+      tag: latest
 
 resources:
   - name: omnibus
@@ -116,6 +145,171 @@ resources:
           username: pay-deploy
           password: ((readonly_local_user_password))
 
+  # Travis Builds
+  - &travis-build
+    name: card-frontend-ci-build
+    type: travis
+    icon: sync
+    source: &travis-build-source
+      repository: alphagov/pay-frontend
+      travis-token: ((travis-api-token))
+      branch: master
+      pro: true
+
+  - <<: *travis-build
+    name: toolbox-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-toolbox
+
+  - <<: *travis-build
+    name: products-ui-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-products-ui
+
+  - <<: *travis-build
+    name: selfservice-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-selfservice
+
+  - <<: *travis-build
+    name: dd-frontend-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-direct-debit-frontend
+
+  - <<: *travis-build
+    name: dd-connector-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-direct-debit-connector
+
+  - <<: *travis-build
+    name: card-connector-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-connector
+
+  - <<: *travis-build
+    name: publicapi-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-publicapi
+
+  - <<: *travis-build
+    name: publicauth-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-publicauth
+
+  - <<: *travis-build
+    name: adminusers-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-adminusers
+
+  - <<: *travis-build
+    name: products-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-products
+
+  - <<: *travis-build
+    name: ledger-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-ledger
+
+  - <<: *travis-build
+    name: cardid-ci-build
+    source:
+      <<: *travis-build-source
+      repository: alphagov/pay-cardid
+
+  # Git Repositories
+  - &git-repo
+    name: toolbox-source
+    type: git
+    icon: github-circle
+    source: &git-repo-source
+      uri: https://github.com/alphagov/pay-toolbox
+      branch: master
+
+  - <<: *git-repo
+    name: card-frontend-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-frontend
+
+  - <<: *git-repo
+    name: products-ui-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-products-ui
+
+  - <<: *git-repo
+    name: selfservice-source
+    source: 
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-selfservice
+
+  - <<: *git-repo
+    name: dd-frontend-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-direct-debit-frontend
+
+  - <<: *git-repo
+    name: dd-connector-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-direct-debit-connector
+
+  - <<: *git-repo
+    name: card-connector-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-connector
+
+  - <<: *git-repo
+    name: publicapi-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-publicapi
+
+  - <<: *git-repo
+    name: publicauth-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-publicauth
+
+  - <<: *git-repo
+    name: adminusers-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-adminusers
+
+  - <<: *git-repo
+    name: products-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-products
+
+  - <<: *git-repo
+    name: ledger-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-ledger
+
+  - <<: *git-repo
+    name: cardid-source
+    source:
+      <<: *git-repo-source
+      uri: https://github.com/alphagov/pay-cardid
+
+  # Github Releases
   - name: git-card-frontend-pre-release
     type: github-release
     source: &github-release-source
@@ -254,12 +448,268 @@ jobs:
             - name: deploy
               team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy.yml
+  
+  # Build Jobs
+  - name: build-card-frontend
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: card-frontend-ci-build
+        trigger: true
+      - get: src
+        resource: card-frontend-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-frontend
+      - put: release
+        resource: git-card-frontend-pre-release
+        params: &release-params
+          name: release-info/name
+          tag: release-info/name
+          globs:
+            - build-output/*
+          commitish: build-info/commit-ref
 
+  - name: build-toolbox
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: toolbox-ci-build
+        trigger: true
+      - get: src
+        resource: toolbox-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-toolbox
+      - put: release
+        resource: git-toolbox-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-products-ui
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: products-ui-ci-build
+        trigger: true
+      - get: src
+        resource: products-ui-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-products-ui
+      - put: release
+        resource: git-products-ui-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-selfservice
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: selfservice-ci-build
+        trigger: true
+      - get: src
+        resource: selfservice-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-selfservice
+      - put: release
+        resource: git-selfservice-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-directdebit-frontend
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: dd-frontend-ci-build
+        trigger: true
+      - get: src
+        resource: dd-frontend-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/node-build.yml
+        params:
+          APP_NAME: pay-direct-debit-frontend
+      - put: release
+        resource: git-directdebit-frontend-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-directdebit-connector
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: dd-connector-ci-build
+        trigger: true
+      - get: src
+        resource: dd-connector-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-direct-debit-connector
+      - put: release
+        resource: git-directdebit-connector-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-card-connector
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: card-connector-ci-build
+        trigger: true
+      - get: src
+        resource: card-connector-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-connector
+      - put: release
+        resource: git-card-connector-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-publicapi
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: publicapi-ci-build
+        trigger: true
+      - get: src
+        resource: publicapi-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-publicapi
+      - put: release
+        resource: git-publicapi-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-publicauth
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: publicauth-ci-build
+        trigger: true
+      - get: src
+        resource: publicauth-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-publicauth
+      - put: release
+        resource: git-publicauth-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-adminusers
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: adminusers-ci-build
+        trigger: true
+      - get: src
+        resource: adminusers-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-adminusers
+      - put: release
+        resource: git-adminusers-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-products
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: products-ci-build
+        trigger: true
+      - get: src
+        resource: products-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-products
+      - put: release
+        resource: git-products-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-ledger
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: ledger-ci-build
+        trigger: true
+      - get: src
+        resource: ledger-source
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-ledger
+      - put: release
+        resource: git-ledger-pre-release
+        params: 
+          <<: *release-params
+
+  - name: build-cardid
+    plan:
+      - get: omnibus
+      - get: build-info
+        resource: cardid-ci-build
+        trigger: true
+      - get: src
+        resource: cardid-source
+        params:
+          submodules: none
+      - task: checkout-commit
+        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-cardid
+      - put: release
+        resource: git-cardid-pre-release
+        params:
+          <<: *release-params
+
+  # Deploy Jobs
   - name: deploy-adminusers-staging
     serial_groups: [adminusers-stg]
     plan:
       - get: omnibus
       - get: git-adminusers-pre-release
+        passed: [build-adminusers]
         trigger: true
       - task: extract-adminusers-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -295,6 +745,7 @@ jobs:
         passed: [deploy-cardid-data-staging]
         trigger: true
       - get: git-cardid-pre-release
+        passed: [build-cardid]
         trigger: true
       - task: extract-cardid-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -309,6 +760,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-directdebit-frontend-pre-release
+        passed: [build-directdebit-frontend]
         trigger: true
       - task: extract-directdebit-frontend-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -323,6 +775,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-card-connector-pre-release
+        passed: [build-card-connector]
         trigger: true
       - task: extract-card-connector-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -340,6 +793,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-card-frontend-pre-release
+        passed: [build-card-frontend]
         trigger: true
       - task: extract-card-frontend-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -355,6 +809,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-directdebit-connector-pre-release
+        passed: [build-directdebit-connector]
         trigger: true
       - task: extract-directdebit-connector-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -371,6 +826,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-ledger-pre-release
+        passed: [build-ledger]
         trigger: true
       - task: extract-ledger-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -387,6 +843,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-products-pre-release
+        passed: [build-products]
         trigger: true
       - task: extract-products-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -403,6 +860,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-products-ui-pre-release
+        passed: [build-products-ui]
         trigger: true
       - task: extract-products-ui-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -417,6 +875,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-publicapi-pre-release
+        passed: [build-publicapi]
         trigger: true
       - task: extract-publicapi-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -430,6 +889,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-publicauth-pre-release
+        passed: [build-publicauth]
         trigger: true
       - task: extract-publicauth-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -443,6 +903,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-selfservice-pre-release
+        passed: [build-selfservice]
         trigger: true
       - task: download-selfservice-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -457,6 +918,7 @@ jobs:
     plan:
       - get: omnibus
       - get: git-toolbox-pre-release
+        passed: [build-toolbox]
         trigger: true
       - task: download-toolbox-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
@@ -498,6 +960,7 @@ jobs:
           app_name: sqs
           manifest: omnibus/paas/fake-sqs.yml
 
+  # Smoke Tests
   - name: deploy-selenium-hub
     serial_groups: [selenium-stg]
     serial: true
@@ -579,10 +1042,13 @@ jobs:
         trigger: true
       - &trigger-test
         get: git-card-connector-pre-release
-        passed: [deploy-card-connector-staging]
+        passed: [migrate-card-connector-db-staging]
         trigger: true
         params:
           skip_download: true
+      - <<: *trigger-test
+        get: git-adminusers-pre-release
+        passed: [migrate-adminusers-db-staging]
       - <<: *trigger-test
         get: git-cardid-pre-release
         passed: [deploy-cardid-staging]
@@ -591,13 +1057,13 @@ jobs:
         passed: [deploy-card-frontend-staging]
       - <<: *trigger-test
         get: git-ledger-pre-release
-        passed: [deploy-ledger-staging]
+        passed: [migrate-ledger-db-staging]
       - <<: *trigger-test
         get: git-publicapi-pre-release
         passed: [deploy-publicapi-staging]
       - <<: *trigger-test
         get: git-publicauth-pre-release
-        passed: [deploy-publicauth-staging]
+        passed: [migrate-publicauth-db-staging]
       - task: run card smoke test
         file: omnibus/ci/tasks/cf-task.yml
         params: &smoke-test-params
@@ -618,23 +1084,24 @@ jobs:
         trigger: true
       - <<: *trigger-test
         get: git-adminusers-pre-release
-        passed: [deploy-adminusers-staging]
+        passed: [migrate-adminusers-db-staging]
       - <<: *trigger-test
         get: git-directdebit-connector-pre-release
-        passed: [deploy-directdebit-connector-staging]
+        passed: [migrate-directdebit-connector-db-staging]
       - <<: *trigger-test
         get: git-directdebit-frontend-pre-release
         passed: [deploy-directdebit-frontend-staging]
       - <<: *trigger-test
         get: git-ledger-pre-release
-        passed: [deploy-ledger-staging]
+        passed: [migrate-ledger-db-staging]
       - <<: *trigger-test
         get: git-publicapi-pre-release
         passed: [deploy-publicapi-staging]
       - <<: *trigger-test
         get: git-publicauth-pre-release
-        passed: [deploy-publicauth-staging]
-      - task: run direct debit smoke test
+        passed: [migrate-publicauth-db-staging]
+      - &direct-debit-smoke-test-task
+        task: run direct debit smoke test
         file: omnibus/ci/tasks/cf-task.yml
         params:
           <<: *smoke-test-params
@@ -653,7 +1120,7 @@ jobs:
         trigger: true
       - <<: *trigger-test
         get: git-products-pre-release
-        passed: [deploy-products-staging]
+        passed: [migrate-products-db-staging]
       - <<: *trigger-test
         get: git-products-ui-pre-release
         passed: [deploy-products-ui-staging]
@@ -663,6 +1130,7 @@ jobs:
           <<: *smoke-test-params
           COMMAND: cf ssh smoke-tests-staging -c /app/bin/smoke-products
 
+  # Database Migrations
   - name: migrate-adminusers-db-staging
     plan:
       - get: omnibus
