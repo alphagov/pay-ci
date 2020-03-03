@@ -4,7 +4,7 @@ image_resource:
   type: registry-image
   source:
     repository: node
-    tag: 12.11.1-alpine
+    tag: 12.14-alpine
 
 inputs:
   - name: src
@@ -14,7 +14,7 @@ outputs:
   - name: build-output
 
 caches:
-  - path: ../../../root/.npm
+  - path: npm_cache
 
 params:
   LD_LIBRARY_PATH: /src/node_modules/appmetrics
@@ -30,10 +30,11 @@ run:
       node --version
       npm --version
       apk add --virtual build-dependencies --update python build-base libexecinfo-dev
+      npm config set cache ../npm_cache
       npm rebuild node-sass
       npm install
       npm run compile
-      rm -rf ./node_modules
+      rm -rf node_modules
       npm install --only=prod
 
       release_number="$(cat ../release-info/number)"
