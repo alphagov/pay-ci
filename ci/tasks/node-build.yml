@@ -4,7 +4,7 @@ image_resource:
   type: registry-image
   source:
     repository: node
-    tag: 12.11.1-alpine
+    tag: 12.14-alpine
 
 inputs:
   - name: src
