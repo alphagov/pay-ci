@@ -14,7 +14,7 @@ outputs:
   - name: build-output
 
 caches:
-  - path: ../../../root/.npm
+  - path: npm_cache
 
 params:
   LD_LIBRARY_PATH: /src/node_modules/appmetrics
@@ -30,6 +30,7 @@ run:
       node --version
       npm --version
       apk add --virtual build-dependencies --update python build-base libexecinfo-dev
+      npm config set cache ../npm_cache
       npm rebuild node-sass
       npm install
       npm run compile
