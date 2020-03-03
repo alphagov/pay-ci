@@ -1,34 +1,5 @@
 ---
 groups:
-  - name: All
-    jobs:
-      - update-pipeline
-      - deploy-adminusers-staging
-      - deploy-cardid-data-staging
-      - deploy-cardid-staging
-      - deploy-card-connector-staging
-      - deploy-card-frontend-staging
-      - deploy-directdebit-connector-staging
-      - deploy-directdebit-frontend-staging
-      - deploy-ledger-staging
-      - deploy-products-staging
-      - deploy-products-ui-staging
-      - deploy-publicapi-staging
-      - deploy-publicauth-staging
-      - deploy-selfservice-staging
-      - deploy-notifications-staging
-      - deploy-toolbox-staging
-      - deploy-sqs-staging
-      - card-payment-smoke-tests-staging
-      - direct-debit-smoke-tests-staging
-      - products-smoke-test-staging
-      - migrate-adminusers-db-staging
-      - migrate-card-connector-db-staging
-      - migrate-directdebit-connector-db-staging
-      - migrate-ledger-db-staging
-      - migrate-products-db-staging
-      - migrate-publicauth-db-staging
-
   - name: Adminusers
     jobs:
       - deploy-adminusers-staging
@@ -59,30 +30,49 @@ groups:
       - migrate-directdebit-connector-db-staging
       - direct-debit-smoke-tests-staging
 
-  - name: Staging Deploys
+  - name: Direct Debit Frontend
     jobs:
-      - deploy-adminusers-staging
-      - deploy-cardid-data-staging
-      - deploy-cardid-staging
-      - deploy-card-connector-staging
-      - deploy-card-frontend-staging
-      - deploy-directdebit-connector-staging
       - deploy-directdebit-frontend-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: Ledger
+    jobs:
       - deploy-ledger-staging
+      - migrate-ledger-db-staging
+      - card-payment-smoke-tests-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: Products
+    jobs:
       - deploy-products-staging
+      - migrate-products-db-staging
+      - products-smoke-test-staging
+
+  - name: Products UI
+    jobs:
       - deploy-products-ui-staging
+      - products-smoke-test-staging
+
+  - name: Public API
+    jobs:
       - deploy-publicapi-staging
+      - card-payment-smoke-tests-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: PublicAuth
+    jobs:
       - deploy-publicauth-staging
+      - migrate-publicauth-db-staging
+      - card-payment-smoke-tests-staging
+      - direct-debit-smoke-tests-staging
+
+  - name: Other Services
+    jobs:
       - deploy-selfservice-staging
       - deploy-notifications-staging
       - deploy-toolbox-staging
       - deploy-sqs-staging
-      - migrate-adminusers-db-staging
-      - migrate-card-connector-db-staging
-      - migrate-directdebit-connector-db-staging
-      - migrate-ledger-db-staging
-      - migrate-products-db-staging
-      - migrate-publicauth-db-staging
+      - update-pipeline
 
   - name: Smoke Tests
     jobs:
@@ -93,15 +83,6 @@ groups:
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
-
-  - name: Staging DB Migrations
-    jobs:
-      - migrate-adminusers-db-staging
-      - migrate-card-connector-db-staging
-      - migrate-directdebit-connector-db-staging
-      - migrate-ledger-db-staging
-      - migrate-products-db-staging
-      - migrate-publicauth-db-staging
 
 resource_types:
   - name: cf-cli
@@ -624,13 +605,13 @@ jobs:
         passed: [deploy-card-frontend-staging]
       - <<: *trigger-test
         get: git-ledger-pre-release
-        passed: [deploy-ledger-staging]
+        passed: [migrate-ledger-db-staging]
       - <<: *trigger-test
         get: git-publicapi-pre-release
         passed: [deploy-publicapi-staging]
       - <<: *trigger-test
         get: git-publicauth-pre-release
-        passed: [deploy-publicauth-staging]
+        passed: [migrate-publicauth-db-staging]
       - task: run card smoke test
         file: omnibus/ci/tasks/cf-task.yml
         params: &smoke-test-params
@@ -660,13 +641,13 @@ jobs:
         passed: [deploy-directdebit-frontend-staging]
       - <<: *trigger-test
         get: git-ledger-pre-release
-        passed: [deploy-ledger-staging]
+        passed: [migrate-ledger-db-staging]
       - <<: *trigger-test
         get: git-publicapi-pre-release
         passed: [deploy-publicapi-staging]
       - <<: *trigger-test
         get: git-publicauth-pre-release
-        passed: [deploy-publicauth-staging]
+        passed: [migrate-publicauth-db-staging]
       - &direct-debit-smoke-test-task
         task: run direct debit smoke test
         file: omnibus/ci/tasks/cf-task.yml
@@ -687,7 +668,7 @@ jobs:
         trigger: true
       - <<: *trigger-test
         get: git-products-pre-release
-        passed: [deploy-products-staging]
+        passed: [migrate-products-db-staging]
       - <<: *trigger-test
         get: git-products-ui-pre-release
         passed: [deploy-products-ui-staging]
