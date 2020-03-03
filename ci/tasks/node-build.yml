@@ -14,7 +14,8 @@ outputs:
   - name: build-output
 
 caches:
-  - path: src/node_modules
+  - path: node_module_cache_dev
+  - path: node_module_cache_prod
 
 params:
   LD_LIBRARY_PATH: /src/node_modules/appmetrics
@@ -30,14 +31,16 @@ run:
       node --version
       npm --version
       apk add --virtual build-dependencies --update python build-base libexecinfo-dev
+      ln -s ../node_module_cache_dev node_modules
       npm rebuild node-sass
       npm install
       npm run compile
-      rm -rf ./node_modules
+      rm node_modules
+      ln -s ../node_module_cache_prod node_modules
       npm install --only=prod
 
       release_number="$(cat ../release-info/number)"
       archive_path="../build-output/${APP_NAME}-${release_number}.tar.gz"
 
       echo "Creating build archive in: ${archive_path}"
-      tar -czf "$archive_path" --exclude .git .
+      tar -czfh "$archive_path" --exclude .git .
