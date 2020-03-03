@@ -14,7 +14,7 @@ outputs:
   - name: build-output
 
 caches:
-  - path: src/node_modules
+  - path: ../../../root/.npm
 
 params:
   LD_LIBRARY_PATH: /src/node_modules/appmetrics
