@@ -1,0 +1,36 @@
+---
+applications:
+  # - name: metric-emitter
+  #   docker:
+  #     image: alpine:3.11
+  #     healthcheck: process
+  #     memory: 256M
+  #     command: '/bin/ash -c while true; do echo "thing.stuff.count 1 $(date +%s)" | nc -w1 carbon-relay.apps.internal 2003; sleep 2; done' 
+
+  - name: carbon-relay
+    docker:
+      image: bodsch/docker-carbon-relay-ng
+      healthcheck: process
+      memory: 256M
+    env:
+      GRAPHITE: graphite.apps.internal
+      GRAPHITE_PORT: 2003
+    routes:
+      - route: carbon-relay.apps.internal
+  
+  - name: metric-emitter
+    docker:
+      image: alpine:3.11
+      healthcheck: process
+      memory: 64M
+      command: '/bin/ash -c while true; do echo "thing.stuff.count 1 $(date +%s)" | nc -w1 carbon-relay.apps.internal 2003; sleep 2; done' 
+
+  - name: graphite
+    docker:
+      image: bodsch/docker-graphite:1.1.4
+      healthcheck: process
+      memory: 512M
+    routes:
+      - route: graphite.apps.internal
+      
+
