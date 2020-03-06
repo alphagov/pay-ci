@@ -16,7 +16,7 @@ applications:
       - name: stunnel
         process_types:
           - web
-        command: '/bin/sh start-stunnel.sh'
+        command: './start-stunnel.sh'
         memory: 256MB
 
 
