@@ -2,10 +2,15 @@
 applications:
   - name: carbon-relay
     health-check-type: process
+    instances: 2
     buildpacks:
     - https://github.com/cloudfoundry/apt-buildpack
     - https://github.com/cloudfoundry/binary-buildpack
-    command: ./start.sh
+    command: ./start_carbon_relay.sh
     env:
       HOSTED_GRAPHITE_HOST: ((hosted_graphite_host))
       HOSTED_GRAPHITE_API_KEY: ((hosted_graphite_api_key))
+    sidecars:
+      - name: stunnel
+        process_types: [ 'web' ]
+        command: ./start_stunnel.sh
