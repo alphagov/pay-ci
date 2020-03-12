@@ -301,7 +301,7 @@ def forward_app(app, port)
     tries += 1
     sleep(1)
   end
-  STDERR.puts("#{app}[#{port}]: not up")
+  abort("#{app}[#{port}]: timed out")
 end
 
 STDERR.puts("Forwarding apps:")
