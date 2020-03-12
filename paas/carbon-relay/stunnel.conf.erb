@@ -1,0 +1,18 @@
+; Disable support for old TLS protocols
+options = NO_SSLv3
+options = NO_TLSv1
+;options = NO_TLSv1.1
+;options = NO_TLSv1.2
+;options = NO_TLSv1_3
+
+pid = /home/vcap/app/stunnel.pid
+debug = notice
+foreground = yes
+output = /home/vcap/app/stunnel.log
+
+[hosted_graphite]
+accept = localhost:20030
+client = yes
+connect = <%= ENV.fetch('HOSTED_GRAPHITE_HOST') %>:20030
+CApath = /etc/ssl/certs
+

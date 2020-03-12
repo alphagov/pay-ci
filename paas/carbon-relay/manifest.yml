@@ -1,44 +1,11 @@
 ---
 applications:
-
   - name: carbon-relay
     health-check-type: process
-    docker:
-      image: bodsch/docker-carbon-relay-ng
-      memory: 256M
+    buildpacks:
+    - https://github.com/cloudfoundry/apt-buildpack
+    - https://github.com/cloudfoundry/binary-buildpack
+    command: ./start.sh
     env:
-      GRAPHITE_HOST: localhost
-      GRAPHITE_PORT: 20031
-      HG_ACCOUNT_ID: ""
-    routes:
-      - route: carbon-relay.apps.internal
-    sidecars:
-      - name: stunnel
-        process_types:
-          - web
-        command: './start-stunnel.sh'
-        memory: 256MB
-
-
-  # cf v3-create-app carbon-relay
-  # cf v3-apply-manifest
-  # cf v3-push carbon-relay
-
-  # metrics must be rewritten in carbon relay config with api key prefix
-  #"YOUR-API-KEY.my.metric.name"
-  
-  # - name: metric-emitter
-  #   health-check-type: process
-  #   docker:
-  #     image: alpine:3.11
-  #     memory: 64M
-  #     command: '/bin/ash -c while true; do echo "thing.stuff.count 1 $(date +%s)" | nc -w1 carbon-relay.apps.internal 2003; sleep 2; done' 
-
-  # - name: graphite
-  #   health-check-type: process
-  #   docker:
-  #     image: bodsch/docker-graphite:1.1.4
-  #     memory: 1G
-  #   routes:
-  #     - route: graphite.apps.internal
-  #     - route: pay-graphite.cloudapps.digital
+      HOSTED_GRAPHITE_HOST: ((hosted_graphite_host))
+      HOSTED_GRAPHITE_API_KEY: ((hosted_graphite_api_key))
