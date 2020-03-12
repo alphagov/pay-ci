@@ -1,0 +1,11 @@
+---
+applications:
+  - name: carbon-relay
+    health-check-type: process
+    buildpacks:
+    - https://github.com/cloudfoundry/apt-buildpack
+    - https://github.com/cloudfoundry/binary-buildpack
+    command: ./start.sh
+    env:
+      HOSTED_GRAPHITE_HOST: ((hosted_graphite_host))
+      HOSTED_GRAPHITE_API_KEY: ((hosted_graphite_api_key))
