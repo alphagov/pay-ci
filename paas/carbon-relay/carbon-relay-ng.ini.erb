@@ -38,7 +38,7 @@ destinations = [
 
 [[rewriter]]
 old = '/^/'
-new = '<%= ENV.fetch('HOSTED_GRAPHITE_API_KEY') %>.'
+new = '<%= ENV.fetch('HOSTED_GRAPHITE_API_KEY') %>.paas.'
 not = ''
 max = -1
 

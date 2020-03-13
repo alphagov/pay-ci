@@ -178,5 +178,18 @@ credentials = {
       zendesk_user = "fake_user"
     }
   }
+  carbon-relay = {
+    pay_low_pass_secrets = {
+      hosted_graphite_api_key = "hosted_graphite/prod/api_key"
+      hosted_graphite_account_id = "hosted_graphite/prod/account_id"
+    }
+
+    pay_dev_pass_secrets = {
+    }
+
+    static_values = {
+      hosted_graphite_host = "carbon.hostedgraphite.com"
+    }
+  }
 }
 
