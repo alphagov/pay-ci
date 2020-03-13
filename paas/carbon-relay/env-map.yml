@@ -1,0 +1,4 @@
+env_vars:
+  HOSTED_GRAPHITE_HOST:       '.[][] | select(.name == "carbon-relay-secret-service") | .credentials.hosted_graphite_host      '
+  HOSTED_GRAPHITE_API_KEY:    '.[][] | select(.name == "carbon-relay-secret-service") | .credentials.hosted_graphite_api_key   '
+  HOSTED_GRAPHITE_ACCOUNT_ID: '.[][] | select(.name == "carbon-relay-secret-service") | .credentials.hosted_graphite_account_id'

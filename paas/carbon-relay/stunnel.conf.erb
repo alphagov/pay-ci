@@ -13,6 +13,6 @@ output = /home/vcap/app/stunnel.log
 [hosted_graphite]
 accept = localhost:20030
 client = yes
-connect = <%= ENV.fetch('HOSTED_GRAPHITE_HOST') %>:20030
+connect = <%= ENV.fetch('HOSTED_GRAPHITE_ACCOUNT_ID') + '.' + ENV.fetch('HOSTED_GRAPHITE_HOST') %>:20030
 CApath = /etc/ssl/certs
 

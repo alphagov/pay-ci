@@ -26,6 +26,8 @@ locals {
     "cardid_data_test_card_data_location" = "http://${cloudfoundry_route.cardid_data.endpoint}:8080/test-cards/test-card-bin-ranges.csv"
     "cardid_data_worldpay_data_location"  = "http://${cloudfoundry_route.cardid_data.endpoint}:8080/worldpay/GENERIC2ISOCPTISSUERPREPAID.CSV"
     "cardid_data_discover_data_location"  = "http://${cloudfoundry_route.cardid_data.endpoint}:8080/discover/Merchant_Marketing.csv"
+    "carbon_relay_route"                  = "${cloudfoundry_route.carbon_relay.endpoint}"
+    "carbon_relay_port"                   = "2003"
   }
 }
 

@@ -4,13 +4,18 @@ applications:
     health-check-type: process
     instances: 2
     buildpacks:
+    - https://github.com/alphagov/env-map-buildpack.git#v2
     - https://github.com/cloudfoundry/apt-buildpack
     - https://github.com/cloudfoundry/binary-buildpack
     command: ./start_carbon_relay.sh
     env:
-      HOSTED_GRAPHITE_HOST: ((hosted_graphite_host))
-      HOSTED_GRAPHITE_API_KEY: ((hosted_graphite_api_key))
+      # Provided via the carbon-relay-secret-service
+      HOSTED_GRAPHITE_HOST:
+      HOSTED_GRAPHITE_API_KEY:
+      HOSTED_GRAPHITE_ACCOUNT_ID:
     sidecars:
       - name: stunnel
         process_types: [ 'web' ]
         command: ./start_stunnel.sh
+    services:
+      - carbon-relay-secret-service
