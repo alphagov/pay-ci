@@ -12,7 +12,7 @@ resource "cloudfoundry_app" "carbon-relay" {
   }
 }
 
-resource "cloudfoundry_route" "carbon-relay" {
+resource "cloudfoundry_route" "carbon_relay" {
   domain   = data.cloudfoundry_domain.internal.id
   hostname = "carbon-relay${var.internal_hostname_suffix}"
   space    = data.cloudfoundry_space.space.id
