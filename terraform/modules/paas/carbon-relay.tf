@@ -32,3 +32,30 @@ resource "cloudfoundry_user_provided_service" "carbon_relay_secret_service" {
   space       = data.cloudfoundry_space.space.id
   credentials = merge(module.carbon_relay_credentials.secrets, lookup(local.carbon_relay_credentials, "static_values"))
 }
+
+resource "cloudfoundry_network_policy" "carbon_relay" {
+  dynamic "policy" {
+    for_each = toset([
+      cloudfoundry_app.adminusers.id,
+      cloudfoundry_app.card_connector.id,
+      cloudfoundry_app.card_frontend.id,
+      cloudfoundry_app.cardid.id,
+      cloudfoundry_app.directdebit_connector.id,
+      cloudfoundry_app.directdebit_frontend.id,
+      cloudfoundry_app.ledger.id,
+      cloudfoundry_app.notifications.id,
+      cloudfoundry_app.products.id,
+      cloudfoundry_app.products_ui.id,
+      cloudfoundry_app.publicapi.id,
+      cloudfoundry_app.publicauth.id,
+      cloudfoundry_app.selfservice.id,
+      cloudfoundry_app.toolbox.id,
+    ])
+    content {
+      source_app      = policy.value
+      destination_app = cloudfoundry_app.carbon-relay.id
+      protocol        = "udp"
+      port            = "2003"
+    }
+  }
+}
