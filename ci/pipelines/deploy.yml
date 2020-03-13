@@ -97,6 +97,10 @@ groups:
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
 
+  - name: Carbon Relay
+    jobs:
+      - deploy-carbon-relay-staging
+
 resource_types:
   - name: cf-cli
     type: docker-image
@@ -251,7 +255,7 @@ resources:
 
   - <<: *git-repo
     name: selfservice-source
-    source: 
+    source:
       <<: *git-repo-source
       uri: https://github.com/alphagov/pay-selfservice
 
@@ -448,7 +452,7 @@ jobs:
             - name: deploy
               team: pay-deploy
               config_file: omnibus/ci/pipelines/deploy.yml
-  
+
   # Build Jobs
   - name: build-card-frontend
     plan:
@@ -912,6 +916,17 @@ jobs:
         params:
           <<: *push-app-config
           path: artefact
+
+  - name: deploy-carbon-relay-staging
+    serial_groups: [carbon-relay-stg]
+    plan:
+      - get: omnibus
+        trigger: true
+      - put: paas-staging
+        params:
+          command: push
+          path: omnibus/paas/carbon-relay
+          manifest: omnibus/paas/carbon-relay/manifest.yml
 
   - name: deploy-toolbox-staging
     serial_groups: [toolbox-stg]
