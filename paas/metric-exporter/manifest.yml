@@ -20,3 +20,4 @@ applications:
   no-route: true
   services:
     - metric-exporter-secret-service
+    
