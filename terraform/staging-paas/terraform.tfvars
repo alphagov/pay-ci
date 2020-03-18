@@ -191,5 +191,18 @@ credentials = {
       hosted_graphite_host = "carbon.hostedgraphite.com"
     }
   }
+  metric_exporter = {
+    pay_low_pass_secrets = {
+    }
+
+    static_values = {
+      cf_api_endpoint  = "https://api.cloud.service.gov.uk"
+      cf_username      = "placeholder"
+      cf_password      = "placeholder"
+      statsd_endpoint  = "statsd.hostedgraphite.com:8125"
+      statsd_prefix    = "placeholderapikey.paas.system"
+      update_frequency = "300"
+    }
+  }
 }
 

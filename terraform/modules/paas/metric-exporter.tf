@@ -1,5 +1,5 @@
 locals {
-  metric_exporter_credentials = lookup(var.credentials, "metric-exporter")
+  metric_exporter_credentials = lookup(var.credentials, "metric_exporter")
 }
 
 resource "cloudfoundry_app" "metric_exporter" {
