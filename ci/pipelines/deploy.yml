@@ -101,6 +101,10 @@ groups:
     jobs:
       - deploy-carbon-relay-staging
 
+  - name: PaaS Metric Exporter
+    jobs:
+      - deploy-metric-exporter-staging
+
 resource_types:
   - name: cf-cli
     type: docker-image
@@ -312,6 +316,12 @@ resources:
     source:
       <<: *git-repo-source
       uri: https://github.com/alphagov/pay-cardid
+
+  - <<: *git-repo
+    name: metric-exporter-source
+    source:
+      uri: https://github.com/alphagov/paas-metric-exporter
+      branch: master
 
   # Github Releases
   - name: git-card-frontend-pre-release
@@ -974,6 +984,17 @@ jobs:
           docker-username: ((docker-username))
           app_name: sqs
           manifest: omnibus/paas/fake-sqs.yml
+
+  - name: deploy-metric-exporter-staging
+    serial_groups: [metric-exporter-stg]
+    plan:
+      - get: omnibus
+      - get: metric-exporter-source
+      - put: paas-staging
+        params:
+          command: push
+          path: metric-exporter-source
+          manifest: omnibus/paas/metric-exporter/manifest.yml
 
   # Smoke Tests
   - name: deploy-selenium-hub
