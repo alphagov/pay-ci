@@ -1,0 +1,23 @@
+---
+applications:
+- name: metric-exporter
+  memory: 100M
+  instances: 1
+  stack: cflinuxfs3
+  buildpacks:
+    - go_buildpack
+    - https://github.com/alphagov/env-map-buildpack.git#v2
+  env:
+    GOPACKAGENAME: github.com/alphagov/paas-metric-exporter
+    # Provided via the metric-exporter-secret-service
+    API_ENDPOINT:
+    PASSWORD:
+    STATSD_ENDPOINT:
+    STATSD_PREFIX:
+    USERNAME:
+
+  health-check-type: process
+  no-route: true
+  services:
+    - metric-exporter-secret-service
+    
