@@ -990,6 +990,19 @@ jobs:
     plan:
       - get: omnibus
       - get: metric-exporter-source
+      - task: copy-custom-env-map
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          inputs:
+            - name: omnibus
+            - name: metric-exporter-source
+          run:
+            path: cp
+            args: ["omnibus/paas/metric-exporter/env-map.yml", "metric-exporter-source"]
       - put: paas-staging
         params:
           command: push
