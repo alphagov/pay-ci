@@ -1000,6 +1000,8 @@ jobs:
           inputs:
             - name: omnibus
             - name: metric-exporter-source
+          outputs:
+            - name: metric-exporter-source
           run:
             path: cp
             args: ["omnibus/paas/metric-exporter/env-map.yml", "metric-exporter-source"]

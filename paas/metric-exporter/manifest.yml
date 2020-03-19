@@ -16,7 +16,7 @@ applications:
     STATSD_PREFIX:
     USERNAME:
 
-  health-check-type: process
+  health-check-type: none
   no-route: true
   services:
     - metric-exporter-secret-service
