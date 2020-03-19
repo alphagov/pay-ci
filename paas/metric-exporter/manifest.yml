@@ -5,8 +5,8 @@ applications:
   instances: 1
   stack: cflinuxfs3
   buildpacks:
-    - go_buildpack
     - https://github.com/alphagov/env-map-buildpack.git#v2
+    - go_buildpack
   env:
     GOPACKAGENAME: github.com/alphagov/paas-metric-exporter
     # Provided via the metric-exporter-secret-service
