@@ -193,14 +193,15 @@ credentials = {
   }
   metric_exporter = {
     pay_low_pass_secrets = {
+      hosted_graphite_api_key  = "hosted_graphite/prod/api_key"
+      cf_password              = "paas/govuk-pay/payments-readonly-paas-user/password"
+      cf_username              = "paas/govuk-pay/payments-readonly-paas-user/username"
     }
 
     static_values = {
       cf_api_endpoint  = "https://api.cloud.service.gov.uk"
-      cf_username      = "placeholder"
-      cf_password      = "placeholder"
       statsd_endpoint  = "statsd.hostedgraphite.com:8125"
-      statsd_prefix    = "placeholderapikey.paas.system"
+      metric_prefix    = "paas.system"
       update_frequency = "300"
     }
   }
