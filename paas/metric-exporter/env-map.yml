@@ -3,5 +3,5 @@ env_vars:
   USERNAME:         '.[][] | select(.name == "metric-exporter-secret-service") | .credentials.cf_username'
   PASSWORD:         '.[][] | select(.name == "metric-exporter-secret-service") | .credentials.cf_password'
   STATSD_ENDPOINT:  '.[][] | select(.name == "metric-exporter-secret-service") | .credentials.statsd_endpoint'
-  STATSD_PREFIX:    '.[][] | select(.name == "metric-exporter-secret-service") | (.credentials.hosted_graphite_account_id + "." + .credentials.metric_prefix)'
+  STATSD_PREFIX:    '.[][] | select(.name == "metric-exporter-secret-service") | (.credentials.hosted_graphite_api_key + "." + .credentials.metric_prefix)'
   UPDATE_FREQUENCY: '.[][] | select(.name == "metric-exporter-secret-service") | .credentials.update_frequency'
