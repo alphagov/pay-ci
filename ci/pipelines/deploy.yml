@@ -153,6 +153,15 @@ resources:
           username: pay-deploy
           password: ((readonly_local_user_password))
 
+  - name: carbon-relay-source
+    type: git
+    icon: gihub-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+      paths:
+        - paas/carbon-relay/**
+
   # Travis Builds
   - &travis-build
     name: card-frontend-ci-build
@@ -930,13 +939,13 @@ jobs:
   - name: deploy-carbon-relay-staging
     serial_groups: [carbon-relay-stg]
     plan:
-      - get: omnibus
+      - get: carbon-relay-source
         trigger: true
       - put: paas-staging
         params:
           command: push
-          path: omnibus/paas/carbon-relay
-          manifest: omnibus/paas/carbon-relay/manifest.yml
+          path: carbon-relay-source/paas/carbon-relay
+          manifest: carbon-relay-source/paas/carbon-relay/manifest.yml
 
   - name: deploy-toolbox-staging
     serial_groups: [toolbox-stg]
