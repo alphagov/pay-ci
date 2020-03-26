@@ -948,7 +948,6 @@ jobs:
           <<: *cf-creds
           CF_SPACE: staging
           MANIFEST_PATH: omnibus/paas/carbon-relay
-          MANIFEST_FILE: manifest.yml
           APP_NAME: carbon-relay
 
   - name: deploy-toolbox-staging
