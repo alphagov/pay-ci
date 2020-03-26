@@ -26,5 +26,5 @@ run:
       cf login -a "$CF_API" \
         -u "$CF_USERNAME" -p "$CF_PASSWORD" \
         -o "$CF_ORG" -s "$CF_SPACE"
-      cf v3-apply-manifest -f $MANIFEST_PATH
-      cf v3-push $APP_NAME
+      cf v3-apply-manifest -f "$MANIFEST_PATH"
+      cf v3-push "$APP_NAME"

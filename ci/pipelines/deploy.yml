@@ -943,7 +943,7 @@ jobs:
         trigger: true
       - get: omnibus
       - task: deploy-to-paas
-        file: omnibus/ci/tasks/cf-task.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *cf-creds
           CF_SPACE: staging
