@@ -943,6 +943,8 @@ jobs:
         trigger: true
       - get: omnibus
       - task: deploy-to-paas
+        inputs:
+          - name: omnibus
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *cf-creds
