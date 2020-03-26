@@ -941,11 +941,14 @@ jobs:
     plan:
       - get: carbon-relay-source
         trigger: true
-      - put: paas-staging
+      - get: omnibus
+      - task: deploy-to-paas
+        file: omnibus/ci/tasks/cf-task.yml
         params:
-          command: push
-          path: carbon-relay-source/paas/carbon-relay
-          manifest: carbon-relay-source/paas/carbon-relay/manifest.yml
+          <<: *cf-creds
+          CF_SPACE: staging
+          MANIFEST_PATH: omnibus/paas/carbon-relay/manifest.yml
+          APP_NAME: carbon-relay
 
   - name: deploy-toolbox-staging
     serial_groups: [toolbox-stg]
