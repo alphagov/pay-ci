@@ -943,13 +943,12 @@ jobs:
         trigger: true
       - get: omnibus
       - task: deploy-to-paas
-        inputs:
-          - name: omnibus
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *cf-creds
           CF_SPACE: staging
-          MANIFEST_PATH: omnibus/paas/carbon-relay/manifest.yml
+          MANIFEST_PATH: omnibus/paas/carbon-relay
+          MANIFEST_FILE: manifest.yml
           APP_NAME: carbon-relay
 
   - name: deploy-toolbox-staging
