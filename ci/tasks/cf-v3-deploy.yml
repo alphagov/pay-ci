@@ -1,0 +1,30 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: { repository: governmentpaas/cf-cli }
+
+inputs:
+  - name: workdir
+    optional: true
+
+params:
+  CF_API: https://api.london.cloud.service.gov.uk
+  CF_USERNAME: ((cf-username))
+  CF_PASSWORD: ((cf-password))
+  CF_ORG:
+  CF_SPACE:
+  MANIFEST_PATH:
+  APP_NAME:
+
+run:
+  path: bash
+  args:
+    - -c
+    - |
+      set -o errexit -o nounset
+      cf login -a "$CF_API" \
+        -u "$CF_USERNAME" -p "$CF_PASSWORD" \
+        -o "$CF_ORG" -s "$CF_SPACE"
+      cf v3-apply-manifest -f $MANIFEST_PATH
+      cf v3-push $APP_NAME
