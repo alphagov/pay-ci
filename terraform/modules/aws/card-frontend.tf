@@ -49,7 +49,7 @@ resource "aws_cloudfront_distribution" "card_frontend" {
 
   origin {
     origin_id   = "paas"
-    domain_name = "${var.paas_domain}"
+    domain_name = var.paas_domain
 
     custom_origin_config {
       http_port              = 80
@@ -82,7 +82,7 @@ resource "aws_cloudfront_public_key" "card_frontend" {
   encoded_key = data.pass_password.card_frontend_pubkey.full
 
   lifecycle {
-    ignore_changes = ["encoded_key"]
+    ignore_changes = [encoded_key]
   }
 }
 
