@@ -1,8 +1,8 @@
 #!/bin/bash
 set -o errexit -o nounset
 
-: ${APP_NAME:?APP_NAME is required (e.g. card-connector)}
-: ${APP_PACKAGE:?APP_PACKAGE is required (e.g. uk.gov.pay.connector.ConnectorApplication)}
+: "${APP_NAME:?APP_NAME is required (e.g. card-connector)}"
+: "${APP_PACKAGE:?APP_PACKAGE is required (e.g. uk.gov.pay.connector.ConnectorApplication)}"
 
 function createCommandFor() {
   echo "/home/vcap/app/.java-buildpack/open_jdk_jre/bin/java \
@@ -20,18 +20,18 @@ if [[ "$APP_NAME" == 'adminusers' ]]; then
   TASK_COMMAND="${INITIAL_MIGRATION} && ${TASK_COMMAND}";
 fi
 
-cf run-task ${APP_NAME} "${TASK_COMMAND}" --name "${APP_NAME}-db-migration"
+cf run-task "${APP_NAME}" "${TASK_COMMAND}" --name "${APP_NAME}-db-migration"
 
 echo "You can view the raw logs using: cf logs ${APP_NAME} --recent"
 echo "Fetching task logs:"
 
-cf logs ${APP_NAME} | sed '/Exit status/q' > migration.log
+cf logs "${APP_NAME}" | sed '/Exit status/q' > migration.log
 
-EXIT_CODE=$(cat migration.log | sed -En 's/.*Exit status ([0-9]*)/\1/p')
+EXIT_CODE=$(sed -En 's/.*Exit status ([0-9]*)/\1/p' migration.log)
 
-cat migration.log | awk '$4 ~ /(\[APP\/TASK\/)*/' | grep -o '{.*}' | jq '.message' -r
+awk '$4 ~ /(\[APP\/TASK\/)*/' migration.log | grep -o '{.*}' | jq '.message' -r
 
-if [ $EXIT_CODE != 0 ]
+if [ "$EXIT_CODE" != 0 ]
 then
   cat migration.log
   exit 1
