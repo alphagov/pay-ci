@@ -47,7 +47,7 @@ resource "aws_cloudfront_distribution" "directdebit_frontend" {
 
   origin {
     origin_id   = "paas"
-    domain_name = "${var.paas_domain}"
+    domain_name = var.paas_domain
 
     custom_origin_config {
       http_port              = 80

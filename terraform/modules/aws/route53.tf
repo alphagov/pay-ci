@@ -7,7 +7,7 @@ data "aws_route53_zone" "root" {
 }
 
 resource "aws_acm_certificate" "cert" {
-  provider = "aws.us"
+  provider = aws.us
 
   domain_name               = local.subdomain
   subject_alternative_names = ["*.${local.subdomain}"]
@@ -27,7 +27,7 @@ resource "aws_route53_record" "cert_validation" {
 }
 
 resource "aws_acm_certificate_validation" "cert" {
-  provider = "aws.us"
+  provider = aws.us
 
   certificate_arn         = aws_acm_certificate.cert.arn
   validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]

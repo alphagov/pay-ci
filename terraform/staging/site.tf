@@ -26,8 +26,8 @@ module "staging" {
   source = "../modules/aws"
 
   providers = {
-    aws    = "aws"
-    aws.us = "aws.us"
+    aws    = aws
+    aws.us = aws.us
   }
 
   environment       = "staging"
