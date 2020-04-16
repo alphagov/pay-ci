@@ -6,6 +6,7 @@ resource "cloudfoundry_app" "directdebit_frontend" {
   name    = "directdebit-frontend"
   space   = data.cloudfoundry_space.space.id
   stopped = true
+  v3      = true
 
   lifecycle {
     ignore_changes = [stopped, health_check_type]
