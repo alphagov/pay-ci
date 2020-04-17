@@ -737,16 +737,14 @@ jobs:
       - task: extract-adminusers-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-adminusers-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params: &push-app-config
-          command: push
-          path: artefact/target/pay-*-allinone.jar
-          manifest: artefact/manifest.yml
-          vars_files:
-            - omnibus/paas/env_variables/staging.yml
-          vars:
-            db_name: adminusers
-            db_user: adminusers
+          <<: *cf-creds
+          CF_SPACE: staging
+          APP_NAME: adminusers
+          PATH: artefact/target/pay-*-allinone.jar
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-cardid-data-staging
     serial_groups: [cardid-data-stg]
@@ -773,10 +771,12 @@ jobs:
       - task: extract-cardid-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-cardid-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          space: staging-cde
+          APP_NAME: cardid
+          CF_SPACE: staging-cde
 
   - name: deploy-directdebit-frontend-staging
     serial_groups: [directdebit-frontend-stg]
@@ -803,13 +803,12 @@ jobs:
       - task: extract-card-connector-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-card-connector-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          space: staging-cde
-          vars:
-            db_name: connector
-            db_user: connector
+          APP_NAME: 
+          CF_SPACE: staging-cde
 
   - name: deploy-card-frontend-staging
     serial_groups: [card-frontend-stg]
@@ -837,12 +836,12 @@ jobs:
       - task: extract-directdebit-connector-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-directdebit-connector-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          vars:
-            db_name: directdebit-connector
-            db_user: directdebit-connector
+          APP_NAME: directdebit-connector 
+          CF_SPACE: staging
 
   - name: deploy-ledger-staging
     serial_groups: [ledger-stg]
@@ -854,12 +853,12 @@ jobs:
       - task: extract-ledger-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-ledger-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          vars:
-            db_name: ledger
-            db_user: ledger
+          APP_NAME: ledger 
+          CF_SPACE: staging
 
   - name: deploy-products-staging
     serial_groups: [products-stg]
@@ -871,12 +870,12 @@ jobs:
       - task: extract-products-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-products-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          vars:
-            db_name: products
-            db_user: products
+          APP_NAME: products 
+          CF_SPACE: staging
 
   - name: deploy-products-ui-staging
     serial_groups: [products-ui-stg]
@@ -903,9 +902,12 @@ jobs:
       - task: extract-publicapi-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-publicapi-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
+          APP_NAME: products-ui 
+          CF_SPACE: staging
 
   - name: deploy-publicauth-staging
     serial_groups: [publicauth-stg]
@@ -917,9 +919,12 @@ jobs:
       - task: extract-publicauth-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-publicauth-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
+          APP_NAME: publicauth 
+          CF_SPACE: staging
 
   - name: deploy-selfservice-staging
     serial_groups: [selfservice-stg]
@@ -973,18 +978,14 @@ jobs:
         trigger: true
         params:
           skip_download: true
-      - put: app
-        resource: paas-staging
-        params: &docker-app
-          command: push
-          app_name: notifications
-          manifest: omnibus/paas/pay-apps.yml
-          docker_password: ((docker-password))
-          vars:
-            space: staging
-            docker-username: ((docker-username))
-          vars_files:
-            - omnibus/paas/env_variables/staging.yml
+     - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
+        params:
+          <<: *push-app-config
+          APP_NAME: notifications 
+          CF_SPACE: staging
+          CF_DOCKER_PASSWORD: ((docker-password))
+          DOCKER_USERNAME: ((docker-username))
 
   - name: deploy-sqs-staging
     plan:

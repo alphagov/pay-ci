@@ -18,6 +18,9 @@ params:
   CF_PASSWORD: ((cf-password))
   CF_ORG:
   CF_SPACE:
+  CF_DOCKER_PASSWORD:
+  DOCKER_IMAGE:
+  DOCKER_USERNAME:
   MANIFEST_PATH: artefact
   MANIFEST_FILE: manifest.yml
   APP_NAME:
@@ -41,5 +44,7 @@ run:
       args+=(--manifest "$MANIFEST_PATH/$MANIFEST_FILE")
       [ -n "$VARS_FILE" ] && args+=(--vars-file "$VARS_FILE")
       [ -n "$ZDT" ] && args+=(--strategy rolling)
+      [ -n "$DOCKER_USERNAME" ] && args+=(--docker-username "$DOCKER_USERNAME")
+      [ -n "$DOCKER_IMAGE" ] && args+=(--docker-image "$DOCKER_IMAGE")
 
       cf push "${args[@]}"
