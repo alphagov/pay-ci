@@ -1,10 +1,4 @@
 pipelines:
-- name: dev-env-anshul
-  team: pay-deploy
-  config_file: omnibus/ci/pipelines/dev-env.yml
-  vars:
-    space: dev-anshul
-    environment: dev
 - name: dev-env-richard
   team: pay-deploy
   config_file: omnibus/ci/pipelines/dev-env.yml
