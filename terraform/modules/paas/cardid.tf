@@ -6,6 +6,7 @@ resource "cloudfoundry_app" "cardid" {
   name    = "cardid"
   space   = data.cloudfoundry_space.cde_space.id
   stopped = true
+  v3      = true
 
   lifecycle {
     ignore_changes = [stopped, health_check_type]
