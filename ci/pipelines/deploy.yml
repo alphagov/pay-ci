@@ -780,6 +780,8 @@ jobs:
           <<: *push-app-config
           APP_NAME: cardid
           CF_SPACE: staging-cde
+          PATH: artefact/target/pay-*-allinone.jar
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-directdebit-frontend-staging
     serial_groups: [directdebit-frontend-stg]
@@ -791,10 +793,13 @@ jobs:
       - task: extract-directdebit-frontend-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-directdebit-frontend-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          path: artefact
+          APP_NAME: directdebit-frontend
+          CF_SPACE: staging
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-card-connector-staging
     serial_groups: [card-connector-stg]
@@ -810,8 +815,10 @@ jobs:
         file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          APP_NAME: 
+          APP_NAME: card-connector
           CF_SPACE: staging-cde
+          PATH: artefact/target/pay-*-allinone.jar
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-card-frontend-staging
     serial_groups: [card-frontend-stg]
@@ -823,11 +830,13 @@ jobs:
       - task: extract-card-frontend-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-card-frontend-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          space: staging-cde
-          path: artefact
+          APP_NAME: card-frontend
+          CF_SPACE: staging-cde
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-directdebit-connector-staging
     serial_groups: [directdebit-connector-stg]
@@ -845,6 +854,8 @@ jobs:
           <<: *push-app-config
           APP_NAME: directdebit-connector 
           CF_SPACE: staging
+          PATH: artefact/target/pay-*-allinone.jar
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-ledger-staging
     serial_groups: [ledger-stg]
@@ -862,6 +873,8 @@ jobs:
           <<: *push-app-config
           APP_NAME: ledger 
           CF_SPACE: staging
+          PATH: artefact/target/pay-*-allinone.jar
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-products-staging
     serial_groups: [products-stg]
@@ -879,6 +892,8 @@ jobs:
           <<: *push-app-config
           APP_NAME: products 
           CF_SPACE: staging
+          PATH: artefact/target/pay-*-allinone.jar
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-products-ui-staging
     serial_groups: [products-ui-stg]
@@ -890,10 +905,13 @@ jobs:
       - task: extract-products-ui-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-products-ui-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          path: artefact
+          APP_NAME: products-ui 
+          CF_SPACE: staging
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-publicapi-staging
     serial_groups: [publicapi-stg]
@@ -909,8 +927,10 @@ jobs:
         file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          APP_NAME: products-ui 
+          APP_NAME: publicapi 
           CF_SPACE: staging
+          PATH: artefact/target/pay-*-allinone.jar
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-publicauth-staging
     serial_groups: [publicauth-stg]
@@ -928,6 +948,8 @@ jobs:
           <<: *push-app-config
           APP_NAME: publicauth 
           CF_SPACE: staging
+          PATH: artefact/target/pay-*-allinone.jar
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-selfservice-staging
     serial_groups: [selfservice-stg]
@@ -939,10 +961,13 @@ jobs:
       - task: download-selfservice-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-selfservice-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          path: artefact
+          APP_NAME: selfservice 
+          CF_SPACE: staging
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-carbon-relay-staging
     serial_groups: [carbon-relay-stg]
@@ -968,10 +993,13 @@ jobs:
       - task: download-toolbox-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-toolbox-pre-release }
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
-          path: artefact
+          APP_NAME: selfservice 
+          CF_SPACE: staging
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-notifications-staging
     serial_groups: [notifications-stg]
@@ -989,6 +1017,8 @@ jobs:
           CF_SPACE: staging
           CF_DOCKER_PASSWORD: ((docker-password))
           DOCKER_USERNAME: ((docker-username))
+          PATH: artefact/target/pay-*-allinone.jar
+          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-sqs-staging
     plan:
