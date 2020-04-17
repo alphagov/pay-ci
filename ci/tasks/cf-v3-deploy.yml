@@ -28,7 +28,7 @@ params:
   ZDT:
 
 run:
-  path: bash
+  path: /bin/bash
   args:
     - -c
     - |
