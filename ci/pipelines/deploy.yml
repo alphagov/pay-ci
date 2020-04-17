@@ -155,7 +155,7 @@ resources:
 
   - name: carbon-relay-source
     type: git
-    icon: gihub-circle
+    icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: develop
@@ -975,13 +975,14 @@ jobs:
       - get: carbon-relay-source
         trigger: true
       - get: omnibus
-      - task: deploy-to-paas
-        file: omnibus/ci/tasks/cf-v3-deploy.yml
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
+        input_mapping: { artefact: "carbon-relay-source" }
         params:
-          <<: *cf-creds
+          <<: *push-app-config
+          APP_NAME: metric-exporter          
           CF_SPACE: staging
           MANIFEST_PATH: omnibus/paas/carbon-relay
-          APP_NAME: carbon-relay
 
   - name: deploy-toolbox-staging
     serial_groups: [toolbox-stg]
@@ -1051,11 +1052,14 @@ jobs:
           run:
             path: cp
             args: ["omnibus/paas/metric-exporter/env-map.yml", "metric-exporter-source"]
-      - put: paas-staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
+        input_mapping: { artefact: "metric-exporter-source" }
         params:
-          command: push
-          path: metric-exporter-source
-          manifest: omnibus/paas/metric-exporter/manifest.yml
+          <<: *push-app-config
+          APP_NAME: metric-exporter          
+          CF_SPACE: staging
+          MANIFEST_PATH: omnibus/paas/metric-exporter
 
   # Smoke Tests
   - name: deploy-selenium-hub
