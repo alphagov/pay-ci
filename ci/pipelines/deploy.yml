@@ -743,7 +743,7 @@ jobs:
           <<: *cf-creds
           CF_SPACE: staging
           APP_NAME: adminusers
-          PATH: artefact/target/pay-*-allinone.jar
+          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-cardid-data-staging
@@ -759,7 +759,7 @@ jobs:
           <<: *cf-creds
           CF_SPACE: staging
           APP_NAME: cardid-data
-          PATH: artefact/sources
+          APP_PATH: artefact/sources
 
   - name: deploy-cardid-staging
     serial_groups: [cardid-stg]
@@ -780,7 +780,7 @@ jobs:
           <<: *push-app-config
           APP_NAME: cardid
           CF_SPACE: staging-cde
-          PATH: artefact/target/pay-*-allinone.jar
+          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-directdebit-frontend-staging
@@ -817,7 +817,7 @@ jobs:
           <<: *push-app-config
           APP_NAME: card-connector
           CF_SPACE: staging-cde
-          PATH: artefact/target/pay-*-allinone.jar
+          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-card-frontend-staging
@@ -854,7 +854,7 @@ jobs:
           <<: *push-app-config
           APP_NAME: directdebit-connector 
           CF_SPACE: staging
-          PATH: artefact/target/pay-*-allinone.jar
+          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-ledger-staging
@@ -873,7 +873,7 @@ jobs:
           <<: *push-app-config
           APP_NAME: ledger 
           CF_SPACE: staging
-          PATH: artefact/target/pay-*-allinone.jar
+          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-products-staging
@@ -892,7 +892,7 @@ jobs:
           <<: *push-app-config
           APP_NAME: products 
           CF_SPACE: staging
-          PATH: artefact/target/pay-*-allinone.jar
+          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-products-ui-staging
@@ -929,7 +929,7 @@ jobs:
           <<: *push-app-config
           APP_NAME: publicapi 
           CF_SPACE: staging
-          PATH: artefact/target/pay-*-allinone.jar
+          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-publicauth-staging
@@ -948,7 +948,7 @@ jobs:
           <<: *push-app-config
           APP_NAME: publicauth 
           CF_SPACE: staging
-          PATH: artefact/target/pay-*-allinone.jar
+          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-selfservice-staging
@@ -1018,7 +1018,7 @@ jobs:
           CF_SPACE: staging
           CF_DOCKER_PASSWORD: ((docker-password))
           DOCKER_USERNAME: ((docker-username))
-          PATH: artefact/target/pay-*-allinone.jar
+          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-sqs-staging
