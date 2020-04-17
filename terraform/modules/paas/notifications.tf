@@ -3,6 +3,7 @@ resource "cloudfoundry_app" "notifications" {
   space        = data.cloudfoundry_space.space.id
   stopped      = true
   docker_image = "alpine:latest"
+  v3           = true
 
   lifecycle {
     ignore_changes = [stopped, health_check_type, docker_image]
