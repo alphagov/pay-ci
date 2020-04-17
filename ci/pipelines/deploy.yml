@@ -739,11 +739,12 @@ jobs:
         input_mapping: { git-release: git-adminusers-pre-release }
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
-        params: &push-app-config
+        params: &app-deploy-config
           <<: *cf-creds
           CF_SPACE: staging
           APP_NAME: adminusers
           APP_PATH: artefact/target/pay-*-allinone.jar
+          MANIFEST: artefact/manifest.yml
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-cardid-data-staging
@@ -754,12 +755,11 @@ jobs:
         trigger: true
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
-        input_mapping: { artefact: cardid-data-source }
-        params: &push-app-config
+        params:
           <<: *cf-creds
-          CF_SPACE: staging
           APP_NAME: cardid-data
-          APP_PATH: artefact/sources
+          APP_PATH: cardid-data-source/sources
+          MANIFEST: cardid-data-source/manifest.yml
 
   - name: deploy-cardid-staging
     serial_groups: [cardid-stg]
@@ -777,11 +777,9 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
+          <<: *app-deploy-config
           APP_NAME: cardid
           CF_SPACE: staging-cde
-          APP_PATH: artefact/target/pay-*-allinone.jar
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-directdebit-frontend-staging
     serial_groups: [directdebit-frontend-stg]
@@ -796,10 +794,9 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
+          <<: *app-deploy-config
           APP_NAME: directdebit-frontend
-          CF_SPACE: staging
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          APP_PATH: artefact
 
   - name: deploy-card-connector-staging
     serial_groups: [card-connector-stg]
@@ -814,11 +811,9 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
+          <<: *app-deploy-config
           APP_NAME: card-connector
           CF_SPACE: staging-cde
-          APP_PATH: artefact/target/pay-*-allinone.jar
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-card-frontend-staging
     serial_groups: [card-frontend-stg]
@@ -833,10 +828,10 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
+          <<: *app-deploy-config
           APP_NAME: card-frontend
           CF_SPACE: staging-cde
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          APP_PATH: artefact
 
   - name: deploy-directdebit-connector-staging
     serial_groups: [directdebit-connector-stg]
@@ -851,11 +846,8 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
-          APP_NAME: directdebit-connector 
-          CF_SPACE: staging
-          APP_PATH: artefact/target/pay-*-allinone.jar
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          <<: *app-deploy-config
+          APP_NAME: directdebit-connector
 
   - name: deploy-ledger-staging
     serial_groups: [ledger-stg]
@@ -870,11 +862,8 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
-          APP_NAME: ledger 
-          CF_SPACE: staging
-          APP_PATH: artefact/target/pay-*-allinone.jar
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          <<: *app-deploy-config
+          APP_NAME: ledger
 
   - name: deploy-products-staging
     serial_groups: [products-stg]
@@ -889,11 +878,8 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
-          APP_NAME: products 
-          CF_SPACE: staging
-          APP_PATH: artefact/target/pay-*-allinone.jar
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          <<: *app-deploy-config
+          APP_NAME: products
 
   - name: deploy-products-ui-staging
     serial_groups: [products-ui-stg]
@@ -908,10 +894,8 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
-          APP_NAME: products-ui 
-          CF_SPACE: staging
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          <<: *app-deploy-config
+          APP_NAME: products-ui
 
   - name: deploy-publicapi-staging
     serial_groups: [publicapi-stg]
@@ -926,11 +910,8 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
-          APP_NAME: publicapi 
-          CF_SPACE: staging
-          APP_PATH: artefact/target/pay-*-allinone.jar
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          <<: *app-deploy-config
+          APP_NAME: publicapi
 
   - name: deploy-publicauth-staging
     serial_groups: [publicauth-stg]
@@ -945,11 +926,8 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
-          APP_NAME: publicauth 
-          CF_SPACE: staging
-          APP_PATH: artefact/target/pay-*-allinone.jar
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          <<: *app-deploy-config
+          APP_NAME: publicauth
 
   - name: deploy-selfservice-staging
     serial_groups: [selfservice-stg]
@@ -964,10 +942,9 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
-          APP_NAME: selfservice 
-          CF_SPACE: staging
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          <<: *app-deploy-config
+          APP_NAME: selfservice
+          APP_PATH: artefact
 
   - name: deploy-carbon-relay-staging
     serial_groups: [carbon-relay-stg]
@@ -977,12 +954,11 @@ jobs:
       - get: omnibus
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
-        input_mapping: { artefact: "carbon-relay-source" }
         params:
-          <<: *push-app-config
-          APP_NAME: metric-exporter          
-          CF_SPACE: staging
-          MANIFEST_PATH: omnibus/paas/carbon-relay
+          <<: *app-deploy-config
+          APP_NAME: metric-exporter
+          MANIFEST: omnibus/paas/carbon-relay/manifest.yml
+          APP_PATH: omnibus/paas/carbon-relay
 
   - name: deploy-toolbox-staging
     serial_groups: [toolbox-stg]
@@ -997,10 +973,9 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
-          APP_NAME: selfservice 
-          CF_SPACE: staging
-          VARS_FILE: omnibus/paas/env_variables/staging.yml
+          <<: *app-deploy-config
+          APP_NAME: selfservice
+          APP_PATH: artefact
 
   - name: deploy-notifications-staging
     serial_groups: [notifications-stg]
@@ -1013,12 +988,12 @@ jobs:
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
-          <<: *push-app-config
+          <<: *cf-creds
           APP_NAME: notifications 
           CF_SPACE: staging
+          MANIFEST: omnibus/paas/pay-apps.yml
           CF_DOCKER_PASSWORD: ((docker-password))
           DOCKER_USERNAME: ((docker-username))
-          APP_PATH: artefact/target/pay-*-allinone.jar
           VARS_FILE: omnibus/paas/env_variables/staging.yml
 
   - name: deploy-sqs-staging
@@ -1059,10 +1034,11 @@ jobs:
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         input_mapping: { artefact: "metric-exporter-source" }
         params:
-          <<: *push-app-config
+          <<: *app-deploy-config
           APP_NAME: metric-exporter          
           CF_SPACE: staging
-          MANIFEST_PATH: omnibus/paas/metric-exporter
+          MANIFEST: omnibus/paas/metric-exporter/manifest.yml
+          APP_PATH: metric-exporter-source
 
   # Smoke Tests
   - name: deploy-selenium-hub
