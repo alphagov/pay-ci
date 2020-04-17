@@ -738,7 +738,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-adminusers-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params: &push-app-config
           <<: *cf-creds
           CF_SPACE: staging
@@ -753,7 +753,7 @@ jobs:
       - get: cardid-data-source
         trigger: true
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         input_mapping: { artefact: cardid-data-source }
         params: &push-app-config
           <<: *cf-creds
@@ -775,7 +775,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-cardid-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: cardid
@@ -794,7 +794,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-directdebit-frontend-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: directdebit-frontend
@@ -812,7 +812,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-card-connector-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: card-connector
@@ -831,7 +831,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-card-frontend-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: card-frontend
@@ -849,7 +849,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-directdebit-connector-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: directdebit-connector 
@@ -868,7 +868,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-ledger-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: ledger 
@@ -887,7 +887,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-products-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: products 
@@ -906,7 +906,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-products-ui-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: products-ui 
@@ -924,7 +924,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-publicapi-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: publicapi 
@@ -943,7 +943,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-publicauth-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: publicauth 
@@ -962,7 +962,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-selfservice-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: selfservice 
@@ -976,7 +976,7 @@ jobs:
         trigger: true
       - get: omnibus
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         input_mapping: { artefact: "carbon-relay-source" }
         params:
           <<: *push-app-config
@@ -995,7 +995,7 @@ jobs:
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-toolbox-pre-release }
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: selfservice 
@@ -1011,7 +1011,7 @@ jobs:
         params:
           skip_download: true
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *push-app-config
           APP_NAME: notifications 
@@ -1056,7 +1056,7 @@ jobs:
             path: cp
             args: ["omnibus/paas/metric-exporter/env-map.yml", "metric-exporter-source"]
       - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-push.yml
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
         input_mapping: { artefact: "metric-exporter-source" }
         params:
           <<: *push-app-config
