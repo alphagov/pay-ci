@@ -3,7 +3,8 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: rbakergds/cf-cli-v7
+    repository: governmentpaas/cf-cli
+    tag: cf7
 
 inputs:
   - name: omnibus
@@ -39,7 +40,7 @@ run:
 
       args=()
       args+=("$APP_NAME")
-      args+=(--path $APP_PATH)
+      args+=(--path $(pwd)/$APP_PATH)
       args+=(--manifest "$MANIFEST_PATH/$MANIFEST_FILE")
       [ -n "$VARS_FILE" ] && args+=(--vars-file "$VARS_FILE")
       [ -n "$ZDT" ] && args+=(--strategy rolling)
