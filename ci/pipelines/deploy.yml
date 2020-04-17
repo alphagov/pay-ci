@@ -1010,7 +1010,7 @@ jobs:
         trigger: true
         params:
           skip_download: true
-     - task: deploy-to-paas-staging
+      - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-push.yml
         params:
           <<: *push-app-config
@@ -1027,10 +1027,13 @@ jobs:
       - put: app
         resource: paas-staging
         params:
-          <<: *docker-app
+          command: push
+          docker_password: ((docker-password))
           docker-username: ((docker-username))
           app_name: sqs
           manifest: omnibus/paas/fake-sqs.yml
+          vars:
+            space: staging
 
   - name: deploy-metric-exporter-staging
     serial_groups: [metric-exporter-stg]
