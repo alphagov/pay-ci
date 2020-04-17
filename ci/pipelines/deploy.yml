@@ -896,6 +896,7 @@ jobs:
         params:
           <<: *app-deploy-config
           APP_NAME: products-ui
+          APP_PATH: artefact
 
   - name: deploy-publicapi-staging
     serial_groups: [publicapi-stg]

@@ -43,7 +43,6 @@ run:
       [ -n "$MANIFEST" ] && args+=(--manifest "$MANIFEST")
       [ -n "$VARS_FILE" ] && args+=(--vars-file "$VARS_FILE")
       [ -n "$ZDT" ] && args+=(--strategy rolling)
-      [ -n "$DOCKER_USERNAME" ] && args+=(--docker-username "$DOCKER_USERNAME")
-      [ -n "$DOCKER_IMAGE" ] && args+=(--docker-image "$DOCKER_IMAGE")
+      [ -n "$DOCKER_USERNAME" ] && args+=(--var  docker-username="$DOCKER_USERNAME")
 
       cf push "${args[@]}"
