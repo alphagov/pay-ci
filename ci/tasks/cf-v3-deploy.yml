@@ -1,13 +1,15 @@
 platform: linux
 
 image_resource:
-  type: docker-image
-  source: { repository: governmentpaas/cf-cli }
+  type: registry-image
+  source:
+    repository: governmentpaas/cf-cli
+    tag: cf7
 
 inputs:
   - name: omnibus
     optional: true
-  - name: workdir
+  - name: artefact
     optional: true
 
 params:
@@ -16,9 +18,15 @@ params:
   CF_PASSWORD: ((cf-password))
   CF_ORG:
   CF_SPACE:
-  MANIFEST_PATH:
+  CF_DOCKER_PASSWORD:
+  DOCKER_IMAGE:
+  DOCKER_USERNAME:
+  MANIFEST_PATH: artefact
   MANIFEST_FILE: manifest.yml
   APP_NAME:
+  PATH: artefact
+  VARS_FILE:
+  ZDT:
 
 run:
   path: bash
@@ -29,6 +37,14 @@ run:
       cf login -a "$CF_API" \
         -u "$CF_USERNAME" -p "$CF_PASSWORD" \
         -o "$CF_ORG" -s "$CF_SPACE"
-      cd $MANIFEST_PATH
-      cf v3-apply-manifest -f "$MANIFEST_FILE"
-      cf v3-push "$APP_NAME"
+
+      args=()
+      args+=("$APP_NAME")
+      args+=(--path "$PATH")
+      args+=(--manifest "$MANIFEST_PATH/$MANIFEST_FILE")
+      [ -n "$VARS_FILE" ] && args+=(--vars-file "$VARS_FILE")
+      [ -n "$ZDT" ] && args+=(--strategy rolling)
+      [ -n "$DOCKER_USERNAME" ] && args+=(--docker-username "$DOCKER_USERNAME")
+      [ -n "$DOCKER_IMAGE" ] && args+=(--docker-image "$DOCKER_IMAGE")
+
+      cf push "${args[@]}"
