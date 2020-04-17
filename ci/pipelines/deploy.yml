@@ -749,14 +749,17 @@ jobs:
   - name: deploy-cardid-data-staging
     serial_groups: [cardid-data-stg]
     plan:
+      - get: omnibus
       - get: cardid-data-source
         trigger: true
-      - put: paas-staging
-        params:
-          command: push
-          path: cardid-data-source/sources
-          manifest: cardid-data-source/manifest.yml
-          space: staging
+      - task: deploy-to-paas-staging
+        file: omnibus/ci/tasks/cf-v3-push.yml
+        input_mapping: { artefact: cardid-data-source }
+        params: &push-app-config
+          <<: *cf-creds
+          CF_SPACE: staging
+          APP_NAME: cardid-data
+          PATH: artefact/sources
 
   - name: deploy-cardid-staging
     serial_groups: [cardid-stg]
