@@ -39,7 +39,7 @@ run:
 
       args=()
       args+=("$APP_NAME")
-      args+=(--path "$APP_PATH")
+      args+=(--path $APP_PATH)
       args+=(--manifest "$MANIFEST_PATH/$MANIFEST_FILE")
       [ -n "$VARS_FILE" ] && args+=(--vars-file "$VARS_FILE")
       [ -n "$ZDT" ] && args+=(--strategy rolling)
