@@ -957,7 +957,7 @@ jobs:
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *app-deploy-config
-          APP_NAME: metric-exporter
+          APP_NAME: carbon-relay
           MANIFEST: omnibus/paas/carbon-relay/manifest.yml
           APP_PATH: omnibus/paas/carbon-relay
 
