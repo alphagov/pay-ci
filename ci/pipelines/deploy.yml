@@ -746,6 +746,7 @@ jobs:
           APP_PATH: artefact/target/pay-*-allinone.jar
           MANIFEST: artefact/manifest.yml
           VARS_FILE: omnibus/paas/env_variables/staging.yml
+          ZDT: true
 
   - name: deploy-cardid-data-staging
     serial_groups: [cardid-data-stg]
@@ -760,6 +761,7 @@ jobs:
           APP_NAME: cardid-data
           APP_PATH: cardid-data-source/sources
           MANIFEST: cardid-data-source/manifest.yml
+          ZDT: true
 
   - name: deploy-cardid-staging
     serial_groups: [cardid-stg]
@@ -780,6 +782,7 @@ jobs:
           <<: *app-deploy-config
           APP_NAME: cardid
           CF_SPACE: staging-cde
+          ZDT: true
 
   - name: deploy-directdebit-frontend-staging
     serial_groups: [directdebit-frontend-stg]
@@ -797,6 +800,7 @@ jobs:
           <<: *app-deploy-config
           APP_NAME: directdebit-frontend
           APP_PATH: artefact
+          ZDT: true
 
   - name: deploy-card-connector-staging
     serial_groups: [card-connector-stg]
@@ -814,6 +818,7 @@ jobs:
           <<: *app-deploy-config
           APP_NAME: card-connector
           CF_SPACE: staging-cde
+          ZDT: true
 
   - name: deploy-card-frontend-staging
     serial_groups: [card-frontend-stg]
@@ -832,6 +837,7 @@ jobs:
           APP_NAME: card-frontend
           CF_SPACE: staging-cde
           APP_PATH: artefact
+          ZDT: true
 
   - name: deploy-directdebit-connector-staging
     serial_groups: [directdebit-connector-stg]
@@ -848,6 +854,7 @@ jobs:
         params:
           <<: *app-deploy-config
           APP_NAME: directdebit-connector
+          ZDT: true
 
   - name: deploy-ledger-staging
     serial_groups: [ledger-stg]
@@ -864,6 +871,7 @@ jobs:
         params:
           <<: *app-deploy-config
           APP_NAME: ledger
+          ZDT: true
 
   - name: deploy-products-staging
     serial_groups: [products-stg]
@@ -880,6 +888,7 @@ jobs:
         params:
           <<: *app-deploy-config
           APP_NAME: products
+          ZDT: true
 
   - name: deploy-products-ui-staging
     serial_groups: [products-ui-stg]
@@ -897,6 +906,7 @@ jobs:
           <<: *app-deploy-config
           APP_NAME: products-ui
           APP_PATH: artefact
+          ZDT: true
 
   - name: deploy-publicapi-staging
     serial_groups: [publicapi-stg]
@@ -913,6 +923,7 @@ jobs:
         params:
           <<: *app-deploy-config
           APP_NAME: publicapi
+          ZDT: true
 
   - name: deploy-publicauth-staging
     serial_groups: [publicauth-stg]
@@ -929,6 +940,7 @@ jobs:
         params:
           <<: *app-deploy-config
           APP_NAME: publicauth
+          ZDT: true
 
   - name: deploy-selfservice-staging
     serial_groups: [selfservice-stg]
@@ -946,6 +958,7 @@ jobs:
           <<: *app-deploy-config
           APP_NAME: selfservice
           APP_PATH: artefact
+          ZDT: true
 
   - name: deploy-carbon-relay-staging
     serial_groups: [carbon-relay-stg]
@@ -960,6 +973,7 @@ jobs:
           APP_NAME: carbon-relay
           MANIFEST: omnibus/paas/carbon-relay/manifest.yml
           APP_PATH: omnibus/paas/carbon-relay
+          ZDT: true
 
   - name: deploy-toolbox-staging
     serial_groups: [toolbox-stg]
@@ -977,6 +991,7 @@ jobs:
           <<: *app-deploy-config
           APP_NAME: selfservice
           APP_PATH: artefact
+          ZDT: true
 
   - name: deploy-notifications-staging
     serial_groups: [notifications-stg]
@@ -996,6 +1011,7 @@ jobs:
           CF_DOCKER_PASSWORD: ((docker-password))
           DOCKER_USERNAME: ((docker-username))
           VARS_FILE: omnibus/paas/env_variables/staging.yml
+          ZDT: true
 
   - name: deploy-sqs-staging
     plan:
