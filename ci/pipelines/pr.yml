@@ -1,0 +1,48 @@
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: teliaoss/github-pr-resource
+
+resources:
+  - name: card-connector-pull-request
+    type: pull-request
+    icon: github-cirle
+    check_every: 1h
+    source:
+      repository: alphagov/pay-connector
+      access_token: ((github-access-token))
+
+jobs:
+- name: card-connector-test
+  plan:
+  - get: card-connector-pull-request
+    trigger: true
+    version: every
+  - put: card-connector-pull-request
+    params:
+      path: card-connector-pull-request
+      status: pending
+  - task: unit-test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: maven, tag: "latest"}
+      inputs:
+        - name: card-connector-pull-request
+      run:
+        path: /bin/sh
+        args:
+          - -xce
+          - |
+            echo "HELLO"
+    on_failure:
+      put: card-connector-pull-request
+      params:
+        path: card-connector-pull-request
+        status: failure
+  - put: card-connector-pull-request
+    params:
+      path: card-connector-pull-request
+      status: success
