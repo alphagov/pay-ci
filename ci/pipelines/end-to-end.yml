@@ -8,6 +8,13 @@ resources:
       branch: e2e_on_concourse
       username: ((github-readonly-username))
       password: ((github-readonly-password))
+  
+  - icon: github-circle
+    name: card-connector-git
+    source:
+      branch: master
+      uri: https://github.com/alphagov/pay-connector
+    type: git
 
   - &image
     name: adminusers
@@ -289,3 +296,36 @@ jobs:
                 docker exec ${endtoend} /app/bin/e2e-directdebit
 
                 exit 0
+
+  - name: build-card-connector
+    plan:
+      - get: src
+        resource: card-connector-git
+        trigger: true
+      - task: test
+        privileged: true
+        config:
+          container_limits: {}
+          image_resource:
+            type: registry-image
+            source:
+              repository: amidos/dcind
+          caches:
+            - path: src/.m2
+          inputs:
+            - name: src
+          platform: linux
+          run:
+            path: bash
+            args:
+            - -ec
+            - |
+              source /docker-lib.sh
+              start_docker
+
+              apk --no-cache add openjdk11 maven --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+              export MAVEN_HOME=/usr/lib/mvn
+              export PATH=$MAVEN_HOME/bin:$PATH
+
+              cd src
+              mvn clean verify
