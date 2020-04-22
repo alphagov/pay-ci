@@ -9,6 +9,7 @@ Pay on PaaS.
 - `local`: Stuff for local testing and development
 - `paas`: Cloud Foundry manifests for Pay services
 - `secrets`: Secrets store using [pass](https://passwordstore.org)
+- `terraform`: Terraform for managing Cloudfoundry & AWS infrastructure
 
 ## Documentation
 
