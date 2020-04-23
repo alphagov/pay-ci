@@ -5,27 +5,38 @@ resource_types:
     repository: teliaoss/github-pr-resource
 
 resources:
-  - name: card-connector-pull-request
+  - &pull-request
+    name: card-connector-pull-request
     type: pull-request
     icon: github-cirle
     check_every: 1h
-    source:
+    source: &pull-request-source
       repository: alphagov/pay-connector
       access_token: ((github-access-token))
+
+  - <<: *pull-request
+    name: adminusers-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-adminusers
+
 
 jobs:
 - name: card-connector-test
   plan:
-  - get: src
+  - &pull-request-get
+    get: src
     resource: card-connector-pull-request
     trigger: true
     version: every
     name: src
-  - put: card-connector-pull-request
+  - &send-pending-status
+    put: card-connector-pull-request
     params:
       path: src
       status: pending
-  - task: test
+  - &java-test
+    task: test
     privileged: true
     config:
       container_limits: {}
@@ -69,7 +80,23 @@ jobs:
       params:
         path: src
         status: failure
-  - put: card-connector-pull-request
+  - &send-success-status
+    put: card-connector-pull-request
     params:
       path: src
       status: success
+
+- name: adminusers-test
+  plan:
+  - <<: *pull-request-get
+    resource: adminusers-pull-request
+  - <<: *send-pending-status
+    put: adminusers-pull-request
+  - <<: *java-test
+    on_failure:
+      put: adminusers-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: adminusers-pull-request
