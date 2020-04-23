@@ -20,6 +20,35 @@ resources:
       <<: *pull-request-source
       repository: alphagov/pay-adminusers
 
+  - <<: *pull-request
+    name: publicapi-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-publicapi
+
+  - <<: *pull-request
+    name: ledger-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-ledger
+  
+  - <<: *pull-request
+    name: publicauth-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-publicauth
+
+  - <<: *pull-request
+    name: cardid-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-cardid
+
+  - <<: *pull-request
+    name: direct-debit-connector-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-direct-debit-connector
 
 jobs:
 - name: card-connector-test
@@ -100,3 +129,78 @@ jobs:
         status: failure
   - <<: *send-success-status
     put: adminusers-pull-request
+
+- name: cardid-test
+  plan:
+  - <<: *pull-request-get
+    resource: cardid-pull-request
+  - <<: *send-pending-status
+    put: cardid-pull-request
+  - <<: *java-test
+    on_failure:
+      put: cardid-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: cardid-pull-request
+
+- name: pay-direct-debit-connector-test
+  plan:
+  - <<: *pull-request-get
+    resource: direct-debit-connector-pull-request
+  - <<: *send-pending-status
+    put: direct-debit-connector-pull-request
+  - <<: *java-test
+    on_failure:
+      put: direct-debit-connector-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: direct-debit-connector-pull-request
+
+- name: ledger-test
+  plan:
+  - <<: *pull-request-get
+    resource: ledger-pull-request
+  - <<: *send-pending-status
+    put: ledger-pull-request
+  - <<: *java-test
+    on_failure:
+      put: ledger-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: ledger-pull-request
+
+- name: publicauth-test
+  plan:
+  - <<: *pull-request-get
+    resource: publicauth-pull-request
+  - <<: *send-pending-status
+    put: publicauth-pull-request
+  - <<: *java-test
+    on_failure:
+      put: publicauth-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: publicauth-pull-request
+
+- name: publicapi-test
+  plan:
+  - <<: *pull-request-get
+    resource: publicapi-pull-request
+  - <<: *send-pending-status
+    put: publicapi-pull-request
+  - <<: *java-test
+    on_failure:
+      put: publicapi-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: publicapi-pull-request
