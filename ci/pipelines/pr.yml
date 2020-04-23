@@ -31,7 +31,7 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-ledger
-  
+
   - <<: *pull-request
     name: publicauth-pull-request
     source:
@@ -50,6 +50,11 @@ resources:
       <<: *pull-request-source
       repository: alphagov/pay-direct-debit-connector
 
+  - <<: *pull-request
+    name: frontend-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-frontend
 jobs:
 - name: card-connector-test
   plan:
@@ -204,3 +209,50 @@ jobs:
         status: failure
   - <<: *send-success-status
     put: publicapi-pull-request
+
+- name: frontend-test
+  plan:
+  - <<: *pull-request-get
+    resource: frontend-pull-request
+  - <<: *send-pending-status
+    put: frontend-pull-request
+  - &node-test
+    task: test
+    privileged: true
+    config:
+      platform: linux
+
+      image_resource:
+        type: docker-image
+        source:
+          repository: node
+          tag: 12-alpine
+
+      inputs:
+        - name: src
+
+      caches:
+        - path: src/node_modules
+
+      run:
+        path: sh
+        dir: src
+        args:
+          - -ec
+          - |
+            set -o errexit -o nounset -o pipefail
+            node --version
+            npm --version
+            apk add --virtual build-dependencies --update python build-base libexecinfo-dev ruby
+            npm config set cache ../npm_cache
+            npm rebuild node-sass
+            npm install
+            npm run compile
+            npm test -- --forbid-only --forbid-pending
+    on_failure:
+      put: frontend-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: frontend-pull-request
