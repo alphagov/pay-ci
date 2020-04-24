@@ -232,7 +232,7 @@ jobs:
         - name: src
 
       caches:
-        - path: src/node_modules
+        - path: npm_cache
 
       run:
         path: sh
@@ -241,12 +241,22 @@ jobs:
           - -ec
           - |
             set -o errexit -o nounset -o pipefail
-            node --version
-            npm --version
-            apk add --virtual build-dependencies --update python build-base libexecinfo-dev ruby
+            echo "node: $(node --version)"
+            echo "npm: $(npm --version)"
+
+            apk update
+            apk upgrade
+            apk add --update --virtual build-dependencies build-base
+            apk add --update bash ca-certificates wget python
+
+            # For Pact. See: https://docs.pact.io/docker#alpine-linux
+            wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
+            wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.29-r0/glibc-2.29-r0.apk
+            apk add glibc-2.29-r0.apk
+
             npm config set cache ../npm_cache
             npm rebuild node-sass
-            npm install
+            npm ci
             npm run compile
             npm test -- --forbid-only --forbid-pending
     on_failure:
