@@ -8,7 +8,7 @@ resources:
   - &pull-request
     name: card-connector-pull-request
     type: pull-request
-    icon: github-cirle
+    icon: github-circle
     check_every: 1h
     source: &pull-request-source
       repository: alphagov/pay-connector
@@ -51,12 +51,35 @@ resources:
       repository: alphagov/pay-direct-debit-connector
 
   - <<: *pull-request
-    name: frontend-pull-request
+    name: card-frontend-pull-request
     source:
       <<: *pull-request-source
       repository: alphagov/pay-frontend
+
+  - <<: *pull-request
+    name: selfservice-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-selfservice
+
+  - <<: *pull-request
+    name: toolbox-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-toolbox
+
+  - <<: *pull-request
+    name: dd-frontend-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-direct-debit-frontend
+
 jobs:
-- name: card-connector-test
+- &pull-request-test
+  name: card-connector-test
+  max_in_flight: 3
+  build_log_retention:
+    builds: 500
   plan:
   - &pull-request-get
     get: src
@@ -70,7 +93,7 @@ jobs:
       path: src
       status: pending
   - &java-test
-    task: test
+    task: run-tests
     privileged: true
     config:
       container_limits: {}
@@ -120,7 +143,8 @@ jobs:
       path: src
       status: success
 
-- name: adminusers-test
+- <<: *pull-request-test
+  name: adminusers-test
   plan:
   - <<: *pull-request-get
     resource: adminusers-pull-request
@@ -135,7 +159,8 @@ jobs:
   - <<: *send-success-status
     put: adminusers-pull-request
 
-- name: cardid-test
+- <<: *pull-request-test
+  name: cardid-test
   plan:
   - <<: *pull-request-get
     resource: cardid-pull-request
@@ -150,7 +175,8 @@ jobs:
   - <<: *send-success-status
     put: cardid-pull-request
 
-- name: pay-direct-debit-connector-test
+- <<: *pull-request-test
+  name: pay-direct-debit-connector-test
   plan:
   - <<: *pull-request-get
     resource: direct-debit-connector-pull-request
@@ -165,7 +191,8 @@ jobs:
   - <<: *send-success-status
     put: direct-debit-connector-pull-request
 
-- name: ledger-test
+- <<: *pull-request-test
+  name: ledger-test
   plan:
   - <<: *pull-request-get
     resource: ledger-pull-request
@@ -180,7 +207,8 @@ jobs:
   - <<: *send-success-status
     put: ledger-pull-request
 
-- name: publicauth-test
+- <<: *pull-request-test
+  name: publicauth-test
   plan:
   - <<: *pull-request-get
     resource: publicauth-pull-request
@@ -195,7 +223,8 @@ jobs:
   - <<: *send-success-status
     put: publicauth-pull-request
 
-- name: publicapi-test
+- <<: *pull-request-test
+  name: publicapi-test
   plan:
   - <<: *pull-request-get
     resource: publicapi-pull-request
@@ -210,30 +239,27 @@ jobs:
   - <<: *send-success-status
     put: publicapi-pull-request
 
-- name: frontend-test
+- <<: *pull-request-test
+  name: card-frontend-test
   plan:
   - <<: *pull-request-get
-    resource: frontend-pull-request
+    resource: card-frontend-pull-request
   - <<: *send-pending-status
-    put: frontend-pull-request
+    put: card-frontend-pull-request
   - &node-test
     task: test
     privileged: true
     config:
       platform: linux
-
       image_resource:
         type: docker-image
         source:
           repository: node
           tag: 12-alpine
-
       inputs:
         - name: src
-
       caches:
         - path: npm_cache
-
       run:
         path: sh
         dir: src
@@ -260,9 +286,57 @@ jobs:
             npm run compile
             npm test -- --forbid-only --forbid-pending
     on_failure:
-      put: frontend-pull-request
+      put: card-frontend-pull-request
       params:
         path: src
         status: failure
   - <<: *send-success-status
-    put: frontend-pull-request
+    put: card-frontend-pull-request
+
+- <<: *pull-request-test
+  name: selfservice-test
+  plan:
+  - <<: *pull-request-get
+    resource: selfservice-pull-request
+  - <<: *send-pending-status
+    put: selfservice-pull-request
+  - <<: *node-test
+    on_failure:
+      put: selfservice-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: selfservice-pull-request
+
+- <<: *pull-request-test
+  name: toolbox-test
+  plan:
+  - <<: *pull-request-get
+    resource: toolbox-pull-request
+  - <<: *send-pending-status
+    put: toolbox-pull-request
+  - <<: *node-test
+    on_failure:
+      put: toolbox-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: toolbox-pull-request
+
+- <<: *pull-request-test
+  name: dd-frontend-test
+  plan:
+  - <<: *pull-request-get
+    resource: dd-frontend-pull-request
+  - <<: *send-pending-status
+    put: dd-frontend-pull-request
+  - <<: *node-test
+    on_failure:
+      put: dd-frontend-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: dd-frontend-pull-request
