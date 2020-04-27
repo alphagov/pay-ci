@@ -5,6 +5,15 @@ resource_types:
     repository: teliaoss/github-pr-resource
 
 resources:
+  - name: pr-ci-pipeline
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+      paths:
+        - ci/pipelines/pr.yml
+
   - &pull-request
     name: card-connector-pull-request
     type: pull-request
@@ -100,7 +109,8 @@ jobs:
       image_resource:
         type: registry-image
         source:
-          repository: amidos/dcind
+          repository: govukpay/concourse-runner
+          tag: latest
       caches:
         - path: src/.m2
       inputs:
@@ -111,9 +121,7 @@ jobs:
         args:
         - -ec
         - |
-          apk --no-cache add openjdk11 maven --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
-
-          source /docker-lib.sh
+          source /docker-helpers.sh
           start_docker
 
           cd src
@@ -340,3 +348,10 @@ jobs:
         status: failure
   - <<: *send-success-status
     put: dd-frontend-pull-request
+
+- name: update-pr-ci-pipeline
+  plan:
+    - get: pr-ci-pipeline
+      trigger: true
+    - set_pipeline: pr-ci
+      file: pr-ci-pipeline/ci/pipelines/pr.yml
