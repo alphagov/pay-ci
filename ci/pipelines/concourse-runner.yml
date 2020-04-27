@@ -26,6 +26,8 @@ jobs:
         trigger: true
       - task: build
         privileged: true
+        params: 
+          CONTEXT: concourse-runner-src/ci/docker/concourse-runner
         config:
           platform: linux
           image_resource:
@@ -34,7 +36,6 @@ jobs:
               repository: vito/oci-build-task
           inputs:
           - name: concourse-runner-src
-            path: .
           outputs:
           - name: image
           run:
