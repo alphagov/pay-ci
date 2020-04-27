@@ -1,0 +1,342 @@
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: teliaoss/github-pr-resource
+
+resources:
+  - &pull-request
+    name: card-connector-pull-request
+    type: pull-request
+    icon: github-circle
+    check_every: 1h
+    source: &pull-request-source
+      repository: alphagov/pay-connector
+      access_token: ((github-access-token))
+
+  - <<: *pull-request
+    name: adminusers-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-adminusers
+
+  - <<: *pull-request
+    name: publicapi-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-publicapi
+
+  - <<: *pull-request
+    name: ledger-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-ledger
+
+  - <<: *pull-request
+    name: publicauth-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-publicauth
+
+  - <<: *pull-request
+    name: cardid-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-cardid
+
+  - <<: *pull-request
+    name: direct-debit-connector-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-direct-debit-connector
+
+  - <<: *pull-request
+    name: card-frontend-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-frontend
+
+  - <<: *pull-request
+    name: selfservice-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-selfservice
+
+  - <<: *pull-request
+    name: toolbox-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-toolbox
+
+  - <<: *pull-request
+    name: dd-frontend-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-direct-debit-frontend
+
+jobs:
+- &pull-request-test
+  name: card-connector-test
+  max_in_flight: 3
+  build_log_retention:
+    builds: 500
+  plan:
+  - &pull-request-get
+    get: src
+    resource: card-connector-pull-request
+    trigger: true
+    version: every
+    name: src
+  - &send-pending-status
+    put: card-connector-pull-request
+    params:
+      path: src
+      status: pending
+  - &java-test
+    task: run-tests
+    privileged: true
+    config:
+      container_limits: {}
+      image_resource:
+        type: registry-image
+        source:
+          repository: amidos/dcind
+      caches:
+        - path: src/.m2
+      inputs:
+        - name: src
+      platform: linux
+      run:
+        path: bash
+        args:
+        - -ec
+        - |
+          apk --no-cache add openjdk11 maven --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+
+          source /docker-lib.sh
+          start_docker
+
+          cd src
+
+          export MAVEN_HOME=/usr/lib/mvn
+          export PATH=$MAVEN_HOME/bin:$PATH
+          export MAVEN_REPO="$PWD/.m2"
+
+          cat <<'EOF' >settings.xml
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                                    https://maven.apache.org/xsd/settings-1.0.0.xsd">
+                <localRepository>${env.MAVEN_REPO}</localRepository>
+          </settings>
+          EOF
+
+          mvn --global-settings settings.xml clean verify
+    on_failure:
+      put: card-connector-pull-request
+      params:
+        path: src
+        status: failure
+  - &send-success-status
+    put: card-connector-pull-request
+    params:
+      path: src
+      status: success
+
+- <<: *pull-request-test
+  name: adminusers-test
+  plan:
+  - <<: *pull-request-get
+    resource: adminusers-pull-request
+  - <<: *send-pending-status
+    put: adminusers-pull-request
+  - <<: *java-test
+    on_failure:
+      put: adminusers-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: adminusers-pull-request
+
+- <<: *pull-request-test
+  name: cardid-test
+  plan:
+  - <<: *pull-request-get
+    resource: cardid-pull-request
+  - <<: *send-pending-status
+    put: cardid-pull-request
+  - <<: *java-test
+    on_failure:
+      put: cardid-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: cardid-pull-request
+
+- <<: *pull-request-test
+  name: pay-direct-debit-connector-test
+  plan:
+  - <<: *pull-request-get
+    resource: direct-debit-connector-pull-request
+  - <<: *send-pending-status
+    put: direct-debit-connector-pull-request
+  - <<: *java-test
+    on_failure:
+      put: direct-debit-connector-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: direct-debit-connector-pull-request
+
+- <<: *pull-request-test
+  name: ledger-test
+  plan:
+  - <<: *pull-request-get
+    resource: ledger-pull-request
+  - <<: *send-pending-status
+    put: ledger-pull-request
+  - <<: *java-test
+    on_failure:
+      put: ledger-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: ledger-pull-request
+
+- <<: *pull-request-test
+  name: publicauth-test
+  plan:
+  - <<: *pull-request-get
+    resource: publicauth-pull-request
+  - <<: *send-pending-status
+    put: publicauth-pull-request
+  - <<: *java-test
+    on_failure:
+      put: publicauth-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: publicauth-pull-request
+
+- <<: *pull-request-test
+  name: publicapi-test
+  plan:
+  - <<: *pull-request-get
+    resource: publicapi-pull-request
+  - <<: *send-pending-status
+    put: publicapi-pull-request
+  - <<: *java-test
+    on_failure:
+      put: publicapi-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: publicapi-pull-request
+
+- <<: *pull-request-test
+  name: card-frontend-test
+  plan:
+  - <<: *pull-request-get
+    resource: card-frontend-pull-request
+  - <<: *send-pending-status
+    put: card-frontend-pull-request
+  - &node-test
+    task: test
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: node
+          tag: 12-alpine
+      inputs:
+        - name: src
+      caches:
+        - path: npm_cache
+      run:
+        path: sh
+        dir: src
+        args:
+          - -ec
+          - |
+            set -o errexit -o nounset -o pipefail
+            echo "node: $(node --version)"
+            echo "npm: $(npm --version)"
+
+            apk update
+            apk upgrade
+            apk add --update --virtual build-dependencies build-base
+            apk add --update bash ca-certificates wget python
+
+            # For Pact. See: https://docs.pact.io/docker#alpine-linux
+            wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
+            wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.29-r0/glibc-2.29-r0.apk
+            apk add glibc-2.29-r0.apk
+
+            npm config set cache ../npm_cache
+            npm rebuild node-sass
+            npm ci
+            npm run compile
+            npm test -- --forbid-only --forbid-pending
+    on_failure:
+      put: card-frontend-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: card-frontend-pull-request
+
+- <<: *pull-request-test
+  name: selfservice-test
+  plan:
+  - <<: *pull-request-get
+    resource: selfservice-pull-request
+  - <<: *send-pending-status
+    put: selfservice-pull-request
+  - <<: *node-test
+    on_failure:
+      put: selfservice-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: selfservice-pull-request
+
+- <<: *pull-request-test
+  name: toolbox-test
+  plan:
+  - <<: *pull-request-get
+    resource: toolbox-pull-request
+  - <<: *send-pending-status
+    put: toolbox-pull-request
+  - <<: *node-test
+    on_failure:
+      put: toolbox-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: toolbox-pull-request
+
+- <<: *pull-request-test
+  name: dd-frontend-test
+  plan:
+  - <<: *pull-request-get
+    resource: dd-frontend-pull-request
+  - <<: *send-pending-status
+    put: dd-frontend-pull-request
+  - <<: *node-test
+    on_failure:
+      put: dd-frontend-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: dd-frontend-pull-request
