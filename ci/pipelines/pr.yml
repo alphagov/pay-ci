@@ -83,6 +83,12 @@ resources:
       <<: *pull-request-source
       repository: alphagov/pay-direct-debit-frontend
 
+  - <<: *pull-request
+    name: products-ui-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-products-ui
+
 jobs:
 - &pull-request-test
   name: card-connector-test
@@ -348,6 +354,22 @@ jobs:
         status: failure
   - <<: *send-success-status
     put: dd-frontend-pull-request
+
+- <<: *pull-request-test
+  name: products-ui-test
+  plan:
+  - <<: *pull-request-get
+    resource: products-ui-pull-request
+  - <<: *send-pending-status
+    put: products-ui-pull-request
+  - <<: *node_test
+    on_failure:
+      put: products-ui-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: products-ui-pull-request
 
 - name: update-pr-ci-pipeline
   plan:
