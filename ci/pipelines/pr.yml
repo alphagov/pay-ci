@@ -89,6 +89,11 @@ resources:
       <<: *pull-request-source
       repository: alphagov/pay-products-ui
 
+  - <<: *pull-request
+    name: products-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-products
 jobs:
 - &pull-request-test
   name: card-connector-test
@@ -254,6 +259,22 @@ jobs:
     put: publicapi-pull-request
 
 - <<: *pull-request-test
+  name: products-test
+  plan:
+  - <<: *pull-request-get
+    resource: products-pull-request
+  - <<: *send-pending-status
+    put: products-pull-request
+  - <<: *java-test
+    on_failure:
+      put: products-pull-request
+      params:
+        path: src
+        status: failure
+  - <<: *send-success-status
+    put: products-pull-request
+
+- <<: *pull-request-test
   name: card-frontend-test
   plan:
   - <<: *pull-request-get
@@ -362,7 +383,7 @@ jobs:
     resource: products-ui-pull-request
   - <<: *send-pending-status
     put: products-ui-pull-request
-  - <<: *node_test
+  - <<: *node-test
     on_failure:
       put: products-ui-pull-request
       params:
