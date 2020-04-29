@@ -69,3 +69,9 @@ resource "aws_cloudfront_distribution" "publicapi" {
     ssl_support_method       = "sni-only"
   }
 }
+
+module waf_v2_acl {
+  source      = "./waf_v2_acl" 
+  name        = "publicapi-${var.environment}"
+  description = "Publicapi ACL ${var.environment}"
+}
