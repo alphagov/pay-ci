@@ -1,0 +1,20 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+inputs:
+  - name: build
+outputs:
+  - name: zipped_build
+params:
+  app_name:
+run:
+  path: sh
+  args:
+    - -ec
+    - |
+      set -o errexit -o nounset -o pipefail
+      file_suffix="PR-$(cat build/.git/resource/pr)-GIT-SHA-$(cat build/.git/resource/head_sha)"
+      tar_name=build-"${app_name}"_"${file_suffix}".tar.gz
+      tar -czf zipped_build/"${tar_name}" build/*

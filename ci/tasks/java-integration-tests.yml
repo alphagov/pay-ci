@@ -2,22 +2,30 @@ container_limits: {}
 image_resource:
   type: registry-image
   source:
-    repository: maven
-    tag: 3.6.1
+    repository: govukpay/concourse-runner
+    tag: latest
 caches:
   - path: src/.m2
 inputs:
   - name: src
-outputs:
-  - name: build
-params:
-  app_name:
 platform: linux
 run:
   path: bash
   args:
   - -ec
   - |
+    source /docker-helpers.sh
+    start_docker
+
+    function cleanup {
+      echo "CLEANUP TRIGGERED"
+      clean_docker
+      stop_docker
+      echo "CLEANUP COMPLETE"
+    }
+
+    trap cleanup EXIT
+
     cd src
 
     export MAVEN_HOME=/usr/lib/mvn
@@ -33,7 +41,4 @@ run:
     </settings>
     EOF
 
-    mvn --global-settings settings.xml clean package
-    PR_NUMBER="PR-$(cat .git/resource/pr)"
-    cd ..
-    cp -R src/* build
+    mvn --global-settings settings.xml clean verify

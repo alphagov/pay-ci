@@ -10,8 +10,6 @@ inputs:
   - name: src
 outputs:
   - name: build
-params:
-  app_name:
 platform: linux
 run:
   path: bash
@@ -33,7 +31,7 @@ run:
     </settings>
     EOF
 
-    mvn --global-settings settings.xml clean package
+    mvn --global-settings settings.xml clean package -DskipTests
     PR_NUMBER="PR-$(cat .git/resource/pr)"
     cd ..
     cp -R src/* build

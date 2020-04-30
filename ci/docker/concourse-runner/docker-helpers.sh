@@ -131,5 +131,5 @@ stop_docker() {
 clean_docker() {
   [[ ! -f /tmp/docker.pid ]] && return 0;
   echo "cleaning up docker"
-  docker system prune -af --volumes >/dev/null 2>&1 || true
+  docker system prune -af --volumes || true
 }
