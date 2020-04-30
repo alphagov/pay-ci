@@ -1,8 +1,9 @@
 resource_types:
 - name: pull-request
-  type: docker-image
+  type: registry-image
   source:
     repository: teliaoss/github-pr-resource
+    tag: dev
 
 resources:
   - name: pr-ci-pipeline
@@ -182,6 +183,8 @@ jobs:
   name: cardid-test
   plan:
   - <<: *pull-request-get
+    params:
+      submodules: true
     resource: cardid-pull-request
   - <<: *send-pending-status
     put: cardid-pull-request
