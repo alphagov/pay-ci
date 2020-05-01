@@ -13,7 +13,7 @@ data "external" "aws_waf_v2_acl" {
 resource "null_resource" "aws_waf_v2_acl" {
   triggers = {
     name        = var.name
-    description = var.description
+    description = "'${var.description}'"
     acl_rules   = local.acl_rules
   }
 
