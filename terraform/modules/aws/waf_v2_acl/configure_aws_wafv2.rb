@@ -56,7 +56,7 @@ end
 def wafv2_acl_id(name)
   JSON.load(`aws wafv2 list-web-acls --scope CLOUDFRONT --region us-east-1`)
     .dig('WebACLs')
-    &.find { |acl| acl['Name'] == name }
+    &.find { |item| item['Name'] == name }
     &.fetch('ARN')
 end
 
@@ -84,20 +84,20 @@ command = ARGV.pop
 raise "Specify command (fetch, configure, destroy)" unless command
 
 if command == "fetch"
-  acl_id = wafv2_acl_id(options["name"])
+  acl_id = wafv2_acl_id(options[:name])
   puts JSON.dump({ 'id' => acl_id })
 end
 
 if command == "configure"
-  acl_id = wafv2_acl_id(options["name"])
+  acl_id = wafv2_acl_id(options[:name])
   if acl_id.nil?
-    acl_id = create_acl!(options["name"], options["description"], options["acl"])
+    acl_id = create_acl!(options[:name], options[:description], options[:acl])
   else
-    update_acl!(options["name"], options["description"], options["acl"])
+    update_acl!(options[:name], options[:description], options[:acl])
   end
 end
 
 if command == "destroy"
-  LOG.info("Destroying ACL = #{options["name"]}")
-  destroy_acl!(options["name"])
+  LOG.info("Destroying ACL = #{options[:name]}")
+  destroy_acl!(options[:name])
 end

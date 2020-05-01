@@ -45,7 +45,7 @@ ${jsonencode([
         }
       },
       "OverrideAction": {
-        "Block": {}
+        "Count": {}
       },
       "VisibilityConfig": {
         "SampledRequestsEnabled": true,
