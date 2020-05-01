@@ -66,15 +66,15 @@ options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: example.rb [options]"
 
-  opts.on("-n", "--name", "ACL name") do |n|
+  opts.on("--name NAME", "ACL name") do |n|
     options[:name] = n
   end
 
-  opts.on("-d", "--description", "ACL description") do |d|
+  opts.on("--description DESCRIPTION", "ACL description") do |d|
     options[:description] = d
   end
 
-  opts.on("-a", "--acl", "ACL JSON") do |a|
+  opts.on("--acl ACL", "ACL JSON") do |a|
     options[:acl] = a
   end
 end.parse!
@@ -91,9 +91,9 @@ end
 if command == "configure"
   acl_id = wafv2_acl_id(options["name"])
   if acl_id.nil?
-    acl_id = create_acl!(options["name"], options["description", options["acl"])
+    acl_id = create_acl!(options["name"], options["description"], options["acl"])
   else
-    update_acl!(options["name"], options["description", options["acl"])
+    update_acl!(options["name"], options["description"], options["acl"])
   end
 end
 

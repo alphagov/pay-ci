@@ -3,7 +3,11 @@ locals {
 }
 
 data "external" "aws_waf_v2_acl" {
-  program = ["ruby", "${path.module}/configure_aws_wafv2.rb fetch --name ${var.name}"]
+  program = ["ruby", "${path.module}/fetch_aws_wafv2.rb"]
+
+  query = {
+    name = var.name
+  }
 }
 
 resource "null_resource" "aws_waf_v2_acl" {
@@ -14,7 +18,7 @@ resource "null_resource" "aws_waf_v2_acl" {
   }
 
   provisioner "local-exec" {
-    command = "${path.module}/configure_aws_wafv2.rb configure --name ${self.triggers.name} --description ${self.triggers.description} --acl ${self.triggers.acl_rules}"
+    command = "${path.module}/configure_aws_wafv2.rb configure --name ${self.triggers.name} --description ${self.triggers.description} --acl '${self.triggers.acl_rules}'"
   }
 
   provisioner "local-exec" {
