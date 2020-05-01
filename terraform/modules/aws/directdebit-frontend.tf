@@ -69,3 +69,9 @@ resource "aws_cloudfront_distribution" "directdebit_frontend" {
     ssl_support_method       = "sni-only"
   }
 }
+
+module direct_debit_frontend_waf_acl {
+  source      = "./waf_v2_acl" 
+  name        = "direct-debit-frontend-${var.environment}"
+  description = "Direct Debit Frontend ACL ${var.environment}"
+}

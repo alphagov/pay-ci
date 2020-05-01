@@ -100,3 +100,9 @@ data "external" "card_frontend_fle_config" {
     public_key_id = aws_cloudfront_public_key.card_frontend.id
   }
 }
+
+module card_frontend_waf_acl {
+  source      = "./waf_v2_acl"
+  name        = "card-frontend-${var.environment}"
+  description = "Card Frontend ACL ${var.environment}"
+}

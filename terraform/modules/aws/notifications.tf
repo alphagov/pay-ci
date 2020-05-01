@@ -69,3 +69,9 @@ resource "aws_cloudfront_distribution" "notifications" {
     ssl_support_method       = "sni-only"
   }
 }
+
+module notifications_waf_acl {
+  source      = "./waf_v2_acl" 
+  name        = "notifications-${var.environment}"
+  description = "Notifications ACL ${var.environment}"
+}
