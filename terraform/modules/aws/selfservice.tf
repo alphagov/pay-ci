@@ -69,3 +69,9 @@ resource "aws_cloudfront_distribution" "selfservice" {
     ssl_support_method       = "sni-only"
   }
 }
+
+module selfservice_waf_acl {
+  source      = "./waf_v2_acl" 
+  name        = "selfservice-${var.environment}"
+  description = "Selfservice ACL ${var.environment}"
+}

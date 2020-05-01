@@ -69,3 +69,9 @@ resource "aws_cloudfront_distribution" "products_ui" {
     ssl_support_method       = "sni-only"
   }
 }
+
+module products_ui_waf_acl {
+  source      = "./waf_v2_acl" 
+  name        = "products-ui-${var.environment}"
+  description = "Products UI ACL ${var.environment}"
+}
