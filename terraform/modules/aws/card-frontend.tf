@@ -70,6 +70,8 @@ resource "aws_cloudfront_distribution" "card_frontend" {
     minimum_protocol_version = "TLSv1.2_2018"
     ssl_support_method       = "sni-only"
   }
+
+  web_acl_id = module.card_frontend_waf_acl.acl_id
 }
 
 data "pass_password" "card_frontend_pubkey" {

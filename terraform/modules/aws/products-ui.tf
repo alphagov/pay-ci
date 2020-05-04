@@ -68,6 +68,8 @@ resource "aws_cloudfront_distribution" "products_ui" {
     minimum_protocol_version = "TLSv1.2_2018"
     ssl_support_method       = "sni-only"
   }
+
+  web_acl_id = module.products_ui_waf_acl.acl_id
 }
 
 module products_ui_waf_acl {
