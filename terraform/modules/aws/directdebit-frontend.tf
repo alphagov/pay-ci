@@ -68,6 +68,8 @@ resource "aws_cloudfront_distribution" "directdebit_frontend" {
     minimum_protocol_version = "TLSv1.2_2018"
     ssl_support_method       = "sni-only"
   }
+
+  web_acl_id = module.direct_debit_frontend_waf_acl.acl_id
 }
 
 module direct_debit_frontend_waf_acl {
