@@ -14,7 +14,7 @@ resource "null_resource" "aws_waf_v2_acl" {
   triggers = {
     name        = var.name
     description = "'${var.description}'"
-    acl_rules   = local.acl_rules
+    acl_rules   = var.acl != null ? var.acl : local.acl_rules
   }
 
   provisioner "local-exec" {
