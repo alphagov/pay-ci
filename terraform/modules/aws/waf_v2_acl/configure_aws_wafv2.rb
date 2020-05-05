@@ -4,7 +4,7 @@ require 'json'
 require 'logger'
 require 'optparse'
 
-def create_acl!(name, description, rules, log_destination = nil, log_redacted_fields = nil)
+def create_acl!(name, description, rules, log_destination = nil, log_redacted_fields = "")
   out = JSON.load(`aws wafv2 create-web-acl \
         --scope CLOUDFRONT \
         --region us-east-1 \
@@ -22,7 +22,7 @@ def create_acl!(name, description, rules, log_destination = nil, log_redacted_fi
   out.fetch('Summary').fetch('Id')
 end
 
-def update_acl!(name, description, rules, log_destination = nil, log_redacted_fields = nil)
+def update_acl!(name, description, rules, log_destination = nil, log_redacted_fields = "")
   acl = JSON.load(`aws wafv2 list-web-acls --scope CLOUDFRONT --region us-east-1`)
     .dig('WebACLs')
     &.find { |acl| acl['Name'] == name }
@@ -53,9 +53,12 @@ def put_log_config!(acl_arn, log_destination, log_redacted_fields)
     ResourceArn: acl_arn,
     LogDestinationConfigs: [
       log_destination
-    ],
-    RedactedFields: log_redacted_fields ? JSON.load(log_redacted_fields) : nil
+    ]
   }
+
+  if !log_redacted_fields.empty?
+    config[:RedactedFields] = JSON.load(log_redacted_fields)
+  end
 
   out = `aws wafv2 put-logging-configuration \
        --logging-configuration '#{config.to_json}' \

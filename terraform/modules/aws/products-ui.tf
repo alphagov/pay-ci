@@ -73,7 +73,8 @@ resource "aws_cloudfront_distribution" "products_ui" {
 }
 
 module products_ui_waf_acl {
-  source      = "./waf_v2_acl" 
-  name        = "products-ui-${var.environment}"
-  description = "Products UI ACL ${var.environment}"
+  source          = "./waf_v2_acl" 
+  name            = "products-ui-${var.environment}"
+  description     = "Products UI ACL ${var.environment}"
+  log_destination = aws_kinesis_firehose_delivery_stream.waf_kinesis_stream.id
 }

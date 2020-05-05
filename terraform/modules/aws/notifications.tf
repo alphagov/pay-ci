@@ -73,7 +73,8 @@ resource "aws_cloudfront_distribution" "notifications" {
 }
 
 module notifications_waf_acl {
-  source      = "./waf_v2_acl" 
-  name        = "notifications-${var.environment}"
-  description = "Notifications ACL ${var.environment}"
+  source          = "./waf_v2_acl" 
+  name            = "notifications-${var.environment}"
+  description     = "Notifications ACL ${var.environment}"
+  log_destination = aws_kinesis_firehose_delivery_stream.waf_kinesis_stream.id
 }
