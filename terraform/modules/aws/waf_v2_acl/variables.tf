@@ -23,6 +23,6 @@ variable "log_destination" {
 
 variable "log_redacted_fields" {
   type        = string
-  default     = null
+  default     = ""
   description = "Redacted fields config for this ACL"
 }
