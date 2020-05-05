@@ -104,7 +104,8 @@ data "external" "card_frontend_fle_config" {
 }
 
 module card_frontend_waf_acl {
-  source      = "./waf_v2_acl"
-  name        = "card-frontend-${var.environment}"
-  description = "Card Frontend ACL ${var.environment}"
+  source          = "./waf_v2_acl"
+  name            = "card-frontend-${var.environment}"
+  description     = "Card Frontend ACL ${var.environment}"
+  log_destination = aws_kinesis_firehose_delivery_stream.waf_kinesis_stream.id
 }

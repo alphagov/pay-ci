@@ -73,7 +73,8 @@ resource "aws_cloudfront_distribution" "selfservice" {
 }
 
 module selfservice_waf_acl {
-  source      = "./waf_v2_acl" 
-  name        = "selfservice-${var.environment}"
-  description = "Selfservice ACL ${var.environment}"
+  source          = "./waf_v2_acl" 
+  name            = "selfservice-${var.environment}"
+  description     = "Selfservice ACL ${var.environment}"
+  log_destination = aws_kinesis_firehose_delivery_stream.waf_kinesis_stream.id
 }

@@ -54,7 +54,7 @@ def put_log_config!(acl_arn, log_destination, log_redacted_fields)
     LogDestinationConfigs: [
       log_destination
     ],
-    RedactedFields: log_redacted_fields ? JSON.load(log_redacted_fields) : nil
+    RedactedFields: log_redacted_fields.nil? ? JSON.load(log_redacted_fields) : nil
   }
 
   out = `aws wafv2 put-logging-configuration \

@@ -73,7 +73,8 @@ resource "aws_cloudfront_distribution" "directdebit_frontend" {
 }
 
 module direct_debit_frontend_waf_acl {
-  source      = "./waf_v2_acl" 
-  name        = "direct-debit-frontend-${var.environment}"
-  description = "Direct Debit Frontend ACL ${var.environment}"
+  source          = "./waf_v2_acl" 
+  name            = "direct-debit-frontend-${var.environment}"
+  description     = "Direct Debit Frontend ACL ${var.environment}"
+  log_destination = aws_kinesis_firehose_delivery_stream.waf_kinesis_stream.id
 }
