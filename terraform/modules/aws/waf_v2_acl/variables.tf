@@ -14,3 +14,15 @@ variable "acl" {
   default     = null
   description = "Optional JSON ACL config"
 }
+
+variable "log_destination" {
+  type        = string
+  default     = null
+  description = "Optional Kinesis Firehose log destination for this ACL"
+}
+
+variable "log_redacted_fields" {
+  type        = string
+  default     = null
+  description = "Redacted fields config for this ACL"
+}
