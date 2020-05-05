@@ -157,4 +157,15 @@ module publicapi_waf_acl {
     }
   ]
 EOF
+
+  log_destination     = aws_kinesis_firehose_delivery_stream.waf_kinesis_stream.id
+  log_redacted_fields = <<EOF
+[
+  {
+    "SingleHeader": {
+      "Name": "authorization"
+    }
+  }
+]
+EOF
 }
