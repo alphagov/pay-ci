@@ -9,6 +9,7 @@ RUN apk add --no-cache \
 
 RUN apk add --no-cache \
   openjdk11 \
+  npm \
   maven \
   tini \
   docker-compose>1.25.4-r1 \
