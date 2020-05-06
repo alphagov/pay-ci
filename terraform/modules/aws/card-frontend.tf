@@ -108,4 +108,14 @@ module card_frontend_waf_acl {
   name            = "card-frontend-${var.environment}"
   description     = "Card Frontend ACL ${var.environment}"
   log_destination = aws_kinesis_firehose_delivery_stream.waf_kinesis_stream.id
+
+  log_redacted_fields = <<EOF
+[
+  {
+    "SingleHeader": {
+      "Name": "cookie"
+    }
+  }
+]
+EOF
 }
