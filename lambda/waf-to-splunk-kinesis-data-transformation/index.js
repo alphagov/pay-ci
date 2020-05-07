@@ -11,7 +11,6 @@ exports.handler = async (event, context) => {
             index: "pay_testing",
             event: event
         }
-
         return {
             recordId: record.recordId,
             result: 'Ok',
