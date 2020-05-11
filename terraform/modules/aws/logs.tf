@@ -6,4 +6,6 @@ resource "aws_s3_bucket" "cloudfront_logs" {
 module "waf_logging" {
   source = "./waf_logging"
   environment = var.environment
+  splunk_hec_endpoint = var.splunk_hec_endpoint
+  splunk_hec_token = var.splunk_hec_token
 }
