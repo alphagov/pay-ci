@@ -25,3 +25,12 @@ WAF ACL --> Kinesis Firehose --> Kinesis Splunk Delivery --> Splunk
 | `sourcetype` | `aws:firehose:json` Splunk sourcetype [provided by the AWS Add-on](https://docs.splunk.com/Documentation/AddOns/released/AWS/DataTypes) |
 | `index`      | The Splunk index in which to store the event |
 | `event`      | The ACL log JSON data |
+
+### Development
+
+The function itself has no external dependencies. However, development dependencies should be installed to run the test suite.
+
+```
+npm install
+npm test
+```
