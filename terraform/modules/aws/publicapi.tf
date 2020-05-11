@@ -158,7 +158,7 @@ module publicapi_waf_acl {
   ]
 EOF
 
-  log_destination     = aws_kinesis_firehose_delivery_stream.waf_kinesis_stream.id
+  log_destination     = module.waf_logging.kinesis_stream_id
   log_redacted_fields = <<EOF
 [
   {
