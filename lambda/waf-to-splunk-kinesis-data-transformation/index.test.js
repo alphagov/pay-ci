@@ -12,3 +12,14 @@ test('expects the output to be in the correct format with the correct base64 enc
     expect(result.records).toStrictEqual(expected);
 });
 
+
+test('expects ALLOW logs to be dropped', async () => {
+    const event = {
+        records: [
+            { recordId: "some_id", data: btoa("{\"action\": \"ALLOW\"}")}
+        ]
+    }
+    const context = {}
+    const result = await handler(event, context)
+    expect(result.records[0].result).toStrictEqual('Dropped')
+});
