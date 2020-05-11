@@ -30,4 +30,25 @@ resource "aws_kinesis_firehose_delivery_stream" "waf_kinesis_stream" {
     role_arn           = aws_iam_role.waf_firehose_iam_role.arn
     bucket_arn         = aws_s3_bucket.waf_log_bucket.arn
   }
+
+  splunk_configuration {
+    hec_endpoint               = var.splunk_hec_endpoint
+    hec_token                  = var.splunk_hec_token
+    hec_acknowledgment_timeout = 600
+    hec_endpoint_type          = "Event"
+    s3_backup_mode             = "FailedEventsOnly"
+
+    processing_configuration {
+      enabled = "true"
+
+      processors {
+        type = "Lambda"
+
+        parameters {
+          parameter_name  = "LambdaArn"
+          parameter_value = "${aws_lambda_function.kinesis_data_transformation_lambda.arn}:$LATEST"
+        }
+      }
+    }
+  }
 }
