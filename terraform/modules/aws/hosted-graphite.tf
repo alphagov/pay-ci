@@ -14,7 +14,7 @@ resource "aws_iam_group_membership" "services_membership" {
     "${aws_iam_user.hosted_graphite.name}",
   ]
 
-  group = "${aws_iam_group.services.name}"
+  group = aws_iam_group.services.name
 }
 
 resource "aws_iam_policy" "hosted_graphite_policy" {
