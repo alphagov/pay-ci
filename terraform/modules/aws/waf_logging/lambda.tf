@@ -8,7 +8,6 @@ data "archive_file" "zip_lambda" {
     output_path = "${path.module}/../../../../lambda/waf-to-splunk-kinesis-data-transformation/index.zip"
 }
 
-
 resource "aws_lambda_function" "kinesis_data_transformation_lambda" {
   provider         = aws.us
   filename         = data.archive_file.zip_lambda.output_path
@@ -18,6 +17,7 @@ resource "aws_lambda_function" "kinesis_data_transformation_lambda" {
   description      = "An Amazon Kinesis Firehose stream processor that accesses the records in the input and returns them with a processing status."
   source_code_hash = data.archive_file.zip_lambda.output_base64sha256
   runtime          = "nodejs12.x"
+  timeout          = 60
 
   depends_on = [
     aws_iam_role_policy_attachment.lambda_logs, 
