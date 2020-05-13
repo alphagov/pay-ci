@@ -8,6 +8,10 @@ resource "cloudfoundry_app" "cardid" {
   stopped = true
   v3      = true
 
+  service_binding { 
+    service_instance = cloudfoundry_service_instance.cde_splunk_log_service.id
+  }
+
   lifecycle {
     ignore_changes = [stopped, health_check_type]
   }
