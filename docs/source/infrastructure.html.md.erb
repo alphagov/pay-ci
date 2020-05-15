@@ -1,0 +1,37 @@
+---
+title: Infrastructure
+weight: 20
+---
+
+# Infrastructure
+
+<%= image_tag 'busfactory.jpg' %>
+
+GOV.UK Pay running on [GOV.UK Platform as a Service](https://www.cloud.service.gov.uk/) uses a hybrid infrastructure.
+
+Some infrastructure components reside in AWS, while application services run on GOV.UK PaaS.
+
+### AWS Components
+
+AWS components are managed by the GOV.UK Pay team. These include:
+
+- Route 53 DNS
+- CloudFront CDN / Cache
+- AWS WAF / Shield
+- S3
+- Kinesis Firehose
+- SQS
+- Lambda
+- RDS
+
+### GOV.UK PaaS / CloudFoundry Components
+
+The infrastructure for these services is managed by the GOV.UK PaaS team:
+
+- All microservice applications
+- Scheduled tasks
+- Application log services
+- Application metric services
+- Application credentials
+
+<%= partial 'partials/links' %>

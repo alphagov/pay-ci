@@ -1,21 +1,19 @@
 ---
-title: Infrastructure
-weight: 20
+title: Using Terraform
 ---
 
-# Infrastructure
-
-<%= image_tag 'busfactory.jpg' %>
+# Using Terraform
 
 Pay uses Terraform to manage all infrastructure residing in AWS staging & production environments.
 
-All Terraform code is located in the `/terraform` directory in the [pay-omnibus repository][this-repo]:
+All Terraform code is located in the `/terraform` directory in the [pay-omnibus repository](https://github.com/alphagov/pay-omnibus):
 
 ```sh
 /terraform
-  /account # Manages AWS account configuration
-  /modules # Shared modules used by staging & production
-  /staging # Manage staging infrastructure
+  /staging-account # Manages staging AWS account configuration & users
+  /modules # Shared Terraform modules used by staging & production
+  /staging-aws # Manage staging AWS infrastructure
+  /staging-paas # Manage staging PaaS infrastructure
 ```
 
 ## Getting started with Terraform
@@ -49,5 +47,3 @@ aws-vault exec <name-of-account> -- terraform init
 cd /path/to/pay-omnibus/terraform/staging
 aws-vault exec <name-of-account> -- terraform init
 ```
-
-<%= partial 'partials/links' %>
