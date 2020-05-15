@@ -1,8 +1,9 @@
 ---
+title: 0008 Use Concourse to run E2E tests
 hide_in_navigation: true
 ---
 
-# ADR 7: Use Concourse to run E2E tests
+# ADR 8: Use Concourse to run E2E tests
 
 Date: 2020-03-10
 

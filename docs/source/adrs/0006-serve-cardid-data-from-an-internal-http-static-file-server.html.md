@@ -1,4 +1,5 @@
 ---
+title: 0006 Serve cardid data from an internal http static file server
 hide_in_navigation: true
 ---
 

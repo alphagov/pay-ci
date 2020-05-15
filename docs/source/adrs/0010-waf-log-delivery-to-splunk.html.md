@@ -1,4 +1,9 @@
-# ADR 9: AWS WAF Logging using Kinesis Firehose Splunk Delivery
+---
+title: 0010 AWS WAF Logging using Kinesis Firehose Splunk Delivery
+hide_in_navigation: true
+---
+
+# ADR 10: AWS WAF Logging using Kinesis Firehose Splunk Delivery
 
 Date: 13-05-20
 
@@ -18,7 +23,7 @@ Kinesis Firehose Delivery stream supports data transformation, allowing the WAF 
 
 Splunk [indexer acknowledgement](https://docs.splunk.com/Documentation/Splunk/8.0.3/Data/AboutHECIDXAck) is used to ensure reliable delivery of log data from Kinesis Firehose. Logs that fail to be delivered are retried and eventually backed up to S3.
 
-![AWS WAF Log to Splunk Sequence Diagram](/images/adrs/0009-waf-log-sequence-diagram.svg)
+![AWS WAF Log to Splunk Sequence Diagram](/images/adrs/0010-waf-log-sequence-diagram.svg)
 
 ## Decision
 

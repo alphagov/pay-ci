@@ -1,3 +1,8 @@
+---
+title: 0007 Exporting metrics
+hide_in_navigation: true
+---
+
 # ADR 7: Exporting metrics
 
 Date: 2021-04-20

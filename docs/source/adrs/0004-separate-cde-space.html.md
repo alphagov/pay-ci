@@ -1,4 +1,5 @@
 ---
+title: 0004 Separate CDE space
 hide_in_navigation: true
 ---
 

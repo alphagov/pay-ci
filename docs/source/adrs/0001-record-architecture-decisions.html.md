@@ -1,4 +1,5 @@
 ---
+title: 0001 Record architecture decisions
 hide_in_navigation: true
 ---
 
