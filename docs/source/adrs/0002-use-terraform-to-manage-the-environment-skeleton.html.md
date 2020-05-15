@@ -1,4 +1,5 @@
 ---
+title: 0002 Use terraform to manage the environment skeleton
 hide_in_navigation: true
 ---
 

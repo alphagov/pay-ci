@@ -1,4 +1,5 @@
 ---
+title: 0010 AWS WAF Logging using Kinesis Firehose Splunk Delivery
 hide_in_navigation: true
 ---
 

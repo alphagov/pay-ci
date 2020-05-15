@@ -1,4 +1,5 @@
 ---
+title: 0003 Use a user provided service for service discovery
 hide_in_navigation: true
 ---
 

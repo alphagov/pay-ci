@@ -1,4 +1,5 @@
 ---
+title: 0008 Use Concourse to run E2E tests
 hide_in_navigation: true
 ---
 
