@@ -1,4 +1,8 @@
-# ADR 8: User PaaS provided Splunk log drain 
+---
+hide_in_navigation: true
+---
+
+# ADR 9: User PaaS provided Splunk log drain 
 
 Date: 2020-04-20
 
