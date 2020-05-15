@@ -22,6 +22,16 @@ provider "pass" {
   refresh_store = false
 }
 
+variable "splunk_hec_token" {
+  type        = string
+  description = "HEC Token for Splunk"
+}
+
+variable "splunk_hec_endpoint" {
+  type        = string
+  description = "HEC Endpoint for Splunk"  
+}
+
 module "staging" {
   source = "../modules/aws"
 
@@ -30,7 +40,9 @@ module "staging" {
     aws.us = aws.us
   }
 
-  environment       = "staging"
-  domain_name       = "gdspay.uk"
-  paas_domain       = "cloudapps.digital"
+  environment         = "staging"
+  domain_name         = "gdspay.uk"
+  paas_domain         = "cloudapps.digital"
+  splunk_hec_endpoint = var.splunk_hec_endpoint
+  splunk_hec_token    = var.splunk_hec_token
 }
