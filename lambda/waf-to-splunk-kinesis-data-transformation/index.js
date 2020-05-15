@@ -1,7 +1,7 @@
 exports.handler = async (event, context) => {
     /* Process the list of records and transform them */
-    const okCount = 0
-    const droppedCount = 0
+    let okCount = 0
+    let droppedCount = 0
     const output = event.records.map((record) => {
         const eventJson = Buffer.from(record.data, 'base64').toString('utf8')
         const event = JSON.parse(eventJson)
@@ -31,6 +31,6 @@ exports.handler = async (event, context) => {
             data: Buffer.from(JSON.stringify(data), 'utf8').toString('base64')
         }
     });
-    console.log(`Processing completed. Successful records ${output.length}. Dropped ${droppedCount}. Ok ${okCount}.`)
+    console.log(`Processing completed. Total ${output.length}. Dropped ${droppedCount}. Ok ${okCount}.`)
     return { records: output };
 };
