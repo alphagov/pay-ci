@@ -1,0 +1,46 @@
+container_limits: {}
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner
+    tag: latest
+inputs:
+  - name: build
+  - name: src
+outputs:
+  - name: local_image
+params:
+  app_name:
+run:
+  path: bash
+  args:
+  - -ec
+  - |
+    ls -lrt
+    pwd
+
+    source /docker-helpers.sh
+    start_docker
+
+    function cleanup {
+      echo "CLEANUP TRIGGERED"
+      clean_docker
+      stop_docker
+      echo "CLEANUP COMPLETE"
+    }
+
+    trap cleanup EXIT
+
+    file_suffix="PR-$(cat src/.git/resource/pr)-GIT-SHA-$(cat src/.git/resource/head_sha)"
+
+    cd build
+
+    # bit hacky for now but remove the node_modules if they exist.
+    rm -r node_modules || true
+
+    image_name="govukpay/${app_name}:test"
+    echo "BUILDING ${app_name} with tag ${image_name}"
+    docker build -t "$image_name" .
+    docker image ls
+    docker save "$image_name" -o ../local_image/image-"${app_name}"-"${file_suffix}".tar

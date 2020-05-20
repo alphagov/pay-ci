@@ -1,0 +1,107 @@
+
+container_limits: {}
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner
+    tag: latest
+inputs:
+  - name: src
+  - name: omnibus
+  - name: docker/publicapi
+  - name: docker/frontend
+  - name: docker/reverse_proxy
+  - name: docker/postgres
+  - name: docker/sqs
+  - name: docker/adminusers
+  - name: docker/selfservice
+  - name: docker/connector
+  - name: docker/ledger
+  - name: docker/publicauth
+  - name: docker/stubs
+  - name: docker/cardid
+  - name: docker/selenium
+  - name: docker/endtoend
+  - name: docker/products
+  - name: docker/products-ui
+  - name: docker/directdebit-connector
+  - name: docker/directdebit-frontend
+params:
+  app_name:
+  test_type:
+
+run:
+  path: bash
+  args:
+  - -ec
+  - |
+    ls -lrt
+    pwd
+
+    source /docker-helpers.sh
+    start_docker
+
+    function cleanup {
+      echo "CLEANUP TRIGGERED"
+      clean_docker
+      stop_docker
+      echo "CLEANUP COMPLETE"
+    }
+
+    trap cleanup EXIT
+
+    echo "Loading Docker images..."
+    pids=
+    index=0
+    for image_dir in docker/*/; do
+      mv "${image_dir}"*.tar "${image_dir}"image.tar
+      docker load -qi "${image_dir}image.tar" & pids[${index}]=$!
+      index="$(( "${index}" + 1 ))"
+    done
+
+    for pid in ${pids[*]}; do
+      wait "$pid"
+    done
+
+    docker image ls
+
+    export tag_"${app_name}"=test
+
+
+    case "${test_type}" in
+    "card")
+      echo "Running card e2e tests"
+      cd omnibus/ci/tasks/endtoend/card
+      docker-compose up --force-recreate -d
+      endtoend=$(docker ps -aqf "name=endtoend")
+      echo "E2E container id: ${endtoend}"
+      docker exec ${endtoend} /app/bin/e2e-card
+      ;;
+    "products")
+      echo "Running products e2e tests"
+      cd omnibus/ci/tasks/endtoend/products
+      docker-compose up --force-recreate -d
+      endtoend=$(docker ps -aqf "name=endtoend")
+      echo "E2E container id: ${endtoend}"
+      docker exec ${endtoend} /app/bin/e2e-products
+      ;;
+    "directdebit")
+      echo "Running directdebit e2e tests"
+      cd omnibus/ci/tasks/endtoend/directdebit
+      docker-compose up --force-recreate -d
+      endtoend=$(docker ps -aqf "name=endtoend")
+      echo "E2E container id: ${endtoend}"
+      docker exec ${endtoend} /app/bin/e2e-directdebit
+
+      ;;
+    *)
+      echo "Usage: test_type needs to be one of card, products, directdebit"
+      exit 1
+      ;;
+    esac
+
+
+
+
+    exit 0
