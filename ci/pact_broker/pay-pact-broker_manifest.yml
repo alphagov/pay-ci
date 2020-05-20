@@ -1,0 +1,23 @@
+applications:
+- name: pay-concourse-pact-broker
+  command: |
+    eval $(ruby -rjson -e 'vcap=JSON.parse(ENV["VCAP_SERVICES"]);
+      puts "export PACT_BROKER_DATABASE_USERNAME=#{vcap["postgres"][0]["credentials"]["username"]}";
+      puts "export PACT_BROKER_DATABASE_PASSWORD=#{vcap["postgres"][0]["credentials"]["password"]}";
+      puts "export PACT_BROKER_DATABASE_HOST=#{vcap["postgres"][0]["credentials"]["host"]}";
+      puts "export PACT_BROKER_DATABASE_NAME=#{vcap["postgres"][0]["credentials"]["name"]}";
+    ') && ./entrypoint.sh config.ru
+  disk_quota: 1G
+  docker:
+    image: pactfoundation/pact-broker:2.54.0.0
+  env:
+    PACT_BROKER_PUBLIC_HEARTBEAT: "true"
+  health-check-http-endpoint: /diagnostic/status/heartbeat
+  health-check-type: http
+  instances: 2
+  memory: 256M
+  routes:
+  - route: pay-concourse-pact-broker.cloudapps.digital
+  services:
+  - concourse-pact-broker-db
+  stack: cflinuxfs3
