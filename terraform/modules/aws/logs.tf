@@ -3,6 +3,15 @@ resource "aws_s3_bucket" "cloudfront_logs" {
   acl    = "private"
 }
 
+resource "aws_s3_bucket_public_access_block" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 data "pass_password" "splunk_hec_token" {
   path = "splunk/paas/hec_token"
   provider = pass.low-pass
