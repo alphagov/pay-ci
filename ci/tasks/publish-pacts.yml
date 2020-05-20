@@ -2,9 +2,9 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: alpine
+    repository: curlimages/curl
 inputs:
-  - build
+  - name: build
 params:
   consumer_name:
   pact_directory:
