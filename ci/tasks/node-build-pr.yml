@@ -11,6 +11,7 @@ inputs:
   - name: src
 outputs:
   - name: build
+  - name: pacts
 caches:
   - path: npm_cache
 run:
@@ -43,3 +44,4 @@ run:
 
       cp -R src/* build
       cp -R src/.git build
+      cp -R src/pacts/* pacts/

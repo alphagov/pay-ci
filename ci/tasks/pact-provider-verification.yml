@@ -1,0 +1,47 @@
+container_limits: {}
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner
+inputs:
+  - name: provider_requirements
+  - name: src
+  - name: provider
+outputs:
+  - name: provider_requirements
+run:
+  path: sh
+  args:
+    - -ec
+    - |
+
+      function cleanup {
+        echo "CLEANUP TRIGGERED"
+        clean_docker
+        stop_docker
+        echo "CLEANUP COMPLETE"
+      }
+
+      function needsValidation() {
+        grep "^${provider}" provider_requirements/requirements.txt
+      }
+
+      trap cleanup EXIT
+      source /docker-helpers.sh
+
+      if ! needsValidation; then
+        echo "Pacts between $consumer and $provider are valid"
+        exit 0
+      fi
+
+      echo "Pacts need validation"
+
+      start_docker
+
+      TAG="$(cat src/.git/resource/pr)"
+      cd provider
+
+      mvn test -DrunContractTests -DPACT_CONSUMER_TAG="${TAG}" -DPACT_BROKER_USERNAME= -DPACT_BROKER_PASSWORD= \
+        -Dpact.provider.version="$(git rev-parse HEAD)" -Dpact.verifier.publishResults=true \
+        -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital -DCONSUMER="${consumer}"

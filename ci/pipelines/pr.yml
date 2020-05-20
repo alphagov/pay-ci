@@ -172,6 +172,12 @@ definitions:
     task: test
     privileged: true
     file: omnibus/ci/tasks/node-build-pr.yml
+  - &publish-pacts
+    task: publish pacts
+    privileged: true
+    params:
+      consumer_name: updateThisValue
+    file: omnibus/ci/tasks/publish-pacts.yml
   - &zip-build
     task: zip-build
     privileged: true
@@ -260,7 +266,37 @@ definitions:
           resource: products-ui
           params:
             format: oci
-
+  - &put-pact-provider-pending-status
+    put: updateThisValue
+    params:
+      path: src
+      status: pending
+      context: pact provider validation
+  - &put-pact-provider-success-status
+    put: updateThisValue
+    params:
+      path: src
+      status: success
+      context: pact provider validation
+  - &put-pact-provider-failed-status
+    put: updateThisValue
+    params:
+      path: src
+      status: failure
+      context: pact provider validation
+  - &pact-provider-validation
+    task: <updateThisvalue>
+    privileged: true
+    file: omnibus/ci/tasks/pact-provider-verification.yml
+    params:
+      consumer: updateThisValue
+      provider: updateThisValue
+  - &pact-provider-check
+    task: check is valid
+    privileged: true
+    file: omnibus/ci/tasks/pact-provider-check.yml
+    params:
+      consumer: updateThisValue
 
 groups:
   - name: Card Connector
@@ -275,6 +311,7 @@ groups:
       - publicapi-integration-test
       - publicapi-card-e2e
       - publicapi-products-e2e
+      - publicapi-pact-provider-validation
 
   - name: Adminusers
     jobs:
@@ -292,6 +329,8 @@ groups:
     jobs:
       - ledger-unit-test
       - ledger-integration-test
+      - ledger-consumer-pact-test
+      - ledger-pact-provider-validation
       - ledger-card-e2e
 
   - name: Publicauth
@@ -315,10 +354,12 @@ groups:
   - name: Products-UI
     jobs:
       - products-ui-test
+      - products-ui-pact-provider-validation
 
   - name: Card-Frontend
     jobs:
       - card-frontend-test
+      - card-frontend-pact-provider-validation
 
   - name: Direct-Debit-Frontend
     jobs:
@@ -327,6 +368,7 @@ groups:
   - name: Selfservice
     jobs:
       - selfservice-test
+      - selfservice-pact-provider-validation
 
   - name: Toolbox
     jobs:
@@ -337,13 +379,48 @@ groups:
       - update-pr-ci-pipeline
 
 resource_types:
-- name: pull-request
-  type: registry-image
-  source:
-    repository: teliaoss/github-pr-resource
-    tag: dev
+  - name: pull-request
+    type: registry-image
+    source:
+      repository: teliaoss/github-pr-resource
+      tag: dev
+
+  - name: paas-s3
+    type: registry-image
+    source:
+      repository: govukpay/concourse-s3-resource
 
 resources:
+  - name: card-connector-master
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-connector
+      branch: master
+  - name: ledger-master
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-ledger
+      branch: master
+  - name: adminusers-master
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-adminusers
+      branch: master
+  - name: products-master
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-products
+      branch: master
+  - name: directdebit-connector-master
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-direct-debit-connector
+      branch: master
   - name: pr-ci-pipeline
     type: git
     icon: github-circle
@@ -647,6 +724,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: publicapi-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: publicapi
     - <<: *put-integration-test-success-status
       put: publicapi-pull-request
 
@@ -674,6 +754,47 @@ jobs:
           <<: *put-card-e2e-failed-status
           put: publicapi-pull-request
       - <<: *put-card-e2e-success-status
+        put: publicapi-pull-request
+
+  - name: publicapi-pact-provider-validation
+    plan:
+      - <<: *get-pull-request
+        resource: publicapi-pull-request
+        passed: [publicapi-unit-test]
+      - <<: *put-pact-provider-pending-status
+        put: publicapi-pull-request
+      - get: card-connector-master
+      - get: ledger-master
+      - get: directdebit-connector-master
+      - <<: *pact-provider-check
+        params:
+          consumer: publicapi
+      - in_parallel:
+        - <<: *pact-provider-validation
+          task: connector provider pact validation
+          input_mapping:
+            provider: card-connector-master
+          params:
+            consumer: publicapi
+            provider: connector
+        - <<: *pact-provider-validation
+          task: ledger provider pact validation
+          input_mapping:
+            provider: ledger-master
+          params:
+            consumer: publicapi
+            provider: ledger
+        - <<: *pact-provider-validation
+          task: directdebit-connector provider pact validation
+          input_mapping:
+            provider: directdebit-connector-master
+          params:
+            consumer: publicapi
+            provider: direct-debit-connector
+        on_failure:
+          <<: *put-pact-provider-failed-status
+          put: publicapi-pull-request
+      - <<: *put-pact-provider-success-status
         put: publicapi-pull-request
 
   - <<: *job-definition
@@ -730,6 +851,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: adminusers-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: adminusers
     - <<: *put-integration-test-success-status
       put: adminusers-pull-request
 
@@ -788,6 +912,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: cardid-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: cardid
     - <<: *put-integration-test-success-status
       put: cardid-pull-request
 
@@ -869,8 +996,89 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: ledger-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: ledger
     - <<: *put-integration-test-success-status
       put: ledger-pull-request
+
+  - <<: *job-definition
+    name: ledger-consumer-pact-test
+    plan:
+    - <<: *get-omnibus
+    - <<: *get-pull-request
+      resource: ledger-pull-request
+    - task: run consumer pact tests
+      privileged: true
+      config:
+        container_limits: {}
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: govukpay/concourse-runner
+        inputs:
+          - name: src
+        outputs:
+          - name: pacts
+        run:
+          path: sh
+          dir: src
+          args:
+            - -ec
+            - |
+              source /docker-helpers.sh
+              start_docker
+
+              function cleanup {
+                echo "CLEANUP TRIGGERED"
+                clean_docker
+                stop_docker
+                echo "CLEANUP COMPLETE"
+              }
+
+              trap cleanup EXIT
+
+              commit="$(cat .git/resource/head_sha)"
+              pr="$(cat .git/resource/pr)"
+              mvn clean package \
+                        -DPACT_BROKER_URL=https://pact-broker-test.cloudapps.digital \
+                        -DPACT_BROKER_USERNAME="" \
+                        -DPACT_BROKER_PASSWORD="" \
+                        -DPACT_CONSUMER_VERSION=${commit} \
+                        -DPACT_CONSUMER_TAG=${pr} \
+                        -Dpact.provider.version=${commit} \
+                        -DrunConsumerContractTests=true
+              cp -R target/pacts/* ../pacts/ || true
+
+    - <<: *publish-pacts
+      params:
+        consumer_name: ledger
+        
+  - <<: *job-definition
+    name: ledger-pact-provider-validation
+    plan:
+      - <<: *get-pull-request
+        resource: ledger-pull-request
+        passed: [ledger-consumer-pact-test]
+      - <<: *put-pact-provider-pending-status
+        put: ledger-pull-request
+      - get: card-connector-master
+      - <<: *pact-provider-check
+        params:
+          consumer: ledger
+      - <<: *pact-provider-validation
+        task: connector provider pact validation
+        input_mapping:
+          provider: card-connector-master
+        params:
+          consumer: ledger
+          provider: connector
+        on_failure:
+          <<: *put-pact-provider-failed-status
+          put: ledger-pull-request
+      - <<: *put-pact-provider-success-status
+        put: ledger-pull-request
 
   - <<: *job-definition
     name: ledger-card-e2e
@@ -927,6 +1135,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: publicauth-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: publicauth
     - <<: *put-integration-test-success-status
       put: publicauth-pull-request
 
@@ -985,6 +1196,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: products-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: products
     - <<: *put-integration-test-success-status
       put: products-pull-request
 
@@ -1043,6 +1257,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: directdebit-connector-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: directdebit-connector
     - <<: *put-integration-test-success-status
       put: directdebit-connector-pull-request
 
@@ -1084,6 +1301,9 @@ jobs:
       on_failure:
         <<: *put-test-failed-status
         put: card-frontend-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: frontend
     - <<: *build-docker-image
       params:
         app_name: frontend
@@ -1100,6 +1320,31 @@ jobs:
     - <<: *put-test-success-status
       put: card-frontend-pull-request
 
+  - name: card-frontend-pact-provider-validation
+    plan:
+    - <<: *get-pull-request
+      resource: card-frontend-pull-request
+      passed: [card-frontend-test]
+    - <<: *put-pact-provider-pending-status
+      put: card-frontend-pull-request
+    - get: card-connector-master
+    - <<: *pact-provider-check
+      params:
+        consumer: frontend
+    - in_parallel:
+      - <<: *pact-provider-validation
+        task: connector provider pact validation
+        input_mapping:
+          provider: card-connector-master
+        params:
+          consumer: frontend
+          provider: connector
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: card-frontend-pull-request
+    - <<: *put-pact-provider-success-status
+      put: card-frontend-pull-request
+
   - <<: *job-definition
     name: selfservice-test
     plan:
@@ -1112,6 +1357,9 @@ jobs:
       on_failure:
         <<: *put-test-failed-status
         put: selfservice-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: selfservice
     - <<: *build-docker-image
       params:
         app_name: selfservice
@@ -1129,6 +1377,64 @@ jobs:
       put: selfservice-pull-request
 
   - <<: *job-definition
+    name: selfservice-pact-provider-validation
+    plan:
+    - <<: *get-pull-request
+      resource: selfservice-pull-request
+      passed: [selfservice-test]
+    - <<: *put-pact-provider-pending-status
+      put: selfservice-pull-request
+    - get: card-connector-master
+    - get: ledger-master
+    - get: adminusers-master
+    - get: products-master
+    - get: directdebit-connector-master
+    - <<: *pact-provider-check
+      params:
+        consumer: selfservice
+    - in_parallel:
+      - <<: *pact-provider-validation
+        task: connector provider pact validation
+        input_mapping:
+          provider: card-connector-master
+        params:
+          consumer: selfservice
+          provider: connector
+      - <<: *pact-provider-validation
+        task: direct debit connector provider pact validation
+        input_mapping:
+          provider: directdebit-connector-master
+        params:
+          consumer: selfservice
+          provider: direct-debit-connector
+      - <<: *pact-provider-validation
+        task: adminusers provider pact validation
+        input_mapping:
+          provider: adminusers-master
+        params:
+          consumer: selfservice
+          provider: adminusers
+      - <<: *pact-provider-validation
+        task: ledger provider pact validation
+        input_mapping:
+          provider: ledger-master
+        params:
+          consumer: selfservice
+          provider: ledger
+      - <<: *pact-provider-validation
+        task: products provider pact validation
+        input_mapping:
+          provider: products-master
+        params:
+          consumer: selfservice
+          provider: products
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: selfservice-pull-request
+    - <<: *put-pact-provider-success-status
+      put: selfservice-pull-request
+    
+  - <<: *job-definition
     name: toolbox-test
     plan:
     - <<: *get-pull-request
@@ -1142,7 +1448,7 @@ jobs:
         put: toolbox-pull-request
     - <<: *put-test-success-status
       put: toolbox-pull-request
-
+  
   - <<: *job-definition
     name: products-ui-test
     plan:
@@ -1155,6 +1461,9 @@ jobs:
       on_failure:
         <<: *put-test-failed-status
         put: products-ui-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: products-ui
     - <<: *build-docker-image
       params:
         app_name: products-ui
@@ -1169,6 +1478,40 @@ jobs:
         <<: *put-card-e2e-failed-status
         put: products-ui-pull-request
     - <<: *put-test-success-status
+      put: products-ui-pull-request
+  
+  - <<: *job-definition
+    name: products-ui-pact-provider-validation
+    plan:
+    - <<: *get-pull-request
+      resource: products-ui-pull-request
+      passed: [products-ui-test]
+    - <<: *put-pact-provider-pending-status
+      put: products-ui-pull-request
+    - get: products-master
+    - get: adminusers-master
+    - <<: *pact-provider-check
+      params:
+        consumer: products-ui
+    - in_parallel:
+      - <<: *pact-provider-validation
+        task: products provider pact validation
+        input_mapping:
+          provider: products-master
+        params:
+          consumer: products-ui
+          provider: products
+      - <<: *pact-provider-validation
+        task: adminusers provider pact validation
+        input_mapping:
+          provider: adminusers-master
+        params:
+          consumer: products-ui
+          provider: adminusers
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: products-ui-pull-request
+    - <<: *put-pact-provider-success-status
       put: products-ui-pull-request
 
   - <<: *job-definition
@@ -1198,7 +1541,6 @@ jobs:
         put: directdebit-frontend-pull-request
     - <<: *put-test-success-status
       put: directdebit-frontend-pull-request
-
 
   - name: update-pr-ci-pipeline
     plan:
