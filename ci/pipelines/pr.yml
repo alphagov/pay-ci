@@ -176,7 +176,8 @@ definitions:
     task: publish pacts
     privileged: true
     params:
-      - consumer_name: updateThisValue
+      pact_directory: pacts
+      consumer_name: updateThisValue
     file: omnibus/ci/tasks/publish-pacts.yml
   - &zip-build
     task: zip-build
@@ -364,7 +365,7 @@ resources:
     icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: develop
+      branch: PP-6504-publish-consumer-pacts
       username: alphagov-pay-ci
       password: ((github-access-token))
 
@@ -1092,7 +1093,8 @@ jobs:
         put: card-frontend-pull-request
     - <<: *publish-pacts
       params:
-        - consumer_name: frontend
+        consumer_name: frontend
+        pact_directory: pacts
     - <<: *build-docker-image
       params:
         app_name: frontend
@@ -1123,7 +1125,8 @@ jobs:
         put: selfservice-pull-request
     - <<: *publish-pacts
       params:
-        - consumer_name: selfservice
+        consumer_name: selfservice
+        pact_directory: pacts
     - <<: *build-docker-image
       params:
         app_name: selfservice
@@ -1169,7 +1172,8 @@ jobs:
         put: products-ui-pull-request
     - <<: *publish-pacts
       params:
-        - consumer_name: products-ui
+        consumer_name: products-ui
+        pact_directory: pacts
     - <<: *build-docker-image
       params:
         app_name: products-ui

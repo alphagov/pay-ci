@@ -6,14 +6,16 @@ image_resource:
 inputs:
   - build
 params:
-  - consumer_name:
+  consumer_name:
+  pact_directory:
 run:
   path: sh
-  dir: build/pacts
+  dir: build
   args:
     - -c
     - |
-      version="$(cat ../.git/resource/head_sha)"
+      version="$(cat .git/resource/head_sha)"
+      cd "$pact_directory"
       for pact in `ls . | grep -v '\-to\-' `; do
         provider_name=$(echo $pact | awk -F "-" '{ print $2}'| sed 's/.json//')
         curl -v -X PUT -H "Content-Type: application/json" \
