@@ -1,0 +1,48 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: pactfoundation/pact-cli
+params:
+  consumer:
+inputs:
+  - name: src
+outputs:
+  - name: pact_params
+run:
+  path: sh
+  args:
+    - -ec
+    - |
+
+      function pacts_already_verified(){
+          TAG="$(cat src/.git/resource/head_sha)"
+          can_deploy="$(pact-broker can-i-deploy \
+            --pacticipant="$consumer" --version="$TAG" \
+            --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital')"
+          return $?
+      }
+
+
+      if [[ -z "$consumer" || "$consumer" == null ]]; then
+        echo "Pact tests being run in provider context. Creating parameters..."
+        echo master > pact_params/consumer_tag
+        touch pact_params/verification_needed
+      else
+
+        echo "Pact tests being run in consumer context. Creating parameters..."
+
+        if pacts_already_verified; then
+          echo "All $consumer pacts have already been verified"
+          exit 0
+        fi
+
+        echo "Providers needing verification: "
+        touch pact_params/providers_needing_verification
+        echo "$can_deploy" | \
+          awk 'BEGIN {FS="|"}; /\|/ && NR > 4 && !/true/{print $3}' | \
+          tr -d ' ' | \
+          tee pact_params/providers_needing_verification
+
+        cp src/.git/resource/pr pact_params/consumer_tag
+      fi
