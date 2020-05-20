@@ -172,6 +172,12 @@ definitions:
     task: test
     privileged: true
     file: omnibus/ci/tasks/node-build-pr.yml
+  - &publish-pacts
+    task: publish pacts
+    privileged: true
+    params:
+      - consumer_name: updateThisValue
+    file: omnibus/ci/tasks/publish-pacts.yml
   - &zip-build
     task: zip-build
     privileged: true
@@ -1084,6 +1090,9 @@ jobs:
       on_failure:
         <<: *put-test-failed-status
         put: card-frontend-pull-request
+    - <<: *publish-pacts
+      params:
+        - consumer_name: frontend
     - <<: *build-docker-image
       params:
         app_name: frontend
@@ -1112,6 +1121,9 @@ jobs:
       on_failure:
         <<: *put-test-failed-status
         put: selfservice-pull-request
+    - <<: *publish-pacts
+      params:
+        - consumer_name: selfservice
     - <<: *build-docker-image
       params:
         app_name: selfservice
@@ -1155,6 +1167,9 @@ jobs:
       on_failure:
         <<: *put-test-failed-status
         put: products-ui-pull-request
+    - <<: *publish-pacts
+      params:
+        - consumer_name: products-ui
     - <<: *build-docker-image
       params:
         app_name: products-ui

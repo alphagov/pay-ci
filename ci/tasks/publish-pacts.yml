@@ -1,0 +1,22 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+inputs:
+  - build
+params:
+  - consumer_name:
+run:
+  path: sh
+  dir: build/pacts
+  args:
+    - -c
+    - |
+      version="$(cat ../.git/resource/head_sha)"
+      for pact in `ls . | grep -v '\-to\-' `; do
+        provider_name=$(echo $pact | awk -F "-" '{ print $2}'| sed 's/.json//')
+        curl -v -X PUT -H "Content-Type: application/json" \
+        -d@$pact \
+        https://pay-concourse-pact-broker.cloudapps.digital/pacts/provider/$provider_name/consumer/$consumer_name/version/$version
+      done
