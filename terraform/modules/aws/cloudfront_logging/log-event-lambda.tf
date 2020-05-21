@@ -44,7 +44,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.cloudfront_log_event_process.arn
     events              = ["s3:ObjectCreated:*"]
-    //filter_suffix       = ".gz"
+    filter_suffix       = ".gz"
   }
 
   depends_on = [aws_lambda_permission.allow_bucket]
@@ -80,4 +80,35 @@ resource "aws_iam_role_policy_attachment" "cloudfront_log_lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-//@todo add policy allowing put/batch put to Kinesis Firehose
+resource "aws_iam_role_policy" "cloudfront_log_lambda_permissions" {
+    name   = "cloudfront-log-event-process-lambda-permissions"
+    role   = aws_iam_role.iam_cloudfront_log_event_process_lambda.id
+    policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "${var.log_bucket_arn}/*"
+            ]
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "firehose:PutRecord",
+                "firehose:PutRecordBatch"
+            ],
+            "Resource": [
+                "${aws_kinesis_firehose_delivery_stream.cf_log_kinesis_stream.arn}"
+            ]
+        }
+    ]
+}
+EOF
+}
