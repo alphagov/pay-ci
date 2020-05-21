@@ -28,7 +28,7 @@ resource "aws_lambda_function" "cloudfront_log_event_process" {
 
   environment {
     variables = {
-      DELIVERY_STREAM = ""
+      DELIVERY_STREAM = aws_kinesis_firehose_delivery_stream.cf_log_kinesis_stream.name
     }
   }
 
@@ -44,7 +44,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.cloudfront_log_event_process.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_suffix       = ".gz"
+    //filter_suffix       = ".gz"
   }
 
   depends_on = [aws_lambda_permission.allow_bucket]
