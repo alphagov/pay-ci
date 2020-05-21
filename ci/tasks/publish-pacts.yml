@@ -22,7 +22,7 @@ run:
       version="$(cat src/.git/resource/head_sha)"
       cd pacts || exit 1
       for pact in $(ls . | grep -v '\-to\-'); do
-        provider_name=$(jq .provider.name < "$pact")
+        provider_name=$(jq .provider.name < "$pact" | tr -d '"')
         curl -v --fail -X PUT -H "Content-Type: application/json" \
         -d@"$pact" \
         https://pay-concourse-pact-broker.cloudapps.digital/pacts/provider/"${provider_name}"/consumer/"${consumer_name}"/version/"${version}"
