@@ -8,7 +8,7 @@ exports.handler = async (event, context) => {
 
         okCount++
         const data = {
-            time: (Date.now() / 1000),
+            time: Math.round((new Date()).getTime() / 1000),
             host: "lambda",
             source: "aws-cloudfront",
             sourcetype: "aws:cloudfront:accesslogs",
