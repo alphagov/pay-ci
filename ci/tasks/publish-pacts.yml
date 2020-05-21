@@ -20,8 +20,8 @@ run:
       fi
 
       version="$(cat src/.git/resource/head_sha)"
-      cd "$pact_directory"
-      for pact in `ls pacts | grep -v '\-to\-' `; do
+      cd pacts
+      for pact in `ls . | grep -v '\-to\-' `; do
         provider_name=$(echo $pact | awk -F "-" '{ print $2}'| sed 's/.json//')
         curl -v -X PUT -H "Content-Type: application/json" \
         -d@$pact \
