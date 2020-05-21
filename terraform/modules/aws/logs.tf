@@ -9,7 +9,8 @@ resource "aws_s3_bucket_public_access_block" "cloudfront_logs" {
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
-  restrict_public_buckets = true
+  // This is false allowing awslogsdelivery AWS account to deliver log files from CloudFront
+  restrict_public_buckets = false
 }
 
 data "pass_password" "splunk_hec_token" {
