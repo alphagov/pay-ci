@@ -46,3 +46,4 @@ run:
     mvn --global-settings settings.xml clean verify
 
     cp -R target/* ../build/
+    cp -R src/.git ../build

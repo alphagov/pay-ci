@@ -14,6 +14,12 @@ run:
   args:
     - -c
     - |
+
+      if [ ! -f .git/resource/head_sha ]; then
+        echo "ERROR: .git/resource/head_sha/ does not exist."
+        exit 1
+      fi
+
       version="$(cat .git/resource/head_sha)"
       cd "$pact_directory"
       for pact in `ls . | grep -v '\-to\-' `; do
