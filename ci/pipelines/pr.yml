@@ -725,8 +725,10 @@ jobs:
                   exit 0
                 fi
 
-                echo "Pacts are not ok"
-                echo "$can_deploy" | awk '/\|/ {print $0}' | tee provider_requirements/requirements.txt
+                echo "Providers need validation: "
+                echo "$can_deploy" | \
+                  awk 'BEGIN {FS="|"}; /\|/ && NR > 4 && !/true/{print $3}' | \
+                  tee provider_requirements/requirements.txt
 
 
 
