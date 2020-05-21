@@ -176,7 +176,6 @@ definitions:
     task: publish pacts
     privileged: true
     params:
-      pact_directory: pacts
       consumer_name: updateThisValue
     file: omnibus/ci/tasks/publish-pacts.yml
   - &zip-build
@@ -657,7 +656,6 @@ jobs:
     - <<: *publish-pacts
       params:
         consumer_name: publicapi
-        pact_directory: pacts
     - <<: *put-integration-test-success-status
       put: publicapi-pull-request
 
@@ -1098,7 +1096,6 @@ jobs:
     - <<: *publish-pacts
       params:
         consumer_name: frontend
-        pact_directory: pacts
     - <<: *build-docker-image
       params:
         app_name: frontend
@@ -1130,7 +1127,6 @@ jobs:
     - <<: *publish-pacts
       params:
         consumer_name: selfservice
-        pact_directory: pacts
     - <<: *build-docker-image
       params:
         app_name: selfservice
@@ -1177,7 +1173,6 @@ jobs:
     - <<: *publish-pacts
       params:
         consumer_name: products-ui
-        pact_directory: pacts
     - <<: *build-docker-image
       params:
         app_name: products-ui

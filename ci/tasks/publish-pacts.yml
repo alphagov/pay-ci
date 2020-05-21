@@ -4,25 +4,24 @@ image_resource:
   source:
     repository: curlimages/curl
 inputs:
-  - name: build
+  - name: src
+  - name: pacts
 params:
   consumer_name:
-  pact_directory:
 run:
   path: sh
-  dir: build
   args:
     - -c
     - |
 
-      if [ ! -f .git/resource/head_sha ]; then
-        echo "ERROR: .git/resource/head_sha/ does not exist."
+      if [ ! -f src/.git/resource/head_sha ]; then
+        echo "ERROR: src/.git/resource/head_sha/ does not exist."
         exit 1
       fi
 
-      version="$(cat .git/resource/head_sha)"
+      version="$(cat src/.git/resource/head_sha)"
       cd "$pact_directory"
-      for pact in `ls . | grep -v '\-to\-' `; do
+      for pact in `ls pacts | grep -v '\-to\-' `; do
         provider_name=$(echo $pact | awk -F "-" '{ print $2}'| sed 's/.json//')
         curl -v -X PUT -H "Content-Type: application/json" \
         -d@$pact \

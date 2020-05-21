@@ -10,7 +10,7 @@ inputs:
   - name: src
 platform: linux
 outputs:
-  - name: build
+  - name: pacts
 run:
   path: bash
   args:
@@ -45,5 +45,4 @@ run:
 
     mvn --global-settings settings.xml clean verify
 
-    cp -R target/* ../build/
-    cp -R src/.git ../build
+    cp -R target/pacts/* ../pacts/
