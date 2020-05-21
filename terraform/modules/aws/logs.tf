@@ -22,6 +22,8 @@ module "cloudfront_logging" {
   environment    = var.environment
   log_bucket_id  = aws_s3_bucket.cloudfront_logs.id
   log_bucket_arn = aws_s3_bucket.cloudfront_logs.arn
+  splunk_hec_endpoint = "https://http-inputs-gds.splunkcloud.com"
+  splunk_hec_token    = data.pass_password.splunk_hec_token.password
 }
 
 module "waf_logging" {
