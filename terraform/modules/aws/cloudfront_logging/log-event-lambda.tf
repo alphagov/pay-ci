@@ -26,6 +26,12 @@ resource "aws_lambda_function" "cloudfront_log_event_process" {
   runtime          = "nodejs12.x"
   timeout          = 60
 
+  environment {
+    variables = {
+      DELIVERY_STREAM = ""
+    }
+  }
+
   depends_on = [
     aws_iam_role_policy_attachment.cloudfront_log_lambda_logs, 
     aws_cloudwatch_log_group.cloudfront_log_event_process
@@ -70,7 +76,7 @@ EOF
 
 // Allows the lambda to write its own logs to CloudWatch logs
 resource "aws_iam_role_policy_attachment" "cloudfront_log_lambda_logs" {
-  role       = "${aws_iam_role.iam_kinesis_data_transformation_lambda.name}"
+  role       = aws_iam_role.iam_cloudfront_log_event_process_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
