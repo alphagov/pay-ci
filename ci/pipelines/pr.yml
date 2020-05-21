@@ -739,6 +739,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: adminusers-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: adminusers
     - <<: *put-integration-test-success-status
       put: adminusers-pull-request
 
@@ -797,6 +800,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: cardid-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: cardid
     - <<: *put-integration-test-success-status
       put: cardid-pull-request
 
@@ -878,6 +884,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: ledger-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: ledger
     - <<: *put-integration-test-success-status
       put: ledger-pull-request
 
@@ -936,6 +945,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: publicauth-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: publicauth
     - <<: *put-integration-test-success-status
       put: publicauth-pull-request
 
@@ -994,6 +1006,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: products-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: products
     - <<: *put-integration-test-success-status
       put: products-pull-request
 
@@ -1052,6 +1067,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: directdebit-connector-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: directdebit-connector
     - <<: *put-integration-test-success-status
       put: directdebit-connector-pull-request
 
