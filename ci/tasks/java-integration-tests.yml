@@ -9,8 +9,6 @@ caches:
 inputs:
   - name: src
 platform: linux
-outputs:
-  - name: build
 run:
   path: bash
   args:
@@ -44,6 +42,3 @@ run:
     EOF
 
     mvn --global-settings settings.xml clean verify
-
-    cp -R target/* ../build/
-    cp -R src/.git ../build

@@ -4,25 +4,26 @@ image_resource:
   source:
     repository: curlimages/curl
 inputs:
-  - name: build
+  - name: pacts
+  - name: git_details
 params:
   consumer_name:
-  pact_directory:
 run:
   path: sh
-  dir: build
   args:
     - -c
     - |
 
-      if [ ! -f .git/resource/head_sha ]; then
-        echo "ERROR: .git/resource/head_sha/ does not exist."
+      if [ ! -f git_details/head_sha ]; then
+        echo "ERROR: git_details/head_sha does not exist."
         exit 1
       fi
 
-      version="$(cat .git/resource/head_sha)"
-      cd "$pact_directory"
-      for pact in `ls . | grep -v '\-to\-' `; do
+      version="$(cat git_details/head_sha)"
+
+      # This doesn't check the response from pact broker so passes when it fails
+      # we should fix that.
+      for pact in $(ls pacts | grep -v '\-to\-'); do
         provider_name=$(echo $pact | awk -F "-" '{ print $2}'| sed 's/.json//')
         curl -v -X PUT -H "Content-Type: application/json" \
         -d@$pact \
