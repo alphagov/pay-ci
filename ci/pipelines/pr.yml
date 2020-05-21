@@ -281,6 +281,7 @@ groups:
       - publicapi-integration-test
       - publicapi-card-e2e
       - publicapi-products-e2e
+      - publicapi-connector-validation
 
   - name: Adminusers
     jobs:
@@ -684,6 +685,50 @@ jobs:
           put: publicapi-pull-request
       - <<: *put-card-e2e-success-status
         put: publicapi-pull-request
+
+  - name: publicapi-connector-validation
+    plan:
+      - <<: *get-pull-request
+        resource: publicapi-pull-request
+        passed: [publicapi-unit-test]
+      - task: check is valid
+        privileged: true
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: pactfoundation/pact-cli
+          params:
+            provider: connector
+            consumer: publicapi
+          inputs:
+            - name: src
+          run:
+            path: sh
+            dir: src
+            args:
+              - -ec
+              - |
+
+                function isProviderValid(){
+                  TAG="$(cat .git/resource/head_sha)"
+                  pact-broker can-i-deploy \
+                    --pacticipant="$consumer" --version=$TAG \
+                    --pacticipant="$provider" --latest \
+                    --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital'
+                }
+
+                if isProviderValid; then
+                  echo "Pacts are ok"
+                  exit 0
+                fi
+
+                echo "Pacts are not ok"
+                exit 1
+
+
 
   - <<: *job-definition
     name: publicapi-products-e2e
