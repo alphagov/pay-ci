@@ -57,7 +57,7 @@ resource "aws_kinesis_firehose_delivery_stream" "cf_log_kinesis_stream" {
 }
 
 resource "aws_cloudwatch_log_group" "cf_logs_kinesis_stream" {
-  name              = "/aws/kinesisfirehose/cloudfront-logs-govuk-pay-kinesis-stream"
+  name              = "/aws/kinesisfirehose/cloudfront-logs-govuk-pay-kinesis-stream-${var.environment}"
   retention_in_days = 7
 }
 
@@ -83,7 +83,7 @@ resource "aws_s3_bucket_public_access_block" "cf_log_backup_bucket" {
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
-  restrict_public_buckets = true
+  restrict_public_buckets = false
 }
 
 resource "aws_iam_role" "cf_logs_firehose_delivery" {
