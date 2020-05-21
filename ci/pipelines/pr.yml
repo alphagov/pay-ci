@@ -701,23 +701,23 @@ jobs:
             source:
               repository: pactfoundation/pact-cli
           params:
-            provider: connector
             consumer: publicapi
           inputs:
             - name: src
+          outputs:
+            - name: provider_requirements
           run:
             path: sh
-            dir: src
             args:
               - -ec
               - |
 
                 function isProviderValid(){
-                  TAG="$(cat .git/resource/head_sha)"
-                  pact-broker can-i-deploy \
+                  TAG="$(cat src/.git/resource/head_sha)"
+                  can_deploy="$(pact-broker can-i-deploy \
                     --pacticipant="$consumer" --version=$TAG \
-                    --pacticipant="$provider" --latest \
-                    --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital'
+                    --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital')"
+                  return $?
                 }
 
                 if isProviderValid; then
@@ -726,7 +726,7 @@ jobs:
                 fi
 
                 echo "Pacts are not ok"
-                exit 1
+                echo "$can_deploy" | awk '/\|/ {print $0}' | tee provider_requirements/requirements.txt
 
 
 
