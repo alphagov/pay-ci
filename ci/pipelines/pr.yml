@@ -654,10 +654,10 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: publicapi-pull-request
-    - <<: *publish-pacts:
+    - <<: *publish-pacts
       params:
         consumer_name: publicapi
-        pact_directory: src/test/resources/pacts
+        pact_directory: pacts
     - <<: *put-integration-test-success-status
       put: publicapi-pull-request
 
