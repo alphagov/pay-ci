@@ -13,6 +13,8 @@ RUN apk add --no-cache \
   maven \
   tini \
   docker-compose>1.25.4-r1 \
+  git \
+  curl \
   --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 
 COPY ./docker-helpers.sh /

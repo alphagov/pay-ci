@@ -343,12 +343,21 @@ groups:
     jobs:
       - update-pr-ci-pipeline
 
+  - name: pact
+    jobs:
+      - connector-provider-tests
+
 resource_types:
-- name: pull-request
-  type: registry-image
-  source:
-    repository: teliaoss/github-pr-resource
-    tag: dev
+  - name: pull-request
+    type: registry-image
+    source:
+      repository: teliaoss/github-pr-resource
+      tag: dev
+
+  - name: paas-s3
+    type: registry-image
+    source:
+      repository: govukpay/concourse-s3-resource
 
 resources:
   - name: pr-ci-pipeline
@@ -359,6 +368,14 @@ resources:
       branch: develop
       paths:
         - ci/pipelines/pr.yml
+
+  - name: pact-provider-queue
+    type: paas-s3
+    source:
+      bucket: ((readonly_private_bucket_name))
+      regexp: pact_(.*).txt
+      endpoint: ((readonly_private_bucket_domain_name))
+      region_name: eu-west-2
 
   - name: omnibus
     type: git
@@ -729,6 +746,111 @@ jobs:
                 echo "$can_deploy" | \
                   awk 'BEGIN {FS="|"}; /\|/ && NR > 4 && !/true/{print $3}' | \
                   tee provider_requirements/requirements.txt
+      - task: create queue files
+        privileged: true
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: ubuntu
+          params:
+            consumer: publicapi
+          inputs:
+            - name: provider_requirements
+            - name: src
+          outputs:
+            - name: pact_provider_jobs
+          run:
+            path: sh
+            args:
+              - -ec
+              - |
+                 while read provider; do
+                   echo $consumer $(cat src/.git/resource/pr) $(cat src/.git/resource/head_sha) >> pact_provider_jobs/pact_"$provider"_$(cat src/.git/resource/head_sha).txt
+                 done <provider_requirements/requirements.txt
+
+                 exit 0
+      - put: pact-provider-queue
+        params:
+          file: pact_provider_jobs/pact_connector_*.txt
+      - put: pact-provider-queue
+        params:
+          file: pact_provider_jobs/pact_ledger_*.txt
+
+  - name: connector-provider-tests
+    plan:
+      - get: pact-provider-queue
+        trigger: true
+        params:
+          filename: pact_connector_*.txt
+      - task: run tests
+        privileged: true
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+              tag: latest
+          inputs:
+            - name: pact-provider-queue
+          run:
+            path: sh
+            args:
+              - -ec
+              - |
+                source /docker-helpers.sh
+                start_docker
+
+                function cleanup {
+                  echo "CLEANUP TRIGGERED"
+                  clean_docker
+                  stop_docker
+                  echo "CLEANUP COMPLETE"
+                }
+
+                trap cleanup EXIT
+
+                cd pact-provider-queue
+                file=$(ls . | grep connector)
+                consumer=$(cat "$file" | awk '{ print $1}')
+                pr_no=$(cat "$file" | awk '{ print $2}')
+
+                git clone  https://github.com/alphagov/pay-connector.git
+                cd pay-connector
+                git checkout make_pact_broker_url_configurable
+                mvn test -DrunContractTests -DPACT_CONSUMER_TAG=${pr_no} -DPACT_BROKER_USERNAME=b -DPACT_BROKER_PASSWORD=a \
+                  -Dpact.provider.version=test -Dpact.verifier.publishResults=true \
+                  -DPACT_BROKER_URL=pay-concourse-pact-broker.cloudapps.digital -DCONSUMER=${consumer}
+
+      - task: push github status
+        privileged: true
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+              tag: latest
+          params:
+            GH_ACCESS_TOKEN: ((github-access-token))
+          inputs:
+            - name: pact-provider-queue
+          run:
+            path: sh
+            dir: pact-provider-queue
+            args:
+              - -ec
+              - |
+                file=$(ls . | grep connector)
+                consumer=$(cat "$file" | awk '{ print $1}')
+                sha=$(cat "$file" | awk '{ print $3}')
+                curl -u alphagov-pay-ci:${GH_ACCESS_TOKEN} -X POST https://api.github.com/repos/alphagov/pay-$consumer/statuses/$sha \
+                  --data '{ "state": "success", "target_url": "https://cd.gds-reliability.engineering/teams/pay-deploy/pipelines/pr-ci/jobs/publicapi-connector-validation/builds/14", "description": "success", "context": "pact provider test: connector" }'
 
 
 
