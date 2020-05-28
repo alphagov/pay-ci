@@ -5,6 +5,10 @@ resource "cloudfoundry_app" "notifications" {
   docker_image = "alpine:latest"
   v3           = true
 
+  service_binding {
+    service_instance = cloudfoundry_service_instance.splunk_log_service.id
+  }
+
   lifecycle {
     ignore_changes = [stopped, health_check_type, docker_image]
   }
