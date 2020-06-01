@@ -68,4 +68,104 @@ resource "aws_cloudfront_distribution" "publicapi" {
     minimum_protocol_version = "TLSv1.2_2018"
     ssl_support_method       = "sni-only"
   }
+
+  web_acl_id = module.publicapi_waf_acl.acl_id
+}
+
+module publicapi_waf_acl {
+  source      = "./waf_v2_acl" 
+  name        = "publicapi-${var.environment}"
+  description = "Publicapi ACL ${var.environment}"
+  acl         = <<EOF
+[
+    {
+      "Name": "AWS-AWSManagedRulesSQLiRuleSet",
+      "Priority": 0,
+      "Statement": {
+        "ManagedRuleGroupStatement": {
+          "VendorName": "AWS",
+          "Name": "AWSManagedRulesSQLiRuleSet"
+        }
+      },
+      "OverrideAction": {
+        "Count": {}
+      },
+      "VisibilityConfig": {
+        "SampledRequestsEnabled": true,
+        "CloudWatchMetricsEnabled": true,
+        "MetricName": "AWS-AWSManagedRulesSQLiRuleSet"
+      }
+    },
+    {
+      "Name": "AWS-AWSManagedRulesLinuxRuleSet",
+      "Priority": 1,
+      "Statement": {
+        "ManagedRuleGroupStatement": {
+          "VendorName": "AWS",
+          "Name": "AWSManagedRulesLinuxRuleSet"
+        }
+      },
+      "OverrideAction": {
+        "Count": {}
+      },
+      "VisibilityConfig": {
+        "SampledRequestsEnabled": true,
+        "CloudWatchMetricsEnabled": true,
+        "MetricName": "AWS-AWSManagedRulesLinuxRuleSet"
+      }
+    },
+    {
+      "Name": "AWS-AWSManagedRulesKnownBadInputsRuleSet",
+      "Priority": 2,
+      "Statement": {
+        "ManagedRuleGroupStatement": {
+          "VendorName": "AWS",
+          "Name": "AWSManagedRulesKnownBadInputsRuleSet"
+        }
+      },
+      "OverrideAction": {
+        "Count": {}
+      },
+      "VisibilityConfig": {
+        "SampledRequestsEnabled": true,
+        "CloudWatchMetricsEnabled": true,
+        "MetricName": "AWS-AWSManagedRulesKnownBadInputsRuleSet"
+      }
+    },
+    {
+      "Name": "AWS-AWSManagedRulesCommonRuleSet",
+      "Priority": 3,
+      "Statement": {
+        "ManagedRuleGroupStatement": {
+          "VendorName": "AWS",
+          "Name": "AWSManagedRulesCommonRuleSet",
+          "ExcludedRules": [
+            {
+              "Name": "GenericRFI_BODY"
+            }
+          ]
+        }
+      },
+      "OverrideAction": {
+        "None": {}
+      },
+      "VisibilityConfig": {
+        "SampledRequestsEnabled": true,
+        "CloudWatchMetricsEnabled": true,
+        "MetricName": "AWS-AWSManagedRulesCommonRuleSet"
+      }
+    }
+  ]
+EOF
+
+  log_destination     = module.waf_logging.kinesis_stream_id
+  log_redacted_fields = <<EOF
+[
+  {
+    "SingleHeader": {
+      "Name": "authorization"
+    }
+  }
+]
+EOF
 }

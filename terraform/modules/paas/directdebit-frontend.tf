@@ -7,6 +7,9 @@ resource "cloudfoundry_app" "directdebit_frontend" {
   space   = data.cloudfoundry_space.space.id
   stopped = true
   v3      = true
+  service_binding { 
+    service_instance = cloudfoundry_service_instance.splunk_log_service.id
+  }
 
   lifecycle {
     ignore_changes = [stopped, health_check_type]

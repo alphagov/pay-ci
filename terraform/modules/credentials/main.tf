@@ -7,23 +7,25 @@ locals {
 }
 
 provider "pass" {
-  store_dir = "../../../pay-low-pass"
+  version       = "~> 1.2"
+  store_dir     = "../../../pay-low-pass"
   refresh_store = false
 }
 
 provider "pass" {
-  store_dir = "../../../pay-dev-pass"
+  version       = "~> 1.2"
+  store_dir     = "../../../pay-dev-pass"
   refresh_store = false
-  alias = "dev-pass"
+  alias         = "dev-pass"
 }
 
 data "pass_password" "secret" {
   for_each = var.pay_low_pass_secrets
-  path = each.value
+  path     = each.value
 }
 
 data "pass_password" "dev_secret" {
   for_each = var.pay_dev_pass_secrets
-  path = each.value
+  path     = each.value
   provider = pass.dev-pass
 }

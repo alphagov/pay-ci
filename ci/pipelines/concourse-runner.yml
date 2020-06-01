@@ -1,0 +1,44 @@
+---
+resources:
+  - name: concourse-runner-src
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+      paths:
+        - ci/docker/concourse-runner/*
+
+  - name: concourse-runner
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/concourse-runner
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: latest
+
+# Builds and pushes the concourse-runner Docker image used by various Concourse CI pipelines
+jobs:
+  - name: build-and-push
+    plan:
+      - get: concourse-runner-src
+        trigger: true
+      - task: build
+        privileged: true
+        params: 
+          CONTEXT: concourse-runner-src/ci/docker/concourse-runner
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: vito/oci-build-task
+          inputs:
+          - name: concourse-runner-src
+          outputs:
+          - name: image
+          run:
+            path: build
+      - put: concourse-runner
+        params: {image: image/image.tar}

@@ -1,0 +1,1208 @@
+definitions:
+  - &job-definition
+    name: updateThisValue
+    max_in_flight: 3
+    build_log_retention:
+      builds: 500
+  - &get-pull-request
+    get: src
+    resource: updateThisValue
+    trigger: true
+    version: every
+    name: src
+  - &get-omnibus
+    get: omnibus
+    resource: omnibus
+    trigger: false
+    name: omnibus
+  - &put-unit-tests-pending-status
+    put: updateThisValue
+    params:
+      path: src
+      status: pending
+      context: unit tests
+  - &run-java-package
+    task: run-java-package
+    privileged: true
+    file: omnibus/ci/tasks/java-package.yml
+  - &run-java-unit-test
+    task: run-unit-tests
+    privileged: true
+    file: omnibus/ci/tasks/java-tests.yml
+    params:
+      app_name: updateThisValue
+    on_failure:
+      &put-unit-test-failed-status
+      put: updateThisValue
+      params:
+        path: src
+        status: failure
+        context: unit tests
+  - &put-unit-test-success-status
+    put: updateThisValue
+    params:
+      path: src
+      status: success
+      context: unit tests
+  - &build-docker-image
+    task: build-image
+    privileged: true
+    file: omnibus/ci/tasks/build-docker-image.yml
+    params:
+      app_name: updateThisValue
+  - &put-s3-docker-image
+    put: s3-docker-images
+    params:
+      file: local_image/*.tar
+  - &put-s3-build
+    put: s3-builds
+    params:
+      file: zipped_build/*.tar.gz
+  - &put-integration-test-pending-status
+    put: updateThisValue
+    params:
+      path: src
+      status: pending
+      context: integration tests
+  - &run-java-integration-tests
+    task: run-integration-tests
+    privileged: true
+    file: omnibus/ci/tasks/java-integration-tests.yml
+    on_failure:
+      &put-integration-test-failed-status
+      put: updateThisValue
+      params:
+        path: src
+        status: failure
+        context: integration tests
+  - &put-integration-test-success-status
+    put: updateThisValue
+    params:
+      path: src
+      status: success
+      context: integration tests
+  - &get-local-docker-image
+    get: s3-docker-images
+    trigger: true
+    passed: [updateThisValue]
+    params:
+      filename: image-updateThisValue-*.tar
+  - &put-card-e2e-pending-status
+    put: updateThisValue
+    params:
+      path: src
+      status: pending
+      context: card e2e tests
+  - &run-e2e
+    task: run e2e tests
+    privileged: true
+    file: omnibus/ci/tasks/endtoend/task.yml
+    input_mapping:
+      docker/connector: updateThisValue
+    params:
+      app_name: updateThisValue
+      test_type: updateThisValue
+  - &put-card-e2e-failed-status
+    put: card-connector-pull-request
+    params:
+      path: src
+      status: failure
+      context: card e2e tests
+  - &put-card-e2e-success-status
+    put: updateThisValue
+    params:
+      path: src
+      status: success
+      context: card e2e tests
+  - &put-test-failed-status
+    put: card-connector-pull-request
+    params:
+      path: src
+      status: failure
+      context: test
+  - &put-test-success-status
+    put: updateThisValue
+    params:
+      path: src
+      status: success
+      context: test
+  - &put-test-pending-status
+    put: updateThisValue
+    params:
+      path: src
+      status: pending
+      context: test
+  - &put-products-e2e-pending-status
+    put: updateThisValue
+    params:
+      path: src
+      status: pending
+      context: products e2e tests
+  - &put-products-e2e-failed-status
+    put: updateThisValue
+    params:
+      path: src
+      status: failure
+      context: products e2e tests
+  - &put-products-e2e-success-status
+    put: updateThisValue
+    params:
+      path: src
+      status: success
+      context: products e2e tests
+  - &put-directdebit-e2e-pending-status
+    put: updateThisValue
+    params:
+      path: src
+      status: pending
+      context: directdebit e2e tests
+  - &put-directdebit-e2e-failed-status
+    put: updateThisValue
+    params:
+      path: src
+      status: failure
+      context: directdebit e2e tests
+  - &put-directdebit-e2e-success-status
+    put: updateThisValue
+    params:
+      path: src
+      status: success
+      context: directdebit e2e tests
+  - &node-test
+    task: test
+    privileged: true
+    file: omnibus/ci/tasks/node-build-pr.yml
+  - &zip-build
+    task: zip-build
+    privileged: true
+    file: omnibus/ci/tasks/zip-build.yml
+    params:
+      app_name: updateThisValue
+  - &put-node-test-failure
+    put: updateThisValue
+    params:
+      path: src
+      status: failure
+      context: node test
+  - &get-all-docker-images
+    in_parallel:
+      fail_fast: true
+      steps: &docker-image-list
+        - get: docker/publicapi
+          resource: publicapi
+          params:
+            format: oci
+        - get: docker/frontend
+          resource: card-frontend
+          params:
+            format: oci
+        - get: docker/reverse_proxy
+          resource: reverse_proxy
+          params:
+            format: oci
+        - get: docker/postgres
+          resource: postgres
+          params:
+            format: oci
+        - get: docker/sqs
+          resource: sqs
+          params:
+            format: oci
+        - get: docker/adminusers
+          resource: adminusers
+          params:
+            format: oci
+        - get: docker/selfservice
+          resource: selfservice
+          params:
+            format: oci
+        - get: docker/connector
+          resource: card-connector
+          params:
+            format: oci
+        - get: docker/ledger
+          resource: ledger
+          params:
+            format: oci
+        - get: docker/publicauth
+          resource: publicauth
+          params:
+            format: oci
+        - get: docker/stubs
+          resource: stubs
+          params:
+            format: oci
+        - get: docker/cardid
+          resource: cardid
+          params:
+            format: oci
+        - get: docker/directdebit-connector
+          resource: directdebit-connector
+          params:
+            format: oci
+        - get: docker/directdebit-frontend
+          resource: directdebit-frontend
+          params:
+            format: oci
+        - get: docker/endtoend
+          resource: endtoend
+          params:
+            format: oci
+        - get: docker/selenium
+          resource: selenium
+          params:
+            format: oci
+        - get: docker/products
+          resource: products
+          params:
+            format: oci
+        - get: docker/products-ui
+          resource: products-ui
+          params:
+            format: oci
+
+
+groups:
+  - name: Card Connector
+    jobs:
+      - card-connector-unit-test
+      - card-connector-integration-test
+      - card-connector-card-e2e
+
+  - name: Publicapi
+    jobs:
+      - publicapi-unit-test
+      - publicapi-integration-test
+      - publicapi-card-e2e
+      - publicapi-products-e2e
+
+  - name: Adminusers
+    jobs:
+      - adminusers-unit-test
+      - adminusers-integration-test
+      - adminusers-card-e2e
+
+  - name: Cardid
+    jobs:
+      - cardid-unit-test
+      - cardid-integration-test
+      - cardid-card-e2e
+
+  - name: Ledger
+    jobs:
+      - ledger-unit-test
+      - ledger-integration-test
+      - ledger-card-e2e
+
+  - name: Publicauth
+    jobs:
+      - publicauth-unit-test
+      - publicauth-integration-test
+      - publicauth-card-e2e
+
+  - name: Products
+    jobs:
+      - products-unit-test
+      - products-integration-test
+      - products-products-e2e
+
+  - name: Direct Debit Connector
+    jobs:
+      - directdebit-connector-unit-test
+      - directdebit-connector-integration-test
+      - directdebit-connector-directdebit-e2e
+
+  - name: Products-UI
+    jobs:
+      - products-ui-test
+
+  - name: Card-Frontend
+    jobs:
+      - card-frontend-test
+
+  - name: Direct-Debit-Frontend
+    jobs:
+      - directdebit-frontend-test
+
+  - name: Selfservice
+    jobs:
+      - selfservice-test
+
+  - name: Toolbox
+    jobs:
+      - toolbox-test
+
+  - name: Update-Pipeline
+    jobs:
+      - update-pr-ci-pipeline
+
+resource_types:
+- name: pull-request
+  type: registry-image
+  source:
+    repository: teliaoss/github-pr-resource
+    tag: dev
+
+resources:
+  - name: pr-ci-pipeline
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+      paths:
+        - ci/pipelines/pr.yml
+
+  - name: omnibus
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: develop
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+
+  - &image
+    name: adminusers
+    type: registry-image
+    icon: docker
+    source: &image-source
+      repository: govukpay/adminusers
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
+
+  - <<: *image
+    name: cardid
+    source:
+      <<: *image-source
+      repository: govukpay/cardid
+
+  - <<: *image
+    name: card-connector
+    source:
+      <<: *image-source
+      repository: govukpay/connector
+
+  - <<: *image
+    name: card-frontend
+    source:
+      <<: *image-source
+      repository: govukpay/frontend
+
+  - <<: *image
+    name: ledger
+    source:
+      <<: *image-source
+      repository: govukpay/ledger
+
+  - <<: *image
+    name: publicapi
+    source:
+      <<: *image-source
+      repository: govukpay/publicapi
+
+  - <<: *image
+    name: publicauth
+    source:
+      <<: *image-source
+      repository: govukpay/publicauth
+
+  - <<: *image
+    name: products-ui
+    source:
+      <<: *image-source
+      repository: govukpay/products-ui
+
+  - <<: *image
+    name: products
+    source:
+      <<: *image-source
+      repository: govukpay/products
+
+  - <<: *image
+    name: selfservice
+    source:
+      <<: *image-source
+      repository: govukpay/selfservice
+
+  - <<: *image
+    name: directdebit-connector
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-connector
+
+  - <<: *image
+    name: directdebit-frontend
+    source:
+      <<: *image-source
+      repository: govukpay/directdebit-frontend
+
+  - <<: *image
+    name: reverse_proxy
+    source:
+      <<: *image-source
+      repository: govukpay/reverse-proxy
+
+  - <<: *image
+    name: stubs
+    source:
+      <<: *image-source
+      repository: govukpay/stubs
+
+  - <<: *image
+    name: sqs
+    source:
+      <<: *image-source
+      repository: roribio16/alpine-sqs
+      tag: latest
+
+  - <<: *image
+    name: postgres
+    source:
+      <<: *image-source
+      repository: postgres
+      tag: 11-alpine
+
+  - <<: *image
+    name: selenium
+    source:
+      <<: *image-source
+      repository: selenium/standalone-chrome
+      tag: 3.141.59-iron
+
+  - <<: *image
+    name: endtoend
+    source:
+      <<: *image-source
+      repository: govukpay/endtoend
+      tag: latest-master
+
+  - &pull-request
+    name: card-connector-pull-request
+    type: pull-request
+    icon: github-circle
+    check_every: 1h
+    source: &pull-request-source
+      repository: alphagov/pay-connector
+      access_token: ((github-access-token))
+
+  - <<: *pull-request
+    name: adminusers-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-adminusers
+
+  - <<: *pull-request
+    name: publicapi-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-publicapi
+
+  - <<: *pull-request
+    name: ledger-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-ledger
+
+  - <<: *pull-request
+    name: publicauth-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-publicauth
+
+  - <<: *pull-request
+    name: cardid-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-cardid
+
+  - <<: *pull-request
+    name: directdebit-connector-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-direct-debit-connector
+
+  - <<: *pull-request
+    name: card-frontend-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-frontend
+
+  - <<: *pull-request
+    name: selfservice-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-selfservice
+
+  - <<: *pull-request
+    name: toolbox-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-toolbox
+
+  - <<: *pull-request
+    name: directdebit-frontend-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-direct-debit-frontend
+
+  - <<: *pull-request
+    name: products-ui-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-products-ui
+
+  - <<: *pull-request
+    name: products-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-products
+
+jobs:
+  - <<: *job-definition
+    name: card-connector-unit-test
+    plan:
+    - <<: *get-pull-request
+      resource: card-connector-pull-request
+    - <<: *get-omnibus
+    - <<: *put-unit-tests-pending-status
+      put: card-connector-pull-request
+    - <<: *run-java-unit-test
+      params:
+        app_name: connector
+      on_failure:
+        <<: *put-unit-test-failed-status
+        put: card-connector-pull-request
+    - <<: *put-unit-test-success-status
+      put: card-connector-pull-request
+
+  - <<: *job-definition
+    name: card-connector-integration-test
+    plan:
+    - <<: *get-pull-request
+      resource: card-connector-pull-request
+    - <<: *put-integration-test-pending-status
+      put: card-connector-pull-request
+    - <<: *get-omnibus
+    - <<: *run-java-integration-tests
+      on_failure:
+        <<: *put-integration-test-failed-status
+        put: card-connector-pull-request
+    - <<: *put-integration-test-success-status
+      put: card-connector-pull-request
+
+  - <<: *job-definition
+    name: card-connector-card-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: card-connector-pull-request
+        passed: [card-connector-unit-test]
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: card-connector-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: connector
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/connector: local_image
+        params:
+          app_name: connector
+          test_type: card
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: card-connector-pull-request
+      - <<: *put-card-e2e-success-status
+        put: card-connector-pull-request
+
+  - <<: *job-definition
+    name: publicapi-unit-test
+    plan:
+    - <<: *get-pull-request
+      resource: publicapi-pull-request
+    - <<: *get-omnibus
+    - <<: *put-unit-tests-pending-status
+      put: publicapi-pull-request
+    - <<: *run-java-unit-test
+      params:
+        app_name: publicapi
+      on_failure:
+        <<: *put-unit-test-failed-status
+        put: publicapi-pull-request
+    - <<: *put-unit-test-success-status
+      put: publicapi-pull-request
+
+  - <<: *job-definition
+    name: publicapi-integration-test
+    plan:
+    - <<: *get-pull-request
+      resource: publicapi-pull-request
+    - <<: *put-integration-test-pending-status
+      put: publicapi-pull-request
+    - <<: *get-omnibus
+    - <<: *run-java-integration-tests
+      on_failure:
+        <<: *put-integration-test-failed-status
+        put: publicapi-pull-request
+    - <<: *put-integration-test-success-status
+      put: publicapi-pull-request
+
+  - <<: *job-definition
+    name: publicapi-card-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: publicapi-pull-request
+        passed: [publicapi-unit-test]
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: publicapi-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: publicapi
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/publicapi: local_image
+        params:
+          app_name: publicapi
+          test_type: card
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: publicapi-pull-request
+      - <<: *put-card-e2e-success-status
+        put: publicapi-pull-request
+
+  - <<: *job-definition
+    name: publicapi-products-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: publicapi-pull-request
+        passed: [publicapi-unit-test]
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: publicapi-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: publicapi
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/publicapi: local_image
+        params:
+          app_name: publicapi
+          test_type: products
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: publicapi-pull-request
+      - <<: *put-card-e2e-success-status
+        put: publicapi-pull-request
+  - <<: *job-definition
+    name: adminusers-unit-test
+    plan:
+    - <<: *get-pull-request
+      resource: adminusers-pull-request
+    - <<: *get-omnibus
+    - <<: *put-unit-tests-pending-status
+      put: adminusers-pull-request
+    - <<: *run-java-unit-test
+      params:
+        app_name: adminusers
+      on_failure:
+        <<: *put-unit-test-failed-status
+        put: adminusers-pull-request
+    - <<: *put-unit-test-success-status
+      put: adminusers-pull-request
+
+  - <<: *job-definition
+    name: adminusers-integration-test
+    plan:
+    - <<: *get-pull-request
+      resource: adminusers-pull-request
+    - <<: *put-integration-test-pending-status
+      put: adminusers-pull-request
+    - <<: *get-omnibus
+    - <<: *run-java-integration-tests
+      on_failure:
+        <<: *put-integration-test-failed-status
+        put: adminusers-pull-request
+    - <<: *put-integration-test-success-status
+      put: adminusers-pull-request
+
+  - <<: *job-definition
+    name: adminusers-card-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: adminusers-pull-request
+        passed: [adminusers-unit-test]
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: adminusers-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: adminusers
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/adminusers: local_image
+        params:
+          app_name: adminusers
+          test_type: card
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: adminusers-pull-request
+      - <<: *put-card-e2e-success-status
+        put: adminusers-pull-request
+
+  - <<: *job-definition
+    name: cardid-unit-test
+    plan:
+    - <<: *get-pull-request
+      resource: cardid-pull-request
+    - <<: *get-omnibus
+    - <<: *put-unit-tests-pending-status
+      put: cardid-pull-request
+    - <<: *run-java-unit-test
+      params:
+        app_name: cardid
+      on_failure:
+        <<: *put-unit-test-failed-status
+        put: cardid-pull-request
+    - <<: *put-unit-test-success-status
+      put: cardid-pull-request
+
+  - <<: *job-definition
+    name: cardid-integration-test
+    plan:
+    - <<: *get-pull-request
+      resource: cardid-pull-request
+    - <<: *put-integration-test-pending-status
+      put: cardid-pull-request
+    - <<: *get-omnibus
+    - <<: *run-java-integration-tests
+      on_failure:
+        <<: *put-integration-test-failed-status
+        put: cardid-pull-request
+    - <<: *put-integration-test-success-status
+      put: cardid-pull-request
+
+  - <<: *job-definition
+    name: cardid-card-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: cardid-pull-request
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: cardid-pull-request
+      - task: update submodule
+        privileged: true
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: maven
+              tag: 3.6.1
+          inputs:
+            - name: src
+          params:
+            GH_ACCESS_TOKEN: ((github-access-token))
+          outputs:
+            - name: src
+          run:
+            path: sh
+            dir: src
+            args:
+              - -ec
+              - |
+                sed -i 's/git@github.com:/https:\/\/x-oauth-basic@github.com\//' .gitmodules
+                X_OAUTH_BASIC_TOKEN=${GH_ACCESS_TOKEN} git submodule update
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: cardid
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/cardid: local_image
+        params:
+          app_name: cardid
+          test_type: card
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: cardid-pull-request
+      - <<: *put-card-e2e-success-status
+        put: cardid-pull-request
+
+  - <<: *job-definition
+    name: ledger-unit-test
+    plan:
+    - <<: *get-pull-request
+      resource: ledger-pull-request
+    - <<: *get-omnibus
+    - <<: *put-unit-tests-pending-status
+      put: ledger-pull-request
+    - <<: *run-java-unit-test
+      params:
+        app_name: ledger
+      on_failure:
+        <<: *put-unit-test-failed-status
+        put: ledger-pull-request
+    - <<: *put-unit-test-success-status
+      put: ledger-pull-request
+
+  - <<: *job-definition
+    name: ledger-integration-test
+    plan:
+    - <<: *get-pull-request
+      resource: ledger-pull-request
+    - <<: *put-integration-test-pending-status
+      put: ledger-pull-request
+    - <<: *get-omnibus
+    - <<: *run-java-integration-tests
+      on_failure:
+        <<: *put-integration-test-failed-status
+        put: ledger-pull-request
+    - <<: *put-integration-test-success-status
+      put: ledger-pull-request
+
+  - <<: *job-definition
+    name: ledger-card-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: ledger-pull-request
+        passed: [ledger-unit-test]
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: ledger-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: ledger
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/ledger: local_image
+        params:
+          app_name: ledger
+          test_type: card
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: ledger-pull-request
+      - <<: *put-card-e2e-success-status
+        put: ledger-pull-request
+
+  - <<: *job-definition
+    name: publicauth-unit-test
+    plan:
+    - <<: *get-pull-request
+      resource: publicauth-pull-request
+    - <<: *get-omnibus
+    - <<: *put-unit-tests-pending-status
+      put: publicauth-pull-request
+    - <<: *run-java-unit-test
+      params:
+        app_name: publicauth
+      on_failure:
+        <<: *put-unit-test-failed-status
+        put: publicauth-pull-request
+    - <<: *put-unit-test-success-status
+      put: publicauth-pull-request
+
+  - <<: *job-definition
+    name: publicauth-integration-test
+    plan:
+    - <<: *get-pull-request
+      resource: publicauth-pull-request
+    - <<: *put-integration-test-pending-status
+      put: publicauth-pull-request
+    - <<: *get-omnibus
+    - <<: *run-java-integration-tests
+      on_failure:
+        <<: *put-integration-test-failed-status
+        put: publicauth-pull-request
+    - <<: *put-integration-test-success-status
+      put: publicauth-pull-request
+
+  - <<: *job-definition
+    name: publicauth-card-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: publicauth-pull-request
+        passed: [publicauth-unit-test]
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: publicauth-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: publicauth
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/publicauth: local_image
+        params:
+          app_name: publicauth
+          test_type: card
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: publicauth-pull-request
+      - <<: *put-card-e2e-success-status
+        put: publicauth-pull-request
+
+  - <<: *job-definition
+    name: products-unit-test
+    plan:
+    - <<: *get-pull-request
+      resource: products-pull-request
+    - <<: *get-omnibus
+    - <<: *put-unit-tests-pending-status
+      put: products-pull-request
+    - <<: *run-java-unit-test
+      params:
+        app_name: products
+      on_failure:
+        <<: *put-unit-test-failed-status
+        put: products-pull-request
+    - <<: *put-unit-test-success-status
+      put: products-pull-request
+
+  - <<: *job-definition
+    name: products-integration-test
+    plan:
+    - <<: *get-pull-request
+      resource: products-pull-request
+    - <<: *put-integration-test-pending-status
+      put: products-pull-request
+    - <<: *get-omnibus
+    - <<: *run-java-integration-tests
+      on_failure:
+        <<: *put-integration-test-failed-status
+        put: products-pull-request
+    - <<: *put-integration-test-success-status
+      put: products-pull-request
+
+  - <<: *job-definition
+    name: products-products-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: products-pull-request
+        passed: [products-unit-test]
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: products-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: products
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/products: local_image
+        params:
+          app_name: products
+          test_type: products
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: products-pull-request
+      - <<: *put-card-e2e-success-status
+        put: products-pull-request
+
+  - <<: *job-definition
+    name: directdebit-connector-unit-test
+    plan:
+    - <<: *get-pull-request
+      resource: directdebit-connector-pull-request
+    - <<: *get-omnibus
+    - <<: *put-unit-tests-pending-status
+      put: directdebit-connector-pull-request
+    - <<: *run-java-unit-test
+      params:
+        app_name: directdebit-connector
+      on_failure:
+        <<: *put-unit-test-failed-status
+        put: directdebit-connector-pull-request
+    - <<: *put-unit-test-success-status
+      put: directdebit-connector-pull-request
+
+  - <<: *job-definition
+    name: directdebit-connector-integration-test
+    plan:
+    - <<: *get-pull-request
+      resource: directdebit-connector-pull-request
+    - <<: *put-integration-test-pending-status
+      put: directdebit-connector-pull-request
+    - <<: *get-omnibus
+    - <<: *run-java-integration-tests
+      on_failure:
+        <<: *put-integration-test-failed-status
+        put: directdebit-connector-pull-request
+    - <<: *put-integration-test-success-status
+      put: directdebit-connector-pull-request
+
+  - <<: *job-definition
+    name: directdebit-connector-directdebit-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: directdebit-connector-pull-request
+        passed: [directdebit-connector-unit-test]
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: directdebit-connector-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: directdebit-connector
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/directdebit-connector: local_image
+        params:
+          app_name: directdebitconnector
+          test_type: directdebit
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: directdebit-connector-pull-request
+      - <<: *put-card-e2e-success-status
+        put: directdebit-connector-pull-request
+
+  - <<: *job-definition
+    name: card-frontend-test
+    plan:
+    - <<: *get-pull-request
+      resource: card-frontend-pull-request
+    - <<: *get-omnibus
+    - <<: *put-test-pending-status
+      put: card-frontend-pull-request
+    - <<: *node-test
+      on_failure:
+        <<: *put-test-failed-status
+        put: card-frontend-pull-request
+    - <<: *build-docker-image
+      params:
+        app_name: frontend
+    - <<: *get-all-docker-images
+    - <<: *run-e2e
+      input_mapping:
+        docker/frontend: local_image
+      params:
+        app_name: frontend
+        test_type: card
+      on_failure:
+        <<: *put-card-e2e-failed-status
+        put: card-frontend-pull-request
+    - <<: *put-test-success-status
+      put: card-frontend-pull-request
+
+  - <<: *job-definition
+    name: selfservice-test
+    plan:
+    - <<: *get-pull-request
+      resource: selfservice-pull-request
+    - <<: *get-omnibus
+    - <<: *put-test-pending-status
+      put: selfservice-pull-request
+    - <<: *node-test
+      on_failure:
+        <<: *put-test-failed-status
+        put: selfservice-pull-request
+    - <<: *build-docker-image
+      params:
+        app_name: selfservice
+    - <<: *get-all-docker-images
+    - <<: *run-e2e
+      input_mapping:
+        docker/selfservice: local_image
+      params:
+        app_name: selfservice
+        test_type: card
+      on_failure:
+        <<: *put-card-e2e-failed-status
+        put: selfservice-pull-request
+    - <<: *put-test-success-status
+      put: selfservice-pull-request
+
+  - <<: *job-definition
+    name: toolbox-test
+    plan:
+    - <<: *get-pull-request
+      resource: toolbox-pull-request
+    - <<: *get-omnibus
+    - <<: *put-test-pending-status
+      put: toolbox-pull-request
+    - <<: *node-test
+      on_failure:
+        <<: *put-test-failed-status
+        put: toolbox-pull-request
+    - <<: *put-test-success-status
+      put: toolbox-pull-request
+
+  - <<: *job-definition
+    name: products-ui-test
+    plan:
+    - <<: *get-pull-request
+      resource: products-ui-pull-request
+    - <<: *get-omnibus
+    - <<: *put-test-pending-status
+      put: products-ui-pull-request
+    - <<: *node-test
+      on_failure:
+        <<: *put-test-failed-status
+        put: products-ui-pull-request
+    - <<: *build-docker-image
+      params:
+        app_name: products-ui
+    - <<: *get-all-docker-images
+    - <<: *run-e2e
+      input_mapping:
+        docker/products-ui: local_image
+      params:
+        app_name: productsui
+        test_type: products
+      on_failure:
+        <<: *put-card-e2e-failed-status
+        put: products-ui-pull-request
+    - <<: *put-test-success-status
+      put: products-ui-pull-request
+
+  - <<: *job-definition
+    name: directdebit-frontend-test
+    plan:
+    - <<: *get-pull-request
+      resource: directdebit-frontend-pull-request
+    - <<: *get-omnibus
+    - <<: *put-test-pending-status
+      put: directdebit-frontend-pull-request
+    - <<: *node-test
+      on_failure:
+        <<: *put-test-failed-status
+        put: directdebit-frontend-pull-request
+    - <<: *build-docker-image
+      params:
+        app_name: directdebit-frontend
+    - <<: *get-all-docker-images
+    - <<: *run-e2e
+      input_mapping:
+        docker/directdebit-frontend: local_image
+      params:
+        app_name: directdebitfrontend
+        test_type: directdebit
+      on_failure:
+        <<: *put-card-e2e-failed-status
+        put: directdebit-frontend-pull-request
+    - <<: *put-test-success-status
+      put: directdebit-frontend-pull-request
+
+
+  - name: update-pr-ci-pipeline
+    plan:
+      - get: pr-ci-pipeline
+        trigger: true
+      - set_pipeline: pr-ci
+        file: pr-ci-pipeline/ci/pipelines/pr.yml

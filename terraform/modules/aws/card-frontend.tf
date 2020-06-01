@@ -70,6 +70,8 @@ resource "aws_cloudfront_distribution" "card_frontend" {
     minimum_protocol_version = "TLSv1.2_2018"
     ssl_support_method       = "sni-only"
   }
+
+  web_acl_id = module.card_frontend_waf_acl.acl_id
 }
 
 data "pass_password" "card_frontend_pubkey" {
@@ -99,4 +101,21 @@ data "external" "card_frontend_fle_config" {
   query = {
     public_key_id = aws_cloudfront_public_key.card_frontend.id
   }
+}
+
+module card_frontend_waf_acl {
+  source          = "./waf_v2_acl"
+  name            = "card-frontend-${var.environment}"
+  description     = "Card Frontend ACL ${var.environment}"
+  log_destination = module.waf_logging.kinesis_stream_id
+
+  log_redacted_fields = <<EOF
+[
+  {
+    "SingleHeader": {
+      "Name": "cookie"
+    }
+  }
+]
+EOF
 }

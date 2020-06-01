@@ -1,0 +1,309 @@
+version: '2.2'
+
+networks:
+  pymnt_network:
+    name: pymnt_network
+
+services:
+  publicapi:
+    image: govukpay/publicapi:${tag_publicapi:-latest-master}
+    env_file:
+      - ../docker-config/java_app.env
+      - ../docker-config/publicapi.env
+    environment:
+      - PORT=9100
+    networks:
+      pymnt_network:
+        aliases:
+          - publicapi.pymnt.localdomain
+          - publicapi.internal.pymnt.localdomain # This is what the pay-endtoend ready.sh wants
+    mem_limit: 1G
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9100/healthcheck"]
+      interval: 1m30s
+      timeout: 10s
+    logging:
+      driver: "json-file"
+
+  frontend:
+    image: govukpay/frontend:${tag_frontend:-latest-master}
+    env_file: ../docker-config/frontend.env
+    networks:
+      pymnt_network:
+        aliases:
+          - frontend.internal.pymnt.localdomain
+    mem_limit: 1500M
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", 'http://localhost:9200/healthcheck']
+      interval: 30s
+      timeout: 10s
+    logging:
+      driver: "json-file"
+
+  frontend_proxy:
+    image: govukpay/reverse-proxy:latest-master
+    environment:
+      - KEY_FILE=/ssl/keys/frontend.pymnt.localdomain.key
+      - CERT_FILE=/ssl/certs/frontend.pymnt.localdomain.crt
+      - HOST=frontend.internal.pymnt.localdomain
+      - PORT=9200
+      - START_IN_DEV_MODE=${START_IN_DEV_MODE}
+      - NAXSI_WHITELIST_RULES=/etc/nginx/frontend.naxsi
+      - REQUEST_ID_HEADER_VALUE=$$msec
+      - REQUEST_ID_LOG_FIELD=$$msec
+    volumes:
+      - "./../docker-config/ssl:/ssl"
+    networks:
+      pymnt_network:
+        aliases:
+          - frontend.pymnt.localdomain
+    mem_limit: 50M
+    logging:
+      driver: "json-file"
+
+  postgres:
+    image: postgres:11-alpine
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - ./../docker-config/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      pymnt_network:
+        aliases:
+          - postgres.db.pymnt.localdomain
+    mem_limit: 500M
+    logging:
+      driver: "json-file"
+
+  sqs:
+    # roribio16/alpine-sqs
+    image: roribio16/alpine-sqs:latest
+    volumes:
+      - "./../docker-config/elasticmq.conf:/opt/custom/elasticmq.conf"
+    networks:
+      pymnt_network:
+        aliases:
+          - sqs.internal.pymnt.localdomain
+    mem_limit: 500M
+
+  adminusers:
+    image: govukpay/adminusers:${tag_adminusers:-latest-master}
+    env_file:
+      - ../docker-config/java_app.env
+      - ../docker-config/adminusers.env
+    environment:
+      - RUN_MIGRATION=true
+      - RUN_APP=true
+    networks:
+      pymnt_network:
+        aliases:
+          - adminusers.pymnt.localdomain
+          - adminusers.internal.pymnt.localdomain
+    mem_limit: 2G
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9700/healthcheck"]
+      interval: 1m30s
+      timeout: 10s
+    depends_on:
+      - postgres
+    logging:
+      driver: "json-file"
+
+  selfservice:
+    image: govukpay/selfservice:${tag_selfservice:-latest-master}
+    env_file: ../docker-config/selfservice.env
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - RUN_APP=true
+    networks:
+      pymnt_network:
+        aliases:
+          - selfservice.internal.pymnt.localdomain
+    mem_limit: 1G
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9400/healthcheck"]
+      interval: 30s
+      timeout: 10s
+    logging:
+      driver: "json-file"
+
+  selfservice_proxy:
+    image: govukpay/reverse-proxy:latest-master
+    environment:
+      - KEY_FILE=/ssl/keys/selfservice.pymnt.localdomain.key
+      - CERT_FILE=/ssl/certs/selfservice.pymnt.localdomain.crt
+      - HOST=selfservice.internal.pymnt.localdomain
+      - PORT=9400
+      - START_IN_DEV_MODE=${START_IN_DEV_MODE}
+      - NAXSI_WHITELIST_RULES=/etc/nginx/selfservice.naxsi
+      - REQUEST_ID_HEADER_VALUE=$$msec
+      - REQUEST_ID_LOG_FIELD=$$msec
+    volumes:
+      - "./../docker-config/ssl:/ssl"
+    networks:
+      pymnt_network:
+        aliases:
+          - selfservice.pymnt.localdomain
+    mem_limit: 50M
+    logging:
+      driver: "json-file"
+      
+  connector:
+    image: govukpay/connector:${tag_connector:-latest-master}
+    env_file:
+      - ../docker-config/java_app.env
+      - ../docker-config/connector.env
+    environment:
+      - RUN_MIGRATION=true
+      - RUN_APP=true
+    networks:
+      pymnt_network:
+        aliases:
+          - connector.pymnt.localdomain
+          - notifications.pymnt.localdomain
+          - connector.internal.pymnt.localdomain
+    mem_limit: 2G
+    depends_on:
+      - postgres
+      - sqs
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9300/healthcheck"]
+      interval: 1m30s
+      timeout: 10s
+    logging:
+      driver: "json-file"
+
+  ledger:
+    image: govukpay/ledger:${tag_ledger:-latest-master}
+    env_file:
+      - ../docker-config/java_app.env
+      - ../docker-config/ledger.env
+    environment:
+      - RUN_MIGRATION=true
+      - RUN_APP=true
+    networks:
+      pymnt_network:
+        aliases:
+          - ledger.pymnt.localdomain
+          - ledger.internal.pymnt.localdomain
+    mem_limit: 2G
+    depends_on:
+      - postgres
+      - sqs
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:10700/healthcheck"]
+      interval: 1m30s
+      timeout: 10s
+    logging:
+      driver: "json-file"
+  publicauth:
+    image: govukpay/publicauth:${tag_publicauth:-latest-master}
+    env_file:
+      - ../docker-config/java_app.env
+      - ../docker-config/publicauth.env
+    environment:
+      - RUN_MIGRATION=true
+      - RUN_APP=true
+    networks:
+      pymnt_network:
+        aliases:
+          - publicauth.pymnt.localdomain
+          - publicauth.internal.pymnt.localdomain
+    mem_limit: 1G
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9600/healthcheck"]
+      interval: 1m30s
+      timeout: 10s
+    depends_on:
+      - postgres
+    logging:
+      driver: "json-file"
+
+  stubs:
+    image: govukpay/stubs:${tag_stubs:-latest-master}
+    env_file: ../docker-config/stubs.env
+    networks:
+      pymnt_network:
+        aliases:
+          - stubs.internal.pymnt.localdomain
+    mem_limit: 1G
+    logging:
+      driver: "json-file"
+
+  stubs_proxy:
+    image: govukpay/reverse-proxy:latest-master
+    volumes:
+      - "./../docker-config/ssl:/ssl"
+    environment:
+      - CERT_FILE=/ssl/certs/stubs.pymnt.localdomain.crt
+      - KEY_FILE=/ssl/keys/stubs.pymnt.localdomain.key
+      - HOST=stubs.internal.pymnt.localdomain
+      - PORT=9900
+      - START_IN_DEV_MODE=false
+      - X_FRAME_OPTIONS_HEADER=ALLOW
+    networks:
+      pymnt_network:
+        aliases:
+          - stubs.pymnt.localdomain
+    mem_limit: 50M
+    logging:
+      driver: "json-file"
+
+  cardid:
+    image: govukpay/cardid:${tag_cardid:-latest-master}
+    env_file:
+      - ../docker-config/java_app.env
+      - ../docker-config/cardid.env
+    networks:
+      pymnt_network:
+        aliases:
+          - cardid.pymnt.localdomain
+          - cardid.internal.pymnt.localdomain
+    mem_limit: 2G
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9800/healthcheck"]
+      interval: 30s
+      timeout: 10s
+    logging:
+      driver: "json-file"
+  endtoend:
+    image: govukpay/endtoend:${tag_endtoend:-latest-master}
+    env_file: ../docker-config/endtoend.env
+    environment:
+      - MAVEN_OPTS=${END_TO_END_JAVA_OPTS}
+    networks:
+      - pymnt_network
+    mem_limit: ${END_TO_END_MEM_LIMIT}
+    depends_on:
+      selenium:
+        condition: service_started
+      cardid:
+        condition: service_healthy
+      connector:
+        condition: service_healthy
+      selfservice:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      publicauth:
+        condition: service_healthy
+      publicapi:
+        condition: service_healthy
+      ledger:
+        condition: service_healthy
+      adminusers:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+
+  selenium:
+    image: selenium/standalone-chrome:3.141.59-iron
+    networks:
+      - pymnt_network
+    ports:
+      - "4444"
+    logging:
+      driver: "json-file"
+    volumes:
+      - /dev/shm:/dev/shm
+

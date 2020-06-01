@@ -1,0 +1,45 @@
+# We should have a single task for builing node apps for pr and build
+# pipelines. This task should output the built project and subsequent task be
+# resposibile for putting it where it needs to go.
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: node
+    tag: 12-alpine
+inputs:
+  - name: src
+outputs:
+  - name: build
+caches:
+  - path: npm_cache
+run:
+  path: sh
+  dir: src
+  args:
+    - -ec
+    - |
+      set -o errexit -o nounset -o pipefail
+      echo "node: $(node --version)"
+      echo "npm: $(npm --version)"
+
+      apk update
+      apk upgrade
+      apk add --update --virtual build-dependencies build-base
+      apk add --update bash ca-certificates wget python
+
+      # For Pact. See: https://docs.pact.io/docker#alpine-linux
+      wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
+      wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.29-r0/glibc-2.29-r0.apk
+      apk add glibc-2.29-r0.apk
+
+      npm config set cache ../npm_cache
+      npm rebuild node-sass
+      npm ci
+      npm run compile
+      npm test -- --forbid-only --forbid-pending
+
+      cd ..
+
+      cp -R src/* build
+      cp -R src/.git build
