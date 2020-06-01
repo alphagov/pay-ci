@@ -1,7 +1,3 @@
-resource "aws_iam_group" "services" {
-  name = "Services"
-}
-
 resource "aws_iam_user" "hosted_graphite" {
   name          = "hosted.graphite"
   force_destroy = true
