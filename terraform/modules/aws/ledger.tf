@@ -2,16 +2,6 @@ resource "aws_iam_user" "ledger" {
   name  = "ledger"
 } 
 
-resource "aws_iam_group_membership" "ledger_applications_group_membership" {
-  name  = "applications_group_membership"
-
-  users = [
-    "${aws_iam_user.ledger.name}",
-  ]
-
-  group = "${aws_iam_group.applications.name}"
-}
-
 resource "aws_iam_policy" "ledger_queue_policy" {
   name = "ledger_queue_policy"
 
