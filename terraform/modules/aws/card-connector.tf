@@ -1,6 +1,12 @@
 resource "aws_iam_user" "card_connector" {
   name = "card.connector"
   force_destroy = true
+} 
+
+resource "aws_iam_group_membership" "card_connector_applications_group_membership" {
+  name   = "applications_group_membership"
+  user   = aws_iam_user.card_connector.name]
+  groups = [aws_iam_group.applications.name]
 }
 
 resource "aws_iam_policy" "card_connector_queue_policy" {

@@ -2,6 +2,12 @@ resource "aws_iam_user" "ledger" {
   name  = "ledger"
 } 
 
+resource "aws_iam_user_group_membership" "ledger_applications_group_membership" {
+  name   = "applications_group_membership"
+  user   = aws_iam_user.ledger.name
+  groups = [aws_iam_group.applications.name]
+}
+
 resource "aws_iam_policy" "ledger_queue_policy" {
   name = "ledger_queue_policy"
 
