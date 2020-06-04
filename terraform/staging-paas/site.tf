@@ -46,13 +46,3 @@ module "paas_postgres" {
   org   = "govuk-pay"
   space = "staging"
 }
-
-data "terraform_remote_state" "aws" {
-  backend "s3"
-
-  config = {
-    bucket = "govuk-pay-terraform-state"
-    key    = "staging"
-    region = "eu-west-2"
-  }
-}
