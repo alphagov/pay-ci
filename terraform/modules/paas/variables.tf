@@ -8,6 +8,11 @@ variable "space" {
   description = "PaaS space"
 }
 
+variable "environment" {
+  type        = string
+  description = "The application environment e.g. dev, staging or production"
+}
+
 variable "external_domain" {
   type        = string
   description = "Domain for external app routes"
@@ -28,4 +33,14 @@ variable "external_hostname_suffix" {
 variable "credentials" {
   type        = map(map(map(string)))
   description = "credential for the apps"
+}
+
+variable "aws_region" {
+  type        = string
+  description = "Name of AWS region to use in configuration values e.g. eu-west-2"
+}
+
+variable "aws_account_id" {
+  type        = string
+  description = "AWS account id to use in configuration passed to user provided services etc."
 }
