@@ -17,8 +17,8 @@ credentials = {
   }
   card_connector = {
     pay_low_pass_secrets = {
-      aws_access_key = "aws/migration/iam/card_connector/access_key"
-      aws_secret_key = "aws/migration/iam/card_connector/secret_key"
+      aws_access_key = "aws/paas/staging/iam/card_connector/access_key"
+      aws_secret_key = "aws/paas/staging/iam/card_connector/secret_key"
       sentry_dsn = "sentry/connector_dsn"
       apple_pay_certificate = "apple_pay/staging/payment-processing-certificate"
       apple_pay_key = "apple_pay/staging/payment-processing-private-key"
@@ -95,8 +95,8 @@ credentials = {
   }
   ledger = {
     pay_low_pass_secrets = {
-      aws_access_key = "aws/migration/iam/ledger/access_key"
-      aws_secret_key = "aws/migration/iam/ledger/secret_key"
+      aws_access_key = "aws/paas/staging/iam/ledger/access_key"
+      aws_secret_key = "aws/paas/staging/iam/ledger/secret_key"
       sentry_dsn = "sentry/ledger_dsn"
     }
     static_values = {
