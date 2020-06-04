@@ -1,0 +1,34 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: pactfoundation/pact-cli
+inputs:
+  - name: src
+outputs:
+  - name: provider_requirements
+run:
+  path: sh
+  args:
+    - -ec
+    - |
+
+      function arePactsValid(){
+          TAG="$(cat src/.git/resource/head_sha)"
+          can_deploy="$(pact-broker can-i-deploy \
+            --pacticipant="$consumer" --version="$TAG" \
+            --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital')"
+          return $?
+      }
+
+      if arePactsValid; then
+        echo "Pacts are valid"
+        exit 0
+      fi
+
+      echo "Providers need validation: "
+      touch provider_requirements/requirements.txt
+      echo "$can_deploy" | \
+        awk 'BEGIN {FS="|"}; /\|/ && NR > 4 && !/true/{print $3}' | \
+        tr -d ' ' | \
+        tee provider_requirements/requirements.txt
