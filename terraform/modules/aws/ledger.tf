@@ -19,7 +19,8 @@ resource "aws_iam_policy" "ledger_queue_policy" {
         "Sid": "",
         "Effect": "Allow",
         "Action": [
-            "sqs:ReceiveMessage"
+            "sqs:ReceiveMessage",
+            "sqs:GetQueueAttributes"
         ],
         "Resource": [
             "${aws_sqs_queue.payment_event.arn}"
