@@ -271,38 +271,39 @@ definitions:
     params:
       path: src
       status: pending
-      context: pact provider validation
+      context: pact provider verification
   - &put-pact-provider-success-status
     put: updateThisValue
     params:
       path: src
       status: success
-      context: pact provider validation
+      context: pact provider verification
   - &put-pact-provider-failed-status
     put: updateThisValue
     params:
       path: src
       status: failure
-      context: pact provider validation
-  - &pact-provider-validation
-    task: <updateThisvalue>
+      context: pact provider verification
+  - &pact-provider-verification
+    task: pact verification
     privileged: true
     file: omnibus/ci/tasks/pact-provider-verification.yml
     params:
       consumer: updateThisValue
       provider: updateThisValue
-  - &pact-provider-check
+  - &pact-provider-test-preflight-check
     task: check is valid
     privileged: true
-    file: omnibus/ci/tasks/pact-provider-check.yml
+    file: omnibus/ci/tasks/pact-provider-test-preflight-check.yml
     params:
-      consumer: updateThisValue
-
+      consumer:
+  
 groups:
   - name: Card Connector
     jobs:
       - card-connector-unit-test
       - card-connector-integration-test
+      - card-connector-pact-provider-test
       - card-connector-card-e2e
 
   - name: Publicapi
@@ -311,13 +312,14 @@ groups:
       - publicapi-integration-test
       - publicapi-card-e2e
       - publicapi-products-e2e
-      - publicapi-pact-provider-validation
+      - publicapi-pact-provider-verification
 
   - name: Adminusers
     jobs:
       - adminusers-unit-test
       - adminusers-integration-test
       - adminusers-card-e2e
+      - adminusers-pact-provider-test
 
   - name: Cardid
     jobs:
@@ -330,7 +332,8 @@ groups:
       - ledger-unit-test
       - ledger-integration-test
       - ledger-consumer-pact-test
-      - ledger-pact-provider-validation
+      - ledger-pact-provider-test
+      - ledger-pact-provider-verification
       - ledger-card-e2e
 
   - name: Publicauth
@@ -343,23 +346,25 @@ groups:
     jobs:
       - products-unit-test
       - products-integration-test
+      - products-pact-provider-test
       - products-products-e2e
 
   - name: Direct Debit Connector
     jobs:
       - directdebit-connector-unit-test
       - directdebit-connector-integration-test
+      - directdebit-connector-pact-provider-test
       - directdebit-connector-directdebit-e2e
 
   - name: Products-UI
     jobs:
       - products-ui-test
-      - products-ui-pact-provider-validation
+      - products-ui-pact-provider-verification
 
   - name: Card-Frontend
     jobs:
       - card-frontend-test
-      - card-frontend-pact-provider-validation
+      - card-frontend-pact-provider-verification
 
   - name: Direct-Debit-Frontend
     jobs:
@@ -368,7 +373,7 @@ groups:
   - name: Selfservice
     jobs:
       - selfservice-test
-      - selfservice-pact-provider-validation
+      - selfservice-pact-provider-verification
 
   - name: Toolbox
     jobs:
@@ -670,6 +675,26 @@ jobs:
       put: card-connector-pull-request
 
   - <<: *job-definition
+    name: card-connector-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: card-connector-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: card-connector-pull-request
+    - <<: *get-omnibus
+    - <<: *pact-provider-test-preflight-check
+    - <<: *pact-provider-verification
+      input_mapping:
+        test_target: src
+      params:
+        provider: connector
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: card-connector-pull-request
+    - <<: *put-pact-provider-success-status
+      put: card-connector-pull-request
+
+  - <<: *job-definition
     name: card-connector-card-e2e
     plan:
       - <<: *get-pull-request
@@ -756,38 +781,39 @@ jobs:
       - <<: *put-card-e2e-success-status
         put: publicapi-pull-request
 
-  - name: publicapi-pact-provider-validation
+  - name: publicapi-pact-provider-verification
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
         passed: [publicapi-unit-test]
       - <<: *put-pact-provider-pending-status
         put: publicapi-pull-request
+      - <<: *get-omnibus
       - get: card-connector-master
       - get: ledger-master
       - get: directdebit-connector-master
-      - <<: *pact-provider-check
+      - <<: *pact-provider-test-preflight-check
         params:
           consumer: publicapi
       - in_parallel:
-        - <<: *pact-provider-validation
-          task: connector provider pact validation
+        - <<: *pact-provider-verification
+          task: connector provider pact verification
           input_mapping:
-            provider: card-connector-master
+            test_target: card-connector-master
           params:
             consumer: publicapi
             provider: connector
-        - <<: *pact-provider-validation
-          task: ledger provider pact validation
+        - <<: *pact-provider-verification
+          task: ledger provider pact verification
           input_mapping:
-            provider: ledger-master
+            test_target: ledger-master
           params:
             consumer: publicapi
             provider: ledger
-        - <<: *pact-provider-validation
-          task: directdebit-connector provider pact validation
+        - <<: *pact-provider-verification
+          task: directdebit-connector provider pact verification
           input_mapping:
-            provider: directdebit-connector-master
+            test_target: directdebit-connector-master
           params:
             consumer: publicapi
             provider: direct-debit-connector
@@ -855,6 +881,26 @@ jobs:
       params:
         consumer_name: adminusers
     - <<: *put-integration-test-success-status
+      put: adminusers-pull-request
+      
+  - <<: *job-definition
+    name: adminusers-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: adminusers-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: adminusers-pull-request
+    - <<: *get-omnibus
+    - <<: *pact-provider-test-preflight-check
+    - <<: *pact-provider-verification
+      input_mapping:
+        test_target: src
+      params:
+        provider: adminusers
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: adminusers-pull-request
+    - <<: *put-pact-provider-success-status
       put: adminusers-pull-request
 
   - <<: *job-definition
@@ -1002,6 +1048,27 @@ jobs:
     - <<: *put-integration-test-success-status
       put: ledger-pull-request
 
+      
+  - <<: *job-definition
+    name: ledger-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: ledger-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: ledger-pull-request
+    - <<: *get-omnibus
+    - <<: *pact-provider-test-preflight-check
+    - <<: *pact-provider-verification
+      input_mapping:
+        test_target: src
+      params:
+        provider: ledger
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: ledger-pull-request
+    - <<: *put-pact-provider-success-status
+      put: ledger-pull-request
+
   - <<: *job-definition
     name: ledger-consumer-pact-test
     plan:
@@ -1056,7 +1123,7 @@ jobs:
         consumer_name: ledger
         
   - <<: *job-definition
-    name: ledger-pact-provider-validation
+    name: ledger-pact-provider-verification
     plan:
       - <<: *get-pull-request
         resource: ledger-pull-request
@@ -1064,11 +1131,11 @@ jobs:
       - <<: *put-pact-provider-pending-status
         put: ledger-pull-request
       - get: card-connector-master
-      - <<: *pact-provider-check
+      - <<: *pact-provider-test-preflight-check
         params:
           consumer: ledger
-      - <<: *pact-provider-validation
-        task: connector provider pact validation
+      - <<: *pact-provider-verification
+        task: connector provider pact verification
         input_mapping:
           provider: card-connector-master
         params:
@@ -1202,6 +1269,27 @@ jobs:
     - <<: *put-integration-test-success-status
       put: products-pull-request
 
+      
+  - <<: *job-definition
+    name: products-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: products-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: products-pull-request
+    - <<: *get-omnibus
+    - <<: *pact-provider-test-preflight-check
+    - <<: *pact-provider-verification
+      input_mapping:
+        test_target: src
+      params:
+        provider: products
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: products-pull-request
+    - <<: *put-pact-provider-success-status
+      put: products-pull-request
+
   - <<: *job-definition
     name: products-products-e2e
     plan:
@@ -1262,6 +1350,26 @@ jobs:
         consumer_name: directdebit-connector
     - <<: *put-integration-test-success-status
       put: directdebit-connector-pull-request
+      
+  - <<: *job-definition
+    name: directdebit-connector-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: directdebit-connector-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: directdebit-connector-pull-request
+    - <<: *get-omnibus
+    - <<: *pact-provider-test-preflight-check
+    - <<: *pact-provider-verification
+      input_mapping:
+        test_target: src
+      params:
+        provider: directdebit-connector
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: directdebit-connector-pull-request
+    - <<: *put-pact-provider-success-status
+      put: directdebit-connector-pull-request
 
   - <<: *job-definition
     name: directdebit-connector-directdebit-e2e
@@ -1320,7 +1428,7 @@ jobs:
     - <<: *put-test-success-status
       put: card-frontend-pull-request
 
-  - name: card-frontend-pact-provider-validation
+  - name: card-frontend-pact-provider-verification
     plan:
     - <<: *get-pull-request
       resource: card-frontend-pull-request
@@ -1328,20 +1436,19 @@ jobs:
     - <<: *put-pact-provider-pending-status
       put: card-frontend-pull-request
     - get: card-connector-master
-    - <<: *pact-provider-check
+    - <<: *pact-provider-test-preflight-check
       params:
         consumer: frontend
-    - in_parallel:
-      - <<: *pact-provider-validation
-        task: connector provider pact validation
-        input_mapping:
-          provider: card-connector-master
-        params:
-          consumer: frontend
-          provider: connector
-      on_failure:
-        <<: *put-pact-provider-failed-status
-        put: card-frontend-pull-request
+    - <<: *pact-provider-verification
+      task: connector provider pact verification
+      input_mapping:
+        provider: card-connector-master
+      params:
+        consumer: frontend
+        provider: connector
+    on_failure:
+      <<: *put-pact-provider-failed-status
+      put: card-frontend-pull-request
     - <<: *put-pact-provider-success-status
       put: card-frontend-pull-request
 
@@ -1377,7 +1484,7 @@ jobs:
       put: selfservice-pull-request
 
   - <<: *job-definition
-    name: selfservice-pact-provider-validation
+    name: selfservice-pact-provider-verification
     plan:
     - <<: *get-pull-request
       resource: selfservice-pull-request
@@ -1389,40 +1496,40 @@ jobs:
     - get: adminusers-master
     - get: products-master
     - get: directdebit-connector-master
-    - <<: *pact-provider-check
+    - <<: *pact-provider-test-preflight-check
       params:
         consumer: selfservice
     - in_parallel:
-      - <<: *pact-provider-validation
-        task: connector provider pact validation
+      - <<: *pact-provider-verification
+        task: connector provider pact verification
         input_mapping:
           provider: card-connector-master
         params:
           consumer: selfservice
           provider: connector
-      - <<: *pact-provider-validation
-        task: direct debit connector provider pact validation
+      - <<: *pact-provider-verification
+        task: direct debit connector provider pact verification
         input_mapping:
           provider: directdebit-connector-master
         params:
           consumer: selfservice
           provider: direct-debit-connector
-      - <<: *pact-provider-validation
-        task: adminusers provider pact validation
+      - <<: *pact-provider-verification
+        task: adminusers provider pact verification
         input_mapping:
           provider: adminusers-master
         params:
           consumer: selfservice
           provider: adminusers
-      - <<: *pact-provider-validation
-        task: ledger provider pact validation
+      - <<: *pact-provider-verification
+        task: ledger provider pact verification
         input_mapping:
           provider: ledger-master
         params:
           consumer: selfservice
           provider: ledger
-      - <<: *pact-provider-validation
-        task: products provider pact validation
+      - <<: *pact-provider-verification
+        task: products provider pact verification
         input_mapping:
           provider: products-master
         params:
@@ -1481,7 +1588,7 @@ jobs:
       put: products-ui-pull-request
   
   - <<: *job-definition
-    name: products-ui-pact-provider-validation
+    name: products-ui-pact-provider-verification
     plan:
     - <<: *get-pull-request
       resource: products-ui-pull-request
@@ -1490,19 +1597,19 @@ jobs:
       put: products-ui-pull-request
     - get: products-master
     - get: adminusers-master
-    - <<: *pact-provider-check
+    - <<: *pact-provider-test-preflight-check
       params:
         consumer: products-ui
     - in_parallel:
-      - <<: *pact-provider-validation
-        task: products provider pact validation
+      - <<: *pact-provider-verification
+        task: products provider pact verification
         input_mapping:
           provider: products-master
         params:
           consumer: products-ui
           provider: products
-      - <<: *pact-provider-validation
-        task: adminusers provider pact validation
+      - <<: *pact-provider-verification
+        task: adminusers provider pact verification
         input_mapping:
           provider: adminusers-master
         params:

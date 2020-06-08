@@ -4,12 +4,12 @@ image_resource:
   type: registry-image
   source:
     repository: govukpay/concourse-runner
+params:
+  provider:
+  consumer:
 inputs:
-  - name: provider_requirements
-  - name: src
-  - name: provider
-outputs:
-  - name: provider_requirements
+  - name: pact_params
+  - name: test_target
 run:
   path: sh
   args:
@@ -23,25 +23,36 @@ run:
         echo "CLEANUP COMPLETE"
       }
 
-      function needsValidation() {
-        grep "^${provider}" provider_requirements/requirements.txt
+      function needs_verification() {
+        grep "^${provider}" pact_params/providers_needing_verification || test -f pact_params/verification_needed
       }
 
       trap cleanup EXIT
       source /docker-helpers.sh
 
-      if ! needsValidation; then
-        echo "Pacts between $consumer and $provider are valid"
+      if ! needs_verification; then
+        echo "All pacts already verified"
         exit 0
       fi
 
-      echo "Pacts need validation"
 
       start_docker
 
-      TAG="$(cat src/.git/resource/pr)"
-      cd provider
+      set -x
 
-      mvn test -DrunContractTests -DPACT_CONSUMER_TAG="${TAG}" -DPACT_BROKER_USERNAME= -DPACT_BROKER_PASSWORD= \
-        -Dpact.provider.version="$(git rev-parse HEAD)" -Dpact.verifier.publishResults=true \
-        -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital -DCONSUMER="${consumer}"
+      consumer_tag="$(cat pact_params/consumer_tag)"
+
+      cd test_target
+      provider_version="$(git rev-parse HEAD)"
+
+      set +x
+
+      mvn test \
+        -DrunContractTests \
+        -DCONSUMER="$consumer" \
+        -DPACT_CONSUMER_TAG="$consumer_tag" \
+        -Dpact.provider.version="$provider_version" \
+        -Dpact.verifier.publishResults=true \
+        -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital \
+        -DPACT_BROKER_USERNAME=b \
+        -DPACT_BROKER_PASSWORD=a
