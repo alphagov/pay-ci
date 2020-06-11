@@ -38,6 +38,17 @@ definitions:
         path: src
         status: failure
         context: unit tests
+  - &run-ruby-middleman-build
+    task: run-middleman-build
+    privileged: true
+    file: omnibus/ci/tasks/ruby-build.yml
+    on_failure:
+      &put-test-failed-status
+      put: updateThisValue
+      params:
+        path: src
+        status: failure
+        context: middleman build
   - &put-unit-test-success-status
     put: updateThisValue
     params:
@@ -379,6 +390,10 @@ groups:
     jobs:
       - toolbox-test
 
+  - name: Tech-Docs
+    jobs:
+      - tech-docs-test
+
   - name: Update-Pipeline
     jobs:
       - update-pr-ci-pipeline
@@ -640,6 +655,12 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-products
+
+  - <<: *pull-request
+    name: tech-docs-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-tech-docs
 
 jobs:
   - <<: *job-definition
@@ -1012,6 +1033,23 @@ jobs:
           put: cardid-pull-request
       - <<: *put-card-e2e-success-status
         put: cardid-pull-request
+
+  - <<: *job-definition
+    name: tech-docs-test
+    plan: 
+    - <<: *get-pull-request
+      resource: tech-docs-pull-request
+    - <<: *get-omnibus
+    - <<: *put-test-pending-status
+      put: tech-docs-pull-request
+    - <<: *run-ruby-middleman-build
+      params:
+        app_name: pay-tech-docs
+      on_failure:
+        <<: *put-test-failed-status
+        put: tech-docs-pull-request
+    - <<: *put-test-success-status
+      put: tech-docs-pull-request
 
   - <<: *job-definition
     name: ledger-unit-test
@@ -1446,9 +1484,9 @@ jobs:
       params:
         consumer: frontend
         provider: connector
-    on_failure:
-      <<: *put-pact-provider-failed-status
-      put: card-frontend-pull-request
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: card-frontend-pull-request
     - <<: *put-pact-provider-success-status
       put: card-frontend-pull-request
 

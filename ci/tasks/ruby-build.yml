@@ -1,0 +1,27 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: ruby
+    tag: 2.6-alpine
+
+inputs:
+  - name: src
+  - name: release-info
+
+outputs:
+  - name: build-output
+
+run:
+  path: sh
+  dir: src
+  args:
+    - -ec
+    - |
+      set -o errexit -o nounset -o pipefail
+      apt-get update && apt-get install -y nodejs npm
+      gem install bundler
+      bundle install --deployment
+      bundle exec middleman build
