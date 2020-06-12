@@ -32,7 +32,8 @@ resource "aws_iam_policy" "card_connector_queue_policy" {
           ],
           "Resource": [
             "${aws_sqs_queue.payout_reconcile.arn}",
-            "${aws_sqs_queue.payment_event.arn}"
+            "${aws_sqs_queue.payment_event.arn}",
+            "${aws_sqs_queue.capture.arn}"
           ]
       },
       {
