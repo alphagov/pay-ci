@@ -1,0 +1,32 @@
+container_limits: {}
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner
+    tag: latest
+caches:
+  - path: src/.m2
+inputs:
+  - name: src
+platform: linux
+
+run:
+  path: bash
+  args:
+  - -ec
+  - |
+        source /docker-helpers.sh
+        start_docker
+
+        function cleanup {
+          echo "CLEANUP TRIGGERED"
+          clean_docker
+          stop_docker
+          echo "CLEANUP COMPLETE"
+        }
+
+        trap cleanup EXIT
+    cd src
+    docker build --file docker/build_and_test.Dockerfile -t test_app .
+    docker run  --volume $(pwd):/app test_app
+    docker build  -t final .

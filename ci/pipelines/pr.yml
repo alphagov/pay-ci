@@ -364,7 +364,7 @@ groups:
   - name: Card-Frontend
     jobs:
       - card-frontend-test
-      - card-frontend-pact-provider-verification
+#      - card-frontend-pact-provider-verification
 
   - name: Direct-Debit-Frontend
     jobs:
@@ -1405,16 +1405,46 @@ jobs:
     - <<: *get-omnibus
     - <<: *put-test-pending-status
       put: card-frontend-pull-request
-    - <<: *node-test
-      on_failure:
-        <<: *put-test-failed-status
-        put: card-frontend-pull-request
+    - task: node tests
+      privileged: true
+      config:
+        container_limits: {}
+        image_resource:
+          type: registry-image
+          source:
+            repository: govukpay/concourse-runner
+            tag: latest
+        inputs:
+          - name: src
+        outputs:
+          - name: local_image
+          - name: pacts
+        platform: linux
+        run:
+          path: bash
+          args:
+            - -ec
+            - |
+              source /docker-helpers.sh
+              start_docker
+
+              function cleanup {
+                echo "CLEANUP TRIGGERED"
+                clean_docker
+                stop_docker
+                echo "CLEANUP COMPLETE"
+              }
+
+              trap cleanup EXIT
+              cd src
+              docker build  -t test --target builder .
+              docker create --name extractee -it test bash
+              docker cp  extractee:/app/pacts .
+              docker build -t govukpay/frontend:test --target final .
+              docker save govukpay/frontend:test -o ../local_image/image.tar
     - <<: *publish-pacts
       params:
         consumer_name: frontend
-    - <<: *build-docker-image
-      params:
-        app_name: frontend
     - <<: *get-all-docker-images
     - <<: *run-e2e
       input_mapping:
@@ -1428,29 +1458,30 @@ jobs:
     - <<: *put-test-success-status
       put: card-frontend-pull-request
 
-  - name: card-frontend-pact-provider-verification
-    plan:
-    - <<: *get-pull-request
-      resource: card-frontend-pull-request
-      passed: [card-frontend-test]
-    - <<: *put-pact-provider-pending-status
-      put: card-frontend-pull-request
-    - get: card-connector-master
-    - <<: *pact-provider-test-preflight-check
-      params:
-        consumer: frontend
-    - <<: *pact-provider-verification
-      task: connector provider pact verification
-      input_mapping:
-        provider: card-connector-master
-      params:
-        consumer: frontend
-        provider: connector
-    on_failure:
-      <<: *put-pact-provider-failed-status
-      put: card-frontend-pull-request
-    - <<: *put-pact-provider-success-status
-      put: card-frontend-pull-request
+#  - <<: *job-definition
+#    name: card-frontend-pact-provider-verification
+#    plan:
+#    - <<: *get-pull-request
+#      resource: card-frontend-pull-request
+#      passed: [card-frontend-test]
+#    - <<: *put-pact-provider-pending-status
+#      put: card-frontend-pull-request
+#    - get: card-connector-master
+#    - <<: *pact-provider-test-preflight-check
+#      params:
+#        consumer: frontend
+#    - <<: *pact-provider-verification
+#      task: connector provider pact verification
+#      input_mapping:
+#        provider: card-connector-master
+#      params:
+#        consumer: frontend
+#        provider: connector
+#    on_failure:
+#      <<: *put-pact-provider-failed-status
+#      put: card-frontend-pull-request
+#    - <<: *put-pact-provider-success-status
+#      put: card-frontend-pull-request
 
   - <<: *job-definition
     name: selfservice-test
