@@ -1446,9 +1446,9 @@ jobs:
       params:
         consumer: frontend
         provider: connector
-    on_failure:
-      <<: *put-pact-provider-failed-status
-      put: card-frontend-pull-request
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: card-frontend-pull-request
     - <<: *put-pact-provider-success-status
       put: card-frontend-pull-request
 
