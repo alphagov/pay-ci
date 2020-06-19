@@ -44,4 +44,4 @@ run:
 
       cp -R src/* build
       cp -R src/.git build
-      cp -R src/pacts/* pacts/
+      cp -R src/pacts/* pacts/ || true
