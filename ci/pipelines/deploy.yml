@@ -1062,7 +1062,12 @@ jobs:
           <<: *cf-creds
           CF_SPACE: smoke-tests
           COMMAND: cf ssh smoke-tests-staging -c /app/bin/smoke-cardp1
-
+        on_success:
+          task: notify hg
+          file: omnibus/ci/tasks/send-hg-metric.yml
+          params: 
+            METRIC_NAME: ci.concourse.hosted-graphite.test
+            METRIC_VALUE: 1
   - name: direct-debit-smoke-tests-staging
     serial_groups: [adminusers-stg, directdebit-connector-stg, directdebit-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     build_log_retention:
