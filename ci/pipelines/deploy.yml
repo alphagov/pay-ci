@@ -162,89 +162,6 @@ resources:
       paths:
         - paas/carbon-relay/**
 
-  # Travis Builds
-  - &travis-build
-    name: card-frontend-ci-build
-    type: travis
-    icon: sync
-    source: &travis-build-source
-      repository: alphagov/pay-frontend
-      travis-token: ((travis-api-token))
-      branch: master
-      pro: true
-
-  - <<: *travis-build
-    name: toolbox-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-toolbox
-
-  - <<: *travis-build
-    name: products-ui-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-products-ui
-
-  - <<: *travis-build
-    name: selfservice-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-selfservice
-
-  - <<: *travis-build
-    name: dd-frontend-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-direct-debit-frontend
-
-  - <<: *travis-build
-    name: dd-connector-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-direct-debit-connector
-
-  - <<: *travis-build
-    name: card-connector-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-connector
-
-  - <<: *travis-build
-    name: publicapi-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-publicapi
-
-  - <<: *travis-build
-    name: publicauth-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-publicauth
-
-  - <<: *travis-build
-    name: adminusers-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-adminusers
-
-  - <<: *travis-build
-    name: products-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-products
-
-  - <<: *travis-build
-    name: ledger-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-ledger
-
-  - <<: *travis-build
-    name: cardid-ci-build
-    source:
-      <<: *travis-build-source
-      repository: alphagov/pay-cardid
-
   # Git Repositories
   - &git-repo
     name: toolbox-source
@@ -476,13 +393,11 @@ jobs:
   - name: build-card-frontend
     plan:
       - get: omnibus
-      - get: build-info
-        resource: card-frontend-ci-build
-        trigger: true
       - get: src
         resource: card-frontend-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/node-build.yml
         params:
@@ -494,18 +409,16 @@ jobs:
           tag: release-info/name
           globs:
             - build-output/*
-          commitish: build-info/commit-ref
+          commitish: src/.git/ref
 
   - name: build-toolbox
     plan:
       - get: omnibus
-      - get: build-info
-        resource: toolbox-ci-build
-        trigger: true
       - get: src
         resource: toolbox-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/node-build.yml
         params:
@@ -518,13 +431,11 @@ jobs:
   - name: build-products-ui
     plan:
       - get: omnibus
-      - get: build-info
-        resource: products-ui-ci-build
-        trigger: true
       - get: src
         resource: products-ui-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/node-build.yml
         params:
@@ -537,13 +448,11 @@ jobs:
   - name: build-selfservice
     plan:
       - get: omnibus
-      - get: build-info
-        resource: selfservice-ci-build
-        trigger: true
       - get: src
         resource: selfservice-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/node-build.yml
         params:
@@ -556,13 +465,11 @@ jobs:
   - name: build-directdebit-frontend
     plan:
       - get: omnibus
-      - get: build-info
-        resource: dd-frontend-ci-build
-        trigger: true
       - get: src
         resource: dd-frontend-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/node-build.yml
         params:
@@ -575,13 +482,11 @@ jobs:
   - name: build-directdebit-connector
     plan:
       - get: omnibus
-      - get: build-info
-        resource: dd-connector-ci-build
-        trigger: true
       - get: src
         resource: dd-connector-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/maven-build.yml
         params:
@@ -594,13 +499,11 @@ jobs:
   - name: build-card-connector
     plan:
       - get: omnibus
-      - get: build-info
-        resource: card-connector-ci-build
-        trigger: true
       - get: src
         resource: card-connector-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/maven-build.yml
         params:
@@ -613,13 +516,11 @@ jobs:
   - name: build-publicapi
     plan:
       - get: omnibus
-      - get: build-info
-        resource: publicapi-ci-build
-        trigger: true
       - get: src
         resource: publicapi-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/maven-build.yml
         params:
@@ -632,13 +533,11 @@ jobs:
   - name: build-publicauth
     plan:
       - get: omnibus
-      - get: build-info
-        resource: publicauth-ci-build
-        trigger: true
       - get: src
         resource: publicauth-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/maven-build.yml
         params:
@@ -651,72 +550,68 @@ jobs:
   - name: build-adminusers
     plan:
       - get: omnibus
-      - get: build-info
-        resource: adminusers-ci-build
-        trigger: true
       - get: src
         resource: adminusers-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/maven-build.yml
         params:
           APP_NAME: pay-adminusers
       - put: release
         resource: git-adminusers-pre-release
-        params: 
-          <<: *release-params
+        params:
+          name: release-info/name
+          tag: release-info/name
+          globs:
+            - build-output/*
+          commitish: src/.git/ref
 
   - name: build-products
     plan:
       - get: omnibus
-      - get: build-info
-        resource: products-ci-build
-        trigger: true
       - get: src
         resource: products-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/maven-build.yml
         params:
           APP_NAME: pay-products
       - put: release
         resource: git-products-pre-release
-        params: 
+        params:
           <<: *release-params
 
   - name: build-ledger
     plan:
       - get: omnibus
-      - get: build-info
-        resource: ledger-ci-build
-        trigger: true
       - get: src
         resource: ledger-source
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/maven-build.yml
         params:
           APP_NAME: pay-ledger
       - put: release
         resource: git-ledger-pre-release
-        params: 
+        params:
           <<: *release-params
 
   - name: build-cardid
     plan:
       - get: omnibus
-      - get: build-info
-        resource: cardid-ci-build
-        trigger: true
       - get: src
         resource: cardid-source
+        trigger: true
         params:
           submodules: none
-      - task: checkout-commit
-        file: omnibus/ci/tasks/checkout-commit.yml
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
         file: omnibus/ci/tasks/maven-build.yml
         params:
