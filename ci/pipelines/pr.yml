@@ -1125,6 +1125,7 @@ jobs:
   - <<: *job-definition
     name: ledger-pact-provider-verification
     plan:
+      - <<: *get-omnibus
       - <<: *get-pull-request
         resource: ledger-pull-request
         passed: [ledger-consumer-pact-test]
@@ -1137,7 +1138,7 @@ jobs:
       - <<: *pact-provider-verification
         task: connector provider pact verification
         input_mapping:
-          provider: card-connector-master
+          test_target: card-connector-master
         params:
           consumer: ledger
           provider: connector
@@ -1430,6 +1431,7 @@ jobs:
 
   - name: card-frontend-pact-provider-verification
     plan:
+    - <<: *get-omnibus
     - <<: *get-pull-request
       resource: card-frontend-pull-request
       passed: [card-frontend-test]
@@ -1442,7 +1444,7 @@ jobs:
     - <<: *pact-provider-verification
       task: connector provider pact verification
       input_mapping:
-        provider: card-connector-master
+        test_target: card-connector-master
       params:
         consumer: frontend
         provider: connector
@@ -1496,6 +1498,7 @@ jobs:
     - get: adminusers-master
     - get: products-master
     - get: directdebit-connector-master
+    - <<: *get-omnibus
     - <<: *pact-provider-test-preflight-check
       params:
         consumer: selfservice
@@ -1503,35 +1506,35 @@ jobs:
       - <<: *pact-provider-verification
         task: connector provider pact verification
         input_mapping:
-          provider: card-connector-master
+          test_target: card-connector-master
         params:
           consumer: selfservice
           provider: connector
       - <<: *pact-provider-verification
         task: direct debit connector provider pact verification
         input_mapping:
-          provider: directdebit-connector-master
+          test_target: directdebit-connector-master
         params:
           consumer: selfservice
           provider: direct-debit-connector
       - <<: *pact-provider-verification
         task: adminusers provider pact verification
         input_mapping:
-          provider: adminusers-master
+          test_target: adminusers-master
         params:
           consumer: selfservice
           provider: adminusers
       - <<: *pact-provider-verification
         task: ledger provider pact verification
         input_mapping:
-          provider: ledger-master
+          test_target: ledger-master
         params:
           consumer: selfservice
           provider: ledger
       - <<: *pact-provider-verification
         task: products provider pact verification
         input_mapping:
-          provider: products-master
+          test_target: products-master
         params:
           consumer: selfservice
           provider: products
@@ -1590,6 +1593,7 @@ jobs:
   - <<: *job-definition
     name: products-ui-pact-provider-verification
     plan:
+    - <<: *get-omnibus
     - <<: *get-pull-request
       resource: products-ui-pull-request
       passed: [products-ui-test]
@@ -1604,14 +1608,14 @@ jobs:
       - <<: *pact-provider-verification
         task: products provider pact verification
         input_mapping:
-          provider: products-master
+          test_target: products-master
         params:
           consumer: products-ui
           provider: products
       - <<: *pact-provider-verification
         task: adminusers provider pact verification
         input_mapping:
-          provider: adminusers-master
+          test_target: adminusers-master
         params:
           consumer: products-ui
           provider: adminusers
