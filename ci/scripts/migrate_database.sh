@@ -8,14 +8,7 @@ function createCommandFor() {
   echo "source <(jq -r .\"start_command\" /home/vcap/staging_info.yml | sed 's/server/${1}/g')"
 }
 
-TASK_COMMAND=$(createCommandFor "db migrate")
-
-if [[ "$APP_NAME" == 'adminusers' ]]; then
-  INITIAL_MIGRATION=$(createCommandFor migrateToInitialDbState);
-  TASK_COMMAND="${INITIAL_MIGRATION} && ${TASK_COMMAND}";
-fi
-
-cf run-task "${APP_NAME}" "${TASK_COMMAND}" --name "${APP_NAME}-db-migration"
+cf run-task "${APP_NAME}" "$(createCommandFor "db migrate")" --name "${APP_NAME}-db-migration"
 
 echo "You can view the raw logs using: cf logs ${APP_NAME} --recent"
 echo "Fetching task logs:"
