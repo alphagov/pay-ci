@@ -1,4 +1,12 @@
 ---
+definitions: 
+  - &notify-hg
+    task: change-this-value
+    file: omnibus/ci/tasks/send-hg-metric.yml
+    params:
+      METRIC_NAME: change-this-value
+      METRIC_VALUE: 0
+
 groups:
   - name: Adminusers
     jobs:
@@ -1062,6 +1070,30 @@ jobs:
           <<: *cf-creds
           CF_SPACE: smoke-tests
           COMMAND: cf ssh smoke-tests-staging -c /app/bin/smoke-cardp1
+        on_success:
+          in_parallel:
+          - <<: *notify-hg
+            task: notify-hg-success
+            params:
+              METRIC_NAME: ci.concourse.staging.card-smoke-test.success
+              METRIC_VALUE: 1
+          - <<: *notify-hg
+            task: notify-hg-success-status
+            params:
+              METRIC_NAME: ci.concourse.staging.card-smoke-test.status
+              METRIC_VALUE: 1
+        on_failure:
+          in_parallel:
+          - <<: *notify-hg
+            task: notify-hg-failure
+            params:
+              METRIC_NAME: ci.concourse.staging.card-smoke-test.failure
+              METRIC_VALUE: 1
+          - <<: *notify-hg
+            task: notify-hg-failure-status
+            params:
+              METRIC_NAME: ci.concourse.staging.card-smoke-test.status
+              METRIC_VALUE: 0
 
   - name: direct-debit-smoke-tests-staging
     serial_groups: [adminusers-stg, directdebit-connector-stg, directdebit-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
