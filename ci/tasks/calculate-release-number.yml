@@ -23,10 +23,10 @@ run:
 
       # calculate next release number
       set +e
-      latest_release_number=$(git tag --list 'paas_release-*' | sort -nr | head -1 | cut -d "-" -f 2 || true)
-      is_numeric=$(echo ${latest_release_number} | egrep -E '^[0-9]+$')
+      latest_release_number=$(git tag --list 'paas_release-*' | cut -d "-" -f 2  | sort -nr | head -1 || true)
+      is_numeric=$(echo "$latest_release_number" | grep -E '^[0-9]+$')
 
-      if ! [ is_numeric ]; then
+      if ! [ "$is_numeric" ]; then
         latest_release_number=0
       fi
 
