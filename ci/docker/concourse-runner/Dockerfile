@@ -3,6 +3,8 @@ FROM docker:19.03
 RUN apk add --no-cache \
   bash \
   curl \
+  netcat-openbsd \
+  git \
   # dockerd dependencies
   iptables \
   util-linux
@@ -13,8 +15,6 @@ RUN apk add --no-cache \
   maven \
   tini \
   docker-compose>1.25.4-r1 \
-  git \
-  netcat-openbsd \
   --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 
 COPY ./docker-helpers.sh /
