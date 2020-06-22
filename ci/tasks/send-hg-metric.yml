@@ -3,9 +3,11 @@ platform: linux
 
 image_resource:
   type: registry-image
-  source:
-    repository: alpine
-    tag: 3.12.0
+    source:
+      repository: govukpay/concourse-runner
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: latest
 
 inputs:
   - name: src
@@ -21,6 +23,5 @@ run:
   args:
     - -eu
     - |
-        apk add netcat-openbsd
         echo "Sending metric ((METRIC_NAME))"
         nc "((HOSTED_GRAPHITE_ACCOUNT_ID)).carbon.hostedgraphite.com" 2003 <<<"((HOSTED_GRAPHITE_API_KEY)).((METRIC_NAME)) ((METRIC_VALUE))"
