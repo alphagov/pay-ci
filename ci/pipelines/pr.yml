@@ -566,6 +566,7 @@ resources:
     icon: github-circle
     check_every: 1h
     source: &pull-request-source
+      disable_forks: true
       repository: alphagov/pay-connector
       access_token: ((github-access-token))
 
