@@ -9,10 +9,6 @@ image_resource:
     password: ((docker-password))
     tag: latest
 
-inputs:
-  - name: src
-  - name: release-info
-
 params:
   METRIC_NAME: metricname
   METRIC_VALUE: metricvalue
