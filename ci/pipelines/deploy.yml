@@ -4,6 +4,8 @@ definitions:
     task: change-this-value
     file: omnibus/ci/tasks/send-hg-metric.yml
     params:
+      HOSTED_GRAPHITE_ACCOUNT_ID: change-this-value
+      HOSTED_GRAPHITE_API_KEY: change-this-value
       METRIC_NAME: change-this-value
       METRIC_VALUE: 0
 

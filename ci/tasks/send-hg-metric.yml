@@ -10,6 +10,8 @@ image_resource:
     tag: latest
 
 params:
+  HOSTED_GRAPHITE_ACCOUNT_ID: ((HOSTED_GRAPHITE_ACCOUNT_ID))
+  HOSTED_GRAPHITE_API_KEY: ((HOSTED_GRAPHITE_API_KEY))
   METRIC_NAME: metricname
   METRIC_VALUE: metricvalue
 
@@ -20,4 +22,4 @@ run:
     - -eu
     - |
         echo "Sending metric $METRIC_NAME"
-        nc "((HOSTED_GRAPHITE_ACCOUNT_ID)).carbon.hostedgraphite.com" 2003 <<<"((HOSTED_GRAPHITE_API_KEY)).$METRIC_NAME $METRIC_VALUE"
+        nc "${HOSTED_GRAPHITE_ACCOUNT_ID}.carbon.hostedgraphite.com" 2003 <<< "${HOSTED_GRAPHITE_API_KEY}.${METRIC_NAME} ${METRIC_VALUE}"
