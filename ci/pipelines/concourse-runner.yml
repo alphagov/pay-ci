@@ -2,7 +2,7 @@
 resources:
   - name: concourse-runner-src
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: master

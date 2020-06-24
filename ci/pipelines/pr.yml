@@ -392,37 +392,37 @@ resource_types:
 resources:
   - name: card-connector-master
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-connector
       branch: master
   - name: ledger-master
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-ledger
       branch: master
   - name: adminusers-master
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-adminusers
       branch: master
   - name: products-master
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-products
       branch: master
   - name: directdebit-connector-master
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-direct-debit-connector
       branch: master
   - name: pr-ci-pipeline
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: master
@@ -431,7 +431,7 @@ resources:
 
   - name: omnibus
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: master
@@ -557,7 +557,7 @@ resources:
   - &pull-request
     name: card-connector-pull-request
     type: pull-request
-    icon: github-circle
+    icon: github
     check_every: 1h
     source: &pull-request-source
       disable_forks: true

@@ -131,7 +131,7 @@ resource_types:
 resources:
   - name: omnibus
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: master
@@ -163,7 +163,7 @@ resources:
 
   - name: carbon-relay-source
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: master
@@ -174,7 +174,7 @@ resources:
   - &git-repo
     name: toolbox-source
     type: git
-    icon: github-circle
+    icon: github
     source: &git-repo-source
       uri: https://github.com/alphagov/pay-toolbox
       branch: master
@@ -307,7 +307,7 @@ resources:
 
   - name: cardid-data-source
     type: git
-    icon: github-circle
+    icon: github
     source:
       username: alphagov-pay-ci
       password: ((github-access-token))

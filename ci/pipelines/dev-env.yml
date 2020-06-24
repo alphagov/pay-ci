@@ -8,14 +8,14 @@ resource_types:
 resources:
   - name: omnibus
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: master
 
   - name: omnibus-paas
     type: git
-    icon: github-circle
+    icon: github
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: master
