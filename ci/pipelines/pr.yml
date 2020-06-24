@@ -23,11 +23,9 @@ definitions:
       context: unit tests
   - &run-java-package
     task: run-java-package
-    privileged: true
     file: omnibus/ci/tasks/java-package.yml
   - &run-java-unit-test
     task: run-unit-tests
-    privileged: true
     file: omnibus/ci/tasks/java-tests.yml
     params:
       app_name: updateThisValue
@@ -170,17 +168,14 @@ definitions:
       context: directdebit e2e tests
   - &node-test
     task: test
-    privileged: true
     file: omnibus/ci/tasks/node-build-pr.yml
   - &publish-pacts
     task: publish pacts
-    privileged: true
     params:
       consumer_name: updateThisValue
     file: omnibus/ci/tasks/publish-pacts.yml
   - &zip-build
     task: zip-build
-    privileged: true
     file: omnibus/ci/tasks/zip-build.yml
     params:
       app_name: updateThisValue
@@ -293,7 +288,6 @@ definitions:
       provider: updateThisValue
   - &pact-provider-test-preflight-check
     task: check is valid
-    privileged: true
     file: omnibus/ci/tasks/pact-provider-test-preflight-check.yml
     params:
       consumer:
@@ -974,7 +968,6 @@ jobs:
       - <<: *put-card-e2e-pending-status
         put: cardid-pull-request
       - task: update submodule
-        privileged: true
         config:
           container_limits: {}
           platform: linux
