@@ -23,5 +23,5 @@ run:
   args:
     - -eu
     - |
-        echo "Sending metric ((METRIC_NAME))"
-        nc "((HOSTED_GRAPHITE_ACCOUNT_ID)).carbon.hostedgraphite.com" 2003 <<<"((HOSTED_GRAPHITE_API_KEY)).((METRIC_NAME)) ((METRIC_VALUE))"
+        echo "Sending metric $METRIC_NAME"
+        nc "((HOSTED_GRAPHITE_ACCOUNT_ID)).carbon.hostedgraphite.com" 2003 <<<"((HOSTED_GRAPHITE_API_KEY)).$METRIC_NAME $METRIC_VALUE"
