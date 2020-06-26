@@ -1,5 +1,5 @@
 ---
-definitions: 
+definitions:
   - &notify-hg
     task: change-this-value
     file: omnibus/ci/tasks/send-hg-metric.yml
@@ -8,7 +8,13 @@ definitions:
       HOSTED_GRAPHITE_API_KEY: change-this-value
       METRIC_NAME: change-this-value
       METRIC_VALUE: 0
-
+  - &verify-provider-with-consumer
+    task: verify-provider-with-consumer-master-pacts
+    privileged: true
+    file: omnibus/ci/tasks/pact-provider-master-verification.yml
+    params:
+      consumer: change-this-value
+      provider: change-this-value
 groups:
   - name: Adminusers
     jobs:
@@ -524,6 +530,27 @@ jobs:
       - get: src
         resource: card-connector-source
         trigger: true
+      - in_parallel:
+        - <<: *verify-provider-with-consumer
+          task: verify-with-publicapi
+          params:
+            consumer: publicapi
+            provider: connector
+        - <<: *verify-provider-with-consumer
+          task: verify-with-frontend
+          params:
+            consumer: frontend
+            provider: connector
+        - <<: *verify-provider-with-consumer
+          task: verify-with-selfservice
+          params:
+            consumer: selfservice
+            provider: connector
+        - <<: *verify-provider-with-consumer
+          task: verify-with-ledger
+          params:
+            consumer: ledger
+            provider: connector
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
@@ -579,6 +606,17 @@ jobs:
       - get: src
         resource: adminusers-source
         trigger: true
+      - in_parallel:
+        - <<: *verify-provider-with-consumer
+          task: verify-with-products-ui
+          params:
+            consumer: products-ui
+            provider: adminusers
+        - <<: *verify-provider-with-consumer
+          task: verify-with-selfservice
+          params:
+            consumer: selfservice
+            provider: adminusers
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
@@ -600,6 +638,17 @@ jobs:
       - get: src
         resource: products-source
         trigger: true
+      - in_parallel:
+        - <<: *verify-provider-with-consumer
+          task: verify-with-products-ui
+          params:
+            consumer: products-ui
+            provider: products
+        - <<: *verify-provider-with-consumer
+          task: verify-with-selfservice
+          params:
+            consumer: selfservice
+            provider: products
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
@@ -621,6 +670,17 @@ jobs:
         file: omnibus/ci/tasks/tag-pacts-with-master.yml
         params:
           consumer_name: ledger
+      - in_parallel:
+        - <<: *verify-provider-with-consumer
+          task: verify-with-publicapi
+          params:
+            consumer: publicapi
+            provider: ledger
+        - <<: *verify-provider-with-consumer
+          task: verify-with-selfservice
+          params:
+            consumer: selfservice
+            provider: ledger
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
