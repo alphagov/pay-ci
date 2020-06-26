@@ -406,6 +406,10 @@ jobs:
       - get: src
         resource: card-frontend-source
         trigger: true
+      - task: tag-pacts-with-master
+        file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        params:
+          consumer_name: frontend
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
@@ -444,6 +448,10 @@ jobs:
       - get: src
         resource: products-ui-source
         trigger: true
+      - task: tag-pacts-with-master
+        file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        params:
+          consumer_name: products-ui
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
@@ -461,6 +469,10 @@ jobs:
       - get: src
         resource: selfservice-source
         trigger: true
+      - task: tag-pacts-with-master
+        file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        params:
+          consumer_name: selfservice
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
@@ -469,7 +481,7 @@ jobs:
           APP_NAME: pay-selfservice
       - put: release
         resource: git-selfservice-pre-release
-        params: 
+        params:
           <<: *release-params
 
   - name: build-directdebit-frontend
@@ -529,6 +541,10 @@ jobs:
       - get: src
         resource: publicapi-source
         trigger: true
+      - task: tag-pacts-with-master
+        file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        params:
+          consumer_name: publicapi
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
@@ -601,6 +617,10 @@ jobs:
       - get: src
         resource: ledger-source
         trigger: true
+      - task: tag-pacts-with-master
+        file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        params:
+          consumer_name: ledger
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app

@@ -1,0 +1,24 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: rorymalcolm/pay-docker-scratches
+inputs:
+  - name: src
+params:
+  consumer_name: selfservice
+run:
+  path: sh
+  dir: src
+  args:
+    - -c
+    - |
+      pr_commit="$(git rev-list --no-merges -n 1 HEAD)"
+      if [ -z "$pr_commit" ]; then
+        echo "cannot extract pr commit from head of master branch"
+        exit 1
+      fi
+
+      echo "tagging commits with with version ${pr_commit}"
+      curl -v --fail -X PUT -H "Content-Type: application/json" \
+      https://pay-concourse-pact-broker.cloudapps.digital/pacticipants/"${consumer_name}"/versions/"${pr_commit}"/tags/master
