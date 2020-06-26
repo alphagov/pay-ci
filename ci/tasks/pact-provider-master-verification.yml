@@ -1,0 +1,48 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: rorymalcolm/pay-docker-scratches
+params:
+  consumer:
+  provider:
+inputs:
+  - name: src
+run:
+  path: bash
+  dir: src
+  args:
+    - -ec
+    - |
+
+      function cleanup {
+        echo "CLEANUP TRIGGERED"
+        clean_docker
+        stop_docker
+        echo "CLEANUP COMPLETE"
+      }
+
+      trap cleanup EXIT
+      source /docker-helpers.sh
+
+      pr_sha="$(git rev-list --no-merges -n 1 HEAD)"
+      if pact-broker can-i-deploy --pacticipant="$provider" \
+                               --version="$pr_sha" \
+                               --pacticipant="$consumer" \
+                               --latest="master" \
+                               --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital'; then
+        echo "Pacts are valid"
+        exit 0;
+      fi
+
+      start_docker
+
+      mvn test \
+        -DrunContractTests \
+        -DCONSUMER="$consumer" \
+        -DPACT_CONSUMER_TAG="master" \
+        -Dpact.provider.version="$pr_sha" \
+        -Dpact.verifier.publishResults=true \
+        -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital \
+        -DPACT_BROKER_USERNAME=b \
+        -DPACT_BROKER_PASSWORD=a

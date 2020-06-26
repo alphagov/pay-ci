@@ -16,9 +16,9 @@ run:
     - |
 
       function pacts_already_verified(){
-          TAG="$(cat src/.git/resource/head_sha)"
+          git_sha="$(cat src/.git/resource/head_sha)"
           can_deploy="$(pact-broker can-i-deploy \
-            --pacticipant="$consumer" --version="$TAG" \
+            --pacticipant="$consumer" --version="$git_sha" \
             --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital')"
           return $?
       }
