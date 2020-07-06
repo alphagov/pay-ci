@@ -15,7 +15,7 @@ if [[ "$APP_NAME" == 'adminusers' ]]; then
   TASK_COMMAND="${INITIAL_MIGRATION} && ${TASK_COMMAND}";
 fi
 
-cf run-task "${APP_NAME}" "${TASK_COMMAND}" --name "${APP_NAME}-db-migration"
+cf run-task "${APP_NAME}" --command "${TASK_COMMAND}" --name "${APP_NAME}-db-migration"
 
 echo "You can view the raw logs using: cf logs ${APP_NAME} --recent"
 echo "Fetching task logs:"
