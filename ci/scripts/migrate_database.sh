@@ -5,7 +5,7 @@ set -o errexit -o nounset
 : "${APP_PACKAGE:?APP_PACKAGE is required (e.g. uk.gov.pay.connector.ConnectorApplication)}"
 
 function createCommandFor() {
-  echo "source <(jq -r .\"start_command\" /home/vcap/staging_info.yml | sed 's/server/${1}/g')"
+  echo "source <(jq -r .\"start_command\" /home/vcap/staging_info.yml | sed 's/server/${1}/g' | sed 's/eval exec/eval/g')"
 }
 
 TASK_COMMAND=$(createCommandFor "db migrate")
