@@ -1,0 +1,56 @@
+---
+resource_types:
+  - name: cf-cli
+    type: docker-image
+    source:
+      repository: nulldriver/cf-cli-resource
+
+resources:
+  - name: pact-broker-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: master
+      paths:
+        - ci/pipelines/pact-broker.yml
+
+  - name: pact-broker-manifest
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: master
+      paths:
+        - ci/pact_broker
+
+  - name: paas
+    type: cf-cli
+    icon: cloud-upload-outline
+    source:
+      api: https://api.cloud.service.gov.uk
+      org: govuk-pay
+      space: build
+      username: ((cf-username))
+      password: ((cf-password))
+      cf_cli_version: 7
+
+jobs:
+  - name: set-pipeline
+    plan:
+      - get: pact-broker-pipeline
+        trigger: true
+      - set_pipeline: pact-broker
+        file: pact-broker-pipeline/ci/pipelines/pact-broker.yml
+  
+  - name: deploy-pact-broker
+    serial: true
+    plan:
+      - get: pact-broker-manifest
+        trigger: true
+      - put: paas
+        params:
+          command: push
+          app_name: pay-concourse-pact-broker
+          path: pact-broker-manifest/docs/build
+          manifest: pact-broker-manifest/ci/pact_broker/pay-pact-broker_manifest.yml
