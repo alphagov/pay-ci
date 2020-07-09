@@ -12,12 +12,14 @@ applications:
     image: pactfoundation/pact-broker:2.54.0.0
   env:
     PACT_BROKER_PUBLIC_HEARTBEAT: "true"
+    PACT_BROKER_USERNAME: ((broker-auth-username))
+    PACT_BROKER_PASSWORD: ((broker-auth-password))
   health-check-http-endpoint: /diagnostic/status/heartbeat
   health-check-type: http
   instances: 2
   memory: 256M
   routes:
-  - route: pay-concourse-pact-broker.cloudapps.digital
+    - route: pay-concourse-pact-broker.cloudapps.digital
   services:
-  - concourse-pact-broker-db
+    - concourse-pact-broker-db
   stack: cflinuxfs3
