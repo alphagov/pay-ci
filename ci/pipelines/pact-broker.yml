@@ -52,5 +52,7 @@ jobs:
         params:
           command: push
           app_name: pay-concourse-pact-broker
-          path: pact-broker-manifest/docs/build
           manifest: pact-broker-manifest/ci/pact_broker/pay-pact-broker_manifest.yml
+          vars:
+            pact-broker-username: ((pact-broker-username))
+            pact-broker-password: ((pact-broker-password))

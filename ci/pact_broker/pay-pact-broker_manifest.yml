@@ -12,8 +12,8 @@ applications:
     image: pactfoundation/pact-broker:2.54.0.0
   env:
     PACT_BROKER_PUBLIC_HEARTBEAT: "true"
-    PACT_BROKER_USERNAME: ((broker-auth-username))
-    PACT_BROKER_PASSWORD: ((broker-auth-password))
+    PACT_BROKER_USERNAME: ((pact-auth-username))
+    PACT_BROKER_PASSWORD: ((pact-auth-password))
   health-check-http-endpoint: /diagnostic/status/heartbeat
   health-check-type: http
   instances: 2
