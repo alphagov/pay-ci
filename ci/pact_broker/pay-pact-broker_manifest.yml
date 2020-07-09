@@ -19,7 +19,7 @@ applications:
   instances: 2
   memory: 256M
   routes:
-  - route: pay-concourse-pact-broker.cloudapps.digital
+    - route: pay-concourse-pact-broker.cloudapps.digital
   services:
-  - concourse-pact-broker-db
+    - concourse-pact-broker-db
   stack: cflinuxfs3
