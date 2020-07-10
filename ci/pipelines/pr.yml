@@ -291,7 +291,7 @@ definitions:
     file: omnibus/ci/tasks/pact-provider-test-preflight-check.yml
     params:
       consumer:
-  
+
 groups:
   - name: Card Connector
     jobs:
@@ -299,6 +299,11 @@ groups:
       - card-connector-integration-test
       - card-connector-pact-provider-test
       - card-connector-card-e2e
+
+  - name: End To End
+    jobs:
+      - endtoend-card-e2e
+      - endtoend-products-e2e
 
   - name: Publicapi
     jobs:
@@ -564,6 +569,12 @@ resources:
       access_token: ((github-access-token))
 
   - <<: *pull-request
+    name: endtoend-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-endtoend
+
+  - <<: *pull-request
     name: adminusers-pull-request
     source:
       <<: *pull-request-source
@@ -715,6 +726,56 @@ jobs:
         put: card-connector-pull-request
 
   - <<: *job-definition
+    name: endtoend-products-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: endtoend-pull-request
+      - <<: *get-omnibus
+      - <<: *put-products-e2e-pending-status
+        put: endtoend-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: endtoend
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/endtoend: local_image
+        params:
+          app_name: endtoend
+          test_type: products
+        on_failure:
+          <<: *put-products-e2e-failed-status
+          put: endtoend-pull-request
+      - <<: *put-products-e2e-success-status
+        put: endtoend-pull-request
+
+  - <<: *job-definition
+    name: endtoend-card-e2e
+    plan:
+      - <<: *get-pull-request
+        resource: endtoend-pull-request
+      - <<: *get-omnibus
+      - <<: *put-card-e2e-pending-status
+        put: endtoend-pull-request
+      - <<: *run-java-package
+      - <<: *build-docker-image
+        params:
+          app_name: endtoend
+      - <<: *get-all-docker-images
+      - <<: *run-e2e
+        input_mapping:
+          docker/endtoend: local_image
+        params:
+          app_name: endtoend
+          test_type: card
+        on_failure:
+          <<: *put-card-e2e-failed-status
+          put: endtoend-pull-request
+      - <<: *put-card-e2e-success-status
+        put: endtoend-pull-request
+
+  - <<: *job-definition
     name: publicapi-unit-test
     plan:
     - <<: *get-pull-request
@@ -824,7 +885,7 @@ jobs:
         resource: publicapi-pull-request
         passed: [publicapi-unit-test]
       - <<: *get-omnibus
-      - <<: *put-card-e2e-pending-status
+      - <<: *put-products-e2e-pending-status
         put: publicapi-pull-request
       - <<: *run-java-package
       - <<: *build-docker-image
@@ -838,10 +899,11 @@ jobs:
           app_name: publicapi
           test_type: products
         on_failure:
-          <<: *put-card-e2e-failed-status
+          <<: *put-products-e2e-failed-status
           put: publicapi-pull-request
-      - <<: *put-card-e2e-success-status
+      - <<: *put-products-e2e-success-status
         put: publicapi-pull-request
+
   - <<: *job-definition
     name: adminusers-unit-test
     plan:
@@ -1291,7 +1353,7 @@ jobs:
         resource: products-pull-request
         passed: [products-unit-test]
       - <<: *get-omnibus
-      - <<: *put-card-e2e-pending-status
+      - <<: *put-products-e2e-pending-status
         put: products-pull-request
       - <<: *run-java-package
       - <<: *build-docker-image
@@ -1305,9 +1367,9 @@ jobs:
           app_name: products
           test_type: products
         on_failure:
-          <<: *put-card-e2e-failed-status
+          <<: *put-products-e2e-failed-status
           put: products-pull-request
-      - <<: *put-card-e2e-success-status
+      - <<: *put-products-e2e-success-status
         put: products-pull-request
 
   - <<: *job-definition
@@ -1551,7 +1613,7 @@ jobs:
         put: toolbox-pull-request
     - <<: *put-test-success-status
       put: toolbox-pull-request
-  
+
   - <<: *job-definition
     name: products-ui-test
     plan:
@@ -1578,11 +1640,11 @@ jobs:
         app_name: productsui
         test_type: products
       on_failure:
-        <<: *put-card-e2e-failed-status
+        <<: *put-products-e2e-failed-status
         put: products-ui-pull-request
     - <<: *put-test-success-status
       put: products-ui-pull-request
-  
+
   - <<: *job-definition
     name: products-ui-pact-provider-verification
     plan:
