@@ -558,7 +558,6 @@ resources:
     name: card-connector-pull-request
     type: pull-request
     icon: github
-    check_every: 1h
     source: &pull-request-source
       disable_forks: true
       repository: alphagov/pay-connector
