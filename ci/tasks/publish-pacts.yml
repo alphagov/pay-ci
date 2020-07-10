@@ -8,6 +8,8 @@ inputs:
   - name: pacts
 params:
   consumer_name:
+  broker-username: ((pact-broker-username))
+  broker-password: ((pact-broker-password))
 run:
   path: sh
   args:
@@ -26,8 +28,10 @@ run:
         provider_name=$(jq .provider.name < "$pact" | tr -d '"')
         curl -v --fail -X PUT -H "Content-Type: application/json" \
         -d@"$pact" \
+        --user ${broker-username}:${broker-password} \
         https://pay-concourse-pact-broker.cloudapps.digital/pacts/provider/"${provider_name}"/consumer/"${consumer_name}"/version/"${version}"
         
         curl -v --fail -X PUT -H "Content-Type: application/json" \
+        --user ${broker-username}:${broker-password} \
         https://pay-concourse-pact-broker.cloudapps.digital/pacticipants/"${consumer_name}"/versions/"${version}"/tags/"${pr}"
       done

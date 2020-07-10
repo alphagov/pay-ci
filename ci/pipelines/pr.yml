@@ -169,8 +169,13 @@ definitions:
   - &node-test
     task: test
     file: omnibus/ci/tasks/node-build-pr.yml
+  - x-pact-credentials: &pact-credentials
+    pact-broker-username: ((pact-broker-username))
+    pact-broker-password: ((pact-broker-password))
   - &publish-pacts
     task: publish pacts
+    vars:
+      <<: *pact-credentials
     params:
       consumer_name: updateThisValue
     file: omnibus/ci/tasks/publish-pacts.yml
@@ -283,12 +288,16 @@ definitions:
     task: pact verification
     privileged: true
     file: omnibus/ci/tasks/pact-provider-verification.yml
+    vars:
+      <<: *pact-credentials
     params:
       consumer: updateThisValue
       provider: updateThisValue
   - &pact-provider-test-preflight-check
     task: check is valid
     file: omnibus/ci/tasks/pact-provider-test-preflight-check.yml
+    vars:
+      <<: *pact-credentials
     params:
       consumer:
 

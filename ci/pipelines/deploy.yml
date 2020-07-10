@@ -12,6 +12,9 @@ definitions:
     task: verify-provider-with-consumer-master-pacts
     privileged: true
     file: omnibus/ci/tasks/pact-provider-master-verification.yml
+    vars: &pact-credentials
+      pact-broker-username: ((pact-broker-username))
+      pact-broker-password: ((pact-broker-password))
     params:
       consumer: change-this-value
       provider: change-this-value
@@ -414,6 +417,8 @@ jobs:
         trigger: true
       - task: tag-pacts-with-master
         file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        vars:
+          <<: *pact-credentials
         params:
           consumer_name: frontend
       - task: calculate-release-number
@@ -456,6 +461,8 @@ jobs:
         trigger: true
       - task: tag-pacts-with-master
         file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        vars:
+          <<: *pact-credentials
         params:
           consumer_name: products-ui
       - task: calculate-release-number
@@ -477,6 +484,8 @@ jobs:
         trigger: true
       - task: tag-pacts-with-master
         file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        vars:
+          <<: *pact-credentials
         params:
           consumer_name: selfservice
       - task: calculate-release-number
@@ -570,6 +579,8 @@ jobs:
         trigger: true
       - task: tag-pacts-with-master
         file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        vars:
+          <<: *pact-credentials
         params:
           consumer_name: publicapi
       - task: calculate-release-number
@@ -668,6 +679,8 @@ jobs:
         trigger: true
       - task: tag-pacts-with-master
         file: omnibus/ci/tasks/tag-pacts-with-master.yml
+        vars:
+          <<: *pact-credentials
         params:
           consumer_name: ledger
       - in_parallel:
