@@ -170,8 +170,8 @@ definitions:
     task: test
     file: omnibus/ci/tasks/node-build-pr.yml
   - x-pact-credentials: &pact-credentials
-    pact-broker-username: ((pact-broker-username))
-    pact-broker-password: ((pact-broker-password))
+      pact-broker-username: ((pact-broker-username))
+      pact-broker-password: ((pact-broker-password))
   - &publish-pacts
     task: publish pacts
     vars:
