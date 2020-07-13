@@ -7,8 +7,8 @@ inputs:
   - name: src
 params:
   consumer_name: selfservice
-  broker-username: ((pact-broker-username))
-  broker-password: ((pact-broker-password))
+  broker_username: ((pact-broker-username))
+  broker_password: ((pact-broker-password))
 run:
   path: sh
   dir: src
