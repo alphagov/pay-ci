@@ -7,8 +7,8 @@ image_resource:
 params:
   provider:
   consumer:
-  broker-username: ((pact-broker-username))
-  broker-password: ((pact-broker-password))
+  broker_username: ((pact-broker-username))
+  broker_password: ((pact-broker-password))
 inputs:
   - name: pact_params
   - name: test_target
@@ -56,5 +56,5 @@ run:
         -Dpact.provider.version="$provider_version" \
         -Dpact.verifier.publishResults=true \
         -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital \
-        -DPACT_BROKER_USERNAME="$broker-username" \
-        -DPACT_BROKER_PASSWORD="$broker-password"
+        -DPACT_BROKER_USERNAME="$broker_username" \
+        -DPACT_BROKER_PASSWORD="$broker_password"
