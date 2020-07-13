@@ -7,6 +7,8 @@ inputs:
   - name: src
 params:
   consumer_name: selfservice
+  broker-username: ((pact-broker-username))
+  broker-password: ((pact-broker-password))
 run:
   path: sh
   dir: src
@@ -21,4 +23,5 @@ run:
 
       echo "tagging commits with with version ${pr_commit}"
       curl -v --fail -X PUT -H "Content-Type: application/json" \
+      --user ${broker-username}:${broker-password} \
       https://pay-concourse-pact-broker.cloudapps.digital/pacticipants/"${consumer_name}"/versions/"${pr_commit}"/tags/master
