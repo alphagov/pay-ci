@@ -104,7 +104,7 @@ groups:
       - deploy-notifications-staging
       - deploy-toolbox-staging
       - deploy-sqs-staging
-      - update-pipeline
+      - update-deploy-pipeline
 
   - name: Smoke Tests
     jobs:
@@ -147,6 +147,15 @@ resources:
       uri: https://github.com/alphagov/pay-omnibus
       branch: master
 
+  - name: deploy-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: master
+      paths:
+        - ci/pipelines/deploy.yml
+
   - name: every-10-minutes
     type: time
     icon: clock-outline
@@ -162,15 +171,6 @@ resources:
       space: staging
       username: ((paas-ireland-username))
       password: ((paas-ireland-password))
-
-  - name: deploy-pipeline
-    type: concourse-pipeline
-    icon: pipe
-    source:
-      teams:
-        - name: pay-deploy
-          username: pay-deploy
-          password: ((readonly_local_user_password))
 
   - name: carbon-relay-source
     type: git
@@ -397,16 +397,12 @@ x-cf-creds: &cf-creds
   CF_ORG: govuk-pay
 
 jobs:
-  - name: update-pipeline
+  - name: update-deploy-pipeline
     plan:
-      - get: omnibus
+      - get: deploy-pipeline
         trigger: true
-      - put: deploy-pipeline
-        params:
-          pipelines:
-            - name: deploy
-              team: pay-deploy
-              config_file: omnibus/ci/pipelines/deploy.yml
+      - set_pipeline: deploy
+        file: deploy-pipeline/ci/pipelines/deploy.yml
 
   # Build Jobs
   - name: build-card-frontend
