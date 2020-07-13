@@ -1044,8 +1044,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: maven
-              tag: 3.6.1
+              repository: govukpay/concourse-runner
           inputs:
             - name: src
           params:
@@ -1053,13 +1052,25 @@ jobs:
           outputs:
             - name: src
           run:
-            path: sh
+            path: bash
             dir: src
             args:
               - -ec
               - |
-                sed -i 's/git@github.com:/https:\/\/x-oauth-basic@github.com\//' .gitmodules
-                X_OAUTH_BASIC_TOKEN=${GH_ACCESS_TOKEN} git submodule update
+                # cardid-data submodule's url is defined as ssh yet concourse
+                # is using oauth. Furthermore we need to avoid the password
+                # prompt from the git cli. Therefore rewrite the url for https
+                # and add the token. The risk of setting the token in the url is
+                # mitigated since these files are not committed, the container is ephemeral
+                # and anyone with access to read the files could read the token from
+                # environment variable. Furthermore we redact the token from the
+                # files after the update.
+                sed -i "s/git@github.com:/https:\/\/${GH_ACCESS_TOKEN}@github.com\//" .gitmodules
+                git submodule init -q data
+                git submodule update data
+                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
+                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
+
       - <<: *run-java-package
       - <<: *build-docker-image
         params:
