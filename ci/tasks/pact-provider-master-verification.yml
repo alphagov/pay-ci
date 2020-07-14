@@ -8,7 +8,7 @@ params:
   provider:
   broker_username: ((pact-broker-username))
   broker_password: ((pact-broker-password))
-  broker_url: https://pay-concourse-pact-broker.cloudapps.digital
+  broker_url: "https://pay-concourse-pact-broker.cloudapps.digital"
 inputs:
   - name: src
 caches:
