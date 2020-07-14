@@ -983,7 +983,7 @@ jobs:
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
           <<: *app-deploy-config
-          APP_NAME: selfservice
+          APP_NAME: toolbox
           APP_PATH: artefact
           ZDT: true
 
