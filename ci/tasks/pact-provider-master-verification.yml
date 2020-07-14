@@ -8,6 +8,7 @@ params:
   provider:
   broker_username: ((pact-broker-username))
   broker_password: ((pact-broker-password))
+  broker_url: https://pay-concourse-pact-broker.cloudapps.digital
 inputs:
   - name: src
 caches:
@@ -34,9 +35,9 @@ run:
                                --version="$pr_sha" \
                                --pacticipant="$consumer" \
                                --latest="master" \
-                               --broker_username="$broker-username" \
-                               --broker_password="$broker-password" \
-                               --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital'; then
+                               --broker_username="$broker_username" \
+                               --broker_password="$broker_password" \
+                               --broker_base_url='${broker_url}'; then
         echo "Pacts are valid"
         exit 0;
       fi
@@ -60,6 +61,6 @@ run:
         -DPACT_CONSUMER_TAG="master" \
         -Dpact.provider.version="$pr_sha" \
         -Dpact.verifier.publishResults=true \
-        -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital \
+        -DPACT_BROKER_HOST=${broker_url} \
         -DPACT_BROKER_USERNAME="$broker_username" \
         -DPACT_BROKER_PASSWORD="$broker_password"
