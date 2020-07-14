@@ -5,12 +5,14 @@ image_resource:
     repository: pactfoundation/pact-cli
 params:
   consumer:
-  broker-username: ((pact-broker-username))
-  broker-password: ((pact-broker-password))
+  broker_username: ((pact-broker-username))
+  broker_password: ((pact-broker-password))
 inputs:
   - name: src
 outputs:
   - name: pact_params
+caches:
+  - path: src/.m2
 run:
   path: sh
   args:
@@ -22,8 +24,8 @@ run:
           can_deploy="$(pact-broker can-i-deploy \
             --pacticipant="$consumer" --version="$git_sha" \
             --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital')" \
-            --broker-username="$broker-username" \
-            --broker-password="$broker-password"
+            --broker-username="$broker_username" \
+            --broker-password="$broker_password"
           return $?
       }
 
