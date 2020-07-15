@@ -391,6 +391,10 @@ groups:
     jobs:
       - update-pr-ci-pipeline
 
+  - name: Omnibus
+    jobs:
+      - omnibus-pr-test
+
 resource_types:
   - name: pull-request
     type: registry-image
@@ -654,6 +658,15 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-products
+
+  - <<: *pull-request
+    name: omnibus-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-omnibus
+      paths:
+        - "ci/pipelines/*"
+        - "ci/tasks/*"
 
 jobs:
   - <<: *job-definition
@@ -1727,6 +1740,38 @@ jobs:
         put: directdebit-frontend-pull-request
     - <<: *put-test-success-status
       put: directdebit-frontend-pull-request
+
+  - <<: *job-definition
+    name: omnibus-pr-test
+    plan:
+    - <<: *get-pull-request
+      resource: omnibus-pull-request
+    - <<: *put-test-pending-status
+      put: omnibus-pull-request
+    - task: check pipelines & tasks
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: golang
+            tag: 1.14-alpine
+        inputs:
+          - name: src
+        run:
+          path: sh
+          dir: src
+          args:
+            - -ec
+            - |
+              apk add git shellcheck
+              go get github.com/alphagov/paas-cf/tools/pipecleaner
+              pipecleaner --rubocop=false ci/pipelines/*.yml ci/tasks/*.yml
+      on_failure:
+        <<: *put-test-failed-status
+        put: omnibus-pull-request
+    - <<: *put-test-success-status
+      put: omnibus-pull-request
 
   - name: update-pr-ci-pipeline
     plan:
