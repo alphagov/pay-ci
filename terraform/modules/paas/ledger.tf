@@ -9,7 +9,7 @@ resource "cloudfoundry_app" "ledger" {
   v3      = true
 
   service_binding {
-    service_instance = cloudfoundry_service_instance.splunk_log_service
+    service_instance = cloudfoundry_service_instance.splunk_log_service.id
   }
 
   lifecycle {
