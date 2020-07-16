@@ -37,7 +37,7 @@ run:
                                --latest="master" \
                                --broker_username="$broker_username" \
                                --broker_password="$broker_password" \
-                               --broker_base_url='${broker_url}'; then
+                               --broker_base_url="${broker_url}"; then
         echo "Pacts are valid"
         exit 0;
       fi
