@@ -61,6 +61,6 @@ run:
         -DPACT_CONSUMER_TAG="master" \
         -Dpact.provider.version="$pr_sha" \
         -Dpact.verifier.publishResults=true \
-        -DPACT_BROKER_HOST=${broker_url} \
+        -DPACT_BROKER_HOST="${broker_url#https://}" \
         -DPACT_BROKER_USERNAME="$broker_username" \
         -DPACT_BROKER_PASSWORD="$broker_password"
