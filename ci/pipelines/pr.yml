@@ -1558,6 +1558,10 @@ jobs:
     - <<: *publish-pacts
       params:
         consumer_name: frontend
+    - <<: *put-test-success-status
+      put: card-frontend-pull-request
+    - <<: *put-card-e2e-pending-status
+      put: card-frontend-pull-request
     - <<: *build-docker-image
       params:
         app_name: frontend
@@ -1571,7 +1575,7 @@ jobs:
       on_failure:
         <<: *put-card-e2e-failed-status
         put: card-frontend-pull-request
-    - <<: *put-test-success-status
+    - <<: *put-card-e2e-success-status
       put: card-frontend-pull-request
 
   - name: card-frontend-pact-provider-verification
@@ -1614,6 +1618,10 @@ jobs:
     - <<: *publish-pacts
       params:
         consumer_name: selfservice
+    - <<: *put-test-success-status
+      put: selfservice-pull-request
+    - <<: *put-card-e2e-pending-status
+      put: selfservice-pull-request
     - <<: *build-docker-image
       params:
         app_name: selfservice
@@ -1627,7 +1635,7 @@ jobs:
       on_failure:
         <<: *put-card-e2e-failed-status
         put: selfservice-pull-request
-    - <<: *put-test-success-status
+    - <<: *put-card-e2e-success-status
       put: selfservice-pull-request
 
   - <<: *job-definition
@@ -1688,7 +1696,7 @@ jobs:
         put: selfservice-pull-request
     - <<: *put-pact-provider-success-status
       put: selfservice-pull-request
-    
+
   - <<: *job-definition
     name: toolbox-test
     plan:
@@ -1719,6 +1727,10 @@ jobs:
     - <<: *publish-pacts
       params:
         consumer_name: products-ui
+    - <<: *put-test-success-status
+      put: products-ui-pull-request
+    - <<: *put-products-e2e-pending-status
+      put: products-ui-pull-request
     - <<: *build-docker-image
       params:
         app_name: products-ui
@@ -1732,7 +1744,7 @@ jobs:
       on_failure:
         <<: *put-products-e2e-failed-status
         put: products-ui-pull-request
-    - <<: *put-test-success-status
+    - <<: *put-products-e2e-success-status
       put: products-ui-pull-request
 
   - <<: *job-definition
@@ -1782,6 +1794,10 @@ jobs:
       on_failure:
         <<: *put-test-failed-status
         put: directdebit-frontend-pull-request
+    - <<: *put-test-success-status
+      put: directdebit-frontend-pull-request
+    - <<: *put-card-e2e-pending-status
+      put: directdebit-frontend-pull-request
     - <<: *build-docker-image
       params:
         app_name: directdebit-frontend
@@ -1795,7 +1811,7 @@ jobs:
       on_failure:
         <<: *put-card-e2e-failed-status
         put: directdebit-frontend-pull-request
-    - <<: *put-test-success-status
+    - <<: *put-card-e2e-success-status
       put: directdebit-frontend-pull-request
 
   - <<: *job-definition
