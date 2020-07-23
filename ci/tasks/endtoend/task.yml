@@ -44,7 +44,12 @@ run:
 
     function cleanup {
       echo "CLEANUP TRIGGERED"
-      docker stop $(docker ps -q)
+      running_containers=$(docker ps -q)
+      for container in $running_containers; do
+        echo "stopping ${container}"
+        docker stop $container
+      done
+
       clean_docker
       stop_docker
       echo "CLEANUP COMPLETE"
