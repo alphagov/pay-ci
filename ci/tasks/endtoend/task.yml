@@ -101,7 +101,6 @@ run:
       ;;
     esac
 
-
-
+    docker-compose down
 
     exit 0
