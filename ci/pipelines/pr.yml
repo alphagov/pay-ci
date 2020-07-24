@@ -391,6 +391,10 @@ groups:
     jobs:
       - java-commons-test
 
+  - name: JS-Commons
+    jobs:
+      - pay-js-commons-test
+
   - name: Update-Pipeline
     jobs:
       - update-pr-ci-pipeline
@@ -668,6 +672,12 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-products
+
+  - <<: *pull-request
+    name: pay-js-commons-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-js-commons
 
   - <<: *pull-request
     name: omnibus-pull-request
@@ -1813,6 +1823,21 @@ jobs:
         put: directdebit-frontend-pull-request
     - <<: *put-card-e2e-success-status
       put: directdebit-frontend-pull-request
+
+  - <<: *job-definition
+    name: pay-js-commons-test
+    plan:
+    - <<: *get-pull-request
+      resource: pay-js-commons-pull-request
+    - <<: *get-omnibus
+    - <<: *put-test-pending-status
+      put: pay-js-commons-pull-request
+    - <<: *node-test
+      on_failure:
+        <<: *put-test-failed-status
+        put: pay-js-commons-pull-request
+    - <<: *put-test-success-status
+      put: pay-js-commons-pull-request
 
   - <<: *job-definition
     name: omnibus-pr-test
