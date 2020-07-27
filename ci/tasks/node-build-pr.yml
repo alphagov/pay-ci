@@ -25,8 +25,14 @@ run:
       echo "node: $(node --version)"
       echo "npm: $(npm --version)"
 
+      touch /etc/apt/sources.list.d/backports.list
+      echo "deb http://deb.debian.org/debian stretch-backports main" >> /etc/apt/sources.list.d/backports.list
+
       apt-get update
       apt-get -y install ca-certificates wget python libgtk2.0-0 libgtk-3-0 libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
+
+      apt-get update
+      apt-get -y -t stretch-backports install git 
 
       if [[ -f "$(pwd)/scripts/generate-dev-environment.js" ]]; then
         node $(pwd)/scripts/generate-dev-environment.js local
