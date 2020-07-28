@@ -1814,7 +1814,7 @@ jobs:
     - <<: *put-card-e2e-success-status
       put: directdebit-frontend-pull-request
 
- - <<: *job-definition
+  - <<: *job-definition
     name: omnibus-pr-test
     plan:
     - <<: *get-pull-request
