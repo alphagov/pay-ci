@@ -148,24 +148,6 @@ definitions:
       path: src
       status: success
       context: products e2e tests
-  - &put-directdebit-e2e-pending-status
-    put: updateThisValue
-    params:
-      path: src
-      status: pending
-      context: directdebit e2e tests
-  - &put-directdebit-e2e-failed-status
-    put: updateThisValue
-    params:
-      path: src
-      status: failure
-      context: directdebit e2e tests
-  - &put-directdebit-e2e-success-status
-    put: updateThisValue
-    params:
-      path: src
-      status: success
-      context: directdebit e2e tests
   - &node-test
     task: test
     file: omnibus/ci/tasks/node-build-pr.yml
@@ -240,14 +222,6 @@ definitions:
             format: oci
         - get: docker/cardid
           resource: cardid
-          params:
-            format: oci
-        - get: docker/directdebit-connector
-          resource: directdebit-connector
-          params:
-            format: oci
-        - get: docker/directdebit-frontend
-          resource: directdebit-frontend
           params:
             format: oci
         - get: docker/endtoend
@@ -362,7 +336,6 @@ groups:
       - directdebit-connector-unit-test
       - directdebit-connector-integration-test
       - directdebit-connector-pact-provider-test
-      - directdebit-connector-directdebit-e2e
 
   - name: Products-UI
     jobs:
@@ -523,18 +496,6 @@ resources:
     source:
       <<: *image-source
       repository: govukpay/selfservice
-
-  - <<: *image
-    name: directdebit-connector
-    source:
-      <<: *image-source
-      repository: govukpay/directdebit-connector
-
-  - <<: *image
-    name: directdebit-frontend
-    source:
-      <<: *image-source
-      repository: govukpay/directdebit-frontend
 
   - <<: *image
     name: reverse_proxy
@@ -1518,32 +1479,6 @@ jobs:
       put: directdebit-connector-pull-request
 
   - <<: *job-definition
-    name: directdebit-connector-directdebit-e2e
-    plan:
-      - <<: *get-pull-request
-        resource: directdebit-connector-pull-request
-        passed: [directdebit-connector-unit-test]
-      - <<: *get-omnibus
-      - <<: *put-card-e2e-pending-status
-        put: directdebit-connector-pull-request
-      - <<: *run-java-package
-      - <<: *build-docker-image
-        params:
-          app_name: directdebit-connector
-      - <<: *get-all-docker-images
-      - <<: *run-e2e
-        input_mapping:
-          docker/directdebit-connector: local_image
-        params:
-          app_name: directdebitconnector
-          test_type: directdebit
-        on_failure:
-          <<: *put-card-e2e-failed-status
-          put: directdebit-connector-pull-request
-      - <<: *put-card-e2e-success-status
-        put: directdebit-connector-pull-request
-
-  - <<: *job-definition
     name: card-frontend-test
     plan:
     - <<: *get-pull-request
@@ -1802,17 +1737,6 @@ jobs:
       params:
         app_name: directdebit-frontend
     - <<: *get-all-docker-images
-    - <<: *run-e2e
-      input_mapping:
-        docker/directdebit-frontend: local_image
-      params:
-        app_name: directdebitfrontend
-        test_type: directdebit
-      on_failure:
-        <<: *put-card-e2e-failed-status
-        put: directdebit-frontend-pull-request
-    - <<: *put-card-e2e-success-status
-      put: directdebit-frontend-pull-request
 
   - <<: *job-definition
     name: omnibus-pr-test
