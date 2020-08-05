@@ -372,6 +372,10 @@ groups:
     jobs:
       - omnibus-pr-test
 
+  - name: Stubs
+    jobs: 
+      - stubs-test
+
 resource_types:
   - name: pull-request
     type: registry-image
@@ -629,6 +633,12 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-products
+
+  - <<: *pull-request
+    name: stubs-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-stubs
 
   - <<: *pull-request
     name: omnibus-pull-request
@@ -1769,6 +1779,21 @@ jobs:
         put: omnibus-pull-request
     - <<: *put-test-success-status
       put: omnibus-pull-request
+
+  - <<: *job-definition
+    name: stubs-test
+    plan:
+    - <<: *get-pull-request
+      resource: stubs-pull-request
+    - <<: *get-omnibus
+    - <<: *put-test-pending-status
+      put: stubs-pull-request
+    - <<: *node-test
+      on_failure:
+        <<: *put-test-failed-status
+        put: stubs-pull-request
+    - <<: *put-test-success-status
+      put: stubs-pull-request
 
   - name: update-pr-ci-pipeline
     plan:
