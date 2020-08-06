@@ -15,7 +15,7 @@ log_level: WARNING
 memory: 1G
 metrics_host: localhost
 metrics_port: '8092'
-notify_base_url: http://stubs-((space)).apps.internal:8080/notify
+notify_base_url: https://api.notifications.service.gov.uk
 run_migration: 'true'
 space: staging
 support_url: ''
