@@ -24,7 +24,7 @@ credentials = {
       apple_pay_key = "apple_pay/staging/payment-processing-private-key"
       smartpay_notification_password = "smartpay/staging/password"
       smartpay_notification_user = "smartpay/staging/username"
-      notify_api_key = "notify/api_key/deploy/staging.connector.notify_api_key"
+      notify_api_key = "notify/api_key/paas/staging/connector.notify_api_key"
       stripe_auth_token = "stripe/staging/test/account-api-key"
       stripe_auth_live_token = "stripe/staging/test/account-api-key"
       stripe_webhook_sign_secret = "stripe/staging/test/webhook-secret"
@@ -124,8 +124,9 @@ credentials = {
   adminusers = {
     pay_low_pass_secrets = {
       sentry_dsn = "sentry/adminusers_dsn"
-      notify_api_key = "notify/api_key/deploy/staging.adminusers.notify_api_key"
+      notify_api_key = "notify/api_key/paas/staging/adminusers.notify_api_key"
       notify_direct_debit_api_key = "notify/api_key/deploy/staging.adminusers.notify_direct_debit_api_key"
+      notify_invite_service_email_template_id = "notify/templates/paas/staging/adminusers.notify_invite_service_email_template_id"
     }
     static_values = {
     }
