@@ -58,6 +58,8 @@ definitions:
       file: zipped_build/*.tar.gz
   - &put-integration-test-pending-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: pending
@@ -69,12 +71,16 @@ definitions:
     on_failure:
       &put-integration-test-failed-status
       put: updateThisValue
+      get_params:
+        skip_download: true
       params:
         path: src
         status: failure
         context: integration tests
   - &put-integration-test-success-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: success
@@ -87,6 +93,8 @@ definitions:
       filename: image-updateThisValue-*.tar
   - &put-card-e2e-pending-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: pending
@@ -102,48 +110,64 @@ definitions:
       test_type: updateThisValue
   - &put-card-e2e-failed-status
     put: card-connector-pull-request
+    get_params:
+      skip_download: true
     params:
       path: src
       status: failure
       context: card e2e tests
   - &put-card-e2e-success-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: success
       context: card e2e tests
   - &put-test-failed-status
     put: card-connector-pull-request
+    get_params:
+      skip_download: true
     params:
       path: src
       status: failure
       context: test
   - &put-test-success-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: success
       context: test
   - &put-test-pending-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: pending
       context: test
   - &put-products-e2e-pending-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: pending
       context: products e2e tests
   - &put-products-e2e-failed-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: failure
       context: products e2e tests
   - &put-products-e2e-success-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: success
@@ -168,6 +192,8 @@ definitions:
       app_name: updateThisValue
   - &put-node-test-failure
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: failure
@@ -242,6 +268,8 @@ definitions:
             format: oci
   - &put-pact-provider-pending-status
     put: updateThisValue
+    get_params:
+      skip_download: true
     params:
       path: src
       status: pending
