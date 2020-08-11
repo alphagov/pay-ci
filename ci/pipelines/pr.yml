@@ -9,12 +9,10 @@ definitions:
     resource: updateThisValue
     trigger: true
     version: every
-    name: src
   - &get-omnibus
     get: omnibus
     resource: omnibus
     trigger: false
-    name: omnibus
   - &put-unit-tests-pending-status
     put: updateThisValue
     params:
