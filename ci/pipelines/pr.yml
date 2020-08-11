@@ -9,6 +9,8 @@ definitions:
     resource: updateThisValue
     trigger: true
     version: every
+    params:
+      integration_tool: checkout
   - &get-omnibus
     get: omnibus
     resource: omnibus
