@@ -29,6 +29,7 @@ credentials = {
       stripe_auth_live_token = "stripe/staging/test/account-api-key"
       stripe_webhook_sign_secret = "stripe/staging/test/webhook-secret"
       stripe_webhook_live_sign_secret = "stripe/staging/test/webhook-secret"
+      notify_payment_receipt_email_template_id = "notify/templates/paas/staging/connector.notify_payment_receipt_email_template_id"
     }
     static_values = {
       secure_worldpay_notification_domain = "london.cloudapps.digital"
@@ -41,7 +42,6 @@ credentials = {
       epdq_test_url = "https://example.com/stub/epdq"
       sqs_enabled = "true"
       notify_base_url = "https://example.com/notify"
-      notify_receipt_email_template_id = "email-template-id"
       notify_refund_email_template_id = "email-refund-issued-template-id"
       stripe_transaction_fee_percentage = "0.1"
       card_connector_analytics_tracking_id = "testing-123"
@@ -127,6 +127,16 @@ credentials = {
       notify_api_key = "notify/api_key/paas/staging/adminusers.notify_api_key"
       notify_direct_debit_api_key = "notify/api_key/deploy/staging.adminusers.notify_direct_debit_api_key"
       notify_invite_service_email_template_id = "notify/templates/paas/staging/adminusers.notify_invite_service_email_template_id"
+      notify_change_sign_in_2fa_to_sms_otp_sms_template_id = "notify/templates/paas/staging/adminusers.notify_change_sign_in_2fa_to_sms_otp_sms_template_id"
+      notify_create_user_in_response_to_invitation_to_service_otp_sms_template_id = "notify/templates/paas/staging/adminusers.notify_create_user_in_response_to_invitation_to_service_otp_sms_template_id"
+      notify_forgotten_password_email_template_id = "notify/templates/paas/staging/adminusers.notify_forgotten_password_email_template_id"
+      notify_invite_service_email_template_id = "notify/templates/paas/staging/adminusers.notify_invite_service_email_template_id"
+      notify_invite_service_user_disabled_email_template_id = "notify/templates/paas/staging/adminusers.notify_invite_service_user_disabled_email_template_id"
+      notify_invite_service_user_exits_email_template_id = "notify/templates/paas/staging/adminusers.notify_invite_service_user_exits_email_template_id"
+      notify_invite_user_existing_email_template_id = "notify/templates/paas/staging/adminusers.notify_invite_user_existing_email_template_id"
+      notify_live_account_created_email_template_id = "notify/templates/paas/staging/adminusers.notify_live_account_created_email_template_id"
+      notify_self_initiated_create_user_and_service_otp_sms_template_id = "notify/templates/paas/staging/adminusers.notify_self_initiated_create_user_and_service_otp_sms_template_id"
+      notify_sign_in_otp_template_id = "notify/templates/paas/staging/adminusers.notify_sign_in_otp_template_id"
     }
     static_values = {
     }
