@@ -30,6 +30,7 @@ credentials = {
       stripe_webhook_sign_secret = "stripe/staging/test/webhook-secret"
       stripe_webhook_live_sign_secret = "stripe/staging/test/webhook-secret"
       notify_payment_receipt_email_template_id = "notify/templates/paas/staging/connector.notify_payment_receipt_email_template_id"
+      notify_refund_email_template_id = "notify/templates/paas/staging/connector.notify_refund_issued_template_id"
     }
     static_values = {
       secure_worldpay_notification_domain = "london.cloudapps.digital"
@@ -42,7 +43,6 @@ credentials = {
       epdq_test_url = "https://example.com/stub/epdq"
       sqs_enabled = "true"
       notify_base_url = "https://example.com/notify"
-      notify_refund_email_template_id = "email-refund-issued-template-id"
       stripe_transaction_fee_percentage = "0.1"
       card_connector_analytics_tracking_id = "testing-123"
     }
