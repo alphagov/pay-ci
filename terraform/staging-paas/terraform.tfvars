@@ -42,7 +42,6 @@ credentials = {
       epdq_live_url = "https://example.com/stub/epdq"
       epdq_test_url = "https://example.com/stub/epdq"
       sqs_enabled = "true"
-      notify_base_url = "https://example.com/notify"
       stripe_transaction_fee_percentage = "0.1"
       card_connector_analytics_tracking_id = "testing-123"
     }
