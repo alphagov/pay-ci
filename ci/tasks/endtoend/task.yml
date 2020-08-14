@@ -28,6 +28,8 @@ inputs:
 params:
   app_name:
   test_type:
+  END_TO_END_JAVA_OPTS: '-Xms1G -Xmx2G'
+  END_TO_END_MEM_LIMIT: '5G'
 
 run:
   path: bash
