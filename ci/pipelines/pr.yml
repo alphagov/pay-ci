@@ -732,6 +732,7 @@ jobs:
 
   - <<: *job-definition
     name: card-connector-card-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: card-connector-pull-request
@@ -758,6 +759,7 @@ jobs:
 
   - <<: *job-definition
     name: endtoend-products-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: endtoend-pull-request
@@ -783,6 +785,7 @@ jobs:
 
   - <<: *job-definition
     name: endtoend-card-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: endtoend-pull-request
@@ -843,6 +846,7 @@ jobs:
 
   - <<: *job-definition
     name: publicapi-card-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
@@ -911,6 +915,7 @@ jobs:
 
   - <<: *job-definition
     name: publicapi-products-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
@@ -1039,6 +1044,7 @@ jobs:
 
   - <<: *job-definition
     name: adminusers-card-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: adminusers-pull-request
@@ -1100,6 +1106,7 @@ jobs:
 
   - <<: *job-definition
     name: cardid-card-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: cardid-pull-request
@@ -1294,6 +1301,7 @@ jobs:
 
   - <<: *job-definition
     name: ledger-card-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: ledger-pull-request
@@ -1355,6 +1363,7 @@ jobs:
 
   - <<: *job-definition
     name: publicauth-card-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: publicauth-pull-request
@@ -1437,6 +1446,7 @@ jobs:
 
   - <<: *job-definition
     name: products-products-e2e
+    serial: true
     plan:
       - <<: *get-pull-request
         resource: products-pull-request
