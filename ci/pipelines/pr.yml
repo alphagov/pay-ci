@@ -736,6 +736,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: card-connector-pull-request
+        trigger: false
         passed: [card-connector-unit-test]
       - <<: *get-omnibus
       - <<: *put-card-e2e-pending-status
@@ -850,6 +851,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
+        trigger: false
         passed: [publicapi-unit-test]
       - <<: *get-omnibus
       - <<: *put-card-e2e-pending-status
@@ -919,6 +921,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
+        trigger: false
         passed: [publicapi-unit-test]
       - <<: *get-omnibus
       - <<: *put-products-e2e-pending-status
@@ -1111,6 +1114,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: cardid-pull-request
+        trigger: false
       - <<: *get-omnibus
       - <<: *put-card-e2e-pending-status
         put: cardid-pull-request
@@ -1273,7 +1277,7 @@ jobs:
     - <<: *publish-pacts
       params:
         consumer_name: ledger
-        
+
   - <<: *job-definition
     name: ledger-pact-provider-verification
     plan:
@@ -1306,6 +1310,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: ledger-pull-request
+        trigger: false
         passed: [ledger-unit-test]
       - <<: *get-omnibus
       - <<: *put-card-e2e-pending-status
@@ -1368,6 +1373,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: publicauth-pull-request
+        trigger: false
         passed: [publicauth-unit-test]
       - <<: *get-omnibus
       - <<: *put-card-e2e-pending-status
@@ -1424,7 +1430,7 @@ jobs:
     - <<: *put-integration-test-success-status
       put: products-pull-request
 
-      
+
   - <<: *job-definition
     name: products-pact-provider-test
     plan:
@@ -1451,6 +1457,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: products-pull-request
+        trigger: false
         passed: [products-unit-test]
       - <<: *get-omnibus
       - <<: *put-products-e2e-pending-status
