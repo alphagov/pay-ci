@@ -1047,6 +1047,7 @@ jobs:
     serial: true
     plan:
       - <<: *get-pull-request
+        trigger: false
         resource: adminusers-pull-request
         passed: [adminusers-unit-test]
       - <<: *get-omnibus
