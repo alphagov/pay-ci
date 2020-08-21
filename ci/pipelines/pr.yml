@@ -199,6 +199,11 @@ definitions:
   - &node-test
     task: test
     file: omnibus/ci/tasks/node-build-pr.yml
+  - &node-build
+    task: build
+    file: omnibus/ci/tasks/node-build-pr.yml
+    params:
+      skip_tests: true
   - x-pact-credentials: &pact-credentials
       pact-broker-username: ((pact-broker-username))
       pact-broker-password: ((pact-broker-password))
@@ -417,6 +422,7 @@ groups:
   - name: Selfservice
     jobs:
       - selfservice-test
+      - selfservice-card-e2e
       - selfservice-pact-provider-verification
       - record-selfservice-build-time
 
@@ -1734,8 +1740,20 @@ jobs:
         consumer_name: selfservice
     - <<: *put-test-success-status
       put: selfservice-pull-request
+
+  - <<: *job-definition
+    name: selfservice-card-e2e
+    serial: true
+    plan:
+    - <<: *get-pull-request
+      resource: selfservice-pull-request
+      trigger: false
     - <<: *put-card-e2e-pending-status
       put: selfservice-pull-request
+    - <<: *node-build
+      on_failure:
+        <<: *put-card-e2e-failed-status
+        put: selfservice-pull-request
     - <<: *build-docker-image
       params:
         app_name: selfservice
