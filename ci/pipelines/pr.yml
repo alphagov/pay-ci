@@ -406,12 +406,14 @@ groups:
   - name: Products-UI
     jobs:
       - products-ui-test
+      - products-ui-products-e2e
       - products-ui-pact-provider-verification
       - record-products-ui-build-time
 
   - name: Card-Frontend
     jobs:
       - card-frontend-test
+      - card-frontend-card-e2e
       - card-frontend-pact-provider-verification
       - record-frontend-build-time
 
@@ -1673,8 +1675,21 @@ jobs:
         consumer_name: frontend
     - <<: *put-test-success-status
       put: card-frontend-pull-request
+
+  - <<: *job-definition
+    name: card-frontend-card-e2e
+    serial: true
+    plan:
+    - <<: *get-omnibus
+    - <<: *get-pull-request
+      resource: card-frontend-pull-request
+      trigger: false
     - <<: *put-card-e2e-pending-status
       put: card-frontend-pull-request
+    - <<: *node-build
+      on_failure:
+        <<: *put-card-e2e-failed-status
+        put: card-frontend-pull-request
     - <<: *build-docker-image
       params:
         app_name: frontend
@@ -1879,8 +1894,21 @@ jobs:
         consumer_name: products-ui
     - <<: *put-test-success-status
       put: products-ui-pull-request
+
+  - <<: *job-definition
+    name: products-ui-products-e2e
+    serial: true
+    plan:
+    - <<: *get-omnibus
+    - <<: *get-pull-request
+      resource: products-ui-pull-request
+      trigger: false
     - <<: *put-products-e2e-pending-status
       put: products-ui-pull-request
+    - <<: *node-build
+      on_failure:
+        <<: *put-products-e2e-failed-status
+        put: products-ui-pull-request
     - <<: *build-docker-image
       params:
         app_name: products-ui
