@@ -1433,7 +1433,8 @@ jobs:
     - <<: *get-pull-request
       resource: ledger-pull-request
       passed: [ledger-unit-test, ledger-integration-test,
-        ledger-pact-provider-test, ledger-consumer-pact-test]
+        ledger-pact-provider-test, ledger-consumer-pact-test,
+        ledger-pact-provider-verification]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
