@@ -1746,6 +1746,7 @@ jobs:
     name: selfservice-card-e2e
     serial: true
     plan:
+    - <<: *get-omnibus
     - <<: *get-pull-request
       resource: selfservice-pull-request
       trigger: false
