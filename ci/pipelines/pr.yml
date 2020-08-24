@@ -449,6 +449,7 @@ groups:
   - name: Stubs
     jobs:
       - stubs-test
+      - record-stubs-build-time
 
 resource_types:
   - name: pull-request
@@ -2029,12 +2030,37 @@ jobs:
     - <<: *get-omnibus
     - <<: *put-test-pending-status
       put: stubs-pull-request
-    - <<: *node-test
+    - task: run tests
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: node
+            tag: 12-stretch
+        inputs:
+          - name: src
+        run:
+          path: sh
+          dir: src
+          args:
+            - -ec
+            - |
+              npm ci
+              npm test
       on_failure:
         <<: *put-test-failed-status
         put: stubs-pull-request
     - <<: *put-test-success-status
       put: stubs-pull-request
+
+  - <<: *job-definition
+    name: record-stubs-build-time
+    plan:
+    - <<: *get-pull-request
+      resource: stubs-pull-request
+      passed: [stubs-test]
+    - <<: *send-pr-build-time
 
   - name: update-pr-ci-pipeline
     plan:
