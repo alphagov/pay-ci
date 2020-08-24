@@ -2029,7 +2029,24 @@ jobs:
     - <<: *get-omnibus
     - <<: *put-test-pending-status
       put: stubs-pull-request
-    - <<: *node-test
+    - task: run tests
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: node
+            tag: 12-stretch
+        inputs:
+          - name: src
+        run:
+          path: sh
+          dir: src
+          args:
+            - -ec
+            - |
+              npm ci
+              npm test
       on_failure:
         <<: *put-test-failed-status
         put: stubs-pull-request
