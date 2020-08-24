@@ -449,6 +449,7 @@ groups:
   - name: Stubs
     jobs:
       - stubs-test
+      - record-stubs-build-time
 
 resource_types:
   - name: pull-request
@@ -2052,6 +2053,14 @@ jobs:
         put: stubs-pull-request
     - <<: *put-test-success-status
       put: stubs-pull-request
+
+  - <<: *job-definition
+    name: record-stubs-build-time
+    plan:
+    - <<: *get-pull-request
+      resource: stubs-pull-request
+      passed: [stubs-test]
+    - <<: *send-pr-build-time
 
   - name: update-pr-ci-pipeline
     plan:
