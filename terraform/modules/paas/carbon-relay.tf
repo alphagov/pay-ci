@@ -8,8 +8,8 @@ resource "cloudfoundry_app" "carbon-relay" {
   stopped = true
   v3      = true
 
-  service_binding { 
-    service_instance = cloudfoundry_service_instance.cde_splunk_log_service.id
+  service_binding {
+    service_instance = cloudfoundry_service_instance.splunk_log_service.id
   }
 
   lifecycle {
@@ -28,7 +28,7 @@ resource "cloudfoundry_route" "carbon_relay" {
 }
 
 module "carbon_relay_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.carbon_relay_credentials, "pay_low_pass_secrets")
 }
 
