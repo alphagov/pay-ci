@@ -8,8 +8,8 @@ resource "cloudfoundry_app" "metric_exporter" {
   stopped = true
   v3      = true
 
-  service_binding { 
-    service_instance = cloudfoundry_service_instance.cde_splunk_log_service.id
+  service_binding {
+    service_instance = cloudfoundry_service_instance.splunk_log_service.id
   }
 
   lifecycle {
@@ -18,7 +18,7 @@ resource "cloudfoundry_app" "metric_exporter" {
 }
 
 module "metric_exporter_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.metric_exporter_credentials, "pay_low_pass_secrets")
 }
 
