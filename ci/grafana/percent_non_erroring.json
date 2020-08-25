@@ -1,0 +1,100 @@
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "datasource": "Prometheus 1",
+  "description": "Each point represents the percentage of builds not ending in error within the preceding 24 hours.",
+  "fieldConfig": {
+    "defaults": {
+      "custom": {}
+    },
+    "overrides": []
+  },
+  "fill": 1,
+  "fillGradient": 0,
+  "gridPos": {
+    "h": 18,
+    "w": 24,
+    "x": 0,
+    "y": 0
+  },
+  "hiddenSeries": false,
+  "id": 2,
+  "legend": {
+    "avg": false,
+    "current": false,
+    "max": false,
+    "min": false,
+    "show": true,
+    "total": false,
+    "values": false
+  },
+  "lines": true,
+  "linewidth": 1,
+  "nullPointMode": "connected",
+  "options": {
+    "dataLinks": []
+  },
+  "percentage": false,
+  "pointradius": 2,
+  "points": false,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "expr": "(sum(max_over_time(concourse_builds_finished{team=\"pay-dev\", status!=\"errored\"}[1h]) or vector(0)) - sum(max_over_time(concourse_builds_finished{team=\"pay-dev\", status!=\"errored\"}[1h] offset 1h) or vector(0))) / \n(sum(max_over_time(concourse_builds_finished{team=\"pay-dev\"}[1h]) or vector(0)) - sum(max_over_time(concourse_builds_finished{team=\"pay-dev\"}[1h] offset 1h) or vector(0)))\n* 100",
+      "format": "time_series",
+      "instant": false,
+      "interval": "",
+      "legendFormat": "",
+      "refId": "A"
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeRegions": [],
+  "timeShift": null,
+  "title": "% Non-erroring PR Builds in 24hrs",
+  "tooltip": {
+    "shared": true,
+    "sort": 0,
+    "value_type": "individual"
+  },
+  "transparent": true,
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "$$hashKey": "object:113",
+      "format": "short",
+      "label": "% of non-error builds",
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    },
+    {
+      "$$hashKey": "object:114",
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    }
+  ],
+  "yaxis": {
+    "align": false,
+    "alignLevel": null
+  }
+}
