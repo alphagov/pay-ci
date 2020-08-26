@@ -40,7 +40,8 @@ module "staging" {
     pass.low-pass = pass.low-pass
   }
 
-  environment         = "staging"
-  domain_name         = "gdspay.uk"
-  paas_domain         = "cloudapps.digital"
+  environment = "staging"
+  domain_name = "gdspay.uk"
+  paas_domain = "cloudapps.digital"
+  vpc_cidr    = "172.20.0.0/16"
 }
