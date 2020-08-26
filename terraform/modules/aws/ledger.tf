@@ -1,9 +1,8 @@
 resource "aws_iam_user" "ledger" {
-  name  = "ledger"
-} 
+  name = "ledger"
+}
 
-resource "aws_iam_user_group_membership" "ledger_applications_group_membership" {
-  name   = "applications_group_membership"
+resource "aws_iam_user_group_membership" "ledger_group_membership" {
   user   = aws_iam_user.ledger.name
   groups = [aws_iam_group.applications.name]
 }
