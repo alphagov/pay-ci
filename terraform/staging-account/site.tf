@@ -9,6 +9,8 @@ terraform {
 provider "aws" {
   version = "~> 2.0"
   region  = "eu-west-2"
+
+  allowed_account_ids = ["234617505259"]
 }
 
 resource "aws_s3_bucket" "tfstate" {
@@ -39,4 +41,10 @@ resource "aws_s3_bucket_public_access_block" "tfstate" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+module "cyber_security_audit_role" {
+  source = "git::https://github.com/alphagov/tech-ops//cyber-security/modules/gds_security_audit_role?ref=13f54e554b8f56f34f975447a1011a03321c92b6"
+
+  chain_account_id = "988997429095"
 }
