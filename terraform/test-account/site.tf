@@ -22,7 +22,7 @@ module "state_bucket" {
 }
 
 module "cyber_security_audit_role" {
-  source = "git::https://github.com/alphagov/tech-ops//cyber-security/modules/gds_security_audit_role?ref=13f54e554b8f56f34f975447a1011a03321c92b6"
+  source = "git::https://github.com/alphagov/tech-ops//cyber-security/modules/gds_security_audit_role?ref=720885a9769c40942ff30b32179e1fad18f2ca10"
 
   chain_account_id = "988997429095"
 }
