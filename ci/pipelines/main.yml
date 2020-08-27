@@ -1,0 +1,76 @@
+definitions:
+  - &job-definition
+    name: updateThisValue
+    serial: true
+    build_log_retention:
+      builds: 500
+
+  - &github-release-source
+    source:
+      owner: alphagov
+      access_token: ((github-access-token))
+      tag_filter: "paas_release-(.*)"
+      order_by: version
+      repository: update-this-value
+      pre_release: true
+      release: false
+
+  - &release-params
+    params:
+      name: release-info/name
+      tag: release-info/name
+      globs:
+        - build-output/*
+      commitish: src/.git/ref
+
+groups:
+  - name: card-connector
+    jobs:
+      - build-card-connector
+
+resource_types:
+  - name: pull-request
+    type: registry-image
+    source:
+      repository: teliaoss/github-pr-resource
+      tag: dev
+
+resources:
+  - name: card-connector-main
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-connector
+      branch: master
+  - name: git-card-connector-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-connector
+  - name: omnibus
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+
+jobs:
+  - <<: *job-definition
+    name: build-card-connector
+    plan:
+      - get: omnibus
+      - get: src
+        resource: card-connector-main
+        trigger: true
+      - task: calculate-release-number
+        file: omnibus/ci/tasks/calculate-release-number.yml
+      - task: build-app
+        file: omnibus/ci/tasks/maven-build.yml
+        params:
+          APP_NAME: pay-connector
+      - put: release
+        resource: git-card-connector-pre-release
+        params:
+          <<: *release-params
