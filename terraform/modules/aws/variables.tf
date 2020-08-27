@@ -23,3 +23,12 @@ variable "vpc_cidr" {
   description = "The default VPC cidr range for this environment. This may differ between environments to support VPC peering without overlapping ranges."
   default     = "172.16.0.0/16"
 }
+
+variable "subnet_reservations" {
+  type        = map
+  description = "A map of base subnets in the environment. Gaps must be equal or greater than the number of AZs in a region."
+
+  default = {
+    "rds" = 0
+  }
+}
