@@ -7,14 +7,14 @@ terraform {
 }
 
 provider "aws" {
-  version = "~> 2.0"
+  version = "~> 3.0"
   region  = "eu-west-2"
 
   allowed_account_ids = ["234617505259"]
 }
 
 provider "aws" {
-  version = "~> 2.0"
+  version = "~> 3.0"
   region  = "us-east-1"
   alias   = "us"
 

@@ -10,7 +10,7 @@ terraform {
 }
 
 provider "aws" {
-  version = "~> 2.0"
+  version = "~> 3.0"
   region  = "eu-west-1"
 
   allowed_account_ids = ["734876687119"]
