@@ -13,6 +13,12 @@ variable "paas_domain" {
   description = "PaaS domain for Cloudfront origin"
 }
 
+variable "paas_vpc_peering_name" {
+  type        = string
+  description = "The name of the vpc peering connection with PaaS"
+  default     = "pcx-0d726a5057505ab0b"
+}
+
 variable "paas_public_ips" {
   type    = list
   default = ["52.208.24.161", "52.208.1.143", "52.51.250.21"]
@@ -36,4 +42,9 @@ variable "subnet_reservations" {
   default = {
     "rds" = 0
   }
+}
+
+variable "rds_instances" {
+  type    = map
+  default = {}
 }

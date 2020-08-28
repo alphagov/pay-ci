@@ -26,7 +26,7 @@ resource "aws_db_subnet_group" "rds_subnet_group" {
   name        = "${var.environment}-rds"
   description = "${var.environment} RDS subnet group"
 
-  subnet_ids = values(aws_subnet.aws_subnet)[*].id
+  subnet_ids = values(aws_subnet.rds_subnet)[*].id
 }
 
 resource "aws_security_group" "application_rds" {
