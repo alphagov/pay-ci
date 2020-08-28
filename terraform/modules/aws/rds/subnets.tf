@@ -19,3 +19,24 @@ resource "aws_route_table_association" "rds_subnet" {
   subnet_id      = each.value.id
   route_table_id = var.route_table_id
 }
+
+resource "aws_security_group" "application_rds" {
+  name        = "${var.environment}-sg-rds"
+  description = "${var.environment} RDS database security group"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    Name = "${var.environment}-sg-rds"
+  }
+}
+
+resource "aws_security_group_rule" "permit_postgres_from_paas_to_rds" {
+  type     = "ingress"
+  protocol = "tcp"
+
+  cidr_blocks       = var.permitted_cidrs
+  security_group_id = aws_security_group.application_rds.id
+
+  from_port = 5432
+  to_port   = 5432
+}

@@ -22,3 +22,8 @@ variable "route_table_id" {
 variable "base_subnet" {
   type = number
 }
+
+variable "permitted_cidrs" {
+  type        = list(string)
+  description = "A list of CIDR blocks permitted by the RDS security group ingress rules"
+}
