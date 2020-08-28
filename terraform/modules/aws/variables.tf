@@ -18,8 +18,22 @@ variable "paas_public_ips" {
   default = ["52.208.24.161", "52.208.1.143", "52.51.250.21"]
 }
 
+variable "paas_ireland_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
+}
+
 variable "vpc_cidr" {
   type        = string
   description = "The default VPC cidr range for this environment. This may differ between environments to support VPC peering without overlapping ranges."
   default     = "172.16.0.0/16"
+}
+
+variable "subnet_reservations" {
+  type        = map
+  description = "A map of base subnets in the environment. Gaps must be equal or greater than the number of AZs in a region."
+
+  default = {
+    "rds" = 0
+  }
 }
