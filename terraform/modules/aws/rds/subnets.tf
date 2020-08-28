@@ -1,3 +1,5 @@
+data "aws_availability_zones" "available" {}
+
 // Creates a /24 subnet in each avaialbility zone starting at the provided base subnet
 resource "aws_subnet" "rds_subnet" {
   for_each = toset(data.aws_availability_zones.available.names)
