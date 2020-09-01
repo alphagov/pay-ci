@@ -47,5 +47,9 @@ module "staging" {
   environment = "staging"
   domain_name = "gdspay.uk"
   paas_domain = "cloudapps.digital"
-  vpc_cidr    = "172.20.0.0/16"
+  vpc_cidr    = "172.16.0.0/16"
+
+  subnet_reservations = {
+    "rds" = 36
+  }
 }

@@ -6,7 +6,7 @@ resource "aws_subnet" "rds_subnet" {
 
   vpc_id            = var.vpc_id
   availability_zone = each.value
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, index(data.aws_availability_zones.available.names, each.value))
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, index(data.aws_availability_zones.available.names, each.value) + var.base_subnet)
 
   map_public_ip_on_launch = false
 
