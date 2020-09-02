@@ -19,7 +19,7 @@ provider "cloudfoundry" {
 
 provider "aws" {
   version = "~> 3.0"
-  region  = "eu-west-2"
+  region  = "eu-west-1"
 }
 
 data "aws_region" "current" {}
