@@ -727,6 +727,7 @@ resources:
 jobs:
   - <<: *job-definition
     name: card-connector-unit-test
+    serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
       resource: card-connector-pull-request
@@ -744,6 +745,7 @@ jobs:
 
   - <<: *job-definition
     name: card-connector-integration-test
+    serial_groups: [integration_test]
     plan:
     - <<: *get-pull-request
       resource: card-connector-pull-request
@@ -759,6 +761,7 @@ jobs:
 
   - <<: *job-definition
     name: card-connector-pact-provider-test
+    serial_groups: [pact_test]
     plan:
     - <<: *get-pull-request
       resource: card-connector-pull-request
@@ -779,7 +782,7 @@ jobs:
 
   - <<: *job-definition
     name: card-connector-card-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         resource: card-connector-pull-request
@@ -816,7 +819,7 @@ jobs:
 
   - <<: *job-definition
     name: endtoend-products-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         resource: endtoend-pull-request
@@ -842,7 +845,7 @@ jobs:
 
   - <<: *job-definition
     name: endtoend-card-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         resource: endtoend-pull-request
@@ -876,6 +879,7 @@ jobs:
 
   - <<: *job-definition
     name: publicapi-unit-test
+    serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
       resource: publicapi-pull-request
@@ -893,6 +897,7 @@ jobs:
 
   - <<: *job-definition
     name: publicapi-integration-test
+    serial_groups: [integration_test]
     plan:
     - <<: *get-pull-request
       resource: publicapi-pull-request
@@ -911,7 +916,7 @@ jobs:
 
   - <<: *job-definition
     name: publicapi-card-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
@@ -938,6 +943,7 @@ jobs:
         put: publicapi-pull-request
 
   - name: publicapi-pact-provider-verification
+    serial_groups: [pact_test]
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
@@ -981,7 +987,7 @@ jobs:
 
   - <<: *job-definition
     name: publicapi-products-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
@@ -1073,6 +1079,7 @@ jobs:
 
   - <<: *job-definition
     name: adminusers-unit-test
+    serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
       resource: adminusers-pull-request
@@ -1090,6 +1097,7 @@ jobs:
 
   - <<: *job-definition
     name: adminusers-integration-test
+    serial_groups: [integration_test]
     plan:
     - <<: *get-pull-request
       resource: adminusers-pull-request
@@ -1108,6 +1116,7 @@ jobs:
 
   - <<: *job-definition
     name: adminusers-pact-provider-test
+    serial_groups: [pact_test]
     plan:
     - <<: *get-pull-request
       resource: adminusers-pull-request
@@ -1128,7 +1137,7 @@ jobs:
 
   - <<: *job-definition
     name: adminusers-card-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         trigger: false
@@ -1165,6 +1174,7 @@ jobs:
 
   - <<: *job-definition
     name: cardid-unit-test
+    serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
       resource: cardid-pull-request
@@ -1182,6 +1192,7 @@ jobs:
 
   - <<: *job-definition
     name: cardid-integration-test
+    serial_groups: [integration_test]
     plan:
     - <<: *get-pull-request
       resource: cardid-pull-request
@@ -1200,7 +1211,7 @@ jobs:
 
   - <<: *job-definition
     name: cardid-card-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         resource: cardid-pull-request
@@ -1269,6 +1280,7 @@ jobs:
 
   - <<: *job-definition
     name: ledger-unit-test
+    serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
       resource: ledger-pull-request
@@ -1286,6 +1298,7 @@ jobs:
 
   - <<: *job-definition
     name: ledger-integration-test
+    serial_groups: [integration_test]
     plan:
     - <<: *get-pull-request
       resource: ledger-pull-request
@@ -1305,6 +1318,7 @@ jobs:
       
   - <<: *job-definition
     name: ledger-pact-provider-test
+    serial_groups: [pact_test]
     plan:
     - <<: *get-pull-request
       resource: ledger-pull-request
@@ -1378,6 +1392,7 @@ jobs:
 
   - <<: *job-definition
     name: ledger-pact-provider-verification
+    serial_groups: [pact_test]
     plan:
       - <<: *get-omnibus
       - <<: *get-pull-request
@@ -1404,7 +1419,7 @@ jobs:
 
   - <<: *job-definition
     name: ledger-card-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         resource: ledger-pull-request
@@ -1442,6 +1457,7 @@ jobs:
 
   - <<: *job-definition
     name: publicauth-unit-test
+    serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
       resource: publicauth-pull-request
@@ -1459,6 +1475,7 @@ jobs:
 
   - <<: *job-definition
     name: publicauth-integration-test
+    serial_groups: [integration_test]
     plan:
     - <<: *get-pull-request
       resource: publicauth-pull-request
@@ -1477,7 +1494,7 @@ jobs:
 
   - <<: *job-definition
     name: publicauth-card-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         resource: publicauth-pull-request
@@ -1513,6 +1530,7 @@ jobs:
 
   - <<: *job-definition
     name: products-unit-test
+    serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
       resource: products-pull-request
@@ -1530,6 +1548,7 @@ jobs:
 
   - <<: *job-definition
     name: products-integration-test
+    serial_groups: [integration_test]
     plan:
     - <<: *get-pull-request
       resource: products-pull-request
@@ -1549,6 +1568,7 @@ jobs:
 
   - <<: *job-definition
     name: products-pact-provider-test
+    serial_groups: [pact_test]
     plan:
     - <<: *get-pull-request
       resource: products-pull-request
@@ -1569,7 +1589,7 @@ jobs:
 
   - <<: *job-definition
     name: products-products-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
       - <<: *get-pull-request
         resource: products-pull-request
@@ -1606,6 +1626,7 @@ jobs:
 
   - <<: *job-definition
     name: directdebit-connector-unit-test
+    serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
       resource: directdebit-connector-pull-request
@@ -1623,6 +1644,7 @@ jobs:
 
   - <<: *job-definition
     name: directdebit-connector-integration-test
+    serial_groups: [integration_test]
     plan:
     - <<: *get-pull-request
       resource: directdebit-connector-pull-request
@@ -1641,6 +1663,7 @@ jobs:
       
   - <<: *job-definition
     name: directdebit-connector-pact-provider-test
+    serial_groups: [pact_test]
     plan:
     - <<: *get-pull-request
       resource: directdebit-connector-pull-request
@@ -1661,6 +1684,7 @@ jobs:
 
   - <<: *job-definition
     name: card-frontend-test
+    serial_groups: [node_test]
     plan:
     - <<: *get-pull-request
       resource: card-frontend-pull-request
@@ -1679,7 +1703,7 @@ jobs:
 
   - <<: *job-definition
     name: card-frontend-card-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
     - <<: *get-omnibus
     - <<: *get-pull-request
@@ -1708,6 +1732,7 @@ jobs:
       put: card-frontend-pull-request
 
   - name: card-frontend-pact-provider-verification
+    serial_groups: [pact_test]
     plan:
     - <<: *get-omnibus
     - <<: *get-pull-request
@@ -1742,6 +1767,7 @@ jobs:
 
   - <<: *job-definition
     name: selfservice-test
+    serial_groups: [node_test]
     plan:
     - <<: *get-pull-request
       resource: selfservice-pull-request
@@ -1760,7 +1786,7 @@ jobs:
 
   - <<: *job-definition
     name: selfservice-card-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
     - <<: *get-omnibus
     - <<: *get-pull-request
@@ -1790,6 +1816,7 @@ jobs:
 
   - <<: *job-definition
     name: selfservice-pact-provider-verification
+    serial_groups: [pact_test]
     plan:
     - <<: *get-pull-request
       resource: selfservice-pull-request
@@ -1880,6 +1907,7 @@ jobs:
 
   - <<: *job-definition
     name: products-ui-test
+    serial_groups: [node_test]
     plan:
     - <<: *get-pull-request
       resource: products-ui-pull-request
@@ -1898,7 +1926,7 @@ jobs:
 
   - <<: *job-definition
     name: products-ui-products-e2e
-    serial: true
+    serial_groups: [e2e_test]
     plan:
     - <<: *get-omnibus
     - <<: *get-pull-request
@@ -1928,6 +1956,7 @@ jobs:
 
   - <<: *job-definition
     name: products-ui-pact-provider-verification
+    serial_groups: [pact_test]
     plan:
     - <<: *get-omnibus
     - <<: *get-pull-request
@@ -1971,6 +2000,7 @@ jobs:
 
   - <<: *job-definition
     name: directdebit-frontend-test
+    serial_groups: [node_test]
     plan:
     - <<: *get-pull-request
       resource: directdebit-frontend-pull-request
