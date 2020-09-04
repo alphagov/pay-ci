@@ -35,5 +35,5 @@ module "publicauth_credentials" {
 resource "cloudfoundry_user_provided_service" "publicauth_secret_service" {
   name        = "publicauth-secret-service"
   space       = data.cloudfoundry_space.space.id
-  credentials = merge(module.publicauth_credentials.secrets, lookup(local.publicauth_credentials, "static_values"))
+  credentials = merge(module.publicauth_credentials.secrets, lookup(local.publicauth_credentials, "static_values"), { db_host = var.rds_host_names["publicauth"].address })
 }

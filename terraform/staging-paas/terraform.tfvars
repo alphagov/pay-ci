@@ -58,12 +58,15 @@ credentials = {
   }
   publicauth = {
     pay_low_pass_secrets = {
-      sentry_dsn = "sentry/publicauth_dsn"
+      sentry_dsn  = "sentry/publicauth_dsn"
+      db_password = "aws/paas/staging/rds/application_users/publicauth/publicauth1"
     }
     static_values = {
       // @todo move these to secret store (placeholder for now)
       token_db_bcrypt_salt  = "$2a$12$ZqrGf7v9uNXR6htsfz4k2u"
       token_api_hmac_secret = "something"
+      db_user               = "publicauth1"
+      db_name               = "publicauth"
     }
   }
   card_frontend = {
@@ -100,17 +103,23 @@ credentials = {
       aws_access_key = "aws/paas/staging/iam/ledger/access_key"
       aws_secret_key = "aws/paas/staging/iam/ledger/secret_key"
       sentry_dsn     = "sentry/ledger_dsn"
+      db_password    = "aws/paas/staging/rds/application_users/ledger/ledger"
     }
     static_values = {
+      db_user = "ledger"
+      db_name = "ledger"
     }
   }
   products = {
     pay_low_pass_secrets = {
-      sentry_dsn = "sentry/products_dsn"
+      sentry_dsn  = "sentry/products_dsn"
+      db_password = "aws/paas/staging/rds/application_users/products/products"
     }
     static_values = {
       // @todo add this placeholder to secrets
       products_api_token = "something"
+      db_user            = "products"
+      db_name            = "products"
     }
   }
   products_ui = {
@@ -139,8 +148,11 @@ credentials = {
       notify_live_account_created_email_template_id                               = "notify/templates/paas/staging/adminusers.notify_live_account_created_email_template_id"
       notify_self_initiated_create_user_and_service_otp_sms_template_id           = "notify/templates/paas/staging/adminusers.notify_self_initiated_create_user_and_service_otp_sms_template_id"
       notify_sign_in_otp_template_id                                              = "notify/templates/paas/staging/adminusers.notify_sign_in_otp_template_id"
+      db_password                                                                 = "aws/paas/staging/rds/application_users/adminusers/adminusers1"
     }
     static_values = {
+      db_user = "adminusers1"
+      db_name = "adminusers"
     }
   }
   directdebit_frontend = {

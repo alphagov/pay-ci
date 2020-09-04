@@ -35,5 +35,5 @@ module "adminusers_credentials" {
 resource "cloudfoundry_user_provided_service" "adminusers_secret_service" {
   name        = "adminusers-secret-service"
   space       = data.cloudfoundry_space.space.id
-  credentials = merge(module.adminusers_credentials.secrets, lookup(local.adminusers_credentials, "static_values"))
+  credentials = merge(module.adminusers_credentials.secrets, lookup(local.adminusers_credentials, "static_values"), { db_host = var.rds_host_names["adminusers"].address })
 }
