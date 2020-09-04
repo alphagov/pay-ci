@@ -33,7 +33,7 @@ resource "aws_db_instance" "postgres" {
   password            = "data.db_passwords.${each.key}"
 
   performance_insights_enabled    = true
-  performance_insights_kms_key_id = data.aws_kms_alias.rds.target_key_id
+  performance_insights_kms_key_id = data.aws_kms_alias.rds.target_key_arn
 
   vpc_security_group_ids = [aws_security_group.application_rds.id]
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
