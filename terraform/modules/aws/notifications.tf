@@ -47,7 +47,7 @@ resource "aws_cloudfront_distribution" "notifications" {
 
   origin {
     origin_id   = "paas"
-    domain_name = "${var.paas_domain}"
+    domain_name = var.paas_domain
 
     custom_origin_config {
       http_port              = 80
@@ -73,7 +73,7 @@ resource "aws_cloudfront_distribution" "notifications" {
 }
 
 module notifications_waf_acl {
-  source          = "./waf_v2_acl" 
+  source          = "./waf_v2_acl"
   name            = "notifications-${var.environment}"
   description     = "Notifications ACL ${var.environment}"
   log_destination = module.waf_logging.kinesis_stream_id

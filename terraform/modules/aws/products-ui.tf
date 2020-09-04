@@ -47,7 +47,7 @@ resource "aws_cloudfront_distribution" "products_ui" {
 
   origin {
     origin_id   = "paas"
-    domain_name = "${var.paas_domain}"
+    domain_name = var.paas_domain
 
     custom_origin_config {
       http_port              = 80
@@ -73,7 +73,7 @@ resource "aws_cloudfront_distribution" "products_ui" {
 }
 
 module products_ui_waf_acl {
-  source          = "./waf_v2_acl" 
+  source          = "./waf_v2_acl"
   name            = "products-ui-${var.environment}"
   description     = "Products UI ACL ${var.environment}"
   log_destination = module.waf_logging.kinesis_stream_id
