@@ -1,6 +1,18 @@
 rds_instances = {
+  adminusers = {
+    allocated_storage = 30
+  }
   card-connector = {
     allocated_storage = 110
-    snapshot_identifier = "arn:aws:rds:eu-west-1:234617505259:snapshot:card-connector-copied-snap-shot"
+  }
+  ledger = {
+    allocated_storage = 125
+    engine_version = "11.4"
+  }
+  publicauth = {
+    allocated_storage = 50
+  }
+  products = {
+    allocated_storage = 10
   }
 }

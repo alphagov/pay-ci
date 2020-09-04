@@ -3,9 +3,9 @@ locals {
 }
 
 data "archive_file" "zip_lambda" {
-    type        = "zip"
-    source_file = "${path.module}/../../../../lambda/waf-to-splunk-kinesis-data-transformation/index.js"
-    output_path = "${path.module}/../../../../lambda/waf-to-splunk-kinesis-data-transformation/index.zip"
+  type        = "zip"
+  source_file = "${path.module}/../../../../lambda/waf-to-splunk-kinesis-data-transformation/index.js"
+  output_path = "${path.module}/../../../../lambda/waf-to-splunk-kinesis-data-transformation/index.zip"
 }
 
 resource "aws_lambda_function" "kinesis_data_transformation_lambda" {
@@ -20,7 +20,7 @@ resource "aws_lambda_function" "kinesis_data_transformation_lambda" {
   timeout          = 60
 
   depends_on = [
-    aws_iam_role_policy_attachment.lambda_logs, 
+    aws_iam_role_policy_attachment.lambda_logs,
     aws_cloudwatch_log_group.waf_kinesis_data_transformation_log_group
   ]
 }
@@ -32,7 +32,7 @@ resource "aws_cloudwatch_log_group" "waf_kinesis_data_transformation_log_group" 
 }
 
 resource "aws_iam_role" "iam_kinesis_data_transformation_lambda" {
-  name = "${local.lambda_function_name}-role"
+  name               = "${local.lambda_function_name}-role"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -51,6 +51,6 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
-  role       = "${aws_iam_role.iam_kinesis_data_transformation_lambda.name}"
+  role       = aws_iam_role.iam_kinesis_data_transformation_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }

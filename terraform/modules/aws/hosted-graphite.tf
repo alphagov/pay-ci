@@ -39,5 +39,5 @@ EOF
 resource "aws_iam_policy_attachment" "hosted_graphite" {
   name       = "HostedGraphite"
   users      = ["${aws_iam_user.hosted_graphite.name}"]
-  policy_arn = "${aws_iam_policy.hosted_graphite_policy.arn}"
+  policy_arn = aws_iam_policy.hosted_graphite_policy.arn
 }

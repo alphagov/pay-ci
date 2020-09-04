@@ -47,7 +47,7 @@ resource "aws_cloudfront_distribution" "publicapi" {
 
   origin {
     origin_id   = "paas"
-    domain_name = "${var.paas_domain}"
+    domain_name = var.paas_domain
 
     custom_origin_config {
       http_port              = 80
@@ -73,7 +73,7 @@ resource "aws_cloudfront_distribution" "publicapi" {
 }
 
 module publicapi_waf_acl {
-  source      = "./waf_v2_acl" 
+  source      = "./waf_v2_acl"
   name        = "publicapi-${var.environment}"
   description = "Publicapi ACL ${var.environment}"
   acl         = <<EOF
