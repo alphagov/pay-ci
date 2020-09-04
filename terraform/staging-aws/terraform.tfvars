@@ -7,7 +7,7 @@ rds_instances = {
   }
   ledger = {
     allocated_storage = 125
-    engine_version = "11.4"
+    engine_version    = "11.4"
   }
   publicauth = {
     allocated_storage = 50

@@ -7,7 +7,7 @@ resource "cloudfoundry_app" "directdebit_frontend" {
   space   = data.cloudfoundry_space.space.id
   stopped = true
   v3      = true
-  service_binding { 
+  service_binding {
     service_instance = cloudfoundry_service_instance.splunk_log_service.id
   }
 
@@ -40,7 +40,7 @@ resource "cloudfoundry_network_policy" "directdebit_frontend" {
 }
 
 module "directdebit_frontend_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.directdebit_frontend_credentials, "pay_low_pass_secrets")
 }
 

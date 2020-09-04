@@ -1,5 +1,5 @@
 locals {
-    email_suffix = "@digital.cabinet-office.gov.uk"
+  email_suffix = "@digital.cabinet-office.gov.uk"
 }
 
 module "dan_worth_admin" {

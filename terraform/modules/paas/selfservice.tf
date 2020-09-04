@@ -61,13 +61,13 @@ resource "cloudfoundry_network_policy" "selfservice" {
 }
 
 module "selfservice_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.selfservice_credentials, "pay_low_pass_secrets")
   pay_dev_pass_secrets = lookup(local.selfservice_credentials, "pay_dev_pass_secrets")
 }
 
 resource "cloudfoundry_user_provided_service" "selfservice_secret_service" {
-name        = "selfservice-secret-service"
-space       = data.cloudfoundry_space.space.id
-credentials = merge(module.selfservice_credentials.secrets, lookup(local.selfservice_credentials, "static_values"))
+  name        = "selfservice-secret-service"
+  space       = data.cloudfoundry_space.space.id
+  credentials = merge(module.selfservice_credentials.secrets, lookup(local.selfservice_credentials, "static_values"))
 }

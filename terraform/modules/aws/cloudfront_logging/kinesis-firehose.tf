@@ -21,21 +21,21 @@ resource "aws_kinesis_firehose_delivery_stream" "cf_log_kinesis_stream" {
       processors {
         type = "Lambda"
 
-        parameters {     
-            parameter_name  = "LambdaArn"
-            parameter_value = "${aws_lambda_function.kinesis_data_transformation_lambda.arn}:$LATEST"
+        parameters {
+          parameter_name  = "LambdaArn"
+          parameter_value = "${aws_lambda_function.kinesis_data_transformation_lambda.arn}:$LATEST"
         }
-        parameters { 
-            parameter_name  = "BufferSizeInMBs"
-            parameter_value = 3
+        parameters {
+          parameter_name  = "BufferSizeInMBs"
+          parameter_value = 3
         }
-        parameters { 
-            parameter_name  = "BufferIntervalInSeconds"
-            parameter_value = 60
+        parameters {
+          parameter_name  = "BufferIntervalInSeconds"
+          parameter_value = 60
         }
-        parameters { 
-            parameter_name  = "RoleArn"
-            parameter_value = aws_iam_role.cf_logs_firehose_delivery.arn
+        parameters {
+          parameter_name  = "RoleArn"
+          parameter_value = aws_iam_role.cf_logs_firehose_delivery.arn
         }
       }
     }
@@ -87,8 +87,8 @@ resource "aws_s3_bucket_public_access_block" "cf_log_backup_bucket" {
 }
 
 resource "aws_iam_role" "cf_logs_firehose_delivery" {
-    name = "cloudfront-logs-firehose-delivery-role"
-    assume_role_policy = <<EOF
+  name               = "cloudfront-logs-firehose-delivery-role"
+  assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -106,9 +106,9 @@ EOF
 }
 
 resource "aws_iam_role_policy" "cf_logs_firehose_delivery" {
-    name   = "cloudfront-logs-firehose-delivery-policy"
-    role   = aws_iam_role.cf_logs_firehose_delivery.id
-    policy = <<EOF
+  name   = "cloudfront-logs-firehose-delivery-policy"
+  role   = aws_iam_role.cf_logs_firehose_delivery.id
+  policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [

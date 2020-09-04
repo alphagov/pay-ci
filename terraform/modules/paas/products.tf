@@ -8,7 +8,7 @@ resource "cloudfoundry_app" "products" {
   stopped = true
   v3      = true
 
-  service_binding { 
+  service_binding {
     service_instance = cloudfoundry_service_instance.splunk_log_service.id
   }
 
@@ -28,7 +28,7 @@ resource "cloudfoundry_route" "products" {
 }
 
 module "products_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.products_credentials, "pay_low_pass_secrets")
 }
 

@@ -20,5 +20,5 @@ variable "splunk_hec_token" {
 
 variable "splunk_hec_endpoint" {
   type        = string
-  description = "HEC Endpoint for Splunk"  
+  description = "HEC Endpoint for Splunk"
 }

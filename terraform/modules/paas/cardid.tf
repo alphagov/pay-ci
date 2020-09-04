@@ -8,7 +8,7 @@ resource "cloudfoundry_app" "cardid" {
   stopped = true
   v3      = true
 
-  service_binding { 
+  service_binding {
     service_instance = cloudfoundry_service_instance.cde_splunk_log_service.id
   }
 
@@ -36,7 +36,7 @@ resource "cloudfoundry_network_policy" "cardid" {
 }
 
 module "cardid_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.cardid_credentials, "pay_low_pass_secrets")
 }
 

@@ -46,7 +46,7 @@ resource "cloudfoundry_network_policy" "card_frontend" {
 }
 
 module "card_frontend_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.card_frontend_credentials, "pay_low_pass_secrets")
 }
 
