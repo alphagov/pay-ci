@@ -35,5 +35,5 @@ module "products_credentials" {
 resource "cloudfoundry_user_provided_service" "products_secret_service" {
   name        = "products-secret-service"
   space       = data.cloudfoundry_space.space.id
-  credentials = merge(module.products_credentials.secrets, lookup(local.products_credentials, "static_values"))
+  credentials = merge(module.products_credentials.secrets, lookup(local.products_credentials, "static_values"), { db_host = var.rds_host_names["products"].address })
 }

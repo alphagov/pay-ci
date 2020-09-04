@@ -44,3 +44,8 @@ variable "aws_account_id" {
   type        = string
   description = "AWS account id to use in configuration passed to user provided services etc."
 }
+
+variable "rds_host_names" {
+  type        = map
+  description = "Map of rds host names for the apps"
+}
