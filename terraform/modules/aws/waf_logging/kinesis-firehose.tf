@@ -22,21 +22,21 @@ resource "aws_kinesis_firehose_delivery_stream" "waf_kinesis_stream" {
       processors {
         type = "Lambda"
 
-        parameters {     
-            parameter_name  = "LambdaArn"
-            parameter_value = "${aws_lambda_function.kinesis_data_transformation_lambda.arn}:$LATEST"
+        parameters {
+          parameter_name  = "LambdaArn"
+          parameter_value = "${aws_lambda_function.kinesis_data_transformation_lambda.arn}:$LATEST"
         }
-        parameters { 
-            parameter_name  = "BufferSizeInMBs"
-            parameter_value = 3
+        parameters {
+          parameter_name  = "BufferSizeInMBs"
+          parameter_value = 3
         }
-        parameters { 
-            parameter_name  = "BufferIntervalInSeconds"
-            parameter_value = 60
+        parameters {
+          parameter_name  = "BufferIntervalInSeconds"
+          parameter_value = 60
         }
-        parameters { 
-            parameter_name  = "RoleArn"
-            parameter_value = aws_iam_role.waf_firehose_delivery.arn
+        parameters {
+          parameter_name  = "RoleArn"
+          parameter_value = aws_iam_role.waf_firehose_delivery.arn
         }
       }
     }
@@ -76,8 +76,8 @@ resource "aws_cloudwatch_log_stream" "s3_delivery_stream" {
 }
 
 resource "aws_iam_role" "waf_firehose_delivery" {
-    name = "waf-firehose-delivery-role"
-    assume_role_policy = <<EOF
+  name               = "waf-firehose-delivery-role"
+  assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -95,9 +95,9 @@ EOF
 }
 
 resource "aws_iam_role_policy" "waf_firehose_delivery" {
-    name   = "waf-firehose-delivery-policy"
-    role   = aws_iam_role.waf_firehose_delivery.id
-    policy = <<EOF
+  name   = "waf-firehose-delivery-policy"
+  role   = aws_iam_role.waf_firehose_delivery.id
+  policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [

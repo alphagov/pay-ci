@@ -3,11 +3,11 @@ resource "aws_sqs_queue" "capture" {
   visibility_timeout_seconds = 300
   message_retention_seconds  = 259200
   receive_wait_time_seconds  = 20
-  redrive_policy             = jsonencode({
-      deadLetterTargetArn = aws_sqs_queue.capture_dead_letter.arn
-      maxReceiveCount     = 2
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.capture_dead_letter.arn
+    maxReceiveCount     = 2
   })
-  kms_master_key_id          = data.aws_kms_key.sqs_sse_key.arn
+  kms_master_key_id = data.aws_kms_key.sqs_sse_key.arn
 }
 
 resource "aws_sqs_queue" "capture_dead_letter" {
@@ -20,11 +20,11 @@ resource "aws_sqs_queue" "payment_event" {
   visibility_timeout_seconds = 60
   message_retention_seconds  = 259200
   receive_wait_time_seconds  = 20
-  redrive_policy             = jsonencode({
-      deadLetterTargetArn = aws_sqs_queue.payment_event_dead_letter.arn
-      maxReceiveCount     = 2
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.payment_event_dead_letter.arn
+    maxReceiveCount     = 2
   })
-  kms_master_key_id          = data.aws_kms_key.sqs_sse_key.arn
+  kms_master_key_id = data.aws_kms_key.sqs_sse_key.arn
 }
 
 resource "aws_sqs_queue" "payment_event_dead_letter" {
@@ -37,11 +37,11 @@ resource "aws_sqs_queue" "payout_reconcile" {
   visibility_timeout_seconds = 300
   message_retention_seconds  = 259200
   receive_wait_time_seconds  = 20
-  redrive_policy             = jsonencode({
-      deadLetterTargetArn = aws_sqs_queue.payout_reconcile_dead_letter.arn
-      maxReceiveCount     = 2
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.payout_reconcile_dead_letter.arn
+    maxReceiveCount     = 2
   })
-  kms_master_key_id          = data.aws_kms_key.sqs_sse_key.arn
+  kms_master_key_id = data.aws_kms_key.sqs_sse_key.arn
 }
 
 resource "aws_sqs_queue" "payout_reconcile_dead_letter" {

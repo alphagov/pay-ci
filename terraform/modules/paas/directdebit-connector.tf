@@ -27,7 +27,7 @@ resource "cloudfoundry_route" "directdebit_connector" {
 }
 
 module "directdebit_connector_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.directdebit_connector_credentials, "pay_low_pass_secrets")
   pay_dev_pass_secrets = lookup(local.directdebit_connector_credentials, "pay_dev_pass_secrets")
 }

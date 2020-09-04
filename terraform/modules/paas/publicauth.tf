@@ -28,7 +28,7 @@ resource "cloudfoundry_route" "publicauth" {
 }
 
 module "publicauth_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.publicauth_credentials, "pay_low_pass_secrets")
 }
 

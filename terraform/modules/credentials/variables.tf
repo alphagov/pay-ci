@@ -3,6 +3,6 @@ variable "pay_low_pass_secrets" {
 }
 
 variable "pay_dev_pass_secrets" {
-  type = map(string)
+  type    = map(string)
   default = {}
 }

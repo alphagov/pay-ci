@@ -8,7 +8,7 @@ resource "cloudfoundry_app" "toolbox" {
   stopped = true
   v3      = true
 
-  service_binding { 
+  service_binding {
     service_instance = cloudfoundry_service_instance.splunk_log_service.id
   }
 
@@ -61,7 +61,7 @@ resource "cloudfoundry_network_policy" "toolbox" {
 }
 
 module "toolbox_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.toolbox_credentials, "pay_low_pass_secrets")
 }
 

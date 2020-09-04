@@ -8,7 +8,7 @@ resource "cloudfoundry_app" "card_connector" {
   stopped = true
   v3      = true
 
-  service_binding { 
+  service_binding {
     service_instance = cloudfoundry_service_instance.cde_splunk_log_service.id
   }
 
@@ -28,7 +28,7 @@ resource "cloudfoundry_route" "card_connector" {
 }
 
 module "card_connector_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.card_connector_credentials, "pay_low_pass_secrets")
 }
 

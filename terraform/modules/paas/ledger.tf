@@ -28,7 +28,7 @@ resource "cloudfoundry_route" "ledger" {
 }
 
 module "ledger_credentials" {
-  source = "../credentials"
+  source               = "../credentials"
   pay_low_pass_secrets = lookup(local.ledger_credentials, "pay_low_pass_secrets")
 }
 

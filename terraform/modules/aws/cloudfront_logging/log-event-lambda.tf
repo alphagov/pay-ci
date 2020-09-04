@@ -33,7 +33,7 @@ resource "aws_lambda_function" "cloudfront_log_event_process" {
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.cloudfront_log_lambda_logs, 
+    aws_iam_role_policy_attachment.cloudfront_log_lambda_logs,
     aws_cloudwatch_log_group.cloudfront_log_event_process
   ]
 }
@@ -81,9 +81,9 @@ resource "aws_iam_role_policy_attachment" "cloudfront_log_lambda_logs" {
 }
 
 resource "aws_iam_role_policy" "cloudfront_log_lambda_permissions" {
-    name   = "cloudfront-log-event-process-lambda-permissions"
-    role   = aws_iam_role.iam_cloudfront_log_event_process_lambda.id
-    policy = <<EOF
+  name   = "cloudfront-log-event-process-lambda-permissions"
+  role   = aws_iam_role.iam_cloudfront_log_event_process_lambda.id
+  policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
