@@ -26,6 +26,10 @@ data "aws_region" "current" {}
 
 data "aws_caller_identity" "current" {}
 
+data "aws_db_instance" "card_connector_rds" {
+  db_instance_identifier = "staging-card-connector-rds"
+}
+
 module "paas" {
   source = "../modules/paas"
 
@@ -38,6 +42,7 @@ module "paas" {
   credentials              = var.credentials
   aws_region               = data.aws_region.current.name
   aws_account_id           = data.aws_caller_identity.current.account_id
+  rds_host_names           = { card_connector = data.aws_db_instance.card_connector_rds }
 }
 
 module "paas_postgres" {
