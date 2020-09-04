@@ -18,6 +18,7 @@ resource "aws_db_instance" "postgres" {
 
   allocated_storage   = try(each.value.allocated_storage, var.default_rds_params.allocated_storage)
   storage_type        = try(each.value.storage_type, var.default_rds_params.storage_type)
+  storage_encrypted   = true
   engine              = try(each.value.engine, var.default_rds_params.engine)
   engine_version      = try(each.value.engine_version, var.default_rds_params.engine_version)
   instance_class      = try(each.value.instance_class, var.default_rds_params.instance_class)
@@ -29,4 +30,8 @@ resource "aws_db_instance" "postgres" {
 
   vpc_security_group_ids = [aws_security_group.application_rds.id]
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
+
+  lifecycle {
+    ignore_changes = ["snapshot_identifier"]
+  }
 }
