@@ -16,7 +16,7 @@ variable "paas_domain" {
 variable "paas_vpc_peering_name" {
   type        = string
   description = "The name of the vpc peering connection with PaaS"
-  default     = "pcx-0d726a5057505ab0b"
+  default     = ""
 }
 
 variable "paas_public_ips" {
