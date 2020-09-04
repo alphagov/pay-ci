@@ -9,4 +9,5 @@ module "rds" {
   route_table_id  = aws_route_table.default.id
   base_subnet     = var.subnet_reservations.rds
   permitted_cidrs = [var.paas_ireland_cidr]
+  rds_instances   = var.rds_instances
 }

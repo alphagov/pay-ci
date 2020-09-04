@@ -34,6 +34,11 @@ provider "pass" {
   alias         = "low-pass"
 }
 
+variable "rds_instances" {
+  type    = map
+  default = {}
+}
+
 module "staging" {
   source = "../modules/aws"
 
@@ -44,11 +49,11 @@ module "staging" {
     pass.low-pass = pass.low-pass
   }
 
-  environment = "staging"
-  domain_name = "gdspay.uk"
-  paas_domain = "cloudapps.digital"
-  vpc_cidr    = "172.16.0.0/16"
-
+  environment   = "staging"
+  domain_name   = "gdspay.uk"
+  paas_domain   = "cloudapps.digital"
+  vpc_cidr      = "172.16.0.0/16"
+  rds_instances = var.rds_instances
   subnet_reservations = {
     "rds" = 36
   }

@@ -22,6 +22,13 @@ resource "aws_route_table_association" "rds_subnet" {
   route_table_id = var.route_table_id
 }
 
+resource "aws_db_subnet_group" "rds_subnet_group" {
+  name        = "${var.environment}-rds"
+  description = "${var.environment} RDS subnet group"
+
+  subnet_ids = values(aws_subnet.rds_subnet)[*].id
+}
+
 resource "aws_security_group" "application_rds" {
   name        = "${var.environment}-sg-rds"
   description = "${var.environment} RDS database security group"
