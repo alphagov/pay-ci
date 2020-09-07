@@ -47,6 +47,7 @@ credentials = {
       card_connector_analytics_tracking_id = "testing-123"
       db_user                              = "connector1"
       db_name                              = "connector"
+      db_ssl_option                        = "true"
     }
   }
   cardid = {
@@ -67,6 +68,7 @@ credentials = {
       token_api_hmac_secret = "something"
       db_user               = "publicauth1"
       db_name               = "publicauth"
+      db_ssl_option         = "true"
     }
   }
   card_frontend = {
@@ -106,8 +108,9 @@ credentials = {
       db_password    = "aws/paas/staging/rds/application_users/ledger/ledger"
     }
     static_values = {
-      db_user = "ledger"
-      db_name = "ledger"
+      db_user       = "ledger"
+      db_name       = "ledger"
+      db_ssl_option = "true"
     }
   }
   products = {
@@ -120,6 +123,7 @@ credentials = {
       products_api_token = "something"
       db_user            = "products"
       db_name            = "products"
+      db_ssl_option      = "true"
     }
   }
   products_ui = {
@@ -151,8 +155,9 @@ credentials = {
       db_password                                                                 = "aws/paas/staging/rds/application_users/adminusers/adminusers1"
     }
     static_values = {
-      db_user = "adminusers1"
-      db_name = "adminusers"
+      db_user       = "adminusers1"
+      db_name       = "adminusers"
+      db_ssl_option = "true"
     }
   }
   directdebit_frontend = {
