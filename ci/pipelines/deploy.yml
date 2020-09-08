@@ -25,7 +25,6 @@ groups:
       - deploy-adminusers-staging
       - migrate-adminusers-db-staging
       - card-payment-smoke-tests-staging
-      - direct-debit-smoke-tests-staging
 
   - name: Card Connector
     jobs:
@@ -50,15 +49,10 @@ groups:
   - name: Direct Debit Connector
     jobs:
       - build-directdebit-connector
-      - deploy-directdebit-connector-staging
-      - migrate-directdebit-connector-db-staging
-      - direct-debit-smoke-tests-staging
 
   - name: Direct Debit Frontend
     jobs:
       - build-directdebit-frontend
-      - deploy-directdebit-frontend-staging
-      - direct-debit-smoke-tests-staging
 
   - name: Ledger
     jobs:
@@ -66,7 +60,6 @@ groups:
       - deploy-ledger-staging
       - migrate-ledger-db-staging
       - card-payment-smoke-tests-staging
-      - direct-debit-smoke-tests-staging
 
   - name: Products
     jobs:
@@ -86,7 +79,6 @@ groups:
       - build-publicapi
       - deploy-publicapi-staging
       - card-payment-smoke-tests-staging
-      - direct-debit-smoke-tests-staging
 
   - name: PublicAuth
     jobs:
@@ -94,7 +86,6 @@ groups:
       - deploy-publicauth-staging
       - migrate-publicauth-db-staging
       - card-payment-smoke-tests-staging
-      - direct-debit-smoke-tests-staging
 
   - name: Other Services
     jobs:
@@ -113,7 +104,6 @@ groups:
       - smoke-tests-staging-network-policies
       - smoke-test-user-staging
       - card-payment-smoke-tests-staging
-      - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
 
   - name: Carbon Relay
@@ -778,24 +768,6 @@ jobs:
           CF_SPACE: staging-cde
           ZDT: true
 
-  - name: deploy-directdebit-frontend-staging
-    serial_groups: [directdebit-frontend-stg]
-    plan:
-      - get: omnibus
-      - get: git-directdebit-frontend-pre-release
-        passed: [build-directdebit-frontend]
-        trigger: true
-      - task: extract-directdebit-frontend-artefact
-        file: omnibus/ci/tasks/extract-artefact.yml
-        input_mapping: { git-release: git-directdebit-frontend-pre-release }
-      - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-deploy.yml
-        params:
-          <<: *app-deploy-config
-          APP_NAME: directdebit-frontend
-          APP_PATH: artefact
-          ZDT: true
-
   - name: deploy-card-connector-staging
     serial_groups: [card-connector-stg]
     plan:
@@ -831,23 +803,6 @@ jobs:
           APP_NAME: card-frontend
           CF_SPACE: staging-cde
           APP_PATH: artefact
-          ZDT: true
-
-  - name: deploy-directdebit-connector-staging
-    serial_groups: [directdebit-connector-stg]
-    plan:
-      - get: omnibus
-      - get: git-directdebit-connector-pre-release
-        passed: [build-directdebit-connector]
-        trigger: true
-      - task: extract-directdebit-connector-artefact
-        file: omnibus/ci/tasks/extract-artefact.yml
-        input_mapping: { git-release: git-directdebit-connector-pre-release }
-      - task: deploy-to-paas-staging
-        file: omnibus/ci/tasks/cf-v3-deploy.yml
-        params:
-          <<: *app-deploy-config
-          APP_NAME: directdebit-connector
           ZDT: true
 
   - name: deploy-ledger-staging
@@ -1099,7 +1054,6 @@ jobs:
   - name: smoke-test-user-staging
     serial_groups:
       - card-connector-stg
-      - directdebit-connector-stg
       - publicapi-stg
       - publicauth-stg
       - adminusers-stg
@@ -1186,42 +1140,6 @@ jobs:
               METRIC_NAME: ci.concourse.staging.card-smoke-test.status
               METRIC_VALUE: 0
 
-  - name: direct-debit-smoke-tests-staging
-    serial_groups: [adminusers-stg, directdebit-connector-stg, directdebit-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
-    build_log_retention:
-      builds: 1000
-    plan:
-      - get: omnibus
-      - get: endtoend-container
-        passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
-        trigger: true
-      - get: every-10-minutes
-        trigger: true
-      - <<: *trigger-test
-        get: git-adminusers-pre-release
-        passed: [migrate-adminusers-db-staging]
-      - <<: *trigger-test
-        get: git-directdebit-connector-pre-release
-        passed: [migrate-directdebit-connector-db-staging]
-      - <<: *trigger-test
-        get: git-directdebit-frontend-pre-release
-        passed: [deploy-directdebit-frontend-staging]
-      - <<: *trigger-test
-        get: git-ledger-pre-release
-        passed: [migrate-ledger-db-staging]
-      - <<: *trigger-test
-        get: git-publicapi-pre-release
-        passed: [deploy-publicapi-staging]
-      - <<: *trigger-test
-        get: git-publicauth-pre-release
-        passed: [migrate-publicauth-db-staging]
-      - &direct-debit-smoke-test-task
-        task: run direct debit smoke test
-        file: omnibus/ci/tasks/cf-task.yml
-        params:
-          <<: *smoke-test-params
-          COMMAND: cf ssh smoke-tests-staging -c /app/bin/smoke-directdebitp1
-
   - name: products-smoke-test-staging
     serial_groups: [products-stg, products-ui-stg]
     build_log_retention:
@@ -1276,18 +1194,6 @@ jobs:
           CF_SPACE: staging-cde
           APP_NAME: card-connector
           APP_PACKAGE: uk.gov.pay.connector.app.ConnectorApp
-
-  - name: migrate-directdebit-connector-db-staging
-    plan:
-      - get: omnibus
-      - get: git-directdebit-connector-pre-release
-        passed: [deploy-directdebit-connector-staging]
-        trigger: true
-      - <<: *run-migration
-        params:
-          <<: *migration-params
-          APP_NAME: directdebit-connector
-          APP_PACKAGE: uk.gov.pay.directdebit.DirectDebitConnectorApp
 
   - name: migrate-ledger-db-staging
     plan:
