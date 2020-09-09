@@ -40,11 +40,6 @@ resource "cloudfoundry_network_policy" "toolbox" {
   }
   policy {
     source_app      = cloudfoundry_app.toolbox.id
-    destination_app = cloudfoundry_app.directdebit_connector.id
-    port            = "8080"
-  }
-  policy {
-    source_app      = cloudfoundry_app.toolbox.id
     destination_app = cloudfoundry_app.ledger.id
     port            = "8080"
   }

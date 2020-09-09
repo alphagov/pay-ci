@@ -30,9 +30,4 @@ resource "cloudfoundry_network_policy" "notifications" {
     destination_app = cloudfoundry_app.card_connector.id
     port            = "8080"
   }
-  policy {
-    source_app      = cloudfoundry_app.notifications.id
-    destination_app = cloudfoundry_app.directdebit_connector.id
-    port            = "8080"
-  }
 }
