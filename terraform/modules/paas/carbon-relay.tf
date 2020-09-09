@@ -45,8 +45,6 @@ resource "cloudfoundry_network_policy" "carbon_relay" {
       cloudfoundry_app.card_connector.id,
       cloudfoundry_app.card_frontend.id,
       cloudfoundry_app.cardid.id,
-      cloudfoundry_app.directdebit_connector.id,
-      cloudfoundry_app.directdebit_frontend.id,
       cloudfoundry_app.ledger.id,
       cloudfoundry_app.notifications.id,
       cloudfoundry_app.products.id,

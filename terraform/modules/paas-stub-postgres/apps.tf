@@ -8,11 +8,6 @@ data "cloudfoundry_app" "card_connector" {
   space      = data.cloudfoundry_space.cde_space.id
 }
 
-data "cloudfoundry_app" "directdebit_connector" {
-  name_or_id = "directdebit-connector"
-  space      = data.cloudfoundry_space.space.id
-}
-
 data "cloudfoundry_app" "ledger" {
   name_or_id = "ledger"
   space      = data.cloudfoundry_space.space.id

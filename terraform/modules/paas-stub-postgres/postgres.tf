@@ -55,7 +55,6 @@ resource "cloudfoundry_network_policy" "postgres" {
     for_each = [
       data.cloudfoundry_app.adminusers.id,
       data.cloudfoundry_app.card_connector.id,
-      data.cloudfoundry_app.directdebit_connector.id,
       data.cloudfoundry_app.ledger.id,
       data.cloudfoundry_app.products.id,
       data.cloudfoundry_app.publicauth.id,
