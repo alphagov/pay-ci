@@ -45,10 +45,3 @@ module "paas" {
   aws_account_id           = data.aws_caller_identity.current.account_id
   rds_host_names           = data.aws_db_instance.db_instances
 }
-
-module "paas_postgres" {
-  source = "../modules/paas-postgres"
-
-  org   = "govuk-pay"
-  space = "staging"
-}
