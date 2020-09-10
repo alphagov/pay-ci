@@ -15,11 +15,13 @@ resource "aws_route_table" "default" {
   tags = {
     Name = "${var.environment}-route"
   }
+}
 
-  route {
-    cidr_block                = var.paas_ireland_cidr
-    vpc_peering_connection_id = var.paas_vpc_peering_name
-  }
+resource "aws_route" "paas_vpc" {
+  count                     = var.paas_vpc_peering_name != null ? 1 : 0
+  route_table_id            = aws_route_table.default.id
+  destination_cidr_block    = var.paas_ireland_cidr
+  vpc_peering_connection_id = var.paas_vpc_peering_name
 }
 
 resource "aws_default_security_group" "default" {
