@@ -1,6 +1,6 @@
 resource "aws_route53_record" "selfservice" {
-  zone_id = data.aws_route53_zone.root.zone_id
-  name    = "selfservice.${local.subdomain}"
+  zone_id = aws_route53_zone.hosted_zone.zone_id
+  name    = "selfservice.${var.domain_name}"
   type    = "A"
 
   alias {
@@ -25,7 +25,7 @@ resource "aws_cloudfront_distribution" "selfservice" {
     bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
   }
 
-  aliases = ["selfservice.${var.environment}.${var.domain_name}"]
+  aliases = ["selfservice.${var.domain_name}"]
 
   default_cache_behavior {
     target_origin_id       = "paas"
