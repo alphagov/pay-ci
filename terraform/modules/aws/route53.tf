@@ -1,16 +1,16 @@
-locals {
-  subdomain = "${var.environment}.${var.domain_name}"
-}
-
-data "aws_route53_zone" "root" {
+resource "aws_route53_zone" "hosted_zone" {
   name = var.domain_name
+
+  tags = {
+    Environment = var.environment
+  }
 }
 
 resource "aws_acm_certificate" "cert" {
   provider = aws.us
 
-  domain_name               = local.subdomain
-  subject_alternative_names = ["*.${local.subdomain}"]
+  domain_name               = var.domain_name
+  subject_alternative_names = ["*.${var.domain_name}"]
   validation_method         = "DNS"
 
   lifecycle {
@@ -24,7 +24,7 @@ resource "aws_route53_record" "cert_validation" {
       name    = dvo.resource_record_name
       record  = dvo.resource_record_value
       type    = dvo.resource_record_type
-      zone_id = data.aws_route53_zone.root.id
+      zone_id = aws_route53_zone.hosted_zone.id
     }
   }
 

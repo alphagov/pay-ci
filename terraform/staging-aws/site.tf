@@ -50,7 +50,7 @@ module "staging" {
   }
 
   environment           = "staging"
-  domain_name           = "gdspay.uk"
+  domain_name           = "staging.gdspay.uk"
   paas_domain           = "cloudapps.digital"
   vpc_cidr              = "172.16.0.0/16"
   paas_vpc_peering_name = "pcx-0d726a5057505ab0b"
