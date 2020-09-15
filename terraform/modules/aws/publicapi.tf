@@ -69,7 +69,7 @@ resource "aws_cloudfront_distribution" "publicapi" {
     ssl_support_method       = "sni-only"
   }
 
-  web_acl_id = aws_wafv2_web_acl.public_api.id
+  web_acl_id = aws_wafv2_web_acl.publicapi.id
 }
 
 resource "aws_wafv2_web_acl" "publicapi" {
@@ -94,10 +94,10 @@ resource "aws_wafv2_web_acl" "publicapi" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
-      }
 
-      excluded_rule {
-        name = "GenericRFI_BODY"
+        excluded_rule {
+          name = "GenericRFI_BODY"
+        }
       }
     }
   }
