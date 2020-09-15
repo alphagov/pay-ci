@@ -17,11 +17,23 @@ resource "aws_route_table" "default" {
   }
 }
 
+resource "aws_vpc_peering_connection_accepter" "paas_vpc_connection" {
+  vpc_peering_connection_id = var.paas_vpc_peering_name
+  auto_accept               = true
+  tags = {
+    Side = "Accepter"
+  }
+  //Do NOT release the AWS VPC peering connection
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 resource "aws_route" "paas_vpc" {
   count                     = var.paas_vpc_peering_name != null ? 1 : 0
   route_table_id            = aws_route_table.default.id
   destination_cidr_block    = var.paas_ireland_cidr
-  vpc_peering_connection_id = var.paas_vpc_peering_name
+  vpc_peering_connection_id = aws_vpc_peering_connection_accepter.paas_vpc_connection.id
 }
 
 resource "aws_default_security_group" "default" {
