@@ -69,7 +69,7 @@ resource "aws_cloudfront_distribution" "selfservice" {
     ssl_support_method       = "sni-only"
   }
 
-  web_acl_id = aws_wafv2_web_acl.selfservice.id
+  web_acl_id = aws_wafv2_web_acl.selfservice.arn
 }
 
 resource "aws_wafv2_web_acl" "selfservice" {
@@ -178,6 +178,7 @@ resource "aws_wafv2_web_acl" "selfservice" {
 }
 
 resource "aws_wafv2_web_acl_logging_configuration" "selfservice" {
+  provider                = aws.us
   log_destination_configs = [module.waf_logging.kinesis_stream_id]
   resource_arn            = aws_wafv2_web_acl.selfservice.arn
   redacted_fields {

@@ -69,7 +69,7 @@ resource "aws_cloudfront_distribution" "publicapi" {
     ssl_support_method       = "sni-only"
   }
 
-  web_acl_id = aws_wafv2_web_acl.publicapi.id
+  web_acl_id = aws_wafv2_web_acl.publicapi.arn
 }
 
 resource "aws_wafv2_web_acl" "publicapi" {
@@ -182,6 +182,7 @@ resource "aws_wafv2_web_acl" "publicapi" {
 }
 
 resource "aws_wafv2_web_acl_logging_configuration" "publicapi" {
+  provider                = aws.us
   log_destination_configs = [module.waf_logging.kinesis_stream_id]
   resource_arn            = aws_wafv2_web_acl.publicapi.arn
   redacted_fields {
