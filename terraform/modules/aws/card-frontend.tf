@@ -71,7 +71,7 @@ resource "aws_cloudfront_distribution" "card_frontend" {
     ssl_support_method       = "sni-only"
   }
 
-  web_acl_id = aws_wafv2_web_acl.card_frontend.id
+  web_acl_id = aws_wafv2_web_acl.card_frontend.arn
 }
 
 data "pass_password" "card_frontend_pubkey" {
@@ -209,6 +209,7 @@ resource "aws_wafv2_web_acl" "card_frontend" {
 }
 
 resource "aws_wafv2_web_acl_logging_configuration" "card_frontend" {
+  provider                = aws.us
   log_destination_configs = [module.waf_logging.kinesis_stream_id]
   resource_arn            = aws_wafv2_web_acl.card_frontend.arn
   redacted_fields {
