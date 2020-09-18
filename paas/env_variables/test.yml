@@ -1,0 +1,22 @@
+---
+analytics_tracking_id: testing-123
+db_ssl: 'true'
+db_ssl_option: ssl=false
+default_disk_quota: 500M
+default_memory: 500M
+disable_appmetrics: true
+disable_internal_https: 'true'
+disable_request_logging: false
+disk_quota: 1G
+http_proxy_enabled: 'true'
+http_proxy_host: egress-test.apps.internal
+http_proxy_port: '8080'
+log_level: WARNING
+memory: 1G
+metrics_host: localhost
+metrics_port: '8092'
+notify_base_url: https://api.notifications.service.gov.uk
+run_migration: 'true'
+space: test
+support_url: ''
+notifications_url: https://notifications.test.gdspay.uk

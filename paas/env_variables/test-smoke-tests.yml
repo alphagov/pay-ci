@@ -1,0 +1,11 @@
+---
+selenium_hub_url: http://selenium-hub.apps.internal:4444/wd/hub
+publicapi_url: https://publicapi.test.gdspay.uk
+card_sandbox_api_token: 5d34s8as3d8pckclenmsugnucf0hq0mg967buv8nap0fla6il2nuhgagfp
+direct_debit_sandbox_api_token: a88nm9mgn81t3ioa8jd0fgfo2prf9vugev1qdga4fmkupceqo3k6mvgnf1
+smoke_test_product_payment_link_url: https://products.test.gdspay.uk/redirect/smoke-test/product-test-environment
+selfservice_password: something
+selfservice_otp_key: something
+selfservice_url: something
+notifications_url: https://notifications.test.gdspay.uk
+direct_debit_gocardless_webhook_secret: supersecret
