@@ -1,0 +1,781 @@
+---
+definitions:
+  - &notify-hg
+    task: change-this-value
+    file: omnibus/ci/tasks/send-hg-metric.yml
+    params:
+      HOSTED_GRAPHITE_ACCOUNT_ID: change-this-value
+      HOSTED_GRAPHITE_API_KEY: change-this-value
+      METRIC_NAME: change-this-value
+      METRIC_VALUE: 0
+groups:
+  - name: Adminusers
+    jobs:
+      - deploy-adminusers-test
+      - migrate-adminusers-db-test
+      - card-payment-smoke-tests-test
+
+  - name: Card Connector
+    jobs:
+      - deploy-card-connector-test
+      - migrate-card-connector-db-test
+      - card-payment-smoke-tests-test
+
+  - name: Card ID
+    jobs:
+      - deploy-cardid-test
+      - deploy-cardid-data-test
+      - card-payment-smoke-tests-test
+
+  - name: Card Frontend
+    jobs:
+      - deploy-card-frontend-test
+      - card-payment-smoke-tests-test
+
+  - name: Ledger
+    jobs:
+      - deploy-ledger-test
+      - migrate-ledger-db-test
+      - card-payment-smoke-tests-test
+
+  - name: Products
+    jobs:
+      - deploy-products-test
+      - migrate-products-db-test
+      - products-smoke-test-test
+
+  - name: Products UI
+    jobs:
+      - deploy-products-ui-test
+      - products-smoke-test-test
+
+  - name: Public API
+    jobs:
+      - deploy-publicapi-test
+      - card-payment-smoke-tests-test
+
+  - name: PublicAuth
+    jobs:
+      - deploy-publicauth-test
+      - migrate-publicauth-db-test
+      - card-payment-smoke-tests-test
+
+  - name: Other Services
+    jobs:
+      - deploy-selfservice-test
+      - deploy-notifications-test
+      - deploy-toolbox-test
+      - deploy-sqs-test
+      - update-deploy-pipeline
+
+  - name: Smoke Tests
+    jobs:
+      - deploy-selenium-hub
+      - deploy-smoke-tests-test
+      - smoke-tests-test-network-policies
+      - smoke-test-user-test
+      - card-payment-smoke-tests-test
+      - products-smoke-test-test
+
+  - name: Carbon Relay
+    jobs:
+      - deploy-carbon-relay-test
+
+  - name: PaaS Metric Exporter
+    jobs:
+      - deploy-metric-exporter-test
+
+resource_types:
+  - name: cf-cli
+    type: docker-image
+    source:
+      repository: nulldriver/cf-cli-resource
+  - name: concourse-pipeline
+    type: docker-image
+    source:
+      repository: concourse/concourse-pipeline-resource
+
+resources:
+  - name: omnibus
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: master
+
+  - name: deploy-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: master
+      paths:
+        - ci/pipelines/test-deploy.yml
+
+  - name: every-10-minutes
+    type: time
+    icon: clock-outline
+    source:
+      interval: 10m
+
+  - name: paas-test
+    type: cf-cli
+    icon: cloud-upload-outline
+    source:
+      api: https://api.cloud.service.gov.uk
+      org: govuk-pay
+      space: test
+      username: ((paas-ireland-username))
+      password: ((paas-ireland-password))
+
+  - name: carbon-relay-source
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-omnibus
+      branch: master
+      paths:
+        - paas/carbon-relay/**
+
+  # Git Repositories
+  - name: metric-exporter-source
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/paas-metric-exporter
+      branch: master
+
+  # Github Releases
+  - name: git-card-frontend-pre-release
+    type: github-release
+    source: &github-release-source
+      owner: alphagov
+      access_token: ((github-access-token))
+      tag_filter: "paas_release-(.*)"
+      order_by: version
+      repository: pay-frontend
+      pre_release: true
+      release: false
+
+  - name: git-selfservice-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-selfservice
+
+  - name: git-products-ui-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-products-ui
+
+  - name: git-card-connector-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-connector
+
+  - name: git-publicauth-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-publicauth
+
+  - name: git-publicapi-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-publicapi
+
+  - name: cardid-data-source
+    type: git
+    icon: github
+    source:
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+      uri: https://github.com/alphagov/pay-cardid-data
+      branch: master
+
+  - name: git-cardid-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-cardid
+
+  - name: git-ledger-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-ledger
+
+  - name: git-products-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-products
+
+  - name: git-adminusers-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-adminusers
+
+  - name: git-toolbox-pre-release
+    type: github-release
+    source:
+      <<: *github-release-source
+      repository: pay-toolbox
+
+  - &image
+    name: notifications
+    type: docker-image
+    icon: docker
+    source: &image-source
+      repository: govukpay/notifications
+      tag: latest-master
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - name: paas-smoke-tests
+    type: cf-cli
+    icon: cloud-upload-outline
+    source:
+      api: https://api.cloud.service.gov.uk
+      org: govuk-pay
+      space: smoke-tests
+      username: ((paas-ireland-username))
+      password: ((paas-ireland-password))
+
+  - name: endtoend-container
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/endtoend
+      tag: latest-master
+      username: ((docker-username))
+      password: ((docker-password))
+
+x-cf-creds: &cf-creds
+  CF_API: https://api.cloud.service.gov.uk
+  CF_USERNAME: ((paas-ireland-username))
+  CF_PASSWORD: ((paas-ireland-password))
+  CF_ORG: govuk-pay
+
+jobs:
+  - name: update-deploy-pipeline
+    plan:
+      - get: deploy-pipeline
+        trigger: true
+      - set_pipeline: deploy
+        file: deploy-pipeline/ci/pipelines/deploy.yml
+
+  # Deploy Jobs
+  - name: deploy-adminusers-test
+    serial_groups: [adminusers]
+    plan:
+      - get: omnibus
+      - get: git-adminusers-pre-release
+        trigger: true
+      - task: extract-adminusers-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-adminusers-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params: &app-deploy-config
+          <<: *cf-creds
+          CF_SPACE: test
+          APP_NAME: adminusers
+          APP_PATH: artefact/target/pay-*-allinone.jar
+          MANIFEST: artefact/manifest.yml
+          VARS_FILE: omnibus/paas/env_variables/test.yml
+          ZDT: true
+
+  - name: deploy-cardid-data-test
+    serial_groups: [cardid-data]
+    plan:
+      - get: omnibus
+      - get: cardid-data-source
+        trigger: true
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *cf-creds
+          APP_NAME: cardid-data
+          APP_PATH: cardid-data-source/sources
+          MANIFEST: cardid-data-source/manifest.yml
+          ZDT: true
+
+  - name: deploy-cardid-test
+    serial_groups: [cardid]
+    plan:
+      - get: omnibus
+      - get: cardid-data-source
+        passed: [deploy-cardid-data-test]
+        trigger: true
+      - get: git-cardid-pre-release
+        trigger: true
+      - task: extract-cardid-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-cardid-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: cardid
+          CF_SPACE: test-cde
+          ZDT: true
+
+  - name: deploy-card-connector-test
+    serial_groups: [card-connector]
+    plan:
+      - get: omnibus
+      - get: git-card-connector-pre-release
+        trigger: true
+      - task: extract-card-connector-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-card-connector-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: card-connector
+          CF_SPACE: test-cde
+          ZDT: true
+
+  - name: deploy-card-frontend-test
+    serial_groups: [card-frontend]
+    plan:
+      - get: omnibus
+      - get: git-card-frontend-pre-release
+        trigger: true
+      - task: extract-card-frontend-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-card-frontend-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: card-frontend
+          CF_SPACE: test-cde
+          APP_PATH: artefact
+          ZDT: true
+
+  - name: deploy-ledger-test
+    serial_groups: [ledger]
+    plan:
+      - get: omnibus
+      - get: git-ledger-pre-release
+        trigger: true
+      - task: extract-ledger-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-ledger-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: ledger
+          ZDT: true
+
+  - name: deploy-products-test
+    serial_groups: [products]
+    plan:
+      - get: omnibus
+      - get: git-products-pre-release
+        trigger: true
+      - task: extract-products-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-products-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: products
+          ZDT: true
+
+  - name: deploy-products-ui-test
+    serial_groups: [products-ui]
+    plan:
+      - get: omnibus
+      - get: git-products-ui-pre-release
+        trigger: true
+      - task: extract-products-ui-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-products-ui-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: products-ui
+          APP_PATH: artefact
+          ZDT: true
+
+  - name: deploy-publicapi-test
+    serial_groups: [publicapi]
+    plan:
+      - get: omnibus
+      - get: git-publicapi-pre-release
+        trigger: true
+      - task: extract-publicapi-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-publicapi-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: publicapi
+          ZDT: true
+
+  - name: deploy-publicauth-test
+    serial_groups: [publicauth]
+    plan:
+      - get: omnibus
+      - get: git-publicauth-pre-release
+        trigger: true
+      - task: extract-publicauth-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-publicauth-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: publicauth
+          ZDT: true
+
+  - name: deploy-selfservice-test
+    serial_groups: [selfservice]
+    plan:
+      - get: omnibus
+      - get: git-selfservice-pre-release
+        trigger: true
+      - task: download-selfservice-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-selfservice-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: selfservice
+          APP_PATH: artefact
+          ZDT: true
+
+  - name: deploy-carbon-relay-test
+    serial_groups: [carbon-relay]
+    plan:
+      - get: carbon-relay-source
+        trigger: true
+      - get: omnibus
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: carbon-relay
+          MANIFEST: omnibus/paas/carbon-relay/manifest.yml
+          APP_PATH: omnibus/paas/carbon-relay
+          ZDT: true
+
+  - name: deploy-toolbox-test
+    serial_groups: [toolbox]
+    plan:
+      - get: omnibus
+      - get: git-toolbox-pre-release
+        trigger: true
+      - task: download-toolbox-artefact
+        file: omnibus/ci/tasks/extract-artefact.yml
+        input_mapping: { git-release: git-toolbox-pre-release }
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *app-deploy-config
+          APP_NAME: toolbox
+          APP_PATH: artefact
+          ZDT: true
+
+  - name: deploy-notifications-test
+    serial_groups: [notifications]
+    plan:
+      - get: omnibus
+      - get: notifications
+        trigger: true
+        params:
+          skip_download: true
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        params:
+          <<: *cf-creds
+          APP_NAME: notifications 
+          CF_SPACE: test
+          MANIFEST: omnibus/paas/pay-apps.yml
+          CF_DOCKER_PASSWORD: ((docker-password))
+          DOCKER_USERNAME: ((docker-username))
+          VARS_FILE: omnibus/paas/env_variables/test.yml
+          ZDT: true
+
+  - name: deploy-sqs-test
+    plan:
+      - get: omnibus
+      - put: app
+        resource: paas-test
+        params:
+          command: push
+          docker_password: ((docker-password))
+          docker-username: ((docker-username))
+          app_name: sqs
+          manifest: omnibus/paas/fake-sqs.yml
+          vars:
+            space: test
+
+  - name: deploy-metric-exporter-test
+    serial_groups: [metric-exporter]
+    plan:
+      - get: omnibus
+      - get: metric-exporter-source
+      - task: copy-custom-env-map
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          inputs:
+            - name: omnibus
+            - name: metric-exporter-source
+          outputs:
+            - name: metric-exporter-source
+          run:
+            path: cp
+            args: ["omnibus/paas/metric-exporter/env-map.yml", "metric-exporter-source"]
+      - task: deploy-to-paas-test
+        file: omnibus/ci/tasks/cf-v3-deploy.yml
+        input_mapping: { artefact: "metric-exporter-source" }
+        params:
+          <<: *app-deploy-config
+          APP_NAME: metric-exporter
+          CF_SPACE: test
+          MANIFEST: omnibus/paas/metric-exporter/manifest.yml
+          APP_PATH: metric-exporter-source
+
+  # Smoke Tests
+  - name: deploy-selenium-hub
+    serial_groups: [selenium]
+    serial: true
+    plan:
+      - get: omnibus
+      - put: paas-smoke-tests
+        params: &push-app
+          command: push
+          app_name: selenium-hub
+          manifest: omnibus/paas/smoke-test-apps.yml
+          vars_files:
+            - omnibus/paas/env_variables/test-smoke-tests.yml
+
+  - name: deploy-smoke-tests-test
+    serial_groups: [smoke-tests]
+    plan:
+      - get: omnibus
+      - get: endtoend-container
+        trigger: true
+      - put: paas-smoke-tests
+        params:
+          <<: *push-app
+          docker_password: ((docker-password))
+          docker_username: ((docker-username))
+          docker_image: govukpay/endtoend:latest-master
+          app_name: smoke-tests-test
+
+  - name: smoke-tests-test-network-policies
+    serial_groups: [selenium, smoke-tests]
+    plan:
+      - get: omnibus
+        passed: [deploy-selenium-hub, deploy-smoke-tests-test]
+      - get: endtoend-container
+        passed: [deploy-smoke-tests-test]
+        trigger: true
+      - put: apply-network-policies
+        resource: paas-smoke-tests
+        params:
+          command: add-network-policy
+          source_app: smoke-tests-test
+          destination_app: selenium-hub
+          port: 4444
+          protocol: tcp
+
+  - name: smoke-test-user-test
+    serial_groups:
+      - card-connector
+      - publicapi
+      - publicauth
+      - adminusers
+      - products
+      - smoke-tests
+    plan:
+      - get: omnibus
+      - get: endtoend-container
+        passed: [deploy-smoke-tests-test]
+        trigger: true
+      - task: create-service
+        file: omnibus/ci/tasks/smoke-test-user.yml
+        params:
+          <<: *cf-creds
+          CF_SPACE: test
+          CF_SPACE_CDE: test-cde
+          CF_SPACE_TOOLS: smoke-tests
+          SMOKE_TEST_APP: smoke-tests-test
+          SERVICE_NAME: smoke-test-user-test
+
+  - name: card-payment-smoke-tests-test
+    serial_groups: [cardid, card-connector, card-frontend, ledger, publicapi, publicauth]
+    build_log_retention:
+      builds: 1000
+    plan:
+      - get: omnibus
+      - get: endtoend-container
+        passed: [deploy-smoke-tests-test, smoke-test-user-test]
+        trigger: true
+      - get: every-10-minutes
+        trigger: true
+      - &trigger-test
+        get: git-card-connector-pre-release
+        passed: [migrate-card-connector-db-test]
+        trigger: true
+        params:
+          skip_download: true
+      - <<: *trigger-test
+        get: git-adminusers-pre-release
+        passed: [migrate-adminusers-db-test]
+      - <<: *trigger-test
+        get: git-cardid-pre-release
+        passed: [deploy-cardid-test]
+      - <<: *trigger-test
+        get: git-card-frontend-pre-release
+        passed: [deploy-card-frontend-test]
+      - <<: *trigger-test
+        get: git-ledger-pre-release
+        passed: [migrate-ledger-db-test]
+      - <<: *trigger-test
+        get: git-publicapi-pre-release
+        passed: [deploy-publicapi-test]
+      - <<: *trigger-test
+        get: git-publicauth-pre-release
+        passed: [migrate-publicauth-db-test]
+      - task: run card smoke test
+        file: omnibus/ci/tasks/cf-task.yml
+        params: &smoke-test-params
+          <<: *cf-creds
+          CF_SPACE: smoke-tests
+          COMMAND: cf ssh smoke-tests-test -c /app/bin/smoke-cardp1
+        on_success:
+          in_parallel:
+          - <<: *notify-hg
+            task: notify-hg-success
+            params:
+              METRIC_NAME: ci.concourse.test.card-smoke-test.success
+              METRIC_VALUE: 1
+          - <<: *notify-hg
+            task: notify-hg-success-status
+            params:
+              METRIC_NAME: ci.concourse.test.card-smoke-test.status
+              METRIC_VALUE: 1
+        on_failure:
+          in_parallel:
+          - <<: *notify-hg
+            task: notify-hg-failure
+            params:
+              METRIC_NAME: ci.concourse.test.card-smoke-test.failure
+              METRIC_VALUE: 1
+          - <<: *notify-hg
+            task: notify-hg-failure-status
+            params:
+              METRIC_NAME: ci.concourse.test.card-smoke-test.status
+              METRIC_VALUE: 0
+
+  - name: products-smoke-test-test
+    serial_groups: [products, products-ui]
+    build_log_retention:
+      builds: 1000
+    plan:
+      - get: omnibus
+      - get: endtoend-container
+        passed: [deploy-smoke-tests-test, smoke-test-user-test]
+        trigger: true
+      - get: every-10-minutes
+        trigger: true
+      - <<: *trigger-test
+        get: git-products-pre-release
+        passed: [migrate-products-db-test]
+      - <<: *trigger-test
+        get: git-products-ui-pre-release
+        passed: [deploy-products-ui-test]
+      - task: run products smoke test
+        file: omnibus/ci/tasks/cf-task.yml
+        params:
+          <<: *smoke-test-params
+          COMMAND: cf ssh smoke-tests-test -c /app/bin/smoke-products
+
+  # Database Migrations
+  - name: migrate-adminusers-db-test
+    plan:
+      - get: omnibus
+      - get: git-adminusers-pre-release
+        passed: [deploy-adminusers-test]
+        trigger: true
+      - &run-migration
+        task: run-migration
+        file: omnibus/ci/tasks/cf-task.yml
+        input_mapping: { workdir: omnibus }
+        params:
+          &migration-params
+          <<: *cf-creds
+          CF_SPACE: test
+          COMMAND: workdir/ci/scripts/migrate_database.sh
+          APP_NAME: adminusers
+          APP_PACKAGE: uk.gov.pay.adminusers.app.AdminUsersApp
+
+  - name: migrate-card-connector-db-test
+    plan:
+      - get: omnibus
+      - get: git-card-connector-pre-release
+        passed: [deploy-card-connector-test]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *migration-params
+          CF_SPACE: test-cde
+          APP_NAME: card-connector
+          APP_PACKAGE: uk.gov.pay.connector.app.ConnectorApp
+
+  - name: migrate-ledger-db-test
+    plan:
+      - get: omnibus
+      - get: git-ledger-pre-release
+        passed: [deploy-ledger-test]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *migration-params
+          APP_NAME: ledger
+          APP_PACKAGE: uk.gov.pay.ledger.app.LedgerApp
+
+  - name: migrate-products-db-test
+    plan:
+      - get: omnibus
+      - get: git-products-pre-release
+        passed: [deploy-products-test]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *migration-params
+          APP_NAME: products
+          APP_PACKAGE: uk.gov.pay.products.ProductsApplication
+
+  - name: migrate-publicauth-db-test
+    plan:
+      - get: omnibus
+      - get: git-publicauth-pre-release
+        passed: [deploy-publicauth-test]
+        trigger: true
+      - <<: *run-migration
+        params:
+          <<: *migration-params
+          APP_NAME: publicauth
+          APP_PACKAGE: uk.gov.pay.publicauth.app.PublicAuthApp
+
