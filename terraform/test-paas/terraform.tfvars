@@ -34,7 +34,7 @@ credentials = {
       stripe_webhook_live_sign_secret          = "stripe/test/test/webhook-secret"
       notify_payment_receipt_email_template_id = "notify/templates/paas/test/connector.notify_payment_receipt_email_template_id"
       notify_refund_email_template_id          = "notify/templates/paas/test/connector.notify_refund_issued_template_id"
-      db_password                              = "aws/paas/test/rds/application_users/card_connector/connector1"
+      db_password                              = "aws/paas/test/rds/application_users/card_connector/connector2"
     }
     static_values = {
       secure_worldpay_notification_domain  = "london.cloudapps.digital"
@@ -48,7 +48,7 @@ credentials = {
       sqs_enabled                          = "true"
       stripe_transaction_fee_percentage    = "0.1"
       card_connector_analytics_tracking_id = "testing-123"
-      db_user                              = "connector1"
+      db_user                              = "connector2"
       db_name                              = "connector"
       db_ssl_option                        = "true"
     }
