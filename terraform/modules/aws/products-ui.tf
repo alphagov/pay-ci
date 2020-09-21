@@ -82,6 +82,12 @@ resource "aws_wafv2_web_acl" "products_ui" {
     allow {}
   }
 
+  lifecycle {
+    ignore_changes = [
+      rule,
+    ]
+  }
+
   rule {
     name     = "AWS-AWSManagedRulesCommonRuleSet"
     priority = 0

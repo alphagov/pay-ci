@@ -52,10 +52,10 @@ module "test" {
   environment           = "test"
   domain_name           = "test.gdspay.uk"
   paas_domain           = "cloudapps.digital"
-  vpc_cidr              = "172.17.0.0/16"
-  paas_vpc_peering_name = null
+  vpc_cidr              = "172.16.0.0/16"
+  paas_vpc_peering_name = "pcx-060f9bbb583289713"
   rds_instances         = var.rds_instances
   subnet_reservations = {
-    "rds" = 36
+    "rds" = 40
   }
 }
