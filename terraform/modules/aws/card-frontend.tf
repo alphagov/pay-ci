@@ -113,6 +113,12 @@ resource "aws_wafv2_web_acl" "card_frontend" {
     allow {}
   }
 
+  lifecycle {
+    ignore_changes = [
+      rule,
+    ]
+  }
+
   rule {
     name     = "AWS-AWSManagedRulesCommonRuleSet"
     priority = 0
