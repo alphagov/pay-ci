@@ -6,6 +6,7 @@ image_resource:
 params:
   consumer:
   provider:
+  tag:
   broker_username: ((pact-broker-username))
   broker_password: ((pact-broker-password))
   broker_url: "https://pay-concourse-pact-broker.cloudapps.digital"
@@ -34,7 +35,7 @@ run:
       if pact-broker can-i-deploy --pacticipant="$provider" \
                                --version="$pr_sha" \
                                --pacticipant="$consumer" \
-                               --latest="master" \
+                               --latest="$tag" \
                                --broker_username="$broker_username" \
                                --broker_password="$broker_password" \
                                --broker_base_url="${broker_url}"; then
@@ -58,7 +59,7 @@ run:
       mvn test \
         -DrunContractTests \
         -DCONSUMER="$consumer" \
-        -DPACT_CONSUMER_TAG="master" \
+        -DPACT_CONSUMER_TAG="$tag" \
         -Dpact.provider.version="$pr_sha" \
         -Dpact.verifier.publishResults=true \
         -DPACT_BROKER_HOST="${broker_url#https://}" \

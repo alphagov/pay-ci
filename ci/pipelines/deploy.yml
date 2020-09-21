@@ -11,13 +11,22 @@ definitions:
   - &verify-provider-with-consumer
     task: verify-provider-with-consumer-master-pacts
     privileged: true
-    file: omnibus/ci/tasks/pact-provider-master-verification.yml
+    file: omnibus/ci/tasks/pact-provider-tagged-verification.yml
     vars: &pact-credentials
       pact-broker-username: ((pact-broker-username))
       pact-broker-password: ((pact-broker-password))
     params:
+      tag: main
       consumer: change-this-value
       provider: change-this-value
+  - &tag-pacts-with-main
+    task: tag-pacts-with-main
+    file: omnibus/ci/tasks/tag-pacts.yml
+    vars:
+      <<: *pact-credentials
+    params:
+      tag: main
+      consumer_name: change-this-value
 groups:
   - name: Adminusers
     jobs:
@@ -401,11 +410,9 @@ jobs:
       - get: src
         resource: card-frontend-source
         trigger: true
-      - task: tag-pacts-with-master
-        file: omnibus/ci/tasks/tag-pacts-with-master.yml
-        vars:
-          <<: *pact-credentials
+      - <<: *tag-pacts-with-main
         params:
+          tag: main
           consumer_name: frontend
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
@@ -445,11 +452,9 @@ jobs:
       - get: src
         resource: products-ui-source
         trigger: true
-      - task: tag-pacts-with-master
-        file: omnibus/ci/tasks/tag-pacts-with-master.yml
-        vars:
-          <<: *pact-credentials
+      - <<: *tag-pacts-with-main
         params:
+          tag: main
           consumer_name: products-ui
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
@@ -468,11 +473,9 @@ jobs:
       - get: src
         resource: selfservice-source
         trigger: true
-      - task: tag-pacts-with-master
-        file: omnibus/ci/tasks/tag-pacts-with-master.yml
-        vars:
-          <<: *pact-credentials
+      - <<: *tag-pacts-with-main
         params:
+          tag: main
           consumer_name: selfservice
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
@@ -563,11 +566,9 @@ jobs:
       - get: src
         resource: publicapi-source
         trigger: true
-      - task: tag-pacts-with-master
-        file: omnibus/ci/tasks/tag-pacts-with-master.yml
-        vars:
-          <<: *pact-credentials
+      - <<: *tag-pacts-with-main
         params:
+          tag: main
           consumer_name: publicapi
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
@@ -663,11 +664,9 @@ jobs:
       - get: src
         resource: ledger-source
         trigger: true
-      - task: tag-pacts-with-master
-        file: omnibus/ci/tasks/tag-pacts-with-master.yml
-        vars:
-          <<: *pact-credentials
+      - <<: *tag-pacts-with-main
         params:
+          tag: main
           consumer_name: ledger
       - in_parallel:
         - <<: *verify-provider-with-consumer
