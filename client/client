@@ -10,7 +10,6 @@ require 'base32'
 
 LOCAL_PORTS = {
   'card-connector' => 9891,
-  'directdebit-connector' => 9892,
   'publicapi' => 9893,
   'publicauth' => 9894,
   'adminusers' => 9895,
@@ -33,14 +32,6 @@ class AppClient
       gateway_account_ids.push(card_gateway_account_id)
     end
 
-    if is_app_up?('directdebit-connector')
-      STDERR.puts "🏦  Direct Debit connector is up, creating Direct Debit gateway account and API Token"
-      dd_account = create_account('direct_debit')
-      dd_gateway_account_id = extract_gateway_account_id(dd_account)
-      dd_token = create_token(dd_gateway_account_id, 'direct_debit')
-      gateway_account_ids.push(dd_gateway_account_id)
-    end
-
     service = create_service(service_name, *gateway_account_ids)
     service_id = service.fetch('external_id')
 
@@ -59,9 +50,7 @@ class AppClient
        ['📱  OTP token', generate_otp_token(otp_key)],
        ['💁  Service ID', service_id],
        ['💳  Card gateway account ID', card_gateway_account_id],
-       ['🎫  Card API token', card_token],
-       ['🏦  Direct Debit gateway account ID', dd_gateway_account_id],
-       ['🎟  Direct Debit API token', dd_token]
+       ['🎫  Card API token', card_token]
     ]).render(:unicode, padding: 1, multiline: true)
 
     JSON.dump({
@@ -71,9 +60,7 @@ class AppClient
        'otp_token' => generate_otp_token(otp_key),
        'service_id' => service_id,
        'card_gateway_account_id' => card_gateway_account_id,
-       'card_sandbox_api_token' => card_token,
-       'direct_debit_gateway_account_id' => dd_gateway_account_id,
-       'direct_debit_sandbox_api_token' => dd_token,
+       'card_sandbox_api_token' => card_token
     })
   end
 
@@ -93,10 +80,8 @@ class AppClient
     case type
       when 'card'
         gateway_account_provider = 'card-connector'
-      when 'direct_debit'
-        gateway_account_provider = 'directdebit-connector'
       else
-        STDERR.puts "Unrecognised account type #{type}. Options are card, direct_debit"
+        STDERR.puts "Unrecognised account type #{type}. Options are card"
     end
 
     account = post("#{base_url(gateway_account_provider)}/v1/api/accounts", gateway_account_data)
