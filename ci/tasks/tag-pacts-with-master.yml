@@ -6,7 +6,8 @@ image_resource:
 inputs:
   - name: src
 params:
-  consumer_name: selfservice
+  consumer_name:
+  tag:
   broker_username: ((pact-broker-username))
   broker_password: ((pact-broker-password))
 run:
@@ -17,11 +18,11 @@ run:
     - |
       pr_commit="$(git rev-list --no-merges -n 1 HEAD)"
       if [ -z "$pr_commit" ]; then
-        echo "cannot extract pr commit from head of master branch"
+        echo "cannot extract pr commit from head of main branch"
         exit 1
       fi
 
       echo "tagging commits with with version ${pr_commit}"
       curl -v --fail -X PUT -H "Content-Type: application/json" \
       --user ${broker_username}:${broker_password} \
-      https://pay-concourse-pact-broker.cloudapps.digital/pacticipants/"${consumer_name}"/versions/"${pr_commit}"/tags/master
+      https://pay-concourse-pact-broker.cloudapps.digital/pacticipants/"${consumer_name}"/versions/"${pr_commit}"/tags/"${tag}"
