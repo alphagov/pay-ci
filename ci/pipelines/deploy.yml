@@ -11,7 +11,7 @@ definitions:
   - &verify-provider-with-consumer
     task: verify-provider-with-consumer-master-pacts
     privileged: true
-    file: omnibus/ci/tasks/pact-provider-master-verification.yml
+    file: omnibus/ci/tasks/pact-provider-tagged-verification.yml
     vars: &pact-credentials
       pact-broker-username: ((pact-broker-username))
       pact-broker-password: ((pact-broker-password))
@@ -21,7 +21,7 @@ definitions:
       provider: change-this-value
   - &tag-pacts-with-main
     task: tag-pacts-with-main
-    file: omnibus/ci/tasks/tag-pacts-with-master.yml
+    file: omnibus/ci/tasks/tag-pacts.yml
     vars:
       <<: *pact-credentials
     params:
