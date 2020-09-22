@@ -298,11 +298,12 @@ jobs:
         trigger: true
       - task: deploy-to-paas-test
         file: omnibus/ci/tasks/cf-v3-deploy.yml
+        input_mapping: { artefact: cardid-data-source }
         params:
-          <<: *cf-creds
+          <<: *app-deploy-config
           APP_NAME: cardid-data
-          APP_PATH: cardid-data-source/sources
-          MANIFEST: cardid-data-source/manifest.yml
+          APP_PATH: artefact/sources
+          MANIFEST: artefact/manifest.yml
           ZDT: true
 
   - name: deploy-cardid-test
