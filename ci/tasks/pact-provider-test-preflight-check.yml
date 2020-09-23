@@ -2,7 +2,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: pactfoundation/pact-cli
+    repository: govukpay/pact_with_jq
 params:
   consumer:
   broker_username: ((pact-broker-username))
@@ -26,7 +26,8 @@ run:
             --pacticipant="$consumer" --version="$git_sha" \
             --broker_base_url="$broker_url" \
             --broker-username="$broker_username" \
-            --broker-password="$broker_password")"
+            --broker-password="$broker_password" \
+            --output=json)"
           return $?
       }
 
@@ -47,7 +48,7 @@ run:
         echo "Providers needing verification: "
         touch pact_params/providers_needing_verification
         echo "$can_deploy" | \
-          awk 'BEGIN {FS="|"}; /\|/ && NR > 4 && !/true/{print $3}' | \
+          jq '.matrix[] | select(.verificationResult.success != true) | .provider.name' | \
           tr -d ' ' | \
           tee pact_params/providers_needing_verification
 
