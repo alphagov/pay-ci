@@ -5,6 +5,7 @@ credentials = {
   publicapi = {
     pay_low_pass_secrets = {
       sentry_dsn = "sentry/publicapi_dsn"
+      token_api_hmac_secret = "paas/govuk-pay/test/general/token_api_hmac_secret"
     }
     static_values = {
       rate_limiter_value               = "200"
@@ -15,7 +16,6 @@ credentials = {
       rate_limiter_elevated_accounts   = "31"
       rate_limiter_elevated_value_get  = "100"
       rate_limiter_elevated_value_post = "200"
-      token_api_hmac_secret            = "something"
     }
   }
   card_connector = {
@@ -64,11 +64,11 @@ credentials = {
     pay_low_pass_secrets = {
       sentry_dsn  = "sentry/publicauth_dsn"
       db_password = "aws/paas/test/rds/application_users/publicauth/publicauth1"
+      token_db_bcrypt_salt  = "paas/govuk-pay/test/publicauth/token_db_bcrypt_salt"
+      token_api_hmac_secret = "paas/govuk-pay/test/general/token_api_hmac_secret"
     }
     static_values = {
       // @todo move these to secret store (placeholder for now)
-      token_db_bcrypt_salt  = "$2a$12$ZqrGf7v9uNXR6htsfz4k2u"
-      token_api_hmac_secret = "something"
       db_user               = "publicauth1"
       db_name               = "publicauth"
       db_ssl_option         = "true"
