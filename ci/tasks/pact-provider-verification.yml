@@ -28,7 +28,7 @@ run:
       }
 
       function needs_verification() {
-        grep "^${provider}" pact_params/providers_needing_verification || test -f pact_params/verification_needed
+        grep "^\"${provider}" pact_params/providers_needing_verification || test -f pact_params/verification_needed
       }
 
       trap cleanup EXIT
