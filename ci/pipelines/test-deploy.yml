@@ -9,58 +9,58 @@ definitions:
       METRIC_NAME: change-this-value
       METRIC_VALUE: 0
 groups:
-  - name: Adminusers
+  - name: adminusers
     jobs:
       - deploy-adminusers-test
       - migrate-adminusers-db-test
       - card-payment-smoke-tests-test
 
-  - name: Card Connector
+  - name: card-connector
     jobs:
       - deploy-card-connector-test
       - migrate-card-connector-db-test
       - card-payment-smoke-tests-test
 
-  - name: Card ID
+  - name: card-id
     jobs:
       - deploy-cardid-test
       - deploy-cardid-data-test
       - card-payment-smoke-tests-test
 
-  - name: Card Frontend
+  - name: card-frontend
     jobs:
       - deploy-card-frontend-test
       - card-payment-smoke-tests-test
 
-  - name: Ledger
+  - name: ledger
     jobs:
       - deploy-ledger-test
       - migrate-ledger-db-test
       - card-payment-smoke-tests-test
 
-  - name: Products
+  - name: products
     jobs:
       - deploy-products-test
       - migrate-products-db-test
       - products-smoke-test-test
 
-  - name: Products UI
+  - name: products-ui
     jobs:
       - deploy-products-ui-test
       - products-smoke-test-test
 
-  - name: Public API
+  - name: public-api
     jobs:
       - deploy-publicapi-test
       - card-payment-smoke-tests-test
 
-  - name: PublicAuth
+  - name: publicauth
     jobs:
       - deploy-publicauth-test
       - migrate-publicauth-db-test
       - card-payment-smoke-tests-test
 
-  - name: Other Services
+  - name: other-services
     jobs:
       - deploy-selfservice-test
       - deploy-notifications-test
@@ -68,7 +68,7 @@ groups:
       - deploy-sqs-test
       - update-deploy-pipeline
 
-  - name: Smoke Tests
+  - name: smoke-tests
     jobs:
       - deploy-selenium-hub
       - deploy-smoke-tests-test
@@ -77,11 +77,11 @@ groups:
       - card-payment-smoke-tests-test
       - products-smoke-test-test
 
-  - name: Carbon Relay
+  - name: carbon-relay
     jobs:
       - deploy-carbon-relay-test
 
-  - name: PaaS Metric Exporter
+  - name: paas-metric-exporter
     jobs:
       - deploy-metric-exporter-test
 
@@ -658,7 +658,7 @@ jobs:
       - <<: *trigger-test
         get: git-publicauth-pre-release
         passed: [migrate-publicauth-db-test]
-      - task: run card smoke test
+      - task: run-card-smoke-test
         file: omnibus/ci/tasks/cf-task.yml
         params: &smoke-test-params
           <<: *cf-creds
@@ -706,7 +706,7 @@ jobs:
       - <<: *trigger-test
         get: git-products-ui-pre-release
         passed: [deploy-products-ui-test]
-      - task: run products smoke test
+      - task: run-products-smoke-test
         file: omnibus/ci/tasks/cf-task.yml
         params:
           <<: *smoke-test-params
