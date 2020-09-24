@@ -111,7 +111,6 @@ groups:
       - deploy-selenium-hub
       - deploy-smoke-tests-staging
       - smoke-tests-staging-network-policies
-      - smoke-test-user-staging
       - card-payment-smoke-tests-staging
       - products-smoke-test-staging
 
@@ -1051,29 +1050,6 @@ jobs:
           port: 4444
           protocol: tcp
 
-  - name: smoke-test-user-staging
-    serial_groups:
-      - card-connector-stg
-      - publicapi-stg
-      - publicauth-stg
-      - adminusers-stg
-      - products-stg
-      - smoke-tests-stg
-    plan:
-      - get: omnibus
-      - get: endtoend-container
-        passed: [deploy-smoke-tests-staging]
-        trigger: true
-      - task: create-service
-        file: omnibus/ci/tasks/smoke-test-user.yml
-        params:
-          <<: *cf-creds
-          CF_SPACE: staging
-          CF_SPACE_CDE: staging-cde
-          CF_SPACE_TOOLS: smoke-tests
-          SMOKE_TEST_APP: smoke-tests-staging
-          SERVICE_NAME: smoke-test-user-staging
-
   - name: card-payment-smoke-tests-staging
     serial_groups: [cardid-stg, card-connector-stg, card-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     build_log_retention:
@@ -1081,7 +1057,7 @@ jobs:
     plan:
       - get: omnibus
       - get: endtoend-container
-        passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
+        passed: [deploy-smoke-tests-staging]
         trigger: true
       - get: every-10-minutes
         trigger: true
@@ -1147,7 +1123,7 @@ jobs:
     plan:
       - get: omnibus
       - get: endtoend-container
-        passed: [deploy-smoke-tests-staging, smoke-test-user-staging]
+        passed: [deploy-smoke-tests-staging]
         trigger: true
       - get: every-10-minutes
         trigger: true
