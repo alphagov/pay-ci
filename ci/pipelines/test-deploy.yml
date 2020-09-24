@@ -8,12 +8,47 @@ definitions:
       HOSTED_GRAPHITE_API_KEY: change-this-value
       METRIC_NAME: change-this-value
       METRIC_VALUE: 0
+
+  - &create-release-metatdata
+    task: create-release-metatdata
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: govukpay/concourse-runner
+      inputs:
+        - name: pre-release
+      params:
+        ENVIRONMENT: test
+      outputs:
+        - name: release-metadata
+      run:
+        path: bash
+        args:
+          - -ec
+          - |
+            release_number="$(grep -oe "\d\+$" pre-release/tag)"
+            release_name="paas_release_${ENVIRONMENT}-${release_number}"
+            echo "$release_name" | tee release-metadata/tag
+
+  - &create-test-release
+    put: release
+    resource: update-this-value
+    params:
+      name: release-metadata/tag
+      tag: release-metadata/tag
+      globs:
+        - pre-release/pay-*
+      commitish: pre-release/commit_sha
+
 groups:
   - name: adminusers
     jobs:
       - deploy-adminusers-test
       - migrate-adminusers-db-test
       - card-payment-smoke-tests-test
+      - create-adminusers-test-release
 
   - name: card-connector
     jobs:
@@ -779,4 +814,15 @@ jobs:
           <<: *migration-params
           APP_NAME: publicauth
           APP_PACKAGE: uk.gov.pay.publicauth.app.PublicAuthApp
+
+  # Create git release with tag "test"
+  - name: create-adminusers-test-release
+    plan:
+      - get: pre-release
+        resource: git-adminusers-pre-release
+        trigger: true
+        passed: [card-payment-smoke-tests-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-adminusers-pre-release
 
