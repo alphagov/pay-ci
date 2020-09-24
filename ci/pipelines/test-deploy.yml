@@ -73,7 +73,6 @@ groups:
       - deploy-selenium-hub
       - deploy-smoke-tests-test
       - smoke-tests-test-network-policies
-      - smoke-test-user-test
       - card-payment-smoke-tests-test
       - products-smoke-test-test
 
@@ -600,29 +599,6 @@ jobs:
           port: 4444
           protocol: tcp
 
-  - name: smoke-test-user-test
-    serial_groups:
-      - card-connector
-      - publicapi
-      - publicauth
-      - adminusers
-      - products
-      - smoke-tests
-    plan:
-      - get: omnibus
-      - get: endtoend-container
-        passed: [deploy-smoke-tests-test]
-        trigger: true
-      - task: create-service
-        file: omnibus/ci/tasks/smoke-test-user.yml
-        params:
-          <<: *cf-creds
-          CF_SPACE: test
-          CF_SPACE_CDE: test-cde
-          CF_SPACE_TOOLS: smoke-tests
-          SMOKE_TEST_APP: smoke-tests-test
-          SERVICE_NAME: smoke-test-user-test
-
   - name: card-payment-smoke-tests-test
     serial_groups: [cardid, card-connector, card-frontend, ledger, publicapi, publicauth]
     build_log_retention:
@@ -630,7 +606,7 @@ jobs:
     plan:
       - get: omnibus
       - get: endtoend-container
-        passed: [deploy-smoke-tests-test, smoke-test-user-test]
+        passed: [deploy-smoke-tests-test]
         trigger: true
       - get: every-10-minutes
         trigger: true
@@ -696,7 +672,7 @@ jobs:
     plan:
       - get: omnibus
       - get: endtoend-container
-        passed: [deploy-smoke-tests-test, smoke-test-user-test]
+        passed: [deploy-smoke-tests-test]
         trigger: true
       - get: every-10-minutes
         trigger: true
