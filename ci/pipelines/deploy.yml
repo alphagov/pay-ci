@@ -1000,10 +1000,10 @@ jobs:
         input_mapping: { artefact: "metric-exporter-source" }
         params:
           <<: *app-deploy-config
-          APP_NAME: metric-exporter          
+          APP_NAME: metric-exporter
           CF_SPACE: staging
           MANIFEST: omnibus/paas/metric-exporter/manifest.yml
-          APP_PATH: metric-exporter-source
+          APP_PATH: artefact
 
   # Smoke Tests
   - name: deploy-selenium-hub
