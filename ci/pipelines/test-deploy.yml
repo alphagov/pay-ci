@@ -55,51 +55,61 @@ groups:
       - deploy-card-connector-test
       - migrate-card-connector-db-test
       - card-payment-smoke-tests-test
+      - create-card-connector-test-release
 
   - name: card-id
     jobs:
       - deploy-cardid-test
       - deploy-cardid-data-test
       - card-payment-smoke-tests-test
+      - create-cardid-test-release
 
   - name: card-frontend
     jobs:
       - deploy-card-frontend-test
       - card-payment-smoke-tests-test
+      - create-card-frontend-test-release
 
   - name: ledger
     jobs:
       - deploy-ledger-test
       - migrate-ledger-db-test
       - card-payment-smoke-tests-test
+      - create-ledger-test-release
 
   - name: products
     jobs:
       - deploy-products-test
       - migrate-products-db-test
       - products-smoke-test-test
+      - create-products-test-release
 
   - name: products-ui
     jobs:
       - deploy-products-ui-test
       - products-smoke-test-test
+      - create-products-ui-test-release
 
   - name: public-api
     jobs:
       - deploy-publicapi-test
       - card-payment-smoke-tests-test
+      - create-publicapi-test-release
 
   - name: publicauth
     jobs:
       - deploy-publicauth-test
       - migrate-publicauth-db-test
       - card-payment-smoke-tests-test
+      - create-publicauth-test-release
 
   - name: other-services
     jobs:
       - deploy-selfservice-test
+      - create-selfservice-test-release
       - deploy-notifications-test
       - deploy-toolbox-test
+      - create-toolbox-test-release
       - deploy-sqs-test
       - update-deploy-pipeline
 
@@ -826,3 +836,102 @@ jobs:
       - <<: *create-test-release
         resource: git-adminusers-pre-release
 
+  - name: create-card-frontend-test-release
+    plan:
+      - get: pre-release
+        resource: git-card-frontend-pre-release
+        trigger: true
+        passed: [card-payment-smoke-tests-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-card-frontend-pre-release
+
+  - name: create-selfservice-test-release
+    plan:
+      - get: pre-release
+        resource: git-selfservice-pre-release
+        trigger: true
+        passed: [deploy-selfservice-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-selfservice-pre-release
+
+  - name: create-products-ui-test-release
+    plan:
+      - get: pre-release
+        resource: git-products-ui-pre-release
+        trigger: true
+        passed: [products-smoke-test-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-products-ui-pre-release
+
+  - name: create-card-connector-test-release
+    plan:
+      - get: pre-release
+        resource: git-card-connector-pre-release
+        trigger: true
+        passed: [card-payment-smoke-tests-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-card-connector-pre-release
+
+  - name: create-publicauth-test-release
+    plan:
+      - get: pre-release
+        resource: git-publicauth-pre-release
+        trigger: true
+        passed: [card-payment-smoke-tests-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-publicauth-pre-release
+
+  - name: create-publicapi-test-release
+    plan:
+      - get: pre-release
+        resource: git-publicapi-pre-release
+        trigger: true
+        passed: [card-payment-smoke-tests-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-publicapi-pre-release
+
+  - name: create-cardid-test-release
+    plan:
+      - get: pre-release
+        resource: git-cardid-pre-release
+        trigger: true
+        passed: [card-payment-smoke-tests-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-cardid-pre-release
+
+  - name: create-ledger-test-release
+    plan:
+      - get: pre-release
+        resource: git-ledger-pre-release
+        trigger: true
+        passed: [card-payment-smoke-tests-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-ledger-pre-release
+
+  - name: create-products-test-release
+    plan:
+      - get: pre-release
+        resource: git-products-pre-release
+        trigger: true
+        passed: [products-smoke-test-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-products-pre-release
+
+  - name: create-toolbox-test-release
+    plan:
+      - get: pre-release
+        resource: git-toolbox-pre-release
+        trigger: true
+        passed: [deploy-toolbox-test]
+      - <<: *create-release-metatdata
+      - <<: *create-test-release
+        resource: git-toolbox-pre-release
