@@ -43,6 +43,7 @@ run:
       if [ "$skip_tests" = true ]; then
         echo "Skipping tests"
       else
+        npm run lint
         npm test -- --forbid-only --forbid-pending
 
         if [ -f "cypress.json" ]; then
