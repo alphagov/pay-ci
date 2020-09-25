@@ -732,31 +732,6 @@ jobs:
       - task: extract-card-connector-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
         input_mapping: { git-release: git-card-connector-pre-release }
-      - in_parallel:
-        - <<: *verify-provider-with-consumer
-          task: verify-with-publicapi
-          input_mapping: {src: extract-card-connector-artefact}
-          params:
-            consumer: publicapi
-            provider: connector
-        - <<: *verify-provider-with-consumer
-          task: verify-with-frontend
-          input_mapping: {src: extract-card-connector-artefact}
-          params:
-            consumer: frontend
-            provider: connector
-        - <<: *verify-provider-with-consumer
-          task: verify-with-selfservice
-          input_mapping: {src: extract-card-connector-artefact}
-          params:
-            consumer: selfservice
-            provider: connector
-        - <<: *verify-provider-with-consumer
-          task: verify-with-ledger
-          input_mapping: {src: extract-card-connector-artefact}
-          params:
-            consumer: ledger
-            provider: connector
       - task: deploy-to-paas-staging
         file: omnibus/ci/tasks/cf-v3-deploy.yml
         params:
