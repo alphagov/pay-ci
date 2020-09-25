@@ -9,8 +9,8 @@ definitions:
       METRIC_NAME: change-this-value
       METRIC_VALUE: 0
 
-  - &create-release-metatdata
-    task: create-release-metatdata
+  - &create-release-metadata
+    task: create-release-metadata
     config:
       platform: linux
       image_resource:
@@ -832,7 +832,7 @@ jobs:
         resource: git-adminusers-pre-release
         trigger: true
         passed: [card-payment-smoke-tests-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-adminusers-pre-release
 
@@ -842,7 +842,7 @@ jobs:
         resource: git-card-frontend-pre-release
         trigger: true
         passed: [card-payment-smoke-tests-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-card-frontend-pre-release
 
@@ -852,7 +852,7 @@ jobs:
         resource: git-selfservice-pre-release
         trigger: true
         passed: [deploy-selfservice-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-selfservice-pre-release
 
@@ -862,7 +862,7 @@ jobs:
         resource: git-products-ui-pre-release
         trigger: true
         passed: [products-smoke-test-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-products-ui-pre-release
 
@@ -872,7 +872,7 @@ jobs:
         resource: git-card-connector-pre-release
         trigger: true
         passed: [card-payment-smoke-tests-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-card-connector-pre-release
 
@@ -882,7 +882,7 @@ jobs:
         resource: git-publicauth-pre-release
         trigger: true
         passed: [card-payment-smoke-tests-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-publicauth-pre-release
 
@@ -892,7 +892,7 @@ jobs:
         resource: git-publicapi-pre-release
         trigger: true
         passed: [card-payment-smoke-tests-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-publicapi-pre-release
 
@@ -902,7 +902,7 @@ jobs:
         resource: git-cardid-pre-release
         trigger: true
         passed: [card-payment-smoke-tests-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-cardid-pre-release
 
@@ -912,7 +912,7 @@ jobs:
         resource: git-ledger-pre-release
         trigger: true
         passed: [card-payment-smoke-tests-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-ledger-pre-release
 
@@ -922,7 +922,7 @@ jobs:
         resource: git-products-pre-release
         trigger: true
         passed: [products-smoke-test-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-products-pre-release
 
@@ -932,6 +932,6 @@ jobs:
         resource: git-toolbox-pre-release
         trigger: true
         passed: [deploy-toolbox-test]
-      - <<: *create-release-metatdata
+      - <<: *create-release-metadata
       - <<: *create-test-release
         resource: git-toolbox-pre-release
