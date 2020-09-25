@@ -597,7 +597,7 @@ jobs:
           APP_NAME: metric-exporter
           CF_SPACE: test
           MANIFEST: omnibus/paas/metric-exporter/manifest.yml
-          APP_PATH: metric-exporter-source
+          APP_PATH: artefact
 
   # Smoke Tests
   - name: deploy-selenium-hub
