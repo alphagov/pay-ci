@@ -947,7 +947,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
-        passed: [publicapi-unit-test]
+        passed: [publicapi-unit-test, publicapi-integration-test]
       - <<: *put-pact-provider-pending-status
         put: publicapi-pull-request
       - <<: *get-omnibus
@@ -1315,7 +1315,6 @@ jobs:
     - <<: *put-integration-test-success-status
       put: ledger-pull-request
 
-      
   - <<: *job-definition
     name: ledger-pact-provider-test
     serial_groups: [pact-test]
