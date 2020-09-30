@@ -37,7 +37,6 @@ groups:
 
   - name: Card Connector
     jobs:
-      - build-card-connector
       - deploy-card-connector-staging
       - migrate-card-connector-db-staging
       - card-payment-smoke-tests-staging
@@ -219,12 +218,6 @@ resources:
       uri: https://github.com/alphagov/pay-direct-debit-connector
 
   - <<: *git-repo
-    name: card-connector-source
-    source:
-      <<: *git-repo-source
-      uri: https://github.com/alphagov/pay-connector
-
-  - <<: *git-repo
     name: publicapi-source
     source:
       <<: *git-repo-source
@@ -301,6 +294,7 @@ resources:
     source:
       <<: *github-release-source
       repository: pay-connector
+      tag_filter: "paas_release_test-(.*)"
 
   - name: git-publicauth-pre-release
     type: github-release
@@ -521,44 +515,6 @@ jobs:
         params: 
           <<: *release-params
 
-  - name: build-card-connector
-    plan:
-      - get: omnibus
-      - get: src
-        resource: card-connector-source
-        trigger: true
-      - in_parallel:
-        - <<: *verify-provider-with-consumer
-          task: verify-with-publicapi
-          params:
-            consumer: publicapi
-            provider: connector
-        - <<: *verify-provider-with-consumer
-          task: verify-with-frontend
-          params:
-            consumer: frontend
-            provider: connector
-        - <<: *verify-provider-with-consumer
-          task: verify-with-selfservice
-          params:
-            consumer: selfservice
-            provider: connector
-        - <<: *verify-provider-with-consumer
-          task: verify-with-ledger
-          params:
-            consumer: ledger
-            provider: connector
-      - task: calculate-release-number
-        file: omnibus/ci/tasks/calculate-release-number.yml
-      - task: build-app
-        file: omnibus/ci/tasks/maven-build.yml
-        params:
-          APP_NAME: pay-connector
-      - put: release
-        resource: git-card-connector-pre-release
-        params: 
-          <<: *release-params
-
   - name: build-publicapi
     plan:
       - get: omnibus
@@ -772,7 +728,6 @@ jobs:
     plan:
       - get: omnibus
       - get: git-card-connector-pre-release
-        passed: [build-card-connector]
         trigger: true
       - task: extract-card-connector-artefact
         file: omnibus/ci/tasks/extract-artefact.yml
