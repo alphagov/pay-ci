@@ -338,7 +338,6 @@ groups:
       - card-connector-unit-test
       - card-connector-integration-test
       - card-connector-pact-provider-test
-      - card-connector-consumer-pact-test
       - card-connector-pact-provider-verification
       - card-connector-card-e2e
       - record-connector-build-time
@@ -758,6 +757,9 @@ jobs:
       on_failure:
         <<: *put-integration-test-failed-status
         put: card-connector-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: connector
     - <<: *put-integration-test-success-status
       put: card-connector-pull-request
 
@@ -783,66 +785,13 @@ jobs:
       put: card-connector-pull-request
 
   - <<: *job-definition
-    name: card-connector-consumer-pact-test
-    plan:
-      - <<: *get-omnibus
-      - <<: *get-pull-request
-        resource: card-connector-pull-request
-      - task: run consumer pact tests
-        privileged: true
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          inputs:
-            - name: src
-          outputs:
-            - name: pacts
-          run:
-            path: sh
-            dir: src
-            args:
-              - -ec
-              - |
-                source /docker-helpers.sh
-                start_docker
-
-                function cleanup {
-                  echo "CLEANUP TRIGGERED"
-                  clean_docker
-                  stop_docker
-                  echo "CLEANUP COMPLETE"
-                }
-
-                trap cleanup EXIT
-
-                commit="$(cat .git/resource/head_sha)"
-                pr="$(cat .git/resource/pr)"
-                mvn clean package \
-                          -DPACT_BROKER_URL=https://pact-broker-test.cloudapps.digital \
-                          -DPACT_BROKER_USERNAME="" \
-                          -DPACT_BROKER_PASSWORD="" \
-                          -DPACT_CONSUMER_VERSION=${commit} \
-                          -DPACT_CONSUMER_TAG=${pr} \
-                          -Dpact.provider.version=${commit} \
-                          -DrunConsumerContractTests=true
-                cp -R target/pacts/* ../pacts/ || true
-
-      - <<: *publish-pacts
-        params:
-          consumer_name: connector
-
-  - <<: *job-definition
     name: card-connector-pact-provider-verification
     serial_groups: [pact-test]
     plan:
       - <<: *get-omnibus
       - <<: *get-pull-request
         resource: card-connector-pull-request
-        passed: [card-connector-consumer-pact-test]
+        passed: [card-connector-unit-test, card-connector-integration-test]
       - <<: *put-pact-provider-pending-status
         put: card-connector-pull-request
       - get: ledger-master
@@ -896,8 +845,7 @@ jobs:
     - <<: *get-pull-request
       resource: card-connector-pull-request
       passed: [card-connector-unit-test, card-connector-integration-test,
-        card-connector-pact-provider-test, card-connector-consumer-pact-test,
-        card-connector-pact-provider-verification]
+        card-connector-pact-provider-test, card-connector-pact-provider-verification]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
