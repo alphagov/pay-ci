@@ -23,6 +23,16 @@ definitions:
         - build-output/*
       commitish: src/.git/ref
 
+  - &tag-pacts-with-main
+    task: tag-pacts-with-main
+    file: omnibus/ci/tasks/tag-pacts.yml
+    vars:
+      pact-broker-username: ((pact-broker-username))
+      pact-broker-password: ((pact-broker-password))
+    params:
+      tag: main
+      consumer_name: change-this-value
+
 groups:
   - name: card-connector
     jobs:
@@ -64,6 +74,10 @@ jobs:
       - get: src
         resource: card-connector-main
         trigger: true
+      - <<: *tag-pacts-with-main
+        params:
+          tag: main
+          consumer_name: connector
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
