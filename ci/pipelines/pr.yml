@@ -457,7 +457,7 @@ resource_types:
     type: registry-image
     source:
       repository: teliaoss/github-pr-resource
-      tag: dev
+      tag: latest
 
   - name: paas-s3
     type: registry-image
