@@ -43,7 +43,7 @@ resource_types:
     type: registry-image
     source:
       repository: teliaoss/github-pr-resource
-      tag: dev
+      tag: v0.21.0
 
 resources:
   - name: card-connector-main
