@@ -11,9 +11,9 @@ definitions:
     version: every
     params:
       integration_tool: checkout
-  - &get-omnibus
-    get: omnibus
-    resource: omnibus
+  - &get-ci
+    get: ci
+    resource: ci
     trigger: false
   - &put-unit-tests-pending-status
     put: updateThisValue
@@ -23,10 +23,10 @@ definitions:
       context: unit tests
   - &run-java-package
     task: run-java-package
-    file: omnibus/ci/tasks/java-package.yml
+    file: ci/ci/tasks/java-package.yml
   - &run-java-unit-test
     task: run-unit-tests
-    file: omnibus/ci/tasks/java-tests.yml
+    file: ci/ci/tasks/java-tests.yml
     params:
       app_name: updateThisValue
     on_failure:
@@ -45,7 +45,7 @@ definitions:
   - &build-docker-image
     task: build-image
     privileged: true
-    file: omnibus/ci/tasks/build-docker-image.yml
+    file: ci/ci/tasks/build-docker-image.yml
     params:
       app_name: updateThisValue
   - &put-s3-docker-image
@@ -67,7 +67,7 @@ definitions:
   - &run-java-integration-tests
     task: run-integration-tests
     privileged: true
-    file: omnibus/ci/tasks/java-integration-tests.yml
+    file: ci/ci/tasks/java-integration-tests.yml
     on_failure:
       &put-integration-test-failed-status
       put: updateThisValue
@@ -126,7 +126,7 @@ definitions:
   - &run-e2e
     task: run e2e tests
     privileged: true
-    file: omnibus/ci/tasks/endtoend/task.yml
+    file: ci/ci/tasks/endtoend/task.yml
     input_mapping:
       docker/connector: updateThisValue
     params:
@@ -198,10 +198,10 @@ definitions:
       context: products e2e tests
   - &node-test
     task: test
-    file: omnibus/ci/tasks/node-build-pr.yml
+    file: ci/ci/tasks/node-build-pr.yml
   - &node-build
     task: build
-    file: omnibus/ci/tasks/node-build-pr.yml
+    file: ci/ci/tasks/node-build-pr.yml
     params:
       skip_tests: true
   - x-pact-credentials: &pact-credentials
@@ -213,10 +213,10 @@ definitions:
       <<: *pact-credentials
     params:
       consumer_name: updateThisValue
-    file: omnibus/ci/tasks/publish-pacts.yml
+    file: ci/ci/tasks/publish-pacts.yml
   - &zip-build
     task: zip-build
-    file: omnibus/ci/tasks/zip-build.yml
+    file: ci/ci/tasks/zip-build.yml
     params:
       app_name: updateThisValue
   - &put-node-test-failure
@@ -318,7 +318,7 @@ definitions:
   - &pact-provider-verification
     task: pact verification
     privileged: true
-    file: omnibus/ci/tasks/pact-provider-verification.yml
+    file: ci/ci/tasks/pact-provider-verification.yml
     vars:
       <<: *pact-credentials
     params:
@@ -326,7 +326,7 @@ definitions:
       provider: updateThisValue
   - &pact-provider-test-preflight-check
     task: check is valid
-    file: omnibus/ci/tasks/pact-provider-test-preflight-check.yml
+    file: ci/ci/tasks/pact-provider-test-preflight-check.yml
     vars:
       <<: *pact-credentials
     params:
@@ -443,9 +443,9 @@ groups:
     jobs:
       - update-pr-ci-pipeline
 
-  - name: Omnibus
+  - name: ci
     jobs:
-      - omnibus-pr-test
+      - ci-pr-test
 
   - name: Stubs
     jobs:
@@ -499,16 +499,16 @@ resources:
     type: git
     icon: github
     source:
-      uri: https://github.com/alphagov/pay-omnibus
+      uri: https://github.com/alphagov/pay-ci
       branch: master
       paths:
         - ci/pipelines/pr.yml
 
-  - name: omnibus
+  - name: ci
     type: git
     icon: github
     source:
-      uri: https://github.com/alphagov/pay-omnibus
+      uri: https://github.com/alphagov/pay-ci
       branch: master
       username: alphagov-pay-ci
       password: ((github-access-token))
@@ -717,10 +717,10 @@ resources:
       repository: alphagov/pay-stubs
 
   - <<: *pull-request
-    name: omnibus-pull-request
+    name: ci-pull-request
     source:
       <<: *pull-request-source
-      repository: alphagov/pay-omnibus
+      repository: alphagov/pay-ci
       paths:
         - "ci/pipelines/*"
         - "ci/tasks/*"
@@ -732,7 +732,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: card-connector-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-unit-tests-pending-status
       put: card-connector-pull-request
     - <<: *run-java-unit-test
@@ -752,7 +752,7 @@ jobs:
       resource: card-connector-pull-request
     - <<: *put-integration-test-pending-status
       put: card-connector-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *run-java-integration-tests
       on_failure:
         <<: *put-integration-test-failed-status
@@ -771,7 +771,7 @@ jobs:
       resource: card-connector-pull-request
     - <<: *put-pact-provider-pending-status
       put: card-connector-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *pact-provider-test-preflight-check
     - <<: *pact-provider-verification
       input_mapping:
@@ -788,7 +788,7 @@ jobs:
     name: card-connector-pact-provider-verification
     serial_groups: [pact-test]
     plan:
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *get-pull-request
         resource: card-connector-pull-request
         passed: [card-connector-unit-test, card-connector-integration-test]
@@ -819,7 +819,7 @@ jobs:
         resource: card-connector-pull-request
         trigger: false
         passed: [card-connector-unit-test]
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-card-e2e-pending-status
         put: card-connector-pull-request
       - <<: *run-java-package
@@ -854,7 +854,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: endtoend-pull-request
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-products-e2e-pending-status
         put: endtoend-pull-request
       - <<: *run-java-package
@@ -880,7 +880,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: endtoend-pull-request
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-card-e2e-pending-status
         put: endtoend-pull-request
       - <<: *run-java-package
@@ -914,7 +914,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: publicapi-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-unit-tests-pending-status
       put: publicapi-pull-request
     - <<: *run-java-unit-test
@@ -934,7 +934,7 @@ jobs:
       resource: publicapi-pull-request
     - <<: *put-integration-test-pending-status
       put: publicapi-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *run-java-integration-tests
       on_failure:
         <<: *put-integration-test-failed-status
@@ -953,7 +953,7 @@ jobs:
         resource: publicapi-pull-request
         trigger: false
         passed: [publicapi-unit-test]
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-card-e2e-pending-status
         put: publicapi-pull-request
       - <<: *run-java-package
@@ -981,7 +981,7 @@ jobs:
         passed: [publicapi-unit-test, publicapi-integration-test]
       - <<: *put-pact-provider-pending-status
         put: publicapi-pull-request
-      - <<: *get-omnibus
+      - <<: *get-ci
       - get: card-connector-master
       - get: ledger-master
       - get: directdebit-connector-master
@@ -1024,7 +1024,7 @@ jobs:
         resource: publicapi-pull-request
         trigger: false
         passed: [publicapi-unit-test]
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-products-e2e-pending-status
         put: publicapi-pull-request
       - <<: *run-java-package
@@ -1058,7 +1058,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: java-commons-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-integration-test-pending-status
       put: java-commons-pull-request
     - task: test
@@ -1114,7 +1114,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: adminusers-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-unit-tests-pending-status
       put: adminusers-pull-request
     - <<: *run-java-unit-test
@@ -1134,7 +1134,7 @@ jobs:
       resource: adminusers-pull-request
     - <<: *put-integration-test-pending-status
       put: adminusers-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *run-java-integration-tests
       on_failure:
         <<: *put-integration-test-failed-status
@@ -1153,7 +1153,7 @@ jobs:
       resource: adminusers-pull-request
     - <<: *put-pact-provider-pending-status
       put: adminusers-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *pact-provider-test-preflight-check
     - <<: *pact-provider-verification
       input_mapping:
@@ -1174,7 +1174,7 @@ jobs:
         trigger: false
         resource: adminusers-pull-request
         passed: [adminusers-unit-test]
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-card-e2e-pending-status
         put: adminusers-pull-request
       - <<: *run-java-package
@@ -1209,7 +1209,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: cardid-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-unit-tests-pending-status
       put: cardid-pull-request
     - <<: *run-java-unit-test
@@ -1229,7 +1229,7 @@ jobs:
       resource: cardid-pull-request
     - <<: *put-integration-test-pending-status
       put: cardid-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *run-java-integration-tests
       on_failure:
         <<: *put-integration-test-failed-status
@@ -1247,7 +1247,7 @@ jobs:
       - <<: *get-pull-request
         resource: cardid-pull-request
         trigger: false
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-card-e2e-pending-status
         put: cardid-pull-request
       - task: update submodule
@@ -1315,7 +1315,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: ledger-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-unit-tests-pending-status
       put: ledger-pull-request
     - <<: *run-java-unit-test
@@ -1335,7 +1335,7 @@ jobs:
       resource: ledger-pull-request
     - <<: *put-integration-test-pending-status
       put: ledger-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *run-java-integration-tests
       on_failure:
         <<: *put-integration-test-failed-status
@@ -1354,7 +1354,7 @@ jobs:
       resource: ledger-pull-request
     - <<: *put-pact-provider-pending-status
       put: ledger-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *pact-provider-test-preflight-check
     - <<: *pact-provider-verification
       input_mapping:
@@ -1370,7 +1370,7 @@ jobs:
   - <<: *job-definition
     name: ledger-consumer-pact-test
     plan:
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *get-pull-request
       resource: ledger-pull-request
     - task: run consumer pact tests
@@ -1424,7 +1424,7 @@ jobs:
     name: ledger-pact-provider-verification
     serial_groups: [pact-test]
     plan:
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *get-pull-request
         resource: ledger-pull-request
         passed: [ledger-consumer-pact-test]
@@ -1455,7 +1455,7 @@ jobs:
         resource: ledger-pull-request
         trigger: false
         passed: [ledger-unit-test]
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-card-e2e-pending-status
         put: ledger-pull-request
       - <<: *run-java-package
@@ -1491,7 +1491,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: publicauth-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-unit-tests-pending-status
       put: publicauth-pull-request
     - <<: *run-java-unit-test
@@ -1511,7 +1511,7 @@ jobs:
       resource: publicauth-pull-request
     - <<: *put-integration-test-pending-status
       put: publicauth-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *run-java-integration-tests
       on_failure:
         <<: *put-integration-test-failed-status
@@ -1530,7 +1530,7 @@ jobs:
         resource: publicauth-pull-request
         trigger: false
         passed: [publicauth-unit-test]
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-card-e2e-pending-status
         put: publicauth-pull-request
       - <<: *run-java-package
@@ -1564,7 +1564,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: products-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-unit-tests-pending-status
       put: products-pull-request
     - <<: *run-java-unit-test
@@ -1584,7 +1584,7 @@ jobs:
       resource: products-pull-request
     - <<: *put-integration-test-pending-status
       put: products-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *run-java-integration-tests
       on_failure:
         <<: *put-integration-test-failed-status
@@ -1604,7 +1604,7 @@ jobs:
       resource: products-pull-request
     - <<: *put-pact-provider-pending-status
       put: products-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *pact-provider-test-preflight-check
     - <<: *pact-provider-verification
       input_mapping:
@@ -1625,7 +1625,7 @@ jobs:
         resource: products-pull-request
         trigger: false
         passed: [products-unit-test]
-      - <<: *get-omnibus
+      - <<: *get-ci
       - <<: *put-products-e2e-pending-status
         put: products-pull-request
       - <<: *run-java-package
@@ -1660,7 +1660,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: directdebit-connector-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-unit-tests-pending-status
       put: directdebit-connector-pull-request
     - <<: *run-java-unit-test
@@ -1680,7 +1680,7 @@ jobs:
       resource: directdebit-connector-pull-request
     - <<: *put-integration-test-pending-status
       put: directdebit-connector-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *run-java-integration-tests
       on_failure:
         <<: *put-integration-test-failed-status
@@ -1699,7 +1699,7 @@ jobs:
       resource: directdebit-connector-pull-request
     - <<: *put-pact-provider-pending-status
       put: directdebit-connector-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *pact-provider-test-preflight-check
     - <<: *pact-provider-verification
       input_mapping:
@@ -1718,7 +1718,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: card-frontend-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-test-pending-status
       put: card-frontend-pull-request
     - <<: *node-test
@@ -1735,7 +1735,7 @@ jobs:
     name: card-frontend-card-e2e
     serial_groups: [e2e-test]
     plan:
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *get-pull-request
       resource: card-frontend-pull-request
       trigger: false
@@ -1764,7 +1764,7 @@ jobs:
   - name: card-frontend-pact-provider-verification
     serial_groups: [pact-test]
     plan:
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *get-pull-request
       resource: card-frontend-pull-request
       passed: [card-frontend-test]
@@ -1801,7 +1801,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: selfservice-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-test-pending-status
       put: selfservice-pull-request
     - <<: *node-test
@@ -1818,7 +1818,7 @@ jobs:
     name: selfservice-card-e2e
     serial_groups: [e2e-test]
     plan:
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *get-pull-request
       resource: selfservice-pull-request
       trigger: false
@@ -1858,7 +1858,7 @@ jobs:
     - get: adminusers-master
     - get: products-master
     - get: directdebit-connector-master
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *pact-provider-test-preflight-check
       params:
         consumer: selfservice
@@ -1917,7 +1917,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: toolbox-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-test-pending-status
       put: toolbox-pull-request
     - <<: *node-test
@@ -1941,7 +1941,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: products-ui-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-test-pending-status
       put: products-ui-pull-request
     - <<: *node-test
@@ -1958,7 +1958,7 @@ jobs:
     name: products-ui-products-e2e
     serial_groups: [e2e-test]
     plan:
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *get-pull-request
       resource: products-ui-pull-request
       trigger: false
@@ -1988,7 +1988,7 @@ jobs:
     name: products-ui-pact-provider-verification
     serial_groups: [pact-test]
     plan:
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *get-pull-request
       resource: products-ui-pull-request
       passed: [products-ui-test]
@@ -2034,7 +2034,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: directdebit-frontend-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-test-pending-status
       put: directdebit-frontend-pull-request
     - <<: *node-test
@@ -2051,12 +2051,12 @@ jobs:
     - <<: *get-all-docker-images
 
   - <<: *job-definition
-    name: omnibus-pr-test
+    name: ci-pr-test
     plan:
     - <<: *get-pull-request
-      resource: omnibus-pull-request
+      resource: ci-pull-request
     - <<: *put-test-pending-status
-      put: omnibus-pull-request
+      put: ci-pull-request
     - task: check pipelines & tasks
       config:
         platform: linux
@@ -2078,16 +2078,16 @@ jobs:
               pipecleaner --rubocop=false ci/pipelines/*.yml ci/tasks/*.yml
       on_failure:
         <<: *put-test-failed-status
-        put: omnibus-pull-request
+        put: ci-pull-request
     - <<: *put-test-success-status
-      put: omnibus-pull-request
+      put: ci-pull-request
 
   - <<: *job-definition
     name: stubs-test
     plan:
     - <<: *get-pull-request
       resource: stubs-pull-request
-    - <<: *get-omnibus
+    - <<: *get-ci
     - <<: *put-test-pending-status
       put: stubs-pull-request
     - task: run tests

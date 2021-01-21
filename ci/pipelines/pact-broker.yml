@@ -10,7 +10,7 @@ resources:
     type: git
     icon: github
     source:
-      uri: https://github.com/alphagov/pay-omnibus
+      uri: https://github.com/alphagov/pay-ci
       branch: master
       paths:
         - ci/pipelines/pact-broker.yml
@@ -19,7 +19,7 @@ resources:
     type: git
     icon: github
     source:
-      uri: https://github.com/alphagov/pay-omnibus
+      uri: https://github.com/alphagov/pay-ci
       branch: master
       paths:
         - ci/pact_broker

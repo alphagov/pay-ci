@@ -6,11 +6,11 @@ resource_types:
       repository: nulldriver/cf-cli-resource
 
 resources:
-  - name: omnibus-docs
+  - name: ci-docs
     type: git
     icon: github
     source:
-      uri: https://github.com/alphagov/pay-omnibus
+      uri: https://github.com/alphagov/pay-ci
       branch: master
       paths:
         - docs
@@ -29,7 +29,7 @@ jobs:
   - name: deploy
     serial: true
     plan:
-      - get: omnibus-docs
+      - get: ci-docs
         trigger: true
       - task: build
         config:
@@ -39,13 +39,13 @@ jobs:
             source:
               repository: ruby
           inputs:
-            - name: omnibus-docs
+            - name: ci-docs
           outputs:
-            - name: omnibus-docs/docs/build
+            - name: ci-docs/docs/build
           caches:
-            - path: omnibus-docs/docs/vendor
+            - path: ci-docs/docs/vendor
           run:
-            dir: omnibus-docs/docs
+            dir: ci-docs/docs
             path: bash
             args:
               - -c
@@ -58,6 +58,6 @@ jobs:
       - put: paas
         params:
           command: push
-          app_name: pay-omnibus-docs
-          path: omnibus-docs/docs/build
-          manifest: omnibus-docs/docs/manifest.yml
+          app_name: pay-ci-docs
+          path: ci-docs/docs/build
+          manifest: ci-docs/docs/manifest.yml
