@@ -1,9 +1,0 @@
----
-keys:
-  - https://packagecloud.io/raintank/raintank/gpgkey
-repos:
-  - deb https://packagecloud.io/raintank/raintank/ubuntu/ xenial main
-  - deb-src https://packagecloud.io/raintank/raintank/ubuntu/ xenial main
-packages:
-  - carbon-relay-ng
-  - stunnel
