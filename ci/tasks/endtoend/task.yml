@@ -8,7 +8,7 @@ image_resource:
     tag: latest
 inputs:
   - name: src
-  - name: omnibus
+  - name: ci
   - name: docker/publicapi
   - name: docker/frontend
   - name: docker/reverse_proxy
@@ -78,7 +78,7 @@ run:
     case "${test_type}" in
     "card")
       echo "Running card e2e tests"
-      cd omnibus/ci/tasks/endtoend/card
+      cd ci/ci/tasks/endtoend/card
       docker-compose up --force-recreate -d
       endtoend=$(docker ps -aqf "name=endtoend")
       echo "E2E container id: ${endtoend}"
@@ -86,7 +86,7 @@ run:
       ;;
     "products")
       echo "Running products e2e tests"
-      cd omnibus/ci/tasks/endtoend/products
+      cd ci/ci/tasks/endtoend/products
       docker-compose up --force-recreate -d
       endtoend=$(docker ps -aqf "name=endtoend")
       echo "E2E container id: ${endtoend}"
