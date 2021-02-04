@@ -2043,12 +2043,6 @@ jobs:
         put: directdebit-frontend-pull-request
     - <<: *put-test-success-status
       put: directdebit-frontend-pull-request
-    - <<: *put-card-e2e-pending-status
-      put: directdebit-frontend-pull-request
-    - <<: *build-docker-image
-      params:
-        app_name: directdebit-frontend
-    - <<: *get-all-docker-images
 
   - <<: *job-definition
     name: ci-pr-test
