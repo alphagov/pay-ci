@@ -4,22 +4,17 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-7657-Concourse-toolbox-ECR-test-pipeline
+      branch: master 
       paths:
         - ci/pipelines/toolbox-test-ecr.yml
   # Github Releases
   - name: git-toolbox-pre-release
-    type: github-release
+    type: git
     icon: github
     source: &github-release-source
-      owner: alphagov
-      access_token: ((github-access-token))
-      # Filter on releases that Jenkins has tagged as ready for test-12
-      tag_filter: "alpha_release-(.*)"
-      order_by: version
-      repository: pay-toolbox
-      pre_release: false
-      release: true
+      uri: https://github.com/alphagov/pay-toolbox
+      branch: master
+      tag_regex: "alpha_release-(.*)"
   # ECR registry resource
   - name: ecr-registry-test
     type: dev-registry-image
@@ -96,8 +91,7 @@ jobs:
               echo "Authenticating with Docker Hub..."
               # TODO: use alternative auth method for docker
               echo "$DOCKER_AUTH_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
-
-              COMMIT_SHA=$(cat git-toolbox-pre-release/commit_sha)
+              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
               docker pull govukpay/toolbox:$COMMIT_SHA
 
               docker save govukpay/toolbox:$COMMIT_SHA --output image/image.tar
@@ -105,4 +99,4 @@ jobs:
       - put: ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: git-toolbox-pre-release/commit_sha
+          additional_tags: git-toolbox-pre-release/.git/HEAD
