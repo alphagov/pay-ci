@@ -1,0 +1,102 @@
+resources:
+  - name: toolbox-test-ecr
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master 
+      paths:
+        - ci/pipelines/toolbox-test-ecr.yml
+  # Github Releases
+  - name: git-toolbox-pre-release
+    type: git
+    icon: github
+    source: &github-release-source
+      uri: https://github.com/alphagov/pay-toolbox
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  # ECR registry resource
+  - name: ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/toolbox
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      # Need to create the role for the concourse user to assume in the test account
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      # Hardcode the test account registry ID for now. Needs to be a string, not a number
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+
+resource_types:
+  # Custom resource type - this has been merged to the
+  # https://github.com/concourse/registry-image-resource repo,
+  # however is not yet in a stable release. Using this custom
+  # resource type allows us to support the ECR registry_id parameter
+  # This can be removed once registry_id is in stable release of 'registry-image'.
+  - name: dev-registry-image
+    type: registry-image
+    source:
+      repository: concourse/registry-image-resource
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: dev
+
+jobs:
+  - name: update-toolbox-test-ecr-pipeline
+    plan:
+      - get: toolbox-test-ecr
+        trigger: true
+      - set_pipeline: toolbox-test-ecr
+        file: toolbox-test-ecr/ci/pipelines/toolbox-test-ecr.yml
+  - name: toolbox-test-ecr
+    plan:
+      - get: git-toolbox-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - task: pull-toolbox-from-dockerhub
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          params:
+            DOCKER_USERNAME: ((docker-username))
+            DOCKER_AUTH_TOKEN: ((docker-password))
+          inputs:
+            - name: git-toolbox-pre-release
+          outputs:
+            - name: image
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              source /docker-helpers.sh
+              start_docker
+
+              function cleanup {
+                echo "CLEANUP TRIGGERED"
+                clean_docker
+                stop_docker
+                echo "CLEANUP COMPLETE"
+              }
+
+              trap cleanup EXIT
+
+              echo "Authenticating with Docker Hub..."
+              # TODO: use alternative auth method for docker
+              echo "$DOCKER_AUTH_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
+              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
+              docker pull govukpay/toolbox:$COMMIT_SHA
+
+              docker save govukpay/toolbox:$COMMIT_SHA --output image/image.tar
+
+      - put: ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: git-toolbox-pre-release/.git/HEAD
