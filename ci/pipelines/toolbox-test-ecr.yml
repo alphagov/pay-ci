@@ -100,3 +100,53 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: git-toolbox-pre-release/.git/HEAD
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just deployed to test."
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on test."
+      - task: combine-passing-tags
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: git-toolbox-pre-release
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              CONCAT_TAGS="$(cat git-toolbox-pre-release/.git/HEAD) ready-staging"
+              echo "Contents of CONCAT_TAGS: $CONCAT_TAGS"
+              ls -alh
+              echo $CONCAT_TAGS > docker_tags/docker_tags.txt
+          outputs:
+            - name: docker_tags
+      - put: ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: docker_tags/docker_tags.txt

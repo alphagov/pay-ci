@@ -15,7 +15,7 @@ resources:
       uri: https://github.com/alphagov/pay-toolbox
       branch: master
       tag_regex: "alpha_staging-2-(.*)"
-  # ECR registry resource
+  # ECR Test registry resource
   - name: ecr-registry-test
     type: dev-registry-image
     icon: docker
@@ -25,8 +25,22 @@ resources:
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
       # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
       # Hardcode the test account registry ID for now. Needs to be a string, not a number
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+  # ECR Staging registry resource
+  - name: ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/toolbox
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      # Need to create the role for the concourse user to assume in the staging account
+      aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+      # Hardcode the staging account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_staging_account_id))"
       aws_region: eu-west-1
 
@@ -56,7 +70,7 @@ jobs:
       - get: git-toolbox-staging-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - task: pull-toolbox-from-dockerhub
+      - task: pull-toolbox-from-ecr-test
         privileged: true
         config:
           platform: linux
@@ -96,7 +110,7 @@ jobs:
 
               docker save govukpay/toolbox:$COMMIT_SHA --output image/image.tar
 
-      - put: ecr-registry-test
+      - put: ecr-registry-staging
         params:
           image: image/image.tar
           additional_tags: git-toolbox-pre-release/.git/HEAD
