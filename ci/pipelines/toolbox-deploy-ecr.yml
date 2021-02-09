@@ -1,20 +1,4 @@
 resources:
-  - name: toolbox-deploy-ecr
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-ci
-      branch: master 
-      paths:
-        - ci/pipelines/toolbox-deploy-ecr.yml
-  # Github Releases
-  - name: git-toolbox-staging-release
-    type: git
-    icon: github
-    source: &github-release-source
-      uri: https://github.com/alphagov/pay-toolbox
-      branch: master
-      tag_regex: "alpha_staging-2-(.*)"
   # ECR Test registry resource
   - name: ecr-registry-test
     type: dev-registry-image
@@ -29,6 +13,7 @@ resources:
       # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
+      tag: ready-staging
   # ECR Staging registry resource
   - name: ecr-registry-staging
     type: dev-registry-image
@@ -59,58 +44,90 @@ resource_types:
       tag: dev
 
 jobs:
-  - name: update-toolbox-test-ecr-pipeline
+  - name: toolbox-staging-approval
     plan:
-      - get: toolbox-deploy-ecr
+      - get: ecr-registry-test
         trigger: true
-      - set_pipeline: toolbox-deploy-ecr
-        file: toolbox-test-ecr/ci/pipelines/toolbox-test-ecr.yml
-  - name: toolbox-staging-ecr
-    plan:
-      - get: git-toolbox-staging-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - task: pull-toolbox-from-ecr-test
-        privileged: true
+        params:
+          format: oci
+      - task: pull-tags-from-ecr
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: amazon/aws-cli
+          params:
+            AWS_ACCESS_KEY_ID: ((test_readonly_access_key_id))
+            AWS_SECRET_ACCESS_KEY: ((test_readonly_secret_access_key))
+            AWS_SESSION_TOKEN: ((test_readonly_session_token))
+            AWS_REGION: eu-west-1
+            AWS_PAGER: ""
+            AWS_DEFAULT_OUTPUT: text
+          inputs:
+            - name: ecr-registry-test
+          outputs:
+            - name: docker_tags
+          run:
+            path: /bin/sh
+            args:
+            - -ec
+            - | 
+              DIGEST=$(cat ecr-registry-test/digest)
+              /usr/local/bin/aws ecr list-images \
+              --repository-name govukpay/toolbox \
+              --query "imageIds[?imageDigest=='$DIGEST'][imageTag]" \
+              | tr '\n' ' ' > docker_tags/tags.txt
+      - put: ecr-registry-staging
+        params:
+          image: ecr-registry-test/image.tar
+          additional_tags: docker_tags/tags.txt
+      - task: deploy-to-staging
         config:
           platform: linux
           image_resource:
             type: registry-image
             source:
               repository: govukpay/concourse-runner
-          params:
-            DOCKER_USERNAME: ((docker-username))
-            DOCKER_AUTH_TOKEN: ((docker-password))
-          inputs:
-            - name: git-toolbox-staging-release
-          outputs:
-            - name: image
           run:
             path: /bin/bash
             args:
             - -ec
             - |
-              source /docker-helpers.sh
-              start_docker
-
-              function cleanup {
-                echo "CLEANUP TRIGGERED"
-                clean_docker
-                stop_docker
-                echo "CLEANUP COMPLETE"
-              }
-
-              trap cleanup EXIT
-
-              echo "Authenticating with Docker Hub..."
-              # TODO: use alternative auth method for docker
-              echo "$DOCKER_AUTH_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
-              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
-              docker pull govukpay/toolbox:$COMMIT_SHA
-
-              docker save govukpay/toolbox:$COMMIT_SHA --output image/image.tar
-
+              echo "Imagine we just deployed to staging."
+      - task: smoke-test-on-staging
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on staging."
+      - task: set-passing-tags
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+          - name: docker_tags
+          outputs:
+          - name: docker_tags
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              CONCAT_TAGS="$(cat docker_tags/tags.txt | sed 's/ready-staging/ready-production/g' )"
+              echo $CONCAT_TAGS > docker_tags/tags.txt
       - put: ecr-registry-staging
         params:
-          image: image/image.tar
-          additional_tags: git-toolbox-pre-release/.git/HEAD
+          image: ecr-registry-test/image.tar
+          additional_tags: docker_tags/tags.txt
+      

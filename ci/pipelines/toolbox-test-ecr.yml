@@ -141,8 +141,6 @@ jobs:
             - -ec
             - |
               CONCAT_TAGS="$(cat git-toolbox-pre-release/.git/HEAD) ready-staging"
-              echo "Contents of CONCAT_TAGS: $CONCAT_TAGS"
-              ls -alh
               echo $CONCAT_TAGS > docker_tags/docker_tags.txt
           outputs:
             - name: docker_tags
