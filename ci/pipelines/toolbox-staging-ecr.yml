@@ -156,8 +156,7 @@ jobs:
             args:
             - -ec
             - |
-              CONCAT_TAGS="$(cat docker_tags/tags.txt | sed 's/ready-staging/ready-production/g' )"
-              echo $CONCAT_TAGS > docker_tags/tags.txt
+              sed -i'' 's/ready-staging/ready-production/g' docker_tags/tags.txt
       - put: ecr-registry-staging
         params:
           image: ecr-registry-test/image.tar
