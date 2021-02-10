@@ -65,7 +65,7 @@ jobs:
       #       - -ec
       #       - |
       #         cat "[profile default]" > .aws/config
-      - task: pull-tags-from-ecr
+      - task: pull-tags-from-ecr-registry-test
         config:
           platform: linux
           image_resource:
@@ -142,7 +142,7 @@ jobs:
             - -ec
             - |
               echo "Imagine we just smoked on staging."
-      - task: set-passing-tags
+      - task: set-ready-for-production-tags
         config:
           platform: linux
           image_resource:
