@@ -50,6 +50,21 @@ jobs:
         trigger: true
         params:
           format: oci
+      # - task: prepare-aws-config
+      #   config:
+      #     platform: linux
+      #     image_resource:
+      #       type: registry-image
+      #       source:
+      #         repository: govukpay/concourse-runner
+      #     outputs:
+      #       - name: .aws
+      #     run:
+      #       path: /bin/bash
+      #       args:
+      #       - -ec
+      #       - |
+      #         cat "[profile default]" > .aws/config
       - task: pull-tags-from-ecr
         config:
           platform: linux
@@ -58,9 +73,11 @@ jobs:
             source:
               repository: amazon/aws-cli
           params:
-            AWS_ACCESS_KEY_ID: ((test_readonly_access_key_id))
-            AWS_SECRET_ACCESS_KEY: ((test_readonly_secret_access_key))
-            AWS_SESSION_TOKEN: ((test_readonly_session_token))
+            AWS_ACCESS_KEY_ID: ((readonly_access_key_id))
+            AWS_SECRET_ACCESS_KEY: ((readonly_secret_access_key))
+            AWS_SESSION_TOKEN: ((readonly_session_token))
+            AWS_ASSUME_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+            AWS_REGISTRY_ID: "((pay_aws_test_account_id))"
             AWS_REGION: eu-west-1
             AWS_PAGER: ""
             AWS_DEFAULT_OUTPUT: text
@@ -74,7 +91,24 @@ jobs:
             - -ec
             - | 
               DIGEST=$(cat ecr-registry-test/digest)
-              /usr/local/bin/aws ecr list-images \
+              assumed_role=($(aws sts assume-role \
+              --role-arn $AWS_ASSUME_ROLE_ARN \
+              --role-session-name ecr-test-session \
+              --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
+              --output text \
+              ) )
+
+              export AWS_ACCESS_KEY_ID=${assumed_role[0]}
+              export AWS_SECRET_ACCESS_KEY=${assumed_role[1]}
+              export AWS_SESSION_TOKEN=${assumed_role[2]}
+
+              aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID --profile ecr-test-session
+              aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY --profile ecr-test-session
+              aws configure set aws_session_token $AWS_SESSION_TOKEN --profile ecr-test-session
+
+              aws ecr list-images \
+              --profile ecr-test-session \
+              --registry-id $AWS_REGISTRY_ID \
               --repository-name govukpay/toolbox \
               --query "imageIds[?imageDigest=='$DIGEST'][imageTag]" \
               | tr '\n' ' ' > docker_tags/tags.txt
