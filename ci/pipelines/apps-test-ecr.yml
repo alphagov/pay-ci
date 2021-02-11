@@ -4,7 +4,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master 
+      branch: PP-7683-apps-test-ecr
       paths:
         - ci/pipelines/apps-test-ecr.yml
   # Github Releases
