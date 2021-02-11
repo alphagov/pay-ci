@@ -53,13 +53,16 @@ jobs:
         file: apps-test-ecr/ci/pipelines/apps-test-ecr.yml
   - name: toolbox-test-ecr
     plan:
+      - get: toolbox-test-ecr
       - get: git-app-pre-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - task: pull-image-from-dockerhub
         privileged: true
-        file: ci/ci/tasks/pull-image-from-dockerhub.yml
+        file: toolbox-test-ecr/ci/tasks/pull-image-from-dockerhub.yml
         params:
+          DOCKER_USERNAME: ((docker-username))
+          DOCKER_AUTH_TOKEN: ((docker-password))
           DOCKER_REPOSITORY: govukpay/toolbox
 
       - put: ecr-registry-test

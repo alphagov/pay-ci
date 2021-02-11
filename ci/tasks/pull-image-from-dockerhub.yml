@@ -4,8 +4,8 @@ image_resource:
   source:
     repository: govukpay/concourse-runner
 params:
-  DOCKER_USERNAME: ((docker-username))
-  DOCKER_AUTH_TOKEN: ((docker-password))
+  DOCKER_USERNAME: DockerhubUsername
+  DOCKER_AUTH_TOKEN: DockerhubAuthToken
   DOCKER_REPOSITORY: DockerhubRepositoryName
 inputs:
   - name: git-app-pre-release
