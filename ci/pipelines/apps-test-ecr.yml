@@ -8,7 +8,7 @@ resources:
       paths:
         - ci/pipelines/apps-test-ecr.yml
   # Github Releases
-  - name: git-toolbox-pre-release
+  - name: git-app-pre-release
     type: git
     icon: github
     source: &github-release-source
@@ -53,10 +53,10 @@ jobs:
         file: apps-test-ecr/ci/pipelines/apps-test-ecr.yml
   - name: toolbox-test-ecr
     plan:
-      - get: git-toolbox-pre-release
+      - get: git-app-pre-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - task: pull-toolbox-from-dockerhub
+      - task: pull-image-from-dockerhub
         privileged: true
         config:
           platform: linux
@@ -67,8 +67,9 @@ jobs:
           params:
             DOCKER_USERNAME: ((docker-username))
             DOCKER_AUTH_TOKEN: ((docker-password))
+            DOCKER_REPOSITORY: govukpay/toolbox
           inputs:
-            - name: git-toolbox-pre-release
+            - name: git-app-pre-release
           outputs:
             - name: image
           run:
@@ -91,12 +92,12 @@ jobs:
               echo "Authenticating with Docker Hub..."
               # TODO: use alternative auth method for docker
               echo "$DOCKER_AUTH_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
-              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
-              docker pull govukpay/toolbox:$COMMIT_SHA
+              COMMIT_SHA=$(cat git-app-pre-release/.git/HEAD)
+              docker pull $DOCKER_REPOSITORY:$COMMIT_SHA
 
-              docker save govukpay/toolbox:$COMMIT_SHA --output image/image.tar
+              docker save $DOCKER_REPOSITORY:$COMMIT_SHA --output image/image.tar
 
       - put: ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: git-toolbox-pre-release/.git/HEAD
+          additional_tags: git-app-pre-release/.git/HEAD
