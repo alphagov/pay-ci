@@ -1,0 +1,37 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner
+params:
+  DOCKER_USERNAME: ((docker-username))
+  DOCKER_AUTH_TOKEN: ((docker-password))
+  DOCKER_REPOSITORY: DockerhubRepositoryName
+inputs:
+  - name: git-app-pre-release
+outputs:
+  - name: image
+run:
+  path: /bin/bash
+  args:
+    - -ec
+    - |
+      source /docker-helpers.sh
+      start_docker
+
+      function cleanup {
+        echo "CLEANUP TRIGGERED"
+        clean_docker
+        stop_docker
+        echo "CLEANUP COMPLETE"
+      }
+
+      trap cleanup EXIT
+
+      echo "Authenticating with Docker Hub..."
+      # TODO: use alternative auth method for docker
+      echo "$DOCKER_AUTH_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
+      COMMIT_SHA=$(cat git-app-pre-release/.git/HEAD)
+      docker pull $DOCKER_REPOSITORY:$COMMIT_SHA
+
+      docker save $DOCKER_REPOSITORY:$COMMIT_SHA --output image/image.tar

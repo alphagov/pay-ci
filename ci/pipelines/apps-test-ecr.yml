@@ -58,44 +58,9 @@ jobs:
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - task: pull-image-from-dockerhub
         privileged: true
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          params:
-            DOCKER_USERNAME: ((docker-username))
-            DOCKER_AUTH_TOKEN: ((docker-password))
-            DOCKER_REPOSITORY: govukpay/toolbox
-          inputs:
-            - name: git-app-pre-release
-          outputs:
-            - name: image
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              source /docker-helpers.sh
-              start_docker
-
-              function cleanup {
-                echo "CLEANUP TRIGGERED"
-                clean_docker
-                stop_docker
-                echo "CLEANUP COMPLETE"
-              }
-
-              trap cleanup EXIT
-
-              echo "Authenticating with Docker Hub..."
-              # TODO: use alternative auth method for docker
-              echo "$DOCKER_AUTH_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
-              COMMIT_SHA=$(cat git-app-pre-release/.git/HEAD)
-              docker pull $DOCKER_REPOSITORY:$COMMIT_SHA
-
-              docker save $DOCKER_REPOSITORY:$COMMIT_SHA --output image/image.tar
+        file: ci/ci/tasks/pull-image-from-dockerhub.yml
+        params:
+          DOCKER_REPOSITORY: govukpay/toolbox
 
       - put: ecr-registry-test
         params:
