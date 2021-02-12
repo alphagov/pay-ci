@@ -167,7 +167,7 @@ definitions:
     put: ecr-registry-test
     params:
       image: image/image.tar
-      additional_tags: git-app-pre-release/.git/HEAD
+      additional_tags: updateThisValue
 
 docker_credentials: &docker_credentials
   DOCKER_USERNAME: ((docker-username))
@@ -192,6 +192,9 @@ jobs:
           APP_GIT_DIR: toolbox-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: toolbox-git-release/.git/HEAD
   - name: frontend-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -204,6 +207,9 @@ jobs:
           APP_GIT_DIR: frontend-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: frontend-git-release/.git/HEAD
   - name: adminusers-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -216,6 +222,9 @@ jobs:
           APP_GIT_DIR: adminusers-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: adminusers-git-release/.git/HEAD
   - name: cardid-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -228,6 +237,9 @@ jobs:
           APP_GIT_DIR: cardid-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: cardid-git-release/.git/HEAD
   - name: connector-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -240,6 +252,9 @@ jobs:
           APP_GIT_DIR: connector-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: connector-git-release/.git/HEAD
   - name: ledger-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -252,6 +267,9 @@ jobs:
           APP_GIT_DIR: ledger-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: ledger-git-release/.git/HEAD
   - name: products-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -264,6 +282,9 @@ jobs:
           APP_GIT_DIR: products-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: products-git-release/.git/HEAD
   - name: products-ui-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -276,6 +297,9 @@ jobs:
           APP_GIT_DIR: products-ui-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: products-ui-git-release/.git/HEAD
   - name: publicapi-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -288,6 +312,9 @@ jobs:
           APP_GIT_DIR: publicapi-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: publicapi-git-release/.git/HEAD
   - name: publicauth-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -300,6 +327,9 @@ jobs:
           APP_GIT_DIR: publicauth-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: publicauth-git-release/.git/HEAD
   - name: selfservice-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
@@ -312,3 +342,6 @@ jobs:
           APP_GIT_DIR: selfservice-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: selfservice-git-release/.git/HEAD
