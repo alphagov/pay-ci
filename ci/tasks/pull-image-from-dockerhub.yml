@@ -10,16 +10,27 @@ params:
   APP_GIT_DIR: AppName
 inputs:
   - name: toolbox-git-release
+    optional: true
   - name: frontend-git-release
+    optional: true
   - name: adminusers-git-release
+    optional: true
   - name: cardid-git-release
+    optional: true
   - name: connector-git-release
+    optional: true
   - name: ledger-git-release
+    optional: true
   - name: products-git-release
+    optional: true
   - name: products-ui-git-release
+    optional: true
   - name: publicapi-git-release
+    optional: true
   - name: publicauth-git-release
+    optional: true
   - name: selfservice-git-release
+    optional: true
 outputs:
   - name: image
 run:

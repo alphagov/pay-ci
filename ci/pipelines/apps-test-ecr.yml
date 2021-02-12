@@ -8,13 +8,84 @@ resources:
       paths:
         - ci/pipelines/apps-test-ecr.yml
   # Github Releases
-  - name: git-app-pre-release
+  - name: toolbox-git-release
     type: git
     icon: github
-    source: &github-release-source
+    source:
       uri: https://github.com/alphagov/pay-toolbox
       branch: master
       tag_regex: "alpha_release-(.*)"
+  - name: frontend-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-frontend
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: adminusers-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-adminusers
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: cardid-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-cardid
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: connector-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-connector
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: ledger-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ledger
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: products-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-products
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: products-ui-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-productsui
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: publicauth-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-publicauth
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: publicapi-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-publicapi
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: selfservice-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-selfservice
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+
   # ECR registry resource
   - name: ecr-registry-test
     type: dev-registry-image
@@ -91,6 +162,7 @@ definitions:
       DOCKER_USERNAME: updateThisValue
       DOCKER_AUTH_TOKEN: updateThisValue
       DOCKER_REPOSITORY: updateThisValue
+      APP_GIT_DIR: updateThisValue
   - &put-ecr-registry-test
     put: ecr-registry-test
     params:
@@ -111,121 +183,132 @@ jobs:
   - name: toolbox-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: toolbox-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/toolbox
+          APP_GIT_DIR: toolbox-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: frontend-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: frontend-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/frontend
+          APP_GIT_DIR: frontend-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: adminusers-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: adminusers-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/adminusers
+          APP_GIT_DIR: adminusers-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: cardid-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: cardid-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/cardid
+          APP_GIT_DIR: cardid-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: connector-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: connector-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/connector
+          APP_GIT_DIR: connector-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: ledger-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: ledger-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/ledger
+          APP_GIT_DIR: ledger-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: products-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: products-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/products
+          APP_GIT_DIR: products-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: products-ui-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: products-ui-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/products-ui
+          APP_GIT_DIR: products-ui-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: publicapi-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: publicapi-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/publicapi
+          APP_GIT_DIR: publicapi-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: publicauth-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: publicauth-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/publicauth
+          APP_GIT_DIR: publicauth-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
   - name: selfservice-image-to-test-ecr
     plan:
       - get: toolbox-test-ecr
-      - get: git-app-pre-release
+      - get: selfservice-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/selfservice
+          APP_GIT_DIR: selfservice-git-release
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
