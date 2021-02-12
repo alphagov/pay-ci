@@ -61,7 +61,7 @@ resources:
     type: git
     icon: github
     source:
-      uri: https://github.com/alphagov/pay-productsui
+      uri: https://github.com/alphagov/pay-products-ui
       branch: master
       tag_regex: "alpha_release-(.*)"
   - name: publicauth-git-release
