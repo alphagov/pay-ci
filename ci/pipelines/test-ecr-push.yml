@@ -1,0 +1,186 @@
+definitions:
+  # ECR Test Registry Definition
+  # Use <<: *ecr-test-registry and update the name and source/repository as
+  # necessary.
+  - &ecr-test-registry
+    name: change-me
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/change-me
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+      tag: ready-staging
+  - &git-pre-relrease
+    name: change-me
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-toolbox
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - &concourse-runner-image-resource
+    platform: linux
+    image_resource:
+      type: registry-image
+      source:
+        repository: govukpay/concourse-runner
+
+resource_types:
+  # Custom resource type - this has been merged to the
+  # https://github.com/concourse/registry-image-resource repo,
+  # however is not yet in a stable release. Using this custom
+  # resource type allows us to support the ECR registry_id parameter
+  # This can be removed once registry_id is in stable release of 'registry-image'.
+  - name: dev-registry-image
+    type: registry-image
+    source:
+      repository: concourse/registry-image-resource
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: dev
+
+resources:
+  # Pay CI Repo - For Self Updates
+  - name: ci-repo-update
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master 
+      paths:
+        - ci/pipelines/test-ecr-push.yml
+  # Github Releases
+  - <<: *git-pre-relrease
+    name: git-toolbox-pre-release
+    source:
+      uri: https://github.com/alphagov/pay-toolbox
+  # ECR Registries
+  - <<: *ecr-test-registry
+    name: ecr-test-registry-toolbox
+    source:
+      repository: govukpay/toolbox
+
+groups:
+  - name: ci
+    jobs:
+      - ci-repo-update
+  - name: toolbox
+    jobs:
+      - ecr-test-push-toolbox
+      - ecr-test-deploy-toolbox
+      - ecr-test-smoke-toolbox
+      - ecr-test-retag-toolbox
+
+jobs:
+  - name: ci-repo-update
+    plan:
+      - get: ci-repo-update
+        trigger: true
+      - set_pipeline: ci-repo-update
+        file: ci-repo-update/ci/pipelines/test-ecr-push.yml
+  - name: ecr-test-push-toolbox
+    plan:
+      - get: git-toolbox-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - task: pull-toolbox-from-dockerhub
+        privileged: true
+        config:
+          <<: *concourse-runner-image-resource
+          params:
+            DOCKER_USERNAME: ((docker-username))
+            DOCKER_AUTH_TOKEN: ((docker-password))
+          inputs:
+            - name: git-toolbox-pre-release
+          outputs:
+            - name: image
+            - name: docker_tags
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              source /docker-helpers.sh
+              start_docker
+
+              function cleanup {
+                echo "CLEANUP TRIGGERED"
+                clean_docker
+                stop_docker
+                echo "CLEANUP COMPLETE"
+              }
+
+              trap cleanup EXIT
+
+              echo "Authenticating with Docker Hub..."
+              # TODO: use alternative auth method for docker
+              echo "$DOCKER_AUTH_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
+              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
+              docker pull govukpay/toolbox:$COMMIT_SHA
+
+              docker save govukpay/toolbox:$COMMIT_SHA --output image/image.tar
+
+              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
+              GIT_TAG=$(cat git-toolbox-pre-release/.git/ref)
+              echo "$COMMIT_SHA $GIT_TAG" > docker_tags/docker_tags.txt
+      - put: ecr-test-registry-toolbox
+        params:
+          image: image/image.tar
+          additional_tags: docker_tags/docker_tags.txt
+  - name: ecr-test-deploy-toolbox
+    plan:
+      - get: git-toolbox-pre-release
+        passed: [ecr-test-push-toolbox]
+        trigger: true
+      - task: deploy-toolbox-to-test
+        config:
+          <<: *concourse-runner-image-resource
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just deployed to test."
+  - name: ecr-test-smoke-toolbox
+    plan:
+      - get: git-toolbox-pre-release
+        passed: [ecr-test-deploy-toolbox]
+        trigger: true
+      - task: run-smoke-test
+        config:
+          <<: *concourse-runner-image-resource
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on test."
+  - name: ecr-test-retag-toolbox
+    plan:
+      - get: git-toolbox-pre-release
+        passed: [ecr-test-smoke-toolbox]
+        trigger: true
+      - task: combine-passing-tags
+        config:
+          <<: *concourse-runner-image-resource
+          inputs:
+            - name: git-toolbox-pre-release
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
+              GIT_TAG=$(cat git-toolbox-pre-release/.git/ref)
+              echo "$COMMIT_SHA $GIT_TAG ready-staging" > docker_tags/docker_tags.txt
+          outputs:
+            - name: docker_tags
+      - put: ecr-test-registry-toolbox
+        params:
+          image: image/image.tar
+          additional_tags: docker_tags/docker_tags.txt
