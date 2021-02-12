@@ -51,6 +51,28 @@ groups:
   - name: toolbox
     jobs:
       - toolbox-image-to-test-ecr
+  - name: frontend
+    jobs:
+      - frontend-image-to-test-ecr
+
+definitions:
+  - &pull-image-from-dockerhub
+    task: pull-image-from-dockerhub
+    privileged: true
+    file: toolbox-test-ecr/ci/tasks/pull-image-from-dockerhub.yml
+    params:
+      DOCKER_USERNAME: updateThisValue
+      DOCKER_AUTH_TOKEN: updateThisValue
+      DOCKER_REPOSITORY: updateThisValue
+  - &put-ecr-registry-test
+    put: ecr-registry-test
+    params:
+      image: image/image.tar
+      additional_tags: git-app-pre-release/.git/HEAD
+
+docker_credentials: &docker_credentials
+  DOCKER_USERNAME: ((docker-username))
+  DOCKER_AUTH_TOKEN: ((docker-password))
 
 jobs:
   - name: update-apps-test-ecr-pipeline
@@ -65,14 +87,19 @@ jobs:
       - get: git-app-pre-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - task: pull-image-from-dockerhub
-        privileged: true
-        file: toolbox-test-ecr/ci/tasks/pull-image-from-dockerhub.yml
+      - <<: *pull-image-from-dockerhub
         params:
-          DOCKER_USERNAME: ((docker-username))
-          DOCKER_AUTH_TOKEN: ((docker-password))
           DOCKER_REPOSITORY: govukpay/toolbox
-      - put: ecr-registry-test
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: frontend-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
         params:
-          image: image/image.tar
-          additional_tags: git-app-pre-release/.git/HEAD
+          DOCKER_REPOSITORY: govukpay/frontend
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
