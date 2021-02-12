@@ -54,6 +54,33 @@ groups:
   - name: frontend
     jobs:
       - frontend-image-to-test-ecr
+  - name: adminusers
+    jobs:
+      - adminusers-image-to-test-ecr
+  - name: cardid
+    jobs:
+      - cardid-image-to-test-ecr
+  - name: connector
+    jobs:
+      - connector-image-to-test-ecr
+  - name: ledger
+    jobs:
+      - ledger-image-to-test-ecr
+  - name: products
+    jobs:
+      - products-image-to-test-ecr
+  - name: products-ui
+    jobs:
+      - products-ui-image-to-test-ecr
+  - name: publicapi
+    jobs:
+      - publicapi-image-to-test-ecr
+  - name: publicauth
+    jobs:
+      - publicauth-image-to-test-ecr
+  - name: selfservice
+    jobs:
+      - selfservice-image-to-test-ecr
 
 definitions:
   - &pull-image-from-dockerhub
@@ -101,5 +128,104 @@ jobs:
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/frontend
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: adminusers-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/adminusers
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: cardid-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/cardid
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: connector-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/connector
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: ledger-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/ledger
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: products-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/products
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: products-ui-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/products-ui
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: publicapi-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/publicapi
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: publicauth-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/publicauth
+          <<: *docker_credentials
+      - <<: *put-ecr-registry-test
+  - name: selfservice-image-to-test-ecr
+    plan:
+      - get: toolbox-test-ecr
+      - get: git-app-pre-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/selfservice
           <<: *docker_credentials
       - <<: *put-ecr-registry-test
