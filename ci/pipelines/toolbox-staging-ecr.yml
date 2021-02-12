@@ -81,6 +81,8 @@ jobs:
           outputs:
             - name: docker_tags
           run:
+            # N.B. We perform this (somewhat convoluted) step so that Big Concourse can correctly
+            # assume a role when trying to list images from ECR.
             path: /bin/sh
             args:
             - -ec
