@@ -248,7 +248,7 @@ resource_types:
 groups:
   - name: pipeline-meta-update
     jobs:
-      - update-toolbox-test-ecr-pipeline
+      - update-apps-test-ecr-pipeline
   - name: toolbox
     jobs:
       - toolbox-image-to-test-ecr
@@ -305,9 +305,9 @@ jobs:
         trigger: true
       - set_pipeline: apps-test-ecr
         file: apps-test-ecr/ci/pipelines/apps-test-ecr.yml
-  - name: toolbox-test-ecr
+  - name: toolbox-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: toolbox-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -322,7 +322,7 @@ jobs:
           additional_tags: toolbox-git-release/.git/HEAD
   - name: frontend-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: frontend-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -337,7 +337,7 @@ jobs:
           additional_tags: frontend-git-release/.git/HEAD
   - name: adminusers-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: adminusers-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -352,7 +352,7 @@ jobs:
           additional_tags: adminusers-git-release/.git/HEAD
   - name: cardid-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: cardid-git-release
         trigger: true
         params:
@@ -402,7 +402,7 @@ jobs:
           additional_tags: cardid-git-release/.git/HEAD
   - name: connector-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: connector-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -417,7 +417,7 @@ jobs:
           additional_tags: connector-git-release/.git/HEAD
   - name: ledger-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: ledger-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -432,7 +432,7 @@ jobs:
           additional_tags: ledger-git-release/.git/HEAD
   - name: products-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: products-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -447,7 +447,7 @@ jobs:
           additional_tags: products-git-release/.git/HEAD
   - name: products-ui-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: products-ui-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -462,7 +462,7 @@ jobs:
           additional_tags: products-ui-git-release/.git/HEAD
   - name: publicapi-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: publicapi-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -477,7 +477,7 @@ jobs:
           additional_tags: publicapi-git-release/.git/HEAD
   - name: publicauth-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: publicauth-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -492,7 +492,7 @@ jobs:
           additional_tags: publicauth-git-release/.git/HEAD
   - name: selfservice-image-to-test-ecr
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
       - get: selfservice-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
