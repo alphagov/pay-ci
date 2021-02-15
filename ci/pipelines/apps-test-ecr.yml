@@ -220,7 +220,7 @@ definitions:
   - &pull-image-from-dockerhub
     task: pull-image-from-dockerhub
     privileged: true
-    file: toolbox-test-ecr/ci/tasks/pull-image-from-dockerhub.yml
+    file: apps-test-ecr/ci/tasks/pull-image-from-dockerhub.yml
     params:
       DOCKER_USERNAME: updateThisValue
       DOCKER_AUTH_TOKEN: updateThisValue
