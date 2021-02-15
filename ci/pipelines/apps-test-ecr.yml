@@ -1,12 +1,12 @@
 resources:
-  - name: toolbox-test-ecr
+  - name: apps-test-ecr
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master 
       paths:
-        - ci/pipelines/toolbox-test-ecr.yml
+        - ci/pipelines/apps-test-ecr.yml
   # Github Releases
   - name: git-toolbox-pre-release
     type: git
@@ -45,12 +45,12 @@ resource_types:
       tag: dev
 
 jobs:
-  - name: update-toolbox-test-ecr-pipeline
+  - name: update-apps-test-ecr-pipeline
     plan:
-      - get: toolbox-test-ecr
+      - get: apps-test-ecr
         trigger: true
-      - set_pipeline: toolbox-test-ecr
-        file: toolbox-test-ecr/ci/pipelines/toolbox-test-ecr.yml
+      - set_pipeline: apps-test-ecr
+        file: apps-test-ecr/ci/pipelines/apps-test-ecr.yml
   - name: toolbox-test-ecr
     plan:
       - get: git-toolbox-pre-release
