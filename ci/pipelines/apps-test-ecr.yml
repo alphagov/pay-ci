@@ -1,10 +1,20 @@
+aws_config: &aws_config
+  aws_access_key_id: ((readonly_access_key_id))
+  aws_secret_access_key: ((readonly_secret_access_key))
+  aws_session_token: ((readonly_session_token))
+  # Need to create the role for the concourse user to assume in the test account
+  aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+  # Hardcode the test account registry ID for now. Needs to be a string, not a number
+  aws_ecr_registry_id: "((pay_aws_test_account_id))"
+  aws_region: eu-west-1
+
 resources:
   - name: apps-test-ecr
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-7683-apps-test-ecr
+      branch: master
       paths:
         - ci/pipelines/apps-test-ecr.yml
   # Github Releases
@@ -92,144 +102,67 @@ resources:
     icon: docker
     source:
       repository: govukpay/toolbox
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: frontend-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/frontend
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: adminusers-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/adminusers
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: cardid-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/cardid
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: connector-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/connector
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: ledger-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/ledger
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: products-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/products
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: products-ui-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/products-ui
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: publicapi-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/publicapi
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: publicauth-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/publicauth
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
   - name: selfservice-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/selfservice
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
 
 resource_types:
   # Custom resource type - this has been merged to the
