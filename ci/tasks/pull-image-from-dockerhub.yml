@@ -33,6 +33,7 @@ inputs:
     optional: true
 outputs:
   - name: image
+  - name: docker_tags
 run:
   path: /bin/bash
   args:
@@ -57,3 +58,6 @@ run:
       docker pull $DOCKER_REPOSITORY:$COMMIT_SHA
 
       docker save $DOCKER_REPOSITORY:$COMMIT_SHA --output image/image.tar
+
+      GIT_TAG=$(cat $APP_GIT_DIR/.git/ref)
+      echo "$COMMIT_SHA $GIT_TAG" > docker_tags/docker_tags.txt
