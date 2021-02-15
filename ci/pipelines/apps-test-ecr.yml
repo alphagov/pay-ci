@@ -71,6 +71,7 @@ jobs:
             - name: git-toolbox-pre-release
           outputs:
             - name: image
+            - name: docker_tags
           run:
             path: /bin/bash
             args:
@@ -96,7 +97,59 @@ jobs:
 
               docker save govukpay/toolbox:$COMMIT_SHA --output image/image.tar
 
+              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
+              GIT_TAG=$(cat git-toolbox-pre-release/.git/ref)
+              echo "$COMMIT_SHA $GIT_TAG" > docker_tags/docker_tags.txt
       - put: ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: git-toolbox-pre-release/.git/HEAD
+          additional_tags: docker_tags/docker_tags.txt
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just deployed to test."
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on test."
+      - task: combine-passing-tags
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: git-toolbox-pre-release
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
+              GIT_TAG=$(cat git-toolbox-pre-release/.git/ref)
+              echo "$COMMIT_SHA $GIT_TAG ready-staging" > docker_tags/docker_tags.txt
+          outputs:
+            - name: docker_tags
+      - put: ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: docker_tags/docker_tags.txt
