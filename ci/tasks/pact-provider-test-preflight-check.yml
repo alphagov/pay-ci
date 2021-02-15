@@ -15,7 +15,7 @@ outputs:
 caches:
   - path: src/.m2
 run:
-  path: sh
+  path: bash
   args:
     - -ec
     - |
