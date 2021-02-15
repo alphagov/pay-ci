@@ -1058,7 +1058,6 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: java-commons-pull-request
-    - <<: *get-ci
     - <<: *put-integration-test-pending-status
       put: java-commons-pull-request
     - task: test
@@ -2081,7 +2080,6 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: stubs-pull-request
-    - <<: *get-ci
     - <<: *put-test-pending-status
       put: stubs-pull-request
     - task: run tests
