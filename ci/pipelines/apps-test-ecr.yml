@@ -1,34 +1,168 @@
+aws_config: &aws_config
+  aws_access_key_id: ((readonly_access_key_id))
+  aws_secret_access_key: ((readonly_secret_access_key))
+  aws_session_token: ((readonly_session_token))
+  # Need to create the role for the concourse user to assume in the test account
+  aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+  # Hardcode the test account registry ID for now. Needs to be a string, not a number
+  aws_ecr_registry_id: "((pay_aws_test_account_id))"
+  aws_region: eu-west-1
+
 resources:
   - name: apps-test-ecr
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master 
+      branch: master
       paths:
         - ci/pipelines/apps-test-ecr.yml
   # Github Releases
-  - name: git-toolbox-pre-release
+  - name: toolbox-git-release
     type: git
     icon: github
-    source: &github-release-source
+    source:
       uri: https://github.com/alphagov/pay-toolbox
       branch: master
       tag_regex: "alpha_release-(.*)"
-  # ECR registry resource
-  - name: ecr-registry-test
+  - name: frontend-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-frontend
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: adminusers-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-adminusers
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: cardid-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-cardid
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: connector-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-connector
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: ledger-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ledger
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: products-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-products
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: products-ui-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-products-ui
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: publicauth-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-publicauth
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: publicapi-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-publicapi
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+  - name: selfservice-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-selfservice
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+
+  # ECR registry resources
+  - name: toolbox-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/toolbox
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_config
+  - name: frontend-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/frontend
+      <<: *aws_config
+  - name: adminusers-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/adminusers
+      <<: *aws_config
+  - name: cardid-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/cardid
+      <<: *aws_config
+  - name: connector-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/connector
+      <<: *aws_config
+  - name: ledger-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/ledger
+      <<: *aws_config
+  - name: products-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/products
+      <<: *aws_config
+  - name: products-ui-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/products-ui
+      <<: *aws_config
+  - name: publicapi-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicapi
+      <<: *aws_config
+  - name: publicauth-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicauth
+      <<: *aws_config
+  - name: selfservice-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/selfservice
+      <<: *aws_config
 
 resource_types:
   # Custom resource type - this has been merged to the
@@ -44,6 +178,59 @@ resource_types:
       password: ((docker-password))
       tag: dev
 
+groups:
+  - name: pipeline-meta-update
+    jobs:
+      - update-apps-test-ecr-pipeline
+  - name: toolbox
+    jobs:
+      - toolbox-image-to-test-ecr
+  - name: frontend
+    jobs:
+      - frontend-image-to-test-ecr
+  - name: adminusers
+    jobs:
+      - adminusers-image-to-test-ecr
+  - name: cardid
+    jobs:
+      - cardid-image-to-test-ecr
+  - name: connector
+    jobs:
+      - connector-image-to-test-ecr
+  - name: ledger
+    jobs:
+      - ledger-image-to-test-ecr
+  - name: products
+    jobs:
+      - products-image-to-test-ecr
+  - name: products-ui
+    jobs:
+      - products-ui-image-to-test-ecr
+  - name: publicapi
+    jobs:
+      - publicapi-image-to-test-ecr
+  - name: publicauth
+    jobs:
+      - publicauth-image-to-test-ecr
+  - name: selfservice
+    jobs:
+      - selfservice-image-to-test-ecr
+
+definitions:
+  - &pull-image-from-dockerhub
+    task: pull-image-from-dockerhub
+    privileged: true
+    file: toolbox-test-ecr/ci/tasks/pull-image-from-dockerhub.yml
+    params:
+      DOCKER_USERNAME: updateThisValue
+      DOCKER_AUTH_TOKEN: updateThisValue
+      DOCKER_REPOSITORY: updateThisValue
+      APP_GIT_DIR: updateThisValue
+
+docker_credentials: &docker_credentials
+  DOCKER_USERNAME: ((docker-username))
+  DOCKER_AUTH_TOKEN: ((docker-password))
+
 jobs:
   - name: update-apps-test-ecr-pipeline
     plan:
@@ -51,59 +238,21 @@ jobs:
         trigger: true
       - set_pipeline: apps-test-ecr
         file: apps-test-ecr/ci/pipelines/apps-test-ecr.yml
-  - name: toolbox-test-ecr
+  - name: toolbox-image-to-test-ecr
     plan:
-      - get: git-toolbox-pre-release
+      - get: apps-test-ecr
+      - get: toolbox-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - task: pull-toolbox-from-dockerhub
-        privileged: true
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          params:
-            DOCKER_USERNAME: ((docker-username))
-            DOCKER_AUTH_TOKEN: ((docker-password))
-          inputs:
-            - name: git-toolbox-pre-release
-          outputs:
-            - name: image
-            - name: docker_tags
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              source /docker-helpers.sh
-              start_docker
-
-              function cleanup {
-                echo "CLEANUP TRIGGERED"
-                clean_docker
-                stop_docker
-                echo "CLEANUP COMPLETE"
-              }
-
-              trap cleanup EXIT
-
-              echo "Authenticating with Docker Hub..."
-              # TODO: use alternative auth method for docker
-              echo "$DOCKER_AUTH_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
-              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
-              docker pull govukpay/toolbox:$COMMIT_SHA
-
-              docker save govukpay/toolbox:$COMMIT_SHA --output image/image.tar
-
-              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
-              GIT_TAG=$(cat git-toolbox-pre-release/.git/ref)
-              echo "$COMMIT_SHA $GIT_TAG" > docker_tags/docker_tags.txt
-      - put: ecr-registry-test
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/toolbox
+          APP_GIT_DIR: toolbox-git-release
+          <<: *docker_credentials
+      - put: toolbox-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: docker_tags/docker_tags.txt
+          additional_tags: toolbox-git-release/.git/HEAD
       - task: deploy-to-test
         config:
           platform: linux
@@ -114,9 +263,9 @@ jobs:
           run:
             path: /bin/bash
             args:
-            - -ec
-            - |
-              echo "Imagine we just deployed to test."
+              - -ec
+              - |
+                echo "Imagine we just deployed to test."
       - task: smoke-test-on-test
         config:
           platform: linux
@@ -127,9 +276,9 @@ jobs:
           run:
             path: /bin/bash
             args:
-            - -ec
-            - |
-              echo "Imagine we just smoked on test."
+              - -ec
+              - |
+                echo "Imagine we just smoked on test."
       - task: combine-passing-tags
         config:
           platform: linux
@@ -138,18 +287,203 @@ jobs:
             source:
               repository: govukpay/concourse-runner
           inputs:
-            - name: git-toolbox-pre-release
+            - name: toolbox-git-release
           run:
             path: /bin/bash
             args:
-            - -ec
-            - |
-              COMMIT_SHA=$(cat git-toolbox-pre-release/.git/HEAD)
-              GIT_TAG=$(cat git-toolbox-pre-release/.git/ref)
-              echo "$COMMIT_SHA $GIT_TAG ready-staging" > docker_tags/docker_tags.txt
+              - -ec
+              - |
+                COMMIT_SHA=$(cat toolbox-git-release/.git/HEAD)
+                GIT_TAG=$(cat toolbox-git-release/.git/ref)
+                echo "$COMMIT_SHA $GIT_TAG ready-staging" > docker_tags/docker_tags.txt
           outputs:
             - name: docker_tags
-      - put: ecr-registry-test
+      - put: toolbox-ecr-registry-test
         params:
           image: image/image.tar
           additional_tags: docker_tags/docker_tags.txt
+  - name: frontend-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: frontend-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/frontend
+          APP_GIT_DIR: frontend-git-release
+          <<: *docker_credentials
+      - put: frontend-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: frontend-git-release/.git/HEAD
+  - name: adminusers-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: adminusers-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/adminusers
+          APP_GIT_DIR: adminusers-git-release
+          <<: *docker_credentials
+      - put: adminusers-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: adminusers-git-release/.git/HEAD
+  - name: cardid-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: cardid-git-release
+        trigger: true
+        params:
+          submodules: none
+      - task: update-submodule
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: cardid-git-release
+          params:
+            GH_ACCESS_TOKEN: ((github-access-token))
+          outputs:
+            - name: image
+          run:
+            path: bash
+            dir: cardid-git-release
+            args:
+              - -ec
+              - |
+                # cardid-data submodule's url is defined as ssh yet concourse
+                # is using oauth. Furthermore we need to avoid the password
+                # prompt from the git cli. Therefore rewrite the url for https
+                # and add the token. The risk of setting the token in the url is
+                # mitigated since these files are not committed, the container is ephemeral
+                # and anyone with access to read the files could read the token from
+                # environment variable. Furthermore we redact the token from the
+                # files after the update.
+                sed -i "s/git@github.com:/https:\/\/${GH_ACCESS_TOKEN}@github.com\//" .gitmodules
+                git submodule init -q data
+                git submodule update data
+                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
+                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/cardid
+          APP_GIT_DIR: cardid-git-release
+          <<: *docker_credentials
+      - put: cardid-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: cardid-git-release/.git/HEAD
+  - name: connector-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: connector-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/connector
+          APP_GIT_DIR: connector-git-release
+          <<: *docker_credentials
+      - put: connector-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: connector-git-release/.git/HEAD
+  - name: ledger-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: ledger-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/ledger
+          APP_GIT_DIR: ledger-git-release
+          <<: *docker_credentials
+      - put: ledger-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: ledger-git-release/.git/HEAD
+  - name: products-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: products-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/products
+          APP_GIT_DIR: products-git-release
+          <<: *docker_credentials
+      - put: products-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: products-git-release/.git/HEAD
+  - name: products-ui-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: products-ui-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/products-ui
+          APP_GIT_DIR: products-ui-git-release
+          <<: *docker_credentials
+      - put: products-ui-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: products-ui-git-release/.git/HEAD
+  - name: publicapi-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: publicapi-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/publicapi
+          APP_GIT_DIR: publicapi-git-release
+          <<: *docker_credentials
+      - put: publicapi-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: publicapi-git-release/.git/HEAD
+  - name: publicauth-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: publicauth-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/publicauth
+          APP_GIT_DIR: publicauth-git-release
+          <<: *docker_credentials
+      - put: publicauth-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: publicauth-git-release/.git/HEAD
+  - name: selfservice-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: selfservice-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/selfservice
+          APP_GIT_DIR: selfservice-git-release
+          <<: *docker_credentials
+      - put: selfservice-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: selfservice-git-release/.git/HEAD
