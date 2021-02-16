@@ -21,7 +21,7 @@ params:
   APP_NAME: app
 
 run:
-  path: sh
+  path: bash
   dir: src
   args:
     - -ec
