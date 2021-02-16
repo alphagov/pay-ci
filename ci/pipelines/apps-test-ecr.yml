@@ -102,6 +102,14 @@ resources:
       uri: https://github.com/alphagov/pay-nginx-proxy
       branch: master
       tag_regex: "alpha_release-(.*)"
+  - name: nginx-forward-proxy-dockerhub-release
+    type: updated-registry-image
+    icon: docker
+    source:
+      variant: alpine
+      repository: govukpay/nginx-forward-proxy
+      username: ((docker-username))
+      password: ((docker-password))
 
   # ECR registry resources
   - name: toolbox-ecr-registry-test
@@ -176,6 +184,12 @@ resources:
     source:
       repository: govukpay/docker-nginx-proxy
       <<: *aws_config
+  - name: nginx-forward-proxy-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/nginx-forward-proxy
+      <<: *aws_config
 
 resource_types:
   # Custom resource type - this has been merged to the
@@ -190,6 +204,11 @@ resource_types:
       username: ((docker-username))
       password: ((docker-password))
       tag: dev
+  - name: updated-registry-image
+    type: registry-image
+    source:
+      repository: concourse/registry-image-resource
+      tag: "1.1.0"
 
 groups:
   - name: pipeline-meta-update
@@ -231,6 +250,9 @@ groups:
   - name: nginx-proxy
     jobs:
       - nginx-proxy-image-to-test-ecr
+  - name: nginx-forward-proxy
+    jobs:
+      - nginx-forward-proxy-image-to-test-ecr
 
 definitions:
   - &pull-image-from-dockerhub
@@ -518,3 +540,14 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: nginx-proxy-git-release/.git/HEAD
+  - name: nginx-forward-proxy-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: nginx-forward-proxy-dockerhub-release
+        params:
+          format: oci
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - put: nginx-forward-proxy-ecr-registry-test
+        params:
+          image: nginx-forward-proxy-dockerhub-release/image.tar
+          additional_tags: nginx-forward-proxy-dockerhub-release/tag
