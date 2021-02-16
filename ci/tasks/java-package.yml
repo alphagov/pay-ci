@@ -32,5 +32,6 @@ run:
     EOF
 
     mvn --global-settings settings.xml clean package -DskipTests
+    PR_NUMBER="PR-$(cat .git/resource/pr)"
     cd ..
     cp -R src/* build

@@ -1058,6 +1058,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: java-commons-pull-request
+    - <<: *get-ci
     - <<: *put-integration-test-pending-status
       put: java-commons-pull-request
     - task: test
@@ -1386,12 +1387,11 @@ jobs:
         outputs:
           - name: pacts
         run:
-          path: bash
+          path: sh
           dir: src
           args:
             - -ec
             - |
-              # shellcheck disable=SC1091
               source /docker-helpers.sh
               start_docker
 
@@ -1410,9 +1410,9 @@ jobs:
                         -DPACT_BROKER_URL=https://pact-broker-test.cloudapps.digital \
                         -DPACT_BROKER_USERNAME="" \
                         -DPACT_BROKER_PASSWORD="" \
-                        -DPACT_CONSUMER_VERSION="${commit}" \
-                        -DPACT_CONSUMER_TAG="${pr}" \
-                        -Dpact.provider.version="${commit}" \
+                        -DPACT_CONSUMER_VERSION=${commit} \
+                        -DPACT_CONSUMER_TAG=${pr} \
+                        -Dpact.provider.version=${commit} \
                         -DrunConsumerContractTests=true
               cp -R target/pacts/* ../pacts/ || true
 
@@ -2081,6 +2081,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: stubs-pull-request
+    - <<: *get-ci
     - <<: *put-test-pending-status
       put: stubs-pull-request
     - task: run tests
