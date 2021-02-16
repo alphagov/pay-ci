@@ -31,6 +31,8 @@ inputs:
     optional: true
   - name: selfservice-git-release
     optional: true
+  - name: nginx-proxy-git-release
+    optional: true
 outputs:
   - name: image
   - name: docker_tags
