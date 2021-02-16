@@ -15,7 +15,7 @@ inputs:
 caches:
   - path: test_target/.m2
 run:
-  path: bash
+  path: sh
   args:
     - -ec
     - |
