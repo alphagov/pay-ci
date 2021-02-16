@@ -95,6 +95,13 @@ resources:
       uri: https://github.com/alphagov/pay-selfservice
       branch: master
       tag_regex: "alpha_release-(.*)"
+  - name: nginx-proxy-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-nginx-proxy
+      branch: master
+      tag_regex: "alpha_release-(.*)"
 
   # ECR registry resources
   - name: toolbox-ecr-registry-test
@@ -163,6 +170,12 @@ resources:
     source:
       repository: govukpay/selfservice
       <<: *aws_config
+  - name: nginx-proxy-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/docker-nginx-proxy
+      <<: *aws_config
 
 resource_types:
   # Custom resource type - this has been merged to the
@@ -215,6 +228,9 @@ groups:
   - name: selfservice
     jobs:
       - selfservice-image-to-test-ecr
+  - name: nginx-proxy
+    jobs:
+      - nginx-proxy-image-to-test-ecr
 
 definitions:
   - &pull-image-from-dockerhub
@@ -487,3 +503,18 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: selfservice-git-release/.git/HEAD
+  - name: nginx-proxy-image-to-test-ecr
+    plan:
+      - get: apps-test-ecr
+      - get: nginx-proxy-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/docker-nginx-proxy
+          APP_GIT_DIR: nginx-proxy-git-release
+          <<: *docker_credentials
+      - put: nginx-proxy-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: nginx-proxy-git-release/.git/HEAD
