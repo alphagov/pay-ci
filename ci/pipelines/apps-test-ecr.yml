@@ -544,6 +544,7 @@ jobs:
     plan:
       - get: apps-test-ecr
       - get: nginx-forward-proxy-dockerhub-release
+        trigger: true
         params:
           format: oci
       # Temporarily fetch image from Dockerhub until Concourse can build its own
