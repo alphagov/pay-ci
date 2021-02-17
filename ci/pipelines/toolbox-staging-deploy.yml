@@ -34,18 +34,6 @@ resources:
       variant: release
 
 resource_types:
-  # Custom resource type - this has been merged to the
-  # https://github.com/concourse/registry-image-resource repo,
-  # however is not yet in a stable release. Using this custom
-  # resource type allows us to support the ECR registry_id parameter
-  # This can be removed once registry_id is in stable release of 'registry-image'.
-  - name: dev-registry-image
-    type: registry-image
-    source:
-      repository: concourse/registry-image-resource
-      username: ((docker-username))
-      password: ((docker-password))
-      tag: dev
   - name: registry-image-resource-1-1-0
     type: registry-image
     source:
