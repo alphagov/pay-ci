@@ -1,4 +1,4 @@
-aws_config: &aws_config
+aws_test_config: &aws_test_config
   aws_access_key_id: ((readonly_access_key_id))
   aws_secret_access_key: ((readonly_secret_access_key))
   aws_session_token: ((readonly_session_token))
@@ -6,6 +6,14 @@ aws_config: &aws_config
   aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
   # Hardcode the test account registry ID for now. Needs to be a string, not a number
   aws_ecr_registry_id: "((pay_aws_test_account_id))"
+  aws_region: eu-west-1
+
+aws_staging_config: &aws_staging_config
+  aws_access_key_id: ((readonly_access_key_id))
+  aws_secret_access_key: ((readonly_secret_access_key))
+  aws_session_token: ((readonly_session_token))
+  aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+  aws_ecr_registry_id: "((pay_aws_staging_account_id))"
   aws_region: eu-west-1
 
 resources:
@@ -117,79 +125,88 @@ resources:
     icon: docker
     source:
       repository: govukpay/toolbox
-      <<: *aws_config
+      variant: release
+      <<: *aws_test_config
   - name: frontend-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/frontend
-      <<: *aws_config
+      <<: *aws_test_config
   - name: adminusers-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/adminusers
-      <<: *aws_config
+      <<: *aws_test_config
   - name: cardid-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/cardid
-      <<: *aws_config
+      <<: *aws_test_config
   - name: connector-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/connector
-      <<: *aws_config
+      <<: *aws_test_config
   - name: ledger-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/ledger
-      <<: *aws_config
+      <<: *aws_test_config
   - name: products-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/products
-      <<: *aws_config
+      <<: *aws_test_config
   - name: products-ui-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/products-ui
-      <<: *aws_config
+      <<: *aws_test_config
   - name: publicapi-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/publicapi
-      <<: *aws_config
+      <<: *aws_test_config
   - name: publicauth-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/publicauth
-      <<: *aws_config
+      <<: *aws_test_config
   - name: selfservice-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/selfservice
-      <<: *aws_config
+      <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/docker-nginx-proxy
-      <<: *aws_config
+      <<: *aws_test_config
   - name: nginx-forward-proxy-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/nginx-forward-proxy
-      <<: *aws_config
+      <<: *aws_test_config
+
+  - name: toolbox-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/toolbox
+      <<: *aws_staging_config
+
 
 resource_types:
   # Custom resource type - this has been merged to the
@@ -216,7 +233,10 @@ groups:
       - update-apps-test-ecr-pipeline
   - name: toolbox
     jobs:
-      - toolbox-image-to-test-ecr
+      - push-toolbox-to-test-ecr
+      - deploy-toolbox
+      - smoke-test-toolbox
+      - push-toolbox-to-staging-ecr
   - name: frontend
     jobs:
       - frontend-image-to-test-ecr
@@ -276,7 +296,7 @@ jobs:
         trigger: true
       - set_pipeline: apps-test-ecr
         file: apps-test-ecr/ci/pipelines/apps-test-ecr.yml
-  - name: toolbox-image-to-test-ecr
+  - name: push-toolbox-to-test-ecr
     plan:
       - get: apps-test-ecr
       - get: toolbox-git-release
@@ -287,37 +307,7 @@ jobs:
           DOCKER_REPOSITORY: govukpay/toolbox
           APP_GIT_DIR: toolbox-git-release
           <<: *docker_credentials
-      - put: toolbox-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: toolbox-git-release/.git/HEAD
-      - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
-      - task: smoke-test-on-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just smoked on test."
-      - task: combine-passing-tags
+      - task: parse-release-tag
         config:
           platform: linux
           image_resource:
@@ -331,15 +321,61 @@ jobs:
             args:
               - -ec
               - |
-                COMMIT_SHA=$(cat toolbox-git-release/.git/HEAD)
-                GIT_TAG=$(cat toolbox-git-release/.git/ref)
-                echo "$COMMIT_SHA $GIT_TAG ready-staging" > docker_tags/docker_tags.txt
+                RELEASE_NUMBER=$(cat toolbox-git-release/.git/ref | sed 's/alpha_release-//')
+                echo "${RELEASE_NUMBER}-release" > docker_tags/docker_tags.txt
           outputs:
             - name: docker_tags
       - put: toolbox-ecr-registry-test
         params:
           image: image/image.tar
           additional_tags: docker_tags/docker_tags.txt
+  - name: deploy-toolbox
+    plan:
+      - get: toolbox-ecr-registry-test
+        trigger: true
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just deployed to test."
+  - name: smoke-test-toolbox
+    plan:
+      - get: toolbox-ecr-registry-test
+        trigger: true
+        passed: [deploy-toolbox]
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on test."
+  - name: push-toolbox-to-staging-ecr
+    plan:
+      - get: toolbox-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-toolbox]
+      - put: toolbox-ecr-registry-staging
+        params:
+          image: toolbox-ecr-registry-test/image.tar
+          additional_tags: toolbox-ecr-registry-test/tag
+
   - name: frontend-image-to-test-ecr
     plan:
       - get: apps-test-ecr
