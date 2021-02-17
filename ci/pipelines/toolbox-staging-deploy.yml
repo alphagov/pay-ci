@@ -53,7 +53,7 @@ jobs:
       - get: toolbox-staging-deploy-config
         trigger: true
       - set_pipeline: toolbox-staging-deploy-config
-        file: apps-test-ecr/ci/pipelines/toolbox-staging-deploy.yml
+        file: toolbox-staging-deploy-config/ci/pipelines/toolbox-staging-deploy.yml
   - name: toolbox-staging-deploy
     plan:
       - get: toolbox-staging-deploy-config
