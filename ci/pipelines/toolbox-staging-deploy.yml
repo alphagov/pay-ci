@@ -7,22 +7,21 @@ resources:
       branch: master 
       paths:
         - ci/pipelines/toolbox-staging-deploy.yml
-  # ECR Test registry resource
-  - name: ecr-registry-test
-    type: dev-registry-image
-    icon: docker
-    source:
-      repository: govukpay/toolbox
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
-      tag: ready-staging
+  # ECR Prod registry resource - not available yet
+#  - name: toolbox-ecr-registry-prod
+#    type: dev-registry-image
+#    icon: docker
+#    source:
+#      repository: govukpay/toolbox
+#      aws_access_key_id: ((readonly_access_key_id))
+#      aws_secret_access_key: ((readonly_secret_access_key))
+#      aws_session_token: ((readonly_session_token))
+#      aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+#      aws_ecr_registry_id: "((pay_aws_prod_account_id))"
+#      aws_region: eu-west-1
   # ECR Staging registry resource
-  - name: ecr-registry-staging
-    type: dev-registry-image
+  - name: toolbox-ecr-registry-staging
+    type: registry-image-resource-1-1-0
     icon: docker
     source:
       repository: govukpay/toolbox
@@ -32,6 +31,7 @@ resources:
       aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
       aws_ecr_registry_id: "((pay_aws_staging_account_id))"
       aws_region: eu-west-1
+      variant: release
 
 resource_types:
   # Custom resource type - this has been merged to the
@@ -46,6 +46,11 @@ resource_types:
       username: ((docker-username))
       password: ((docker-password))
       tag: dev
+  - name: registry-image-resource-1-1-0
+    type: registry-image
+    source:
+      repository: concourse/registry-image-resource
+      tag: "1.1.0"
 
 jobs:
   - name: update-toolbox-staging-ecr-pipeline
@@ -57,11 +62,11 @@ jobs:
   - name: toolbox-staging-deploy
     plan:
       - get: toolbox-staging-deploy-config
-      - get: ecr-registry-test
+      - get: toolbox-ecr-registry-staging
         trigger: true
         params:
           format: oci
-      - task: pull-tags-from-ecr-registry-test
+      - task: pull-tags-from-ecr-registry-staging
         config:
           platform: linux
           image_resource:
@@ -78,7 +83,7 @@ jobs:
             AWS_PAGER: ""
             AWS_DEFAULT_OUTPUT: text
           inputs:
-            - name: ecr-registry-test
+            - name: toolbox-ecr-registry-staging
           outputs:
             - name: docker_tags
           run:
@@ -88,7 +93,7 @@ jobs:
             args:
             - -ec
             - | 
-              DIGEST=$(cat ecr-registry-test/digest)
+              DIGEST=$(cat toolbox-ecr-registry-staging/digest)
               assumed_role=($(aws sts assume-role \
               --role-arn $AWS_ASSUME_ROLE_ARN \
               --role-session-name ecr-test-session \
@@ -109,9 +114,9 @@ jobs:
               --repository-name govukpay/toolbox \
               --query "imageIds[?imageDigest=='$DIGEST'][imageTag]" \
               | tr '\n' ' ' > docker_tags/tags.txt
-      - put: ecr-registry-staging
+      - put: toolbox-ecr-registry-staging
         params:
-          image: ecr-registry-test/image.tar
+          image: toolbox-ecr-registry-staging/image.tar
           additional_tags: docker_tags/tags.txt
       - task: deploy-to-staging
         config:
@@ -156,8 +161,8 @@ jobs:
             - -ec
             - |
               sed -i'' 's/ready-staging/ready-production/g' docker_tags/tags.txt
-      - put: ecr-registry-staging
-        params:
-          image: ecr-registry-test/image.tar
-          additional_tags: docker_tags/tags.txt
+#      - put: toolbox-ecr-registry-prod
+#        params:
+#          image: ecr-registry-test/image.tar
+#          additional_tags: docker_tags/tags.txt
       
