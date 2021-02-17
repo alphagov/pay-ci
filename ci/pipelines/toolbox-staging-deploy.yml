@@ -1,12 +1,12 @@
 resources:
-  - name: toolbox-staging-ecr
+  - name: toolbox-staging-deploy-config
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master 
       paths:
-        - ci/pipelines/toolbox-test-ecr.yml
+        - ci/pipelines/toolbox-staging-deploy.yml
   # ECR Test registry resource
   - name: ecr-registry-test
     type: dev-registry-image
@@ -50,12 +50,13 @@ resource_types:
 jobs:
   - name: update-toolbox-staging-ecr-pipeline
     plan:
-      - get: toolbox-staging-ecr
+      - get: toolbox-staging-deploy-config
         trigger: true
-      - set_pipeline: toolbox-staging-ecr
-        file: toolbox-staging-ecr/ci/pipelines/toolbox-staging-ecr.yml
-  - name: toolbox-staging-approval
+      - set_pipeline: toolbox-staging-deploy-config
+        file: apps-test-ecr/ci/pipelines/toolbox-staging-deploy.yml
+  - name: toolbox-staging-deploy
     plan:
+      - get: toolbox-staging-deploy-config
       - get: ecr-registry-test
         trigger: true
         params:
