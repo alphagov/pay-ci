@@ -7,19 +7,17 @@ resources:
       branch: master 
       paths:
         - ci/pipelines/toolbox-staging-deploy.yml
-  # ECR Prod registry resource - not available yet
-#  - name: toolbox-ecr-registry-prod
-#    type: dev-registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/toolbox
-#      aws_access_key_id: ((readonly_access_key_id))
-#      aws_secret_access_key: ((readonly_secret_access_key))
-#      aws_session_token: ((readonly_session_token))
-#      aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
-#      aws_ecr_registry_id: "((pay_aws_prod_account_id))"
-#      aws_region: eu-west-1
-  # ECR Staging registry resource
+  - name: toolbox-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/toolbox
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_prod_account_id))"
+      aws_region: eu-west-1
   - name: toolbox-ecr-registry-staging
     type: registry-image-resource-1-1-0
     icon: docker
@@ -102,10 +100,6 @@ jobs:
               --repository-name govukpay/toolbox \
               --query "imageIds[?imageDigest=='$DIGEST'][imageTag]" \
               | tr '\n' ' ' > docker_tags/tags.txt
-      - put: toolbox-ecr-registry-staging
-        params:
-          image: toolbox-ecr-registry-staging/image.tar
-          additional_tags: docker_tags/tags.txt
       - task: deploy-to-staging
         config:
           platform: linux
@@ -149,8 +143,8 @@ jobs:
             - -ec
             - |
               sed -i'' 's/ready-staging/ready-production/g' docker_tags/tags.txt
-#      - put: toolbox-ecr-registry-prod
-#        params:
-#          image: ecr-registry-test/image.tar
-#          additional_tags: docker_tags/tags.txt
+      - put: toolbox-ecr-registry-prod
+        params:
+          image: toolbox-ecr-registry-staging/image.tar
+          additional_tags: docker_tags/tags.txt
       
