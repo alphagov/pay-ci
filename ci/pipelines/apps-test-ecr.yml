@@ -264,6 +264,12 @@ resources:
     source:
       repository: govukpay/publicapi
       <<: *aws_staging_config
+  - name: publicauth-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicauth
+      <<: *aws_staging_config
 
 
 resource_types:
@@ -337,12 +343,15 @@ groups:
       - deploy-publicapi
       - smoke-test-publicapi
       - push-publicapi-to-staging-ecr
+  - name: publicauth
+    jobs:
+      - push-publicauth-to-test-ecr
+      - deploy-publicauth
+      - smoke-test-publicauth
+      - push-publicauth-to-staging-ecr
   - name: cardid
     jobs:
       - cardid-image-to-test-ecr
-  - name: publicauth
-    jobs:
-      - publicauth-image-to-test-ecr
   - name: selfservice
     jobs:
       - selfservice-image-to-test-ecr
@@ -898,6 +907,71 @@ jobs:
         params:
           image: publicapi-ecr-registry-test/image.tar
           additional_tags: publicapi-ecr-registry-test/tag
+  - name: push-publicauth-to-test-ecr
+    plan:
+      - get: pay-ci
+      - get: publicauth-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/publicauth
+          APP_GIT_DIR: publicauth-git-release
+          <<: *docker_credentials
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: publicauth-git-release
+      - put: publicauth-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/tags
+  - name: deploy-publicauth
+    plan:
+      - get: publicauth-ecr-registry-test
+        trigger: true
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just deployed to test."
+  - name: smoke-test-publicauth
+    plan:
+      - get: publicauth-ecr-registry-test
+        trigger: true
+        passed: [deploy-publicauth]
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on test."
+  - name: push-publicauth-to-staging-ecr
+    plan:
+      - get: publicauth-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-publicauth]
+      - put: publicauth-ecr-registry-staging
+        params:
+          image: publicauth-ecr-registry-test/image.tar
+          additional_tags: publicauth-ecr-registry-test/tag
 
   - name: cardid-image-to-test-ecr
     plan:
@@ -949,21 +1023,6 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: cardid-git-release/.git/HEAD
-  - name: publicauth-image-to-test-ecr
-    plan:
-      - get: apps-test-ecr
-      - get: publicauth-git-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        params:
-          DOCKER_REPOSITORY: govukpay/publicauth
-          APP_GIT_DIR: publicauth-git-release
-          <<: *docker_credentials
-      - put: publicauth-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: publicauth-git-release/.git/HEAD
   - name: selfservice-image-to-test-ecr
     plan:
       - get: apps-test-ecr
