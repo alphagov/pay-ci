@@ -252,6 +252,12 @@ resources:
     source:
       repository: govukpay/products
       <<: *aws_staging_config
+  - name: products-ui-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/products-ui
+      <<: *aws_staging_config
 
 
 resource_types:
@@ -313,12 +319,15 @@ groups:
       - deploy-products
       - smoke-test-products
       - push-products-to-staging-ecr
+  - name: products-ui
+    jobs:
+      - push-products-ui-to-test-ecr
+      - deploy-products-ui
+      - smoke-test-products-ui
+      - push-products-ui-to-staging-ecr
   - name: cardid
     jobs:
       - cardid-image-to-test-ecr
-  - name: products-ui
-    jobs:
-      - products-ui-image-to-test-ecr
   - name: publicapi
     jobs:
       - publicapi-image-to-test-ecr
@@ -750,6 +759,71 @@ jobs:
         params:
           image: products-ecr-registry-test/image.tar
           additional_tags: products-ecr-registry-test/tag
+  - name: push-products-ui-to-test-ecr
+    plan:
+      - get: pay-ci
+      - get: products-ui-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/products-ui
+          APP_GIT_DIR: products-ui-git-release
+          <<: *docker_credentials
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: products-ui-git-release
+      - put: products-ui-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/tags
+  - name: deploy-products-ui
+    plan:
+      - get: products-ui-ecr-registry-test
+        trigger: true
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just deployed to test."
+  - name: smoke-test-products-ui
+    plan:
+      - get: products-ui-ecr-registry-test
+        trigger: true
+        passed: [deploy-products-ui]
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on test."
+  - name: push-products-ui-to-staging-ecr
+    plan:
+      - get: products-ui-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-products-ui]
+      - put: products-ui-ecr-registry-staging
+        params:
+          image: products-ui-ecr-registry-test/image.tar
+          additional_tags: products-ui-ecr-registry-test/tag
 
   - name: cardid-image-to-test-ecr
     plan:
@@ -801,21 +875,6 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: cardid-git-release/.git/HEAD
-  - name: products-ui-image-to-test-ecr
-    plan:
-      - get: apps-test-ecr
-      - get: products-ui-git-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        params:
-          DOCKER_REPOSITORY: govukpay/products-ui
-          APP_GIT_DIR: products-ui-git-release
-          <<: *docker_credentials
-      - put: products-ui-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: products-ui-git-release/.git/HEAD
   - name: publicapi-image-to-test-ecr
     plan:
       - get: apps-test-ecr
