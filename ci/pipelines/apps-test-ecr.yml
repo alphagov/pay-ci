@@ -25,6 +25,13 @@ resources:
       branch: master
       paths:
         - ci/pipelines/apps-test-ecr.yml
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      
   # Github Releases
   - name: toolbox-git-release
     type: git
@@ -199,12 +206,17 @@ resources:
     source:
       repository: govukpay/nginx-forward-proxy
       <<: *aws_test_config
-
   - name: toolbox-ecr-registry-staging
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/toolbox
+      <<: *aws_staging_config
+  - name: frontend-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/frontend
       <<: *aws_staging_config
 
 
@@ -239,7 +251,10 @@ groups:
       - push-toolbox-to-staging-ecr
   - name: frontend
     jobs:
-      - frontend-image-to-test-ecr
+      - push-frontend-to-test-ecr
+      - deploy-frontend
+      - smoke-test-frontend
+      - push-frontend-to-staging-ecr
   - name: adminusers
     jobs:
       - adminusers-image-to-test-ecr
@@ -278,7 +293,7 @@ definitions:
   - &pull-image-from-dockerhub
     task: pull-image-from-dockerhub
     privileged: true
-    file: apps-test-ecr/ci/tasks/pull-image-from-dockerhub.yml
+    file: pay-ci/ci/tasks/pull-image-from-dockerhub.yml
     params:
       DOCKER_USERNAME: updateThisValue
       DOCKER_AUTH_TOKEN: updateThisValue
@@ -298,7 +313,7 @@ jobs:
         file: apps-test-ecr/ci/pipelines/apps-test-ecr.yml
   - name: push-toolbox-to-test-ecr
     plan:
-      - get: apps-test-ecr
+      - get: pay-ci
       - get: toolbox-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -308,27 +323,13 @@ jobs:
           APP_GIT_DIR: toolbox-git-release
           <<: *docker_credentials
       - task: parse-release-tag
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          inputs:
-            - name: toolbox-git-release
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                RELEASE_NUMBER=$(cat toolbox-git-release/.git/ref | sed 's/alpha_release-//')
-                echo "${RELEASE_NUMBER}-release" > docker_tags/docker_tags.txt
-          outputs:
-            - name: docker_tags
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: toolbox-git-release
       - put: toolbox-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: docker_tags/docker_tags.txt
+          additional_tags: tags/tags
   - name: deploy-toolbox
     plan:
       - get: toolbox-ecr-registry-test
@@ -376,9 +377,9 @@ jobs:
           image: toolbox-ecr-registry-test/image.tar
           additional_tags: toolbox-ecr-registry-test/tag
 
-  - name: frontend-image-to-test-ecr
+  - name: push-frontend-to-test-ecr
     plan:
-      - get: apps-test-ecr
+      - get: pay-ci
       - get: frontend-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -387,10 +388,61 @@ jobs:
           DOCKER_REPOSITORY: govukpay/frontend
           APP_GIT_DIR: frontend-git-release
           <<: *docker_credentials
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: frontend-git-release
       - put: frontend-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: frontend-git-release/.git/HEAD
+          additional_tags: tags/tags
+  - name: deploy-frontend
+    plan:
+      - get: frontend-ecr-registry-test
+        trigger: true
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just deployed to test."
+  - name: smoke-test-frontend
+    plan:
+      - get: frontend-ecr-registry-test
+        trigger: true
+        passed: [deploy-frontend]
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on test."
+  - name: push-frontend-to-staging-ecr
+    plan:
+      - get: frontend-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-frontend]
+      - put: frontend-ecr-registry-staging
+        params:
+          image: frontend-ecr-registry-test/image.tar
+          additional_tags: frontend-ecr-registry-test/tag
+
   - name: adminusers-image-to-test-ecr
     plan:
       - get: apps-test-ecr
