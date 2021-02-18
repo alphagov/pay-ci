@@ -224,6 +224,12 @@ resources:
     source:
       repository: govukpay/adminusers
       <<: *aws_staging_config
+  - name: connector-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/connector
+      <<: *aws_staging_config
 
 
 resource_types:
@@ -267,12 +273,15 @@ groups:
       - deploy-adminusers
       - smoke-test-adminusers
       - push-adminusers-to-staging-ecr
+  - name: connector
+    jobs:
+      - push-connector-to-test-ecr
+      - deploy-connector
+      - smoke-test-connector
+      - push-connector-to-staging-ecr
   - name: cardid
     jobs:
       - cardid-image-to-test-ecr
-  - name: connector
-    jobs:
-      - connector-image-to-test-ecr
   - name: ledger
     jobs:
       - ledger-image-to-test-ecr
@@ -518,6 +527,72 @@ jobs:
           image: adminusers-ecr-registry-test/image.tar
           additional_tags: adminusers-ecr-registry-test/tag
 
+  - name: push-connector-to-test-ecr
+    plan:
+      - get: pay-ci
+      - get: connector-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/connector
+          APP_GIT_DIR: connector-git-release
+          <<: *docker_credentials
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: connector-git-release
+      - put: connector-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/tags
+  - name: deploy-connector
+    plan:
+      - get: connector-ecr-registry-test
+        trigger: true
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just deployed to test."
+  - name: smoke-test-connector
+    plan:
+      - get: connector-ecr-registry-test
+        trigger: true
+        passed: [deploy-connector]
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on test."
+  - name: push-connector-to-staging-ecr
+    plan:
+      - get: connector-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-connector]
+      - put: connector-ecr-registry-staging
+        params:
+          image: connector-ecr-registry-test/image.tar
+          additional_tags: connector-ecr-registry-test/tag
+
   - name: cardid-image-to-test-ecr
     plan:
       - get: apps-test-ecr
@@ -568,21 +643,7 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: cardid-git-release/.git/HEAD
-  - name: connector-image-to-test-ecr
-    plan:
-      - get: apps-test-ecr
-      - get: connector-git-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        params:
-          DOCKER_REPOSITORY: govukpay/connector
-          APP_GIT_DIR: connector-git-release
-          <<: *docker_credentials
-      - put: connector-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: connector-git-release/.git/HEAD
+
   - name: ledger-image-to-test-ecr
     plan:
       - get: apps-test-ecr
