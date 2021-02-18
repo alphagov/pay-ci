@@ -1,0 +1,16 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+inputs:
+  - name: git-release
+outputs:
+  - name: tags
+run:
+  path: sh
+  args:
+    - -ec
+    - |
+      RELEASE_NUMBER=$(cat git-release/.git/ref | sed 's/alpha_release-//')
+      echo "${RELEASE_NUMBER}-release" > tags/tags
