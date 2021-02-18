@@ -230,6 +230,12 @@ resources:
     source:
       repository: govukpay/connector
       <<: *aws_staging_config
+  - name: ledger-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/ledger
+      <<: *aws_staging_config
 
 
 resource_types:
@@ -279,12 +285,15 @@ groups:
       - deploy-connector
       - smoke-test-connector
       - push-connector-to-staging-ecr
+  - name: ledger
+    jobs:
+      - push-ledger-to-test-ecr
+      - deploy-ledger
+      - smoke-test-ledger
+      - push-ledger-to-staging-ecr
   - name: cardid
     jobs:
       - cardid-image-to-test-ecr
-  - name: ledger
-    jobs:
-      - ledger-image-to-test-ecr
   - name: products
     jobs:
       - products-image-to-test-ecr
@@ -592,6 +601,71 @@ jobs:
         params:
           image: connector-ecr-registry-test/image.tar
           additional_tags: connector-ecr-registry-test/tag
+  - name: push-ledger-to-test-ecr
+    plan:
+      - get: pay-ci
+      - get: ledger-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/ledger
+          APP_GIT_DIR: ledger-git-release
+          <<: *docker_credentials
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: ledger-git-release
+      - put: ledger-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/tags
+  - name: deploy-ledger
+    plan:
+      - get: ledger-ecr-registry-test
+        trigger: true
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just deployed to test."
+  - name: smoke-test-ledger
+    plan:
+      - get: ledger-ecr-registry-test
+        trigger: true
+        passed: [deploy-ledger]
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on test."
+  - name: push-ledger-to-staging-ecr
+    plan:
+      - get: ledger-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-ledger]
+      - put: ledger-ecr-registry-staging
+        params:
+          image: ledger-ecr-registry-test/image.tar
+          additional_tags: ledger-ecr-registry-test/tag
 
   - name: cardid-image-to-test-ecr
     plan:
@@ -643,22 +717,6 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: cardid-git-release/.git/HEAD
-
-  - name: ledger-image-to-test-ecr
-    plan:
-      - get: apps-test-ecr
-      - get: ledger-git-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        params:
-          DOCKER_REPOSITORY: govukpay/ledger
-          APP_GIT_DIR: ledger-git-release
-          <<: *docker_credentials
-      - put: ledger-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: ledger-git-release/.git/HEAD
   - name: products-image-to-test-ecr
     plan:
       - get: apps-test-ecr
