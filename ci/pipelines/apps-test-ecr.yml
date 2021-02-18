@@ -218,6 +218,12 @@ resources:
     source:
       repository: govukpay/frontend
       <<: *aws_staging_config
+  - name: adminusers-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/adminusers
+      <<: *aws_staging_config
 
 
 resource_types:
@@ -257,7 +263,10 @@ groups:
       - push-frontend-to-staging-ecr
   - name: adminusers
     jobs:
-      - adminusers-image-to-test-ecr
+      - push-adminusers-to-test-ecr
+      - deploy-adminusers
+      - smoke-test-adminusers
+      - push-adminusers-to-staging-ecr
   - name: cardid
     jobs:
       - cardid-image-to-test-ecr
@@ -443,9 +452,9 @@ jobs:
           image: frontend-ecr-registry-test/image.tar
           additional_tags: frontend-ecr-registry-test/tag
 
-  - name: adminusers-image-to-test-ecr
+  - name: push-adminusers-to-test-ecr
     plan:
-      - get: apps-test-ecr
+      - get: pay-ci
       - get: adminusers-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -454,10 +463,61 @@ jobs:
           DOCKER_REPOSITORY: govukpay/adminusers
           APP_GIT_DIR: adminusers-git-release
           <<: *docker_credentials
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: adminusers-git-release
       - put: adminusers-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: adminusers-git-release/.git/HEAD
+          additional_tags: tags/tags
+  - name: deploy-adminusers
+    plan:
+      - get: adminusers-ecr-registry-test
+        trigger: true
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just deployed to test."
+  - name: smoke-test-adminusers
+    plan:
+      - get: adminusers-ecr-registry-test
+        trigger: true
+        passed: [deploy-adminusers]
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on test."
+  - name: push-adminusers-to-staging-ecr
+    plan:
+      - get: adminusers-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-adminusers]
+      - put: adminusers-ecr-registry-staging
+        params:
+          image: adminusers-ecr-registry-test/image.tar
+          additional_tags: adminusers-ecr-registry-test/tag
+
   - name: cardid-image-to-test-ecr
     plan:
       - get: apps-test-ecr
