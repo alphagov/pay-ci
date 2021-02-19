@@ -132,60 +132,70 @@ resources:
     icon: docker
     source:
       repository: govukpay/frontend
+      variant: release
       <<: *aws_test_config
   - name: adminusers-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/adminusers
+      variant: release
       <<: *aws_test_config
   - name: cardid-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/cardid
+      variant: release
       <<: *aws_test_config
   - name: connector-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/connector
+      variant: release
       <<: *aws_test_config
   - name: ledger-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/ledger
+      variant: release
       <<: *aws_test_config
   - name: products-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/products
+      variant: release
       <<: *aws_test_config
   - name: products-ui-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/products-ui
+      variant: release
       <<: *aws_test_config
   - name: publicapi-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/publicapi
+      variant: release
       <<: *aws_test_config
   - name: publicauth-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/publicauth
+      variant: release
       <<: *aws_test_config
   - name: selfservice-ecr-registry-test
     type: dev-registry-image
     icon: docker
     source:
       repository: govukpay/selfservice
+      variant: release
       <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-test
     type: dev-registry-image
