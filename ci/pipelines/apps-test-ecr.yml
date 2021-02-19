@@ -276,6 +276,12 @@ resources:
     source:
       repository: govukpay/selfservice
       <<: *aws_staging_config
+  - name: cardid-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/cardid
+      <<: *aws_staging_config
 
 
 resource_types:
@@ -363,7 +369,10 @@ groups:
       - push-selfservice-to-staging-ecr
   - name: cardid
     jobs:
-      - cardid-image-to-test-ecr
+      - push-cardid-to-test-ecr
+      - deploy-cardid
+      - smoke-test-cardid
+      - push-cardid-to-staging-ecr
   - name: nginx-proxy
     jobs:
       - nginx-proxy-image-to-test-ecr
@@ -1047,9 +1056,9 @@ jobs:
           image: selfservice-ecr-registry-test/image.tar
           additional_tags: selfservice-ecr-registry-test/tag
 
-  - name: cardid-image-to-test-ecr
+  - name: push-cardid-to-test-ecr
     plan:
-      - get: apps-test-ecr
+      - get: pay-ci
       - get: cardid-git-release
         trigger: true
         params:
@@ -1087,16 +1096,66 @@ jobs:
                 git submodule update data
                 sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
                 sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
+    # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         params:
           DOCKER_REPOSITORY: govukpay/cardid
           APP_GIT_DIR: cardid-git-release
           <<: *docker_credentials
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+         git-release: cardid-git-release
       - put: cardid-ecr-registry-test
         params:
-          image: image/image.tar
-          additional_tags: cardid-git-release/.git/HEAD
+         image: image/image.tar
+         additional_tags: tags/tags
+  - name: deploy-cardid
+    plan:
+      - get: cardid-ecr-registry-test
+        trigger: true
+      - task: deploy-to-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just deployed to test."
+  - name: smoke-test-cardid
+    plan:
+      - get: cardid-ecr-registry-test
+        trigger: true
+        passed: [deploy-cardid]
+      - task: smoke-test-on-test
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on test."
+  - name: push-cardid-to-staging-ecr
+    plan:
+      - get: cardid-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-cardid]
+      - put: cardid-ecr-registry-staging
+        params:
+          image: cardid-ecr-registry-test/image.tar
+          additional_tags: cardid-ecr-registry-test/tag
   - name: nginx-proxy-image-to-test-ecr
     plan:
       - get: apps-test-ecr
