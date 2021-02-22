@@ -117,6 +117,14 @@ resources:
       uri: https://github.com/alphagov/pay-nginx-proxy
       branch: master
       tag_regex: "alpha_release-(.*)"
+  - name: pay-infra
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
   - name: nginx-forward-proxy-dockerhub-release
     type: updated-registry-image
     icon: docker
@@ -425,19 +433,53 @@ jobs:
     plan:
       - get: toolbox-ecr-registry-test
         trigger: true
+      - get: pay-infra
       - task: deploy-to-test
         config:
           platform: linux
+          inputs:
+            - name: pay-infra
+            - name: toolbox-ecr-registry-test
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/concourse-runner
+              repository: govukpay/terraform-runner
+          params:
+            AWS_ACCESS_KEY_ID: ((readonly_access_key_id))
+            AWS_SECRET_ACCESS_KEY: ((readonly_secret_access_key))
+            AWS_SESSION_TOKEN: ((readonly_session_token))
+            AWS_ASSUME_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+            AWS_REGISTRY_ID: "((pay_aws_test_account_id))"
+            AWS_REGION: eu-west-1
+            AWS_PAGER: ""
+            AWS_DEFAULT_OUTPUT: text
           run:
             path: /bin/bash
             args:
               - -ec
               - |
-                echo "Imagine we just deployed to test."
+                assumed_role=($(aws sts assume-role \
+                       --role-arn $AWS_ASSUME_ROLE_ARN \
+                       --role-session-name ecr-test-session \
+                       --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
+                       ) )
+
+                export AWS_ACCESS_KEY_ID=${assumed_role[0]}
+                export AWS_SECRET_ACCESS_KEY=${assumed_role[1]}
+                export AWS_SESSION_TOKEN=${assumed_role[2]}
+
+                application_image_tag=$(cat toolbox-ecr-registry-test/tag)
+
+                cd pay-infra/provisioning/terraform/deployments/test/test-12/microservices_v2/toolbox
+                terraform init
+                terraform plan \
+                  -var application_image_tag=$application_image_tag \
+                  -var nginx_image_tag=''
+                terraform apply \
+                  -var application_image_tag=$application_image_tag \
+                  -var nginx_image_tag='' \
+                  -auto-approve
+
   - name: smoke-test-toolbox
     plan:
       - get: toolbox-ecr-registry-test
