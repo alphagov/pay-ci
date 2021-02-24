@@ -595,19 +595,34 @@ jobs:
     plan:
       - get: adminusers-ecr-registry-test
         trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: adminusers-ecr-registry-test/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: adminusers
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: adminusers
+          TAG: ((.:tag))
   - name: smoke-test-adminusers
     plan:
       - get: adminusers-ecr-registry-test
@@ -661,19 +676,34 @@ jobs:
     plan:
       - get: connector-ecr-registry-test
         trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: connector-ecr-registry-test/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: connector
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: connector
+          TAG: ((.:tag))
   - name: smoke-test-connector
     plan:
       - get: connector-ecr-registry-test
@@ -726,19 +756,34 @@ jobs:
     plan:
       - get: ledger-ecr-registry-test
         trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: ledger-ecr-registry-test/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: ledger
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: ledger
+          TAG: ((.:tag))
   - name: smoke-test-ledger
     plan:
       - get: ledger-ecr-registry-test
@@ -791,19 +836,34 @@ jobs:
     plan:
       - get: products-ecr-registry-test
         trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: products-ecr-registry-test/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: products
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: products
+          TAG: ((.:tag))
   - name: smoke-test-products
     plan:
       - get: products-ecr-registry-test
@@ -856,19 +916,34 @@ jobs:
     plan:
       - get: products-ui-ecr-registry-test
         trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: products-ui-ecr-registry-test/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: products-ui
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: products-ui
+          TAG: ((.:tag))
   - name: smoke-test-products-ui
     plan:
       - get: products-ui-ecr-registry-test
@@ -921,19 +996,34 @@ jobs:
     plan:
       - get: publicapi-ecr-registry-test
         trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: publicapi-ecr-registry-test/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: publicapi
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: publicapi
+          TAG: ((.:tag))
   - name: smoke-test-publicapi
     plan:
       - get: publicapi-ecr-registry-test
@@ -986,19 +1076,34 @@ jobs:
     plan:
       - get: publicauth-ecr-registry-test
         trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: publicauth-ecr-registry-test/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: publicauth
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: publicauth
+          TAG: ((.:tag))
   - name: smoke-test-publicauth
     plan:
       - get: publicauth-ecr-registry-test
@@ -1051,19 +1156,34 @@ jobs:
     plan:
       - get: selfservice-ecr-registry-test
         trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: selfservice-ecr-registry-test/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: selfservice
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: selfservice
+          TAG: ((.:tag))
   - name: smoke-test-selfservice
     plan:
       - get: selfservice-ecr-registry-test
@@ -1152,19 +1272,34 @@ jobs:
     plan:
       - get: cardid-ecr-registry-test
         trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: cardid-ecr-registry-test/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just deployed to test."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: cardid
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: cardid
+          TAG: ((.:tag))
   - name: smoke-test-cardid
     plan:
       - get: cardid-ecr-registry-test
