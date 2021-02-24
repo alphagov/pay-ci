@@ -446,51 +446,20 @@ jobs:
         file: assume-role/assume-role.json
         format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          inputs:
-            - name: pay-infra
-            - name: toolbox-ecr-registry-test
-          image_resource:
-            type: registry-image
-            source:
-              repository: hashicorp/terraform
-              tag: 0.13.4
-          params:
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-            AWS_REGION: eu-west-1
-            TAG: ((.:tag))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                cd pay-infra/provisioning/terraform/deployments/test/test-12/microservices_v2/toolbox
-                terraform init
-                terraform apply \
-                  -var application_image_tag=${TAG} \
-                  -var nginx_image_tag='' \
-                  -auto-approve
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          TAG: ((.:tag))
+          APP_NAME: toolbox
       - task: wait-for-deploy
-        config:
-          inputs:
-            - name: pay-ci
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/node-aws-sdk-runner
-          params:
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-            AWS_REGION: eu-west-1
-          run:
-            path: node
-            args:
-              - pay-ci/ci/scripts/wait-for-deploy.js
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          APP_NAME: toolbox
   - name: smoke-test-toolbox
     plan:
       - get: toolbox-ecr-registry-test

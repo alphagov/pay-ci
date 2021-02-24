@@ -4,10 +4,11 @@ const AWS = require("aws-sdk")
 const ecs = new AWS.ECS()
 const MAX_RETRIES = 120
 const CHECK_INTERVAL = 5000
+const { APP_NAME: appName } = process.env
 
 const describeServices = async function describeServices() {
   const params = {
-    services: ['toolbox'],
+    services: [ appName ],
     cluster: 'test-12-fargate'
   };
   return await ecs.describeServices(params).promise()

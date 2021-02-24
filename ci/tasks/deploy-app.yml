@@ -1,0 +1,28 @@
+---
+platform: linux
+inputs:
+  - name: pay-infra
+  - name: toolbox-ecr-registry-test
+image_resource:
+  type: registry-image
+  source:
+    repository: hashicorp/terraform
+    tag: 0.13.4
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
+  TAG:
+  APP_NAME:
+run:
+  path: /bin/sh
+  args:
+    - -ec
+    - |
+      cd pay-infra/provisioning/terraform/deployments/test/test-12/microservices_v2/${APP_NAME}
+      terraform init
+      terraform apply \
+        -var application_image_tag=${TAG} \
+        -var nginx_image_tag='' \
+        -auto-approve

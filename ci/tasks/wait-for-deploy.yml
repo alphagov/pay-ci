@@ -1,0 +1,18 @@
+---
+inputs:
+  - name: pay-ci
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/node-aws-sdk-runner
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
+  APP_NAME:
+run:
+  path: node
+  args:
+    - pay-ci/ci/scripts/wait-for-deploy.js
