@@ -290,6 +290,11 @@ resources:
     source:
       repository: govukpay/cardid
       <<: *aws_staging_config
+  # Slack
+  - name: slack-notification
+    type: slack-notification
+    source:
+      url: https://hooks.slack.com/services/((slack-notification-secret))
 
 
 resource_types:
@@ -310,6 +315,11 @@ resource_types:
     source:
       repository: concourse/registry-image-resource
       tag: "1.1.0"
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
 
 groups:
   - name: pipeline-meta-update
@@ -461,6 +471,16 @@ jobs:
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: toolbox
           TAG: ((.:tag))
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        text: "Deployment of toolbox ((.:tag)) successful"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        text: "Deployment of toolbox ((.:tag)) failed"
   - name: smoke-test-toolbox
     plan:
       - get: toolbox-ecr-registry-test
