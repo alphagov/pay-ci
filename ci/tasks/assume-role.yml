@@ -3,34 +3,14 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: amazon/aws-cli
-    tag: '2.0.44'
+    repository: govukpay/node-aws-sdk-runner
+inputs:
+  - name: pay-ci
 outputs:
   - name: assume-role
 params:
   AWS_ROLE_ARN:
   AWS_ROLE_SESSION_NAME:
 run:
-  path: sh
-  args:
-    - -c
-    - |
-      set -eu
-      aws sts assume-role \
-        --role-arn "${AWS_ROLE_ARN}" \
-        --role-session-name "${AWS_ROLE_SESSION_NAME}" \
-      | python -c '
-      import json
-      import re
-      import sys
-
-      creds = json.loads(sys.stdin.read())["Credentials"]
-
-      vars = {}
-      for k, val in creds.items():
-        var_name = re.sub(r"(?<!^)(?=[A-Z])", "_", k).upper()
-        var_name = "AWS_" + var_name
-        vars[var_name] = val
-
-      print json.dumps(vars)
-      ' > assume-role/assume-role.yml
+  path: node
+  args: ['pay-ci/ci/scripts/assume-role.js']

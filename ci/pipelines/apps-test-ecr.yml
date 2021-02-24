@@ -443,7 +443,7 @@ jobs:
           AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
           AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
       - load_var: role
-        file: assume-role/assume-role.yml
+        file: assume-role/assume-role.json
         format: json
       - task: deploy-to-test
         config:
