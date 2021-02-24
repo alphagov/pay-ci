@@ -2,7 +2,6 @@
 platform: linux
 inputs:
   - name: pay-infra
-  - name: toolbox-ecr-registry-test
 image_resource:
   type: registry-image
   source:
