@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const AWS = require("aws-sdk")
+const AWS = require('aws-sdk')
 const ecs = new AWS.ECS()
 const MAX_RETRIES = 120
 const CHECK_INTERVAL = 5000
