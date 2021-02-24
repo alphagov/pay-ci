@@ -12,6 +12,7 @@ params:
   AWS_SESSION_TOKEN:
   AWS_REGION: eu-west-1
   APP_NAME:
+  TAG:
 run:
   path: node
   args:

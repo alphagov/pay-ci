@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
-const AWS = require("aws-sdk")
+const AWS = require('aws-sdk')
 const ecs = new AWS.ECS()
 const MAX_RETRIES = 120
 const CHECK_INTERVAL = 5000
-const { APP_NAME: appName } = process.env
+const { APP_NAME: appName, TAG: appVersion } = process.env
 
-const describeServices = async function describeServices() {
+function describeServices() {
   const params = {
     services: [ appName ],
     cluster: 'test-12-fargate'
   };
-  return await ecs.describeServices(params).promise()
+  return ecs.describeServices(params).promise()
 }
 
-const run = async function run() {
+async function run() {
   let uncompletedDeployments
   let counter = 0
   const deploymentChecker = setInterval(async () => {
@@ -31,7 +31,7 @@ const run = async function run() {
       console.log('Deployment successful')
       clearInterval(deploymentChecker)
     } else {
-      const {taskDefinition, rolloutState, rolloutStateReason, desiredCount, pendingCount, runningCount} = uncompletedDeployments[0]
+      const {taskDefinition, rolloutState, rolloutStateReason} = uncompletedDeployments[0]
       if (rolloutState === 'FAILED') {
         console.log(
           `Deployment failed.
@@ -41,13 +41,8 @@ const run = async function run() {
         clearInterval(deploymentChecker)
       }
       if (rolloutState === 'IN_PROGRESS' && counter === 1) {
-        console.log(
-          `Deploying task definition: ${taskDefinition}
-           Current status: ${rolloutState}
-           Desired count: ${desiredCount}
-           Pending count: ${pendingCount}
-           Running count: ${runningCount}`
-        )
+        console.log('Deployment details:')
+        console.table({taskDefinition, deploymentStatus: rolloutState, appVersion})
       }
      }
   }, CHECK_INTERVAL)

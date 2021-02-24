@@ -460,6 +460,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: toolbox
+          TAG: ((.:tag))
   - name: smoke-test-toolbox
     plan:
       - get: toolbox-ecr-registry-test
@@ -540,6 +541,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: frontend
+          TAG: ((.:tag))
   - name: smoke-test-frontend
     plan:
       - get: frontend-ecr-registry-test
