@@ -29,7 +29,7 @@ async function run() {
     const result = data.CanariesLastRun.find( run => run.CanaryName === SMOKE_TEST_NAME)
     const state = result.LastRun.Status.State
     if (result.LastRun.Timeline.Completed < startedAt){
-      console.log("waiting for smoke test to finish")
+      console.log("waiting for test to finish")
     } else if (state === "PASSED"){
       console.log(JSON.stringify(result))
       clearInterval(deploymentChecker)
