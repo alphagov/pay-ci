@@ -4,7 +4,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: PP-7670_spike_aws_canary
 jobs:
   - name: run-smoke-tests
     plan:
@@ -19,6 +19,8 @@ jobs:
       format: json
     - task: run_smoke_test
       config:
+        inputs:
+          - name: pay-ci
         platform: linux
         image_resource:
           type: registry-image
