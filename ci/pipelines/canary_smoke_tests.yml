@@ -17,7 +17,7 @@ jobs:
     - load_var: role
       file: assume-role/assume-role.json
       format: json
-    - task: run_smoke_test
+    - task: run_create_card_payment
       config:
         inputs:
           - name: pay-ci
