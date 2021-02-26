@@ -17,21 +17,21 @@ jobs:
     - load_var: role
       file: assume-role/assume-role.json
       format: json
-    - task: run-create-card-payment-smoke-test
+    - task: run_smoke_test
       config:
         platform: linux
         image_resource:
           type: registry-image
           source:
-            repository: amazon/aws-cli
+            repository: govukpay/node-aws-sdk-runner
         params:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           AWS_PAGER: ""
           AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "make_card_payment"
         run:
-          path: aws
-          args: [ 'synthetics', 'start-canary', '--name', 'make_card_payment' ]
-
-
+          path: node
+          args:
+            - pay-ci/ci/scripts/run_smoke_test.js
