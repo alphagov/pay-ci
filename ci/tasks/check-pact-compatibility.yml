@@ -7,7 +7,7 @@ image_resource:
 params:
   PACT_BROKER_USERNAME: ((pact-broker-username))
   PACT_BROKER_PASSWORD: ((jenkins-pact-broker-password))
-  GIT_SHA:
+  GIT_SHA: ((.:git-sha))
   APP_NAME:
   PACT_TAG:
 run:
@@ -15,10 +15,10 @@ run:
   args:
     - -ec
     - |
-      pact-broker create-version-tag \
+      pact-broker can-i-deploy \
         --broker-base-url https://pact-broker-test.cloudapps.digital \
         --pacticipant ${APP_NAME} \
         --version ${GIT_SHA} \
-        --tag ${PACT_TAG} \
+        --to ${PACT_TAG} \
         --broker-username ${PACT_BROKER_USERNAME} \
         --broker-password ${PACT_BROKER_PASSWORD}
