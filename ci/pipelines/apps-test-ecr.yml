@@ -574,6 +574,15 @@ jobs:
         params:
           APP_NAME: frontend
           TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: frontend
+          PACT_TAG: test-fargate
+
   - name: push-frontend-to-staging-ecr
     plan:
       - get: frontend-ecr-registry-test
