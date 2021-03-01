@@ -339,6 +339,7 @@ groups:
       - push-connector-to-test-ecr
       - deploy-connector
       - smoke-test-connector
+      - connector-pact-tag
       - push-connector-to-staging-ecr
   - name: ledger
     jobs:
@@ -745,13 +746,36 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on test."
+
+  - name: connector-pact-tag
+    plan:
+      - get: connector-ecr-registry-test
+        passed: [smoke-test-connector]
+        trigger: true
+      - load_var: tag
+        file: connector-ecr-registry-test/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: connector
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: connector
+          PACT_TAG: test-fargate
+
   - name: push-connector-to-staging-ecr
     plan:
       - get: connector-ecr-registry-test
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-connector]
+        passed: [connector-pact-tag]
       - put: connector-ecr-registry-staging
         params:
           image: connector-ecr-registry-test/image.tar
