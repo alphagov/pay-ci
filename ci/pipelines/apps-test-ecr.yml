@@ -326,6 +326,7 @@ groups:
       - push-frontend-to-test-ecr
       - deploy-frontend
       - smoke-test-frontend
+      - frontend-pact-tag
       - push-frontend-to-staging-ecr
   - name: adminusers
     jobs:
@@ -560,13 +561,26 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on test."
+  - name: frontend-pact-tag
+    plan:
+      - get: frontend-ecr-registry-test
+        passed: [smoke-test-frontend]
+        trigger: true
+      - load_var: tag
+        file: frontend-ecr-registry-test/tag
+      - get: pay-ci  
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: frontend
+          TAG: ((.:tag))
   - name: push-frontend-to-staging-ecr
     plan:
       - get: frontend-ecr-registry-test
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-frontend]
+        passed: [frontend-pact-tag]
       - put: frontend-ecr-registry-staging
         params:
           image: frontend-ecr-registry-test/image.tar
