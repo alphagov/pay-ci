@@ -520,6 +520,21 @@ jobs:
       - get: pay-ci
       - load_var: tag
         file: frontend-ecr-registry-test/tag
+
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: frontend
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: frontend
+          PACT_TAG: test-fargate
+
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
