@@ -1,0 +1,16 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/node-runner
+params:
+  APP_NAME:
+  TAG: #eg 1339-release
+inputs:
+  - name: pay-ci
+outputs:
+  - name: git-sha
+run:
+  path: node
+  args: ['pay-ci/ci/scripts/get-git-sha-for-release-tag.js']
