@@ -333,6 +333,7 @@ groups:
       - push-adminusers-to-test-ecr
       - deploy-adminusers
       - smoke-test-adminusers
+      - adminusers-pact-tag
       - push-adminusers-to-staging-ecr
   - name: connector
     jobs:
@@ -346,24 +347,28 @@ groups:
       - push-ledger-to-test-ecr
       - deploy-ledger
       - smoke-test-ledger
+      - ledger-pact-tag
       - push-ledger-to-staging-ecr
   - name: products
     jobs:
       - push-products-to-test-ecr
       - deploy-products
       - smoke-test-products
+      - products-pact-tag
       - push-products-to-staging-ecr
   - name: products-ui
     jobs:
       - push-products-ui-to-test-ecr
       - deploy-products-ui
       - smoke-test-products-ui
+      - products-ui-pact-tag
       - push-products-ui-to-staging-ecr
   - name: publicapi
     jobs:
       - push-publicapi-to-test-ecr
       - deploy-publicapi
       - smoke-test-publicapi
+      - publicapi-pact-tag
       - push-publicapi-to-staging-ecr
   - name: publicauth
     jobs:
@@ -376,6 +381,7 @@ groups:
       - push-selfservice-to-test-ecr
       - deploy-selfservice
       - smoke-test-selfservice
+      - selfservice-pact-tag
       - push-selfservice-to-staging-ecr
   - name: cardid
     jobs:
@@ -680,13 +686,36 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on test."
+
+  - name: adminusers-pact-tag
+    plan:
+      - get: adminusers-ecr-registry-test
+        passed: [smoke-test-adminusers]
+        trigger: true
+      - load_var: tag
+        file: adminusers-ecr-registry-test/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: adminusers
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: adminusers
+          PACT_TAG: test-fargate
+
   - name: push-adminusers-to-staging-ecr
     plan:
       - get: adminusers-ecr-registry-test
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-adminusers]
+        passed: [adminusers-pact-tag]
       - put: adminusers-ecr-registry-staging
         params:
           image: adminusers-ecr-registry-test/image.tar
@@ -846,6 +875,7 @@ jobs:
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: ledger
           TAG: ((.:tag))
+
   - name: smoke-test-ledger
     plan:
       - get: ledger-ecr-registry-test
@@ -864,13 +894,36 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on test."
+
+  - name: ledger-pact-tag
+    plan:
+      - get: ledger-ecr-registry-test
+        passed: [smoke-test-ledger]
+        trigger: true
+      - load_var: tag
+        file: ledger-ecr-registry-test/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: ledger
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: ledger
+          PACT_TAG: test-fargate
+
   - name: push-ledger-to-staging-ecr
     plan:
       - get: ledger-ecr-registry-test
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-ledger]
+        passed: [ledger-pact-tag]
       - put: ledger-ecr-registry-staging
         params:
           image: ledger-ecr-registry-test/image.tar
@@ -944,13 +997,36 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on test."
+
+  - name: products-pact-tag
+    plan:
+      - get: products-ecr-registry-test
+        passed: [smoke-test-products]
+        trigger: true
+      - load_var: tag
+        file: products-ecr-registry-test/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: products
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: products
+          PACT_TAG: test-fargate
+
   - name: push-products-to-staging-ecr
     plan:
       - get: products-ecr-registry-test
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-products]
+        passed: [products-pact-tag]
       - put: products-ecr-registry-staging
         params:
           image: products-ecr-registry-test/image.tar
@@ -1024,13 +1100,36 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on test."
+
+  - name: products-ui-pact-tag
+    plan:
+      - get: products-ui-ecr-registry-test
+        passed: [smoke-test-products-ui]
+        trigger: true
+      - load_var: tag
+        file: products-ui-ecr-registry-test/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: products-ui
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: products-ui
+          PACT_TAG: test-fargate
+
   - name: push-products-ui-to-staging-ecr
     plan:
       - get: products-ui-ecr-registry-test
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-products-ui]
+        passed: [products-ui-pact-tag]
       - put: products-ui-ecr-registry-staging
         params:
           image: products-ui-ecr-registry-test/image.tar
@@ -1104,13 +1203,36 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on test."
+
+  - name: publicapi-pact-tag
+    plan:
+      - get: publicapi-ecr-registry-test
+        passed: [smoke-test-publicapi]
+        trigger: true
+      - load_var: tag
+        file: publicapi-ecr-registry-test/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: publicapi
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: publicapi
+          PACT_TAG: test-fargate
+
   - name: push-publicapi-to-staging-ecr
     plan:
       - get: publicapi-ecr-registry-test
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-publicapi]
+        passed: [publicapi-pact-tag]
       - put: publicapi-ecr-registry-staging
         params:
           image: publicapi-ecr-registry-test/image.tar
@@ -1264,13 +1386,36 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on test."
+
+  - name: selfservice-pact-tag
+    plan:
+      - get: selfservice-ecr-registry-test
+        passed: [smoke-test-selfservice]
+        trigger: true
+      - load_var: tag
+        file: selfservice-ecr-registry-test/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: selfservice
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: selfservice
+          PACT_TAG: test-fargate
+
   - name: push-selfservice-to-staging-ecr
     plan:
       - get: selfservice-ecr-registry-test
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-selfservice]
+        passed: [selfservice-pact-tag]
       - put: selfservice-ecr-registry-staging
         params:
           image: selfservice-ecr-registry-test/image.tar
