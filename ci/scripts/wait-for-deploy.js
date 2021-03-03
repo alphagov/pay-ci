@@ -4,12 +4,12 @@ const AWS = require('aws-sdk')
 const ecs = new AWS.ECS()
 const MAX_RETRIES = 120
 const CHECK_INTERVAL = 5000
-const { APP_NAME: appName, TAG: appVersion } = process.env
+const { APP_NAME: appName, TAG: appVersion, ENVIRONMENT: env } = process.env
 
 function describeServices() {
   const params = {
     services: [ appName ],
-    cluster: 'test-12-fargate'
+    cluster: `${env}-fargate`
   };
   return ecs.describeServices(params).promise()
 }
