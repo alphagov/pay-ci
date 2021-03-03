@@ -14,12 +14,14 @@ params:
   AWS_REGION: eu-west-1
   TAG:
   APP_NAME:
+  ACCOUNT:
+  ENVIRONMENT:
 run:
   path: /bin/sh
   args:
     - -ec
     - |
-      cd pay-infra/provisioning/terraform/deployments/test/test-12/microservices_v2/${APP_NAME}
+      cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/microservices_v2/${APP_NAME}
       terraform init
       terraform apply \
         -var application_image_tag=${TAG} \

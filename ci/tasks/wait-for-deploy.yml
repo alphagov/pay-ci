@@ -13,6 +13,7 @@ params:
   AWS_REGION: eu-west-1
   APP_NAME:
   TAG:
+  ENVIRONMENT:
 run:
   path: node
   args:

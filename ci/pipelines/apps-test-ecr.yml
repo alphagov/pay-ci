@@ -16,6 +16,24 @@ aws_staging_config: &aws_staging_config
   aws_ecr_registry_id: "((pay_aws_staging_account_id))"
   aws_region: eu-west-1
 
+aws_assumed_role_creds: &aws_assumed_role_creds
+  AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+  AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+  AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+
+wait_for_deploy_params: &wait_for_deploy_params
+  <<: *aws_assumed_role_creds
+  TAG: ((.:tag))
+  ENVIRONMENT: test-12
+
+deploy_params: &deploy_params
+  <<: *aws_assumed_role_creds
+  TAG: ((.:tag))
+  ACCOUNT: test
+  ENVIRONMENT: test-12
+
+
 resources:
   - name: apps-test-ecr
     type: git
@@ -456,19 +474,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: toolbox
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: toolbox
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-toolbox
     plan:
       - get: toolbox-ecr-registry-test
@@ -552,19 +564,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: frontend
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: frontend
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-frontend
     plan:
       - get: frontend-ecr-registry-test
@@ -668,19 +674,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: adminusers
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: adminusers
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-adminusers
     plan:
       - get: adminusers-ecr-registry-test
@@ -785,19 +785,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: connector
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: connector
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-connector
     plan:
       - get: connector-ecr-registry-test
@@ -901,20 +895,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: ledger
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: ledger
-          TAG: ((.:tag))
-
+          <<: *wait_for_deploy_params
   - name: smoke-test-ledger
     plan:
       - get: ledger-ecr-registry-test
@@ -1018,19 +1005,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: products
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: products
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-products
     plan:
       - get: products-ecr-registry-test
@@ -1134,19 +1115,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: products-ui
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: products-ui
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-products-ui
     plan:
       - get: products-ui-ecr-registry-test
@@ -1250,19 +1225,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: publicapi
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: publicapi
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-publicapi
     plan:
       - get: publicapi-ecr-registry-test
@@ -1353,19 +1322,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: publicauth
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: publicauth
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-publicauth
     plan:
       - get: publicauth-ecr-registry-test
@@ -1446,19 +1409,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: selfservice
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: selfservice
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-selfservice
     plan:
       - get: selfservice-ecr-registry-test
@@ -1585,19 +1542,13 @@ jobs:
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          TAG: ((.:tag))
           APP_NAME: cardid
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           APP_NAME: cardid
-          TAG: ((.:tag))
+          <<: *wait_for_deploy_params
   - name: smoke-test-cardid
     plan:
       - get: cardid-ecr-registry-test
