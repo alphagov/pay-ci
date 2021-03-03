@@ -1,3 +1,20 @@
+definitions:
+  aws_assumed_role_creds: &aws_assumed_role_creds
+    AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+    AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+    AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+  wait_for_deploy_params: &wait_for_deploy_params
+    <<: *aws_assumed_role_creds
+    TAG: ((.:tag))
+    ENVIRONMENT: staging-2
+
+  deploy_params: &deploy_params
+    <<: *aws_assumed_role_creds
+    TAG: ((.:tag))
+    ACCOUNT: staging
+    ENVIRONMENT: staging-2
+
 resources:
   - name: toolbox-staging-deploy-config
     type: git
@@ -13,6 +30,14 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
+  - name: pay-infra
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
   - name: toolbox-ecr-registry-prod
     type: registry-image-resource-1-1-0
     icon: docker
@@ -43,7 +68,15 @@ resource_types:
     source:
       repository: concourse/registry-image-resource
       tag: "1.1.0"
-
+groups:
+  - name: pipeline-meta-update
+    jobs:
+      - update-toolbox-staging-ecr-pipeline
+  - name: toolbox
+    jobs:
+      - deploy-toolbox-to-staging
+      - smoke-test-toolbox-on-staging
+      - push-toolbox-to-production-ecr
 jobs:
   - name: update-toolbox-staging-ecr-pipeline
     plan:
@@ -51,14 +84,14 @@ jobs:
         trigger: true
       - set_pipeline: toolbox-staging-deploy-config
         file: toolbox-staging-deploy-config/ci/pipelines/toolbox-staging-deploy.yml
-  - name: toolbox-staging-deploy
+  - name: deploy-toolbox-to-staging
     plan:
-      - get: toolbox-staging-deploy-config
       - get: toolbox-ecr-registry-staging
         trigger: true
-        params:
-          format: oci
+      - get: pay-infra
       - get: pay-ci
+      - load_var: tag
+        file: toolbox-ecr-registry-staging/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -67,52 +100,22 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - load_var: digest
-        file: toolbox-ecr-registry-staging/digest
-      - task: pull-tags-from-ecr-registry-staging
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: amazon/aws-cli
-          params:
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-            AWS_REGION: eu-west-1
-            AWS_REGISTRY_ID: "((pay_aws_staging_account_id))"
-            DIGEST: ((.:digest))
-            AWS_DEFAULT_OUTPUT: text
-          inputs:
-            - name: toolbox-ecr-registry-staging
-          outputs:
-            - name: docker_tags
-          run:
-            # N.B. We perform this (somewhat convoluted) step so that Big Concourse can correctly
-            # assume a role when trying to list images from ECR.
-            path: /bin/sh
-            args:
-            - -ec
-            - |
-              aws ecr list-images \
-              --registry-id $AWS_REGISTRY_ID \
-              --repository-name govukpay/toolbox \
-              --query "imageIds[?imageDigest=='$DIGEST'][imageTag]" \
-              | tr '\n' ' ' > docker_tags/tags.txt
       - task: deploy-to-staging
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              echo "Imagine we just deployed to staging."
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: toolbox
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: toolbox
+          <<: *wait_for_deploy_params
+
+  - name: smoke-test-toolbox-on-staging
+    plan:
+      - get: toolbox-ecr-registry-staging
+        trigger: true
+        passed: [deploy-toolbox-to-staging]
       - task: smoke-test-on-staging
         config:
           platform: linux
@@ -126,25 +129,16 @@ jobs:
             - -ec
             - |
               echo "Imagine we just smoked on staging."
-      - task: set-ready-for-production-tags
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          inputs:
-          - name: docker_tags
-          outputs:
-          - name: docker_tags
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              sed -i'' 's/ready-staging/ready-production/g' docker_tags/tags.txt
+
+  - name: push-toolbox-to-production-ecr
+    plan:
+      - get: toolbox-ecr-registry-staging
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-toolbox-on-staging]
       - put: toolbox-ecr-registry-prod
         params:
           image: toolbox-ecr-registry-staging/image.tar
-          additional_tags: docker_tags/tags.txt
+          additional_tags: toolbox-ecr-registry-staging/tag
       
