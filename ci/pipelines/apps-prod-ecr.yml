@@ -1,0 +1,29 @@
+resources:
+  - name: apps-prod-ecr
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/apps-prod-ecr.yml
+
+resource_types:
+  - name: registry-image-resource-1-1-0
+    type: registry-image
+    source:
+      repository: concourse/registry-image-resource
+      tag: "1.1.0"
+
+groups:
+  - name: pipeline-meta-update
+    jobs:
+      - update-apps-prod-ecr-pipeline
+
+jobs:
+  - name: update-apps-prod-ecr-pipeline
+    plan:
+      - get: apps-prod-ecr
+        trigger: true
+      - set_pipeline: apps-prod-ecr
+        file: apps-prod-ecr/ci/pipelines/apps-prod-ecr.yml
