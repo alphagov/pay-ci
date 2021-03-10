@@ -35,14 +35,14 @@ deploy_params: &deploy_params
 
 
 resources:
-  - name: apps-test-ecr
+  - name: deploy-to-test-pipeline-definition
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
       paths:
-        - ci/pipelines/apps-test-ecr.yml
+        - ci/pipelines/deploy-to-test.yml
   - name: pay-ci
     type: git
     icon: github
@@ -330,9 +330,9 @@ resource_types:
       tag: "1.1.0"
 
 groups:
-  - name: pipeline-meta-update
+  - name: update-deploy-to-test-pipeline
     jobs:
-      - update-apps-test-ecr-pipeline
+      - update-deploy-to-test-pipeline
   - name: toolbox
     jobs:
       - push-toolbox-to-test-ecr
@@ -430,12 +430,12 @@ docker_credentials: &docker_credentials
   DOCKER_AUTH_TOKEN: ((docker-password))
 
 jobs:
-  - name: update-apps-test-ecr-pipeline
+  - name: update-deploy-to-test-pipeline
     plan:
-      - get: apps-test-ecr
+      - get: deploy-to-test-pipeline-definition
         trigger: true
-      - set_pipeline: apps-test-ecr
-        file: apps-test-ecr/ci/pipelines/apps-test-ecr.yml
+      - set_pipeline: deploy-to-test
+        file: deploy-to-test-pipeline-definition/ci/pipelines/deploy-to-test.yml
   - name: push-toolbox-to-test-ecr
     plan:
       - get: pay-ci
@@ -1580,7 +1580,7 @@ jobs:
           additional_tags: cardid-ecr-registry-test/tag
   - name: nginx-proxy-image-to-test-ecr
     plan:
-      - get: apps-test-ecr
+      - get: pay-ci
       - get: nginx-proxy-git-release
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
@@ -1595,7 +1595,7 @@ jobs:
           additional_tags: nginx-proxy-git-release/.git/HEAD
   - name: nginx-forward-proxy-image-to-test-ecr
     plan:
-      - get: apps-test-ecr
+      - get: pay-ci
       - get: nginx-forward-proxy-dockerhub-release
         trigger: true
         params:
