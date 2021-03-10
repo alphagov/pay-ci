@@ -7,6 +7,7 @@ RUN apk add --no-cache \
   git \
   python3 \
   ca-certificates \
+  jq \
   # dockerd dependencies
   iptables \
   util-linux 
