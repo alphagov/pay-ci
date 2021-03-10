@@ -1,0 +1,120 @@
+definitions:
+  aws_assumed_role_creds: &aws_assumed_role_creds
+    AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+    AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+    AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+  wait_for_deploy_params: &wait_for_deploy_params
+    <<: *aws_assumed_role_creds
+    TAG: ((.:tag))
+    ENVIRONMENT: production-2
+
+  deploy_params: &deploy_params
+    <<: *aws_assumed_role_creds
+    TAG: ((.:tag))
+    ACCOUNT: production
+    ENVIRONMENT: production-2
+
+resources:
+  - name: deploy-to-prod-pipeline-definition
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: PP-7686-deploy-toolbox-prod
+      paths:
+        - ci/pipelines/deploy-to-production.yml
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: PP-7686-deploy-toolbox-prod
+  - name: pay-infra
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+  - name: toolbox-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/toolbox
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_prod_account_id))"
+      aws_region: eu-west-1
+      variant: release
+
+resource_types:
+  - name: registry-image-resource-1-1-0
+    type: registry-image
+    source:
+      repository: concourse/registry-image-resource
+      tag: "1.1.0"
+
+groups:
+  - name: pipeline-meta-update
+    jobs:
+      - update-deploy-to-prod-pipeline
+  - name: toolbox
+    jobs:
+      - deploy-toolbox-to-prod
+      - smoke-test-toolbox-on-prod
+
+jobs:
+  - name: update-deploy-to-prod-pipeline
+    plan:
+      - get: deploy-to-prod-pipeline-definition
+        trigger: true
+      - set_pipeline: deploy-to-prod-pipeline-definition
+        file: deploy-to-prod-pipeline-definition/ci/pipelines/deploy-to-production.yml
+  - name: deploy-toolbox-to-prod
+    plan:
+      - get: toolbox-ecr-registry-prod
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: toolbox-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: toolbox
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: toolbox
+          <<: *wait_for_deploy_params
+  - name: smoke-test-toolbox-on-prod
+    plan:
+      - get: toolbox-ecr-registry-prod
+        trigger: true
+        passed: [deploy-toolbox-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on staging."
