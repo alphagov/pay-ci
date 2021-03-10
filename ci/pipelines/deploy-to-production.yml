@@ -65,6 +65,7 @@ groups:
   - name: toolbox
     jobs:
       - deploy-toolbox-to-prod
+      - smoke-test-toolbox-on-prod
 
 jobs:
   - name: update-deploy-to-prod-pipeline
@@ -99,3 +100,21 @@ jobs:
         params:
           APP_NAME: toolbox
           <<: *wait_for_deploy_params
+  - name: smoke-test-toolbox-on-prod
+    plan:
+      - get: toolbox-ecr-registry-prod
+        trigger: true
+        passed: [deploy-toolbox-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on staging."
