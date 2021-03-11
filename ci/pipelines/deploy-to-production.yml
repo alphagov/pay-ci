@@ -21,7 +21,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-7686-deploy-toolbox-prod
+      branch: master
       paths:
         - ci/pipelines/deploy-to-production.yml
   - name: pay-ci
@@ -29,7 +29,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-7686-deploy-toolbox-prod
+      branch: master
   - name: pay-infra
     type: git
     icon: github
