@@ -15,6 +15,14 @@ definitions:
     ACCOUNT: production
     ENVIRONMENT: production-2
 
+  aws_prod_config: &aws_prod_config
+    aws_access_key_id: ((readonly_access_key_id))
+    aws_secret_access_key: ((readonly_secret_access_key))
+    aws_session_token: ((readonly_session_token))
+    aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+    aws_ecr_registry_id: "((pay_aws_prod_account_id))"
+    aws_region: eu-west-1
+
 resources:
   - name: deploy-to-prod-pipeline-definition
     type: git
@@ -43,13 +51,15 @@ resources:
     icon: docker
     source:
       repository: govukpay/toolbox
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
-      aws_ecr_registry_id: "((pay_aws_prod_account_id))"
-      aws_region: eu-west-1
       variant: release
+      <<: *aws_prod_config
+  - name: frontend-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/frontend
+      variant: release
+      <<: *aws_prod_config
 
 resource_types:
   - name: registry-image-resource-1-1-0
@@ -66,6 +76,11 @@ groups:
     jobs:
       - deploy-toolbox-to-prod
       - smoke-test-toolbox-on-prod
+  - name: frontend
+    jobs:
+      - deploy-frontend-to-prod
+      - smoke-test-frontend-on-prod
+      - frontend-pact-tag
 
 jobs:
   - name: update-deploy-to-prod-pipeline
@@ -117,4 +132,69 @@ jobs:
             args:
               - -ec
               - |
-                echo "Imagine we just smoked on staging."
+                echo "Imagine we just smoked on prod."
+  - name: deploy-frontend-to-prod
+    plan:
+      - get: frontend-ecr-registry-prod
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: frontend-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: frontend
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: frontend
+          <<: *wait_for_deploy_params
+
+  - name: smoke-test-frontend-on-prod
+    plan:
+      - get: frontend-ecr-registry-prod
+        trigger: true
+        passed: [deploy-frontend-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on prod."
+  - name: frontend-pact-tag
+    plan:
+      - get: frontend-ecr-registry-prod
+        passed: [smoke-test-frontend-on-prod]
+        trigger: true
+      - load_var: tag
+        file: frontend-ecr-registry-prod/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: frontend
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: frontend
+          PACT_TAG: production-fargate
