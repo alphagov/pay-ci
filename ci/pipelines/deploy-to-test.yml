@@ -49,6 +49,16 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
+  - name: telegraf
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+      paths:
+        - images/docker/govukpay/telegraf
       
   # Github Releases
   - name: toolbox-git-release
@@ -242,6 +252,13 @@ resources:
     source:
       repository: govukpay/nginx-forward-proxy
       <<: *aws_test_config
+  - name: telegraf-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/telegraf
+      tag: latest
+      <<: *aws_test_config
   - name: toolbox-ecr-registry-staging
     type: dev-registry-image
     icon: docker
@@ -413,6 +430,10 @@ groups:
   - name: nginx-forward-proxy
     jobs:
       - nginx-forward-proxy-image-to-test-ecr
+  - name: telegraf
+    jobs:
+      - unit-test-telegraf
+      - build-and-push-telegraf-to-test-ecr
 
 definitions:
   - &pull-image-from-dockerhub
@@ -1605,3 +1626,47 @@ jobs:
         params:
           image: nginx-forward-proxy-dockerhub-release/image.tar
           additional_tags: nginx-forward-proxy-dockerhub-release/tag
+  - name: unit-test-telegraf
+    plan:
+      - get: pay-ci
+      - get: telegraf
+        trigger: true
+      - task: run-telegraf-unit-tests
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: telegraf
+          run:
+            path: ./start.test.sh
+            dir: telegraf/images/docker/govukpay/telegraf
+  - name: build-and-push-telegraf-to-test-ecr
+    plan:
+      - get: pay-ci
+      - get: telegraf
+        trigger: true
+        passed: [unit-test-telegraf]
+      - task: build-telegraf-image
+        privileged: true
+        params:
+            CONTEXT: telegraf/images/docker/govukpay/telegraf
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: vito/oci-build-task
+          inputs:
+            - name: telegraf
+          outputs:
+            - name: image
+          run:
+            path: build
+      - put: telegraf-ecr-registry-test
+        params:
+         image: image/image.tar
+         additional_tags: telegraf/.git/HEAD
