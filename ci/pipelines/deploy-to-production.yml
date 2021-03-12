@@ -60,6 +60,41 @@ resources:
       repository: govukpay/frontend
       variant: release
       <<: *aws_prod_config
+  - name: adminusers-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/adminusers
+      variant: release
+      <<: *aws_prod_config
+  - name: products-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/products
+      variant: release
+      <<: *aws_prod_config
+  - name: products-ui-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/products-ui
+      variant: release
+      <<: *aws_prod_config
+  - name: publicauth-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/publicauth
+      variant: release
+      <<: *aws_prod_config
+  - name: cardid-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/cardid
+      variant: release
+      <<: *aws_prod_config
 
 resource_types:
   - name: registry-image-resource-1-1-0
@@ -81,6 +116,29 @@ groups:
       - deploy-frontend-to-prod
       - smoke-test-frontend-on-prod
       - frontend-pact-tag
+  - name: adminusers
+    jobs:
+      - deploy-adminusers-to-prod
+      - smoke-test-adminusers-on-prod
+      - adminusers-pact-tag
+  - name: products
+    jobs:
+      - deploy-products-to-prod
+      - smoke-test-products-on-prod
+      - products-pact-tag
+  - name: products-ui
+    jobs:
+      - deploy-products-ui-to-prod
+      - smoke-test-products-ui-on-prod
+      - products-ui-pact-tag
+  - name: publicauth
+    jobs:
+      - deploy-publicauth-to-prod
+      - smoke-test-publicauth-on-prod
+  - name: cardid
+    jobs:
+      - deploy-cardid-to-prod
+      - smoke-test-cardid-on-prod
 
 jobs:
   - name: update-deploy-to-prod-pipeline
@@ -198,3 +256,285 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: frontend
           PACT_TAG: production-fargate
+  - name: deploy-adminusers-to-prod
+    plan:
+      - get: adminusers-ecr-registry-prod
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: adminusers-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: adminusers
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: adminusers
+          <<: *wait_for_deploy_params
+  - name: smoke-test-adminusers-on-prod
+    plan:
+      - get: adminusers-ecr-registry-prod
+        trigger: true
+        passed: [deploy-adminusers-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on prod."
+  - name: adminusers-pact-tag
+    plan:
+      - get: adminusers-ecr-registry-prod
+        passed: [smoke-test-adminusers-on-prod]
+        trigger: true
+      - load_var: tag
+        file: adminusers-ecr-registry-prod/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: adminusers
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: adminusers
+          PACT_TAG: prod-fargate
+
+  - name: deploy-products-to-prod
+    plan:
+      - get: products-ecr-registry-prod
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: products-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: products
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: products
+          <<: *wait_for_deploy_params
+  - name: smoke-test-products-on-prod
+    plan:
+      - get: products-ecr-registry-prod
+        trigger: true
+        passed: [deploy-products-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on prod."
+  - name: products-pact-tag
+    plan:
+      - get: products-ecr-registry-prod
+        passed: [smoke-test-products-on-prod]
+        trigger: true
+      - load_var: tag
+        file: products-ecr-registry-prod/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: products
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: products
+          PACT_TAG: prod-fargate
+
+  - name: deploy-products-ui-to-prod
+    plan:
+      - get: products-ui-ecr-registry-prod
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: products-ui-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: products-ui
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: products-ui
+          <<: *wait_for_deploy_params
+  - name: smoke-test-products-ui-on-prod
+    plan:
+      - get: products-ui-ecr-registry-prod
+        trigger: true
+        passed: [deploy-products-ui-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on prod."
+  - name: products-ui-pact-tag
+    plan:
+      - get: products-ui-ecr-registry-prod
+        passed: [smoke-test-products-ui-on-prod]
+        trigger: true
+      - load_var: tag
+        file: products-ui-ecr-registry-prod/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: products-ui
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: products-ui
+          PACT_TAG: prod-fargate
+
+  - name: deploy-publicauth-to-prod
+    plan:
+      - get: publicauth-ecr-registry-prod
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: publicauth-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: publicauth
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: publicauth
+          <<: *wait_for_deploy_params
+  - name: smoke-test-publicauth-on-prod
+    plan:
+      - get: publicauth-ecr-registry-prod
+        trigger: true
+        passed: [deploy-publicauth-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on prod."
+
+  - name: deploy-cardid-to-prod
+    plan:
+      - get: cardid-ecr-registry-prod
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: cardid-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: cardid
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: cardid
+          <<: *wait_for_deploy_params
+  - name: smoke-test-cardid-on-prod
+    plan:
+      - get: cardid-ecr-registry-prod
+        trigger: true
+        passed: [deploy-cardid-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on prod."
