@@ -99,7 +99,14 @@ resources:
     type: registry-image-resource-1-1-0
     icon: docker
     source:
-      repository: govukpay/cardid
+      repository: govukpay/connector
+      variant: release
+      <<: *aws_prod_config
+  - name: selfservice-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/selfservice
       variant: release
       <<: *aws_prod_config
 
@@ -150,6 +157,10 @@ groups:
     jobs:
       - deploy-connector-to-prod
       - smoke-test-connector-on-prod
+  - name: selfservice
+    jobs:
+      - deploy-selfservice-to-prod
+      - smoke-test-selfservice-on-prod
 
 jobs:
   - name: update-deploy-to-prod-pipeline
@@ -158,6 +169,51 @@ jobs:
         trigger: true
       - set_pipeline: deploy-to-prod-pipeline-definition
         file: deploy-to-prod-pipeline-definition/ci/pipelines/deploy-to-production.yml
+
+  - name: deploy-selfservice-to-prod
+    plan:
+      - get: selfservice-ecr-registry-prod
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: selfservice-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: selfservice
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: selfservice
+          <<: *wait_for_deploy_params
+  - name: smoke-test-selfservice-on-prod
+    plan:
+      - get: selfservice-ecr-registry-prod
+        trigger: true
+        passed: [deploy-selfservice-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Imagine we just smoked on prod."
 
   - name: deploy-connector-to-prod
     plan:
