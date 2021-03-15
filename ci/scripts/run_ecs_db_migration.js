@@ -70,7 +70,7 @@ const run = async function run () {
     console.log(`Current task definition is using release: ${currentAppRelease}`)
     const jobAppRelease = TAG.split('-')[0]
 
-    if (currentAppRelease != jobAppRelease) {
+    if (currentAppRelease !== jobAppRelease) {
       throw new Error(`The input release ${jobAppRelease} number does not match the
         release number of the app currently running in the environment ${currentAppRelease}.
         Run the version of this job with the correct app release number.`)
