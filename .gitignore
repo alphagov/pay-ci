@@ -1,2 +1,3 @@
 .idea/
 .DS_Store
+ci/scripts/node_modules/*
