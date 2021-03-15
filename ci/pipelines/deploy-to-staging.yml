@@ -145,6 +145,19 @@ resources:
     source:
       repository: govukpay/cardid
       <<: *aws_production_config
+  - name: connector-ecr-registry-staging
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/connector
+      variant: release
+      <<: *aws_staging_config
+  - name: connector-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/connector
+      <<: *aws_production_config
 
 resource_types:
   - name: registry-image-resource-1-1-0
@@ -152,6 +165,7 @@ resource_types:
     source:
       repository: concourse/registry-image-resource
       tag: "1.1.0"
+
 groups:
   - name: update-deploy-to-staging-pipeline
     jobs:
@@ -195,7 +209,12 @@ groups:
       - deploy-cardid-to-staging
       - smoke-test-cardid-on-staging
       - push-cardid-to-production-ecr
-      
+  - name: connector
+    jobs:
+      - deploy-connector-to-staging
+      - smoke-test-connector-on-staging
+      - push-connector-to-production-ecr
+
 jobs:
   - name: update-deploy-to-staging-pipeline
     plan:
@@ -204,6 +223,62 @@ jobs:
       - set_pipeline: deploy-to-staging
         file: deploy-to-staging-pipeline-definition/ci/pipelines/deploy-to-staging.yml
         
+  - name: deploy-connector-to-staging
+    plan:
+      - get: connector-ecr-registry-staging
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: connector-ecr-registry-staging/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-staging
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: connector
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: connector
+          <<: *wait_for_deploy_params
+  - name: smoke-test-connector-on-staging
+    plan:
+      - get: connector-ecr-registry-staging
+        trigger: true
+        passed: [deploy-connector-to-staging]
+      - task: smoke-test-on-staging
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on staging."
+  - name: push-connector-to-production-ecr
+    plan:
+      - get: connector-ecr-registry-staging
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-connector-on-staging]
+      - put: connector-ecr-registry-prod
+        params:
+          image: connector-ecr-registry-staging/image.tar
+          additional_tags: connector-ecr-registry-staging/tag
+
   - name: deploy-toolbox-to-staging
     plan:
       - get: toolbox-ecr-registry-staging
