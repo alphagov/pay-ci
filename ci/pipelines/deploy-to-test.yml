@@ -53,12 +53,10 @@ resources:
     type: git
     icon: github
     source:
-      uri: https://github.com/alphagov/pay-infra
-      branch: master
+      uri: https://github.com/alphagov/pay-telegraf
+      branch: main
       username: alphagov-pay-ci
       password: ((github-access-token))
-      paths:
-        - images/docker/govukpay/telegraf
       
   # Github Releases
   - name: toolbox-git-release
@@ -1643,7 +1641,7 @@ jobs:
             - name: telegraf
           run:
             path: ./start.test.sh
-            dir: telegraf/images/docker/govukpay/telegraf
+            dir: telegraf
   - name: build-and-push-telegraf-to-test-ecr
     plan:
       - get: pay-ci
@@ -1653,7 +1651,7 @@ jobs:
       - task: build-telegraf-image
         privileged: true
         params:
-            CONTEXT: telegraf/images/docker/govukpay/telegraf
+            CONTEXT: telegraf
         config:
           platform: linux
           image_resource:
@@ -1669,4 +1667,3 @@ jobs:
       - put: telegraf-ecr-registry-test
         params:
          image: image/image.tar
-         additional_tags: telegraf/.git/HEAD
