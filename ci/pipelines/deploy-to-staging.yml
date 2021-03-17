@@ -287,6 +287,7 @@ groups:
       - push-ledger-to-production-ecr
   - name: telegraf
     jobs:
+      - deploy-toolbox-to-staging
       - push-telegraf-to-production-ecr
 
 jobs:
