@@ -265,11 +265,13 @@ groups:
     jobs:
       - deploy-connector-to-staging
       - smoke-test-connector-on-staging
+      - connector-pact-tag
       - push-connector-to-production-ecr
   - name: selfservice
     jobs:
       - deploy-selfservice-to-staging
       - smoke-test-selfservice-on-staging
+      - selfservice-pact-tag
       - push-selfservice-to-production-ecr
   - name: publicapi
     jobs:
@@ -339,6 +341,28 @@ jobs:
             - -ec
             - |
               echo "Imagine we just smoked on staging."
+  - name: selfservice-pact-tag
+    plan:
+      - get: selfservice-ecr-registry-staging
+        passed: [smoke-test-selfservice-on-staging]
+        trigger: true
+      - load_var: tag
+        file: selfservice-ecr-registry-staging/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: selfservice
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: selfservice
+          PACT_TAG: staging-fargate
+
   - name: push-selfservice-to-production-ecr
     plan:
       - get: selfservice-ecr-registry-staging
@@ -395,6 +419,28 @@ jobs:
             - -ec
             - |
               echo "Imagine we just smoked on staging."
+  - name: connector-pact-tag
+    plan:
+      - get: connector-ecr-registry-staging
+        passed: [smoke-test-connector-on-staging]
+        trigger: true
+      - load_var: tag
+        file: connector-ecr-registry-staging/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: connector
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: connector
+          PACT_TAG: staging-fargate
+
   - name: push-connector-to-production-ecr
     plan:
       - get: connector-ecr-registry-staging
