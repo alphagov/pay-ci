@@ -326,6 +326,12 @@ resources:
     source:
       repository: govukpay/cardid
       <<: *aws_staging_config
+  - name: telegraf-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/telegraf
+      <<: *aws_staging_config
 
 
 resource_types:
@@ -440,6 +446,7 @@ groups:
     jobs:
       - unit-test-telegraf
       - build-and-push-telegraf-to-test-ecr
+      - push-telegraf-to-staging-ecr
 
 definitions:
   - &pull-image-from-dockerhub
@@ -544,6 +551,9 @@ jobs:
   - name: smoke-test-toolbox
     plan:
       - get: toolbox-ecr-registry-test
+        trigger: true
+        passed: [deploy-toolbox]
+      - get: telegraf-ecr-registry-test
         trigger: true
         passed: [deploy-toolbox]
       - task: smoke-test-on-test
@@ -1911,3 +1921,15 @@ jobs:
         params:
          image: image/image.tar
          additional_tags: telegraf-git-release/.git/ref
+  - name: push-telegraf-to-staging-ecr
+    plan:
+      - get: pay-ci
+      - get: telegraf-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [smoke-test-toolbox]
+      - put: telegraf-ecr-registry-staging
+        params:
+          image: telegraf-ecr-registry-test/image.tar
+          additional_tags: telegraf-ecr-registry-test/tag
