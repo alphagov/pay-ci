@@ -49,12 +49,15 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
-  - name: telegraf
+
+  # Github Releases
+  - name: telegraf-git-release
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-telegraf
       branch: main
+      tag_regex: "(.*)-release"
       username: alphagov-pay-ci
       password: ((github-access-token))
 
@@ -1867,7 +1870,7 @@ jobs:
   - name: unit-test-telegraf
     plan:
       - get: pay-ci
-      - get: telegraf
+      - get: telegraf-git-release
         trigger: true
       - task: run-telegraf-unit-tests
         config:
@@ -1878,20 +1881,20 @@ jobs:
             source:
               repository: govukpay/concourse-runner
           inputs:
-            - name: telegraf
+            - name: telegraf-git-release
           run:
             path: ./start.test.sh
-            dir: telegraf
+            dir: telegraf-git-release
   - name: build-and-push-telegraf-to-test-ecr
     plan:
       - get: pay-ci
-      - get: telegraf
+      - get: telegraf-git-release
         trigger: true
         passed: [unit-test-telegraf]
       - task: build-telegraf-image
         privileged: true
         params:
-            CONTEXT: telegraf
+            CONTEXT: telegraf-git-release
         config:
           platform: linux
           image_resource:
@@ -1899,7 +1902,7 @@ jobs:
             source:
               repository: vito/oci-build-task
           inputs:
-            - name: telegraf
+            - name: telegraf-git-release
           outputs:
             - name: image
           run:
@@ -1907,3 +1910,4 @@ jobs:
       - put: telegraf-ecr-registry-test
         params:
          image: image/image.tar
+         additional_tags: telegraf-git-release/.git/ref
