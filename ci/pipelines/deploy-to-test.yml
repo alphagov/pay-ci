@@ -57,7 +57,7 @@ resources:
       branch: main
       username: alphagov-pay-ci
       password: ((github-access-token))
-      
+
   # Github Releases
   - name: toolbox-git-release
     type: git
@@ -255,7 +255,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/telegraf
-      tag: latest
+      variant: release
       <<: *aws_test_config
   - name: toolbox-ecr-registry-staging
     type: dev-registry-image
@@ -479,10 +479,14 @@ jobs:
     plan:
       - get: toolbox-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: toolbox_image_tag
         file: toolbox-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -492,15 +496,44 @@ jobs:
         file: assume-role/assume-role.json
         format: json
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
-        params:
-          APP_NAME: toolbox
-          <<: *deploy_params
+        config:
+          platform: linux
+          inputs:
+            - name: pay-infra
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: 0.13.4
+          params:
+            APP_NAME: toolbox
+            APP_IMAGE_TAG: ((.:toolbox_image_tag))
+            TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
+            ACCOUNT: test
+            ENVIRONMENT: test-12
+            AWS_REGION: eu-west-1
+            <<: *aws_assumed_role_creds
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/microservices_v2/${APP_NAME}
+                terraform init
+                terraform apply \
+                  -var application_image_tag=${APP_IMAGE_TAG} \
+                  -var telegraf_image_tag=${TELEGRAF_IMAGE_TAG} \
+                  -var nginx_image_tag='' \
+                  -auto-approve
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
           APP_NAME: toolbox
-          <<: *wait_for_deploy_params
+          TAG: ((.:toolbox_image_tag))
+          ACCOUNT: test
+          ENVIRONMENT: test-12
+          AWS_REGION: eu-west-1
+          <<: *aws_assumed_role_creds
   - name: smoke-test-toolbox
     plan:
       - get: toolbox-ecr-registry-test
