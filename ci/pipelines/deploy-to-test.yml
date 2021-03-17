@@ -553,9 +553,6 @@ jobs:
       - get: toolbox-ecr-registry-test
         trigger: true
         passed: [deploy-toolbox]
-      - get: telegraf-ecr-registry-test
-        trigger: true
-        passed: [deploy-toolbox]
       - task: smoke-test-on-test
         config:
           platform: linux
@@ -1928,7 +1925,7 @@ jobs:
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-toolbox]
+        passed: [deploy-toolbox]
       - put: telegraf-ecr-registry-staging
         params:
           image: telegraf-ecr-registry-test/image.tar
