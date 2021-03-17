@@ -368,6 +368,7 @@ groups:
       - smoke-test-adminusers
       - adminusers-pact-tag
       - push-adminusers-to-staging-ecr
+      - adminusers-db-migration
   - name: connector
     jobs:
       - push-connector-to-test-ecr
@@ -375,6 +376,7 @@ groups:
       - smoke-test-connector
       - connector-pact-tag
       - push-connector-to-staging-ecr
+      - connector-db-migration
   - name: ledger
     jobs:
       - push-ledger-to-test-ecr
@@ -390,6 +392,7 @@ groups:
       - smoke-test-products
       - products-pact-tag
       - push-products-to-staging-ecr
+      - products-db-migration
   - name: products-ui
     jobs:
       - push-products-ui-to-test-ecr
@@ -410,6 +413,7 @@ groups:
       - deploy-publicauth
       - smoke-test-publicauth
       - push-publicauth-to-staging-ecr
+      - publicauth-db-migration
   - name: selfservice
     jobs:
       - push-selfservice-to-test-ecr
@@ -734,6 +738,46 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
+  - name: adminusers-db-migration
+    plan:
+      - get: pay-ci
+      - get: adminusers-ecr-registry-test
+        params:
+          format: oci
+        trigger: false
+        passed: [deploy-adminusers]
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: tag
+        file: adminusers-ecr-registry-test/tag
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-aws-sdk-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-12-fargate"
+            APP_NAME: "adminusers"
+            TAG: ((.:tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run_ecs_db_migration.js
   - name: smoke-test-adminusers
     plan:
       - get: adminusers-ecr-registry-test
@@ -845,6 +889,46 @@ jobs:
         params:
           APP_NAME: connector
           <<: *wait_for_deploy_params
+  - name: connector-db-migration
+    plan:
+      - get: pay-ci
+      - get: connector-ecr-registry-test
+        params:
+          format: oci
+        trigger: false
+        passed: [deploy-connector]
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: tag
+        file: connector-ecr-registry-test/tag
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-aws-sdk-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-12-fargate"
+            APP_NAME: "connector"
+            TAG: ((.:tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run_ecs_db_migration.js
   - name: smoke-test-connector
     plan:
       - get: connector-ecr-registry-test
@@ -1107,6 +1191,46 @@ jobs:
         params:
           APP_NAME: products
           <<: *wait_for_deploy_params
+  - name: products-db-migration
+    plan:
+      - get: pay-ci
+      - get: products-ecr-registry-test
+        params:
+          format: oci
+        trigger: false
+        passed: [deploy-products]
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: tag
+        file: products-ecr-registry-test/tag
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-aws-sdk-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-12-fargate"
+            APP_NAME: "products"
+            TAG: ((.:tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run_ecs_db_migration.js
   - name: smoke-test-products
     plan:
       - get: products-ecr-registry-test
@@ -1424,6 +1548,46 @@ jobs:
         params:
           APP_NAME: publicauth
           <<: *wait_for_deploy_params
+  - name: publicauth-db-migration
+    plan:
+      - get: pay-ci
+      - get: publicauth-ecr-registry-test
+        params:
+          format: oci
+        trigger: false
+        passed: [deploy-publicauth]
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: tag
+        file: publicauth-ecr-registry-test/tag
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-aws-sdk-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-12-fargate"
+            APP_NAME: "publicauth"
+            TAG: ((.:tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run_ecs_db_migration.js
   - name: smoke-test-publicauth
     plan:
       - get: publicauth-ecr-registry-test
