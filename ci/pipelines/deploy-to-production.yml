@@ -114,6 +114,8 @@ resources:
     icon: docker
     source:
       repository: govukpay/telegraf
+      variant: release
+      <<: *aws_prod_config
   - name: ledger-ecr-registry-prod
     type: registry-image-resource-1-1-0
     icon: docker
@@ -126,7 +128,8 @@ resources:
     icon: docker
     source:
       repository: govukpay/publicapi
-
+      variant: release
+      <<: *aws_prod_config
 
 resource_types:
   - name: registry-image-resource-1-1-0
