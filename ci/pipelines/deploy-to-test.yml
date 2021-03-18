@@ -246,6 +246,7 @@ resources:
     type: dev-registry-image
     icon: docker
     source:
+      variant: release
       repository: govukpay/docker-nginx-proxy
       <<: *aws_test_config
   - name: nginx-forward-proxy-ecr-registry-test
@@ -332,6 +333,12 @@ resources:
     icon: docker
     source:
       repository: govukpay/telegraf
+      <<: *aws_staging_config
+  - name: nginx-proxy-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/docker-nginx-proxy
       <<: *aws_staging_config
 
 
@@ -439,7 +446,9 @@ groups:
       - push-cardid-to-staging-ecr
   - name: nginx-proxy
     jobs:
-      - nginx-proxy-image-to-test-ecr
+      - push-nginx-proxy-to-test-ecr
+      - deploy-toolbox
+      - push-nginx-proxy-to-staging-ecr
   - name: nginx-forward-proxy
     jobs:
       - build-and-push-nginx-forward-proxy-to-test-ecr
@@ -497,12 +506,16 @@ jobs:
         trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: toolbox_image_tag
         file: toolbox-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -525,6 +538,7 @@ jobs:
             APP_NAME: toolbox
             APP_IMAGE_TAG: ((.:toolbox_image_tag))
             TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
+            NGINX_IMAGE_TAG: ((.:nginx_image_tag))
             ACCOUNT: test
             ENVIRONMENT: test-12
             AWS_REGION: eu-west-1
@@ -539,7 +553,7 @@ jobs:
                 terraform apply \
                   -var application_image_tag=${APP_IMAGE_TAG} \
                   -var telegraf_image_tag=${TELEGRAF_IMAGE_TAG} \
-                  -var nginx_image_tag='' \
+                  -var nginx_image_tag=${NGINX_IMAGE_TAG} \
                   -auto-approve
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
@@ -1849,7 +1863,7 @@ jobs:
         params:
           image: cardid-ecr-registry-test/image.tar
           additional_tags: cardid-ecr-registry-test/tag
-  - name: nginx-proxy-image-to-test-ecr
+  - name: push-nginx-proxy-to-test-ecr
     plan:
       - get: pay-ci
       - get: nginx-proxy-git-release
@@ -1860,10 +1874,26 @@ jobs:
           DOCKER_REPOSITORY: govukpay/docker-nginx-proxy
           APP_GIT_DIR: nginx-proxy-git-release
           <<: *docker_credentials
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: nginx-proxy-git-release
       - put: nginx-proxy-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: nginx-proxy-git-release/.git/HEAD
+          additional_tags: tags/tags
+  - name: push-nginx-proxy-to-staging-ecr
+    plan:
+      - get: pay-ci
+      - get: nginx-proxy-ecr-registry-test
+        params:
+          format: oci
+        trigger: true
+        passed: [deploy-toolbox]
+      - put: nginx-proxy-ecr-registry-staging
+        params:
+          image: nginx-proxy-ecr-registry-test/image.tar
+          additional_tags: nginx-proxy-ecr-registry-test/tag
   - name: build-and-push-nginx-forward-proxy-to-test-ecr
     plan:
       - get: pay-ci
