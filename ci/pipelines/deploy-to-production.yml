@@ -197,7 +197,7 @@ jobs:
     plan:
       - get: deploy-to-prod-pipeline-definition
         trigger: true
-      - set_pipeline: deploy-to-prod-pipeline-definition
+      - set_pipeline: deploy-to-prod-pipeline
         file: deploy-to-prod-pipeline-definition/ci/pipelines/deploy-to-production.yml
 
   - name: deploy-selfservice-to-prod
