@@ -114,8 +114,19 @@ resources:
     icon: docker
     source:
       repository: govukpay/telegraf
+  - name: ledger-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/ledger
       variant: release
       <<: *aws_prod_config
+  - name: publicapi-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/publicapi
+
 
 resource_types:
   - name: registry-image-resource-1-1-0
@@ -168,6 +179,16 @@ groups:
     jobs:
       - deploy-selfservice-to-prod
       - smoke-test-selfservice-on-prod
+  - name: publicapi
+    jobs:
+      - deploy-publicapi-to-prod
+      - smoke-test-publicapi-on-prod
+      - publicapi-pact-tag
+  - name: ledger
+    jobs:
+      - deploy-ledger-to-prod
+      - smoke-test-ledger-on-prod
+      - ledger-pact-tag
 
 jobs:
   - name: update-deploy-to-prod-pipeline
@@ -688,3 +709,131 @@ jobs:
             - -ec
             - |
               echo "Imagine we just smoked on prod."
+  - name: deploy-publicapi-to-prod
+    plan:
+      - get: publicapi-ecr-registry-prod
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: publicapi-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: publicapi
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: publicapi
+          <<: *wait_for_deploy_params
+  - name: smoke-test-publicapi-on-prod
+    plan:
+      - get: publicapi-ecr-registry-prod
+        trigger: true
+        passed: [deploy-publicapi-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on prod."
+  - name: publicapi-pact-tag
+    plan:
+      - get: publicapi-ecr-registry-prod
+        passed: [smoke-test-publicapi-on-prod]
+        trigger: true
+      - load_var: tag
+        file: publicapi-ecr-registry-prod/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: publicapi
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: publicapi
+          PACT_TAG: prod-fargate
+  - name: deploy-ledger-to-prod
+    plan:
+      - get: ledger-ecr-registry-prod
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: tag
+        file: ledger-ecr-registry-prod/tag
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: ledger
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: ledger
+          <<: *wait_for_deploy_params
+  - name: smoke-test-ledger-on-prod
+    plan:
+      - get: ledger-ecr-registry-prod
+        trigger: true
+        passed: [deploy-ledger-to-prod]
+      - task: smoke-test-on-prod
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+            - -ec
+            - |
+              echo "Imagine we just smoked on prod."
+  - name: ledger-pact-tag
+    plan:
+      - get: ledger-ecr-registry-prod
+        passed: [smoke-test-ledger-on-prod]
+        trigger: true
+      - load_var: tag
+        file: ledger-ecr-registry-prod/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: ledger
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: ledger
+          PACT_TAG: prod-fargate
