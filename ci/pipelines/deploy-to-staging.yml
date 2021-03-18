@@ -210,6 +210,19 @@ resources:
     source:
       repository: govukpay/telegraf
       <<: *aws_production_config
+  - name: nginx-proxy-ecr-registry-staging
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/docker-nginx-proxy
+      variant: release
+      <<: *aws_staging_config
+  - name: nginx-proxy-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/docker-nginx-proxy
+      <<: *aws_production_config
 
 resource_types:
   - name: registry-image-resource-1-1-0
@@ -289,6 +302,10 @@ groups:
     jobs:
       - deploy-toolbox-to-staging
       - push-telegraf-to-production-ecr
+  - name: nginx-proxy
+    jobs:
+      - deploy-toolbox-to-staging
+      - push-nginx-proxy-to-production-ecr
 
 jobs:
   - name: update-deploy-to-staging-pipeline
@@ -486,12 +503,16 @@ jobs:
         trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
+      - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: toolbox-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -514,6 +535,7 @@ jobs:
             APP_NAME: toolbox
             APP_IMAGE_TAG: ((.:tag))
             TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
+            NGINX_IMAGE_TAG: ((.:nginx_image_tag))
             ACCOUNT: staging
             ENVIRONMENT: staging-2
             AWS_REGION: eu-west-1
@@ -528,7 +550,7 @@ jobs:
                 terraform apply \
                   -var application_image_tag=${APP_IMAGE_TAG} \
                   -var telegraf_image_tag=${TELEGRAF_IMAGE_TAG} \
-                  -var nginx_image_tag='' \
+                  -var nginx_image_tag=${NGINX_IMAGE_TAG} \
                   -auto-approve
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
@@ -1220,3 +1242,14 @@ jobs:
         params:
           image: telegraf-ecr-registry-staging/image.tar
           additional_tags: telegraf-ecr-registry-staging/tag
+  - name: push-nginx-proxy-to-production-ecr
+    plan:
+      - get: nginx-proxy-ecr-registry-staging
+        params:
+          format: oci
+        trigger: true
+        passed: [deploy-toolbox-to-staging]
+      - put: nginx-proxy-ecr-registry-prod
+        params:
+          image: nginx-proxy-ecr-registry-staging/image.tar
+          additional_tags: nginx-proxy-ecr-registry-staging/tag
