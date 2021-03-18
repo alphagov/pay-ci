@@ -254,6 +254,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/nginx-forward-proxy
+      variant: release
       <<: *aws_test_config
   - name: telegraf-ecr-registry-test
     type: dev-registry-image
@@ -617,10 +618,14 @@ jobs:
     plan:
       - get: frontend-ecr-registry-test
         trigger: true
+      - get: nginx-forward-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: frontend-ecr-registry-test/tag
+      - load_var: nginx_forward_proxy_image_tag
+        file: nginx-forward-proxy-ecr-registry-test/tag
 
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -645,15 +650,41 @@ jobs:
         file: assume-role/assume-role.json
         format: json
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
-        params:
-          APP_NAME: frontend
-          <<: *deploy_params
+        config:
+          platform: linux
+          inputs:
+            - name: pay-infra
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: 0.13.4
+          params:
+            APP_NAME: frontend
+            APP_IMAGE_TAG: ((.:tag))
+            NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
+            ACCOUNT: test
+            ENVIRONMENT: test-12
+            AWS_REGION: eu-west-1
+            <<: *aws_assumed_role_creds
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/microservices_v2/${APP_NAME}
+                terraform init
+                terraform apply \
+                  -var application_image_tag=${APP_IMAGE_TAG} \
+                  -var forward_proxy_image_tag=${NGINX_FORWARD_PROXY_IMAGE_TAG} \
+                  -var nginx_image_tag='' \
+                  -auto-approve
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
           APP_NAME: frontend
           <<: *wait_for_deploy_params
+
   - name: smoke-test-frontend
     plan:
       - get: frontend-ecr-registry-test
