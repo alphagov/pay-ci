@@ -210,18 +210,18 @@ resources:
     source:
       repository: govukpay/telegraf
       <<: *aws_production_config
-  - name: nginx-proxy-ecr-registry-staging
+  - name: nginx-forward-proxy-ecr-registry-staging
     type: registry-image-resource-1-1-0
     icon: docker
     source:
-      repository: govukpay/docker-nginx-proxy
+      repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_staging_config
-  - name: nginx-proxy-ecr-registry-prod
+  - name: nginx-forward-proxy-ecr-registry-prod
     type: registry-image-resource-1-1-0
     icon: docker
     source:
-      repository: govukpay/docker-nginx-proxy
+      repository: govukpay/nginx-forward-proxy
       <<: *aws_production_config
 
 resource_types:
@@ -302,10 +302,10 @@ groups:
     jobs:
       - deploy-toolbox-to-staging
       - push-telegraf-to-production-ecr
-  - name: nginx-proxy
+  - name: nginx-forward-proxy
     jobs:
-      - deploy-toolbox-to-staging
-      - push-nginx-proxy-to-production-ecr
+      - deploy-frontend-to-staging
+      - push-nginx-forward-proxy-to-production-ecr
 
 jobs:
   - name: update-deploy-to-staging-pipeline
@@ -590,10 +590,13 @@ jobs:
   - name: deploy-frontend-to-staging
     plan:
       - get: frontend-ecr-registry-staging
+      - get: nginx-forward-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: frontend-ecr-registry-staging/tag
+      - load_var: nginx-forward-proxy-image-tag
+        file: nginx-forward-proxy-ecr-registry-staging/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -616,10 +619,35 @@ jobs:
         file: assume-role/assume-role.json
         format: json
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
-        params:
-          APP_NAME: frontend
-          <<: *deploy_params
+        config:
+          platform: linux
+          inputs:
+            - name: pay-infra
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: 0.13.4
+          params:
+            APP_NAME: frontend
+            APP_IMAGE_TAG: ((.:tag))
+            NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx-forward-proxy-image-tag))
+            ACCOUNT: staging
+            ENVIRONMENT: staging-2
+            AWS_REGION: eu-west-1
+            <<: *aws_assumed_role_creds
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/microservices_v2/${APP_NAME}
+                terraform init
+                terraform apply \
+                  -var application_image_tag=${APP_IMAGE_TAG} \
+                  -var forward_proxy_image_tag=${NGINX_FORWARD_PROXY_IMAGE_TAG} \
+                  -var nginx_image_tag='' \
+                  -auto-approve
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
@@ -1242,14 +1270,14 @@ jobs:
         params:
           image: telegraf-ecr-registry-staging/image.tar
           additional_tags: telegraf-ecr-registry-staging/tag
-  - name: push-nginx-proxy-to-production-ecr
+  - name: push-nginx-forward-proxy-to-production-ecr
     plan:
-      - get: nginx-proxy-ecr-registry-staging
+      - get: nginx-forward-proxy-ecr-registry-staging
         params:
           format: oci
         trigger: true
-        passed: [deploy-toolbox-to-staging]
-      - put: nginx-proxy-ecr-registry-prod
+        passed: [deploy-frontend-to-staging]
+      - put: nginx-forward-proxy-ecr-registry-prod
         params:
-          image: nginx-proxy-ecr-registry-staging/image.tar
-          additional_tags: nginx-proxy-ecr-registry-staging/tag
+          image: nginx-forward-proxy-ecr-registry-staging/image.tar
+          additional_tags: nginx-forward-proxy-ecr-registry-staging/tag
