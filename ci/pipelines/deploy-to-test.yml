@@ -446,6 +446,7 @@ groups:
     jobs:
       - unit-test-telegraf
       - build-and-push-telegraf-to-test-ecr
+      - deploy-toolbox
       - push-telegraf-to-staging-ecr
 
 definitions:
