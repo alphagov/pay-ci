@@ -54,7 +54,7 @@ async function runTask (params) {
 const run = async function run () {
   console.log(`Running migration for ${APP_NAME} within ${CLUSTER_NAME} cluster`)
 
-  try{
+  try {
     const service = await getService()
     if (!service) {
       throw new Error(`failed to find active service for ${APP_NAME}`)
