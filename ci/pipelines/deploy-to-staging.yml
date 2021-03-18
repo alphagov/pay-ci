@@ -306,6 +306,19 @@ jobs:
       - get: pay-ci
       - load_var: tag
         file: selfservice-ecr-registry-staging/tag
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: selfservice
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: selfservice
+          PACT_TAG: staging-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -384,6 +397,19 @@ jobs:
       - get: pay-ci
       - load_var: tag
         file: connector-ecr-registry-staging/tag
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: connector
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: connector
+          PACT_TAG: staging-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -546,6 +572,19 @@ jobs:
       - get: pay-ci
       - load_var: tag
         file: frontend-ecr-registry-staging/tag
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: frontend
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: frontend
+          PACT_TAG: staging-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -622,6 +661,19 @@ jobs:
       - get: pay-ci
       - load_var: tag
         file: adminusers-ecr-registry-staging/tag
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: adminusers
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: adminusers
+          PACT_TAG: staging-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -698,6 +750,19 @@ jobs:
       - get: pay-ci
       - load_var: tag
         file: products-ecr-registry-staging/tag
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: products
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: products
+          PACT_TAG: staging-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -774,6 +839,19 @@ jobs:
       - get: pay-ci
       - load_var: tag
         file: products-ui-ecr-registry-staging/tag
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: products-ui
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: products-ui
+          PACT_TAG: staging-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -960,6 +1038,19 @@ jobs:
       - get: pay-ci
       - load_var: tag
         file: publicapi-ecr-registry-staging/tag
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: publicapi
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: publicapi
+          PACT_TAG: staging-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1036,6 +1127,19 @@ jobs:
       - get: pay-ci
       - load_var: tag
         file: ledger-ecr-registry-staging/tag
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: ledger
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: ledger
+          PACT_TAG: staging-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
