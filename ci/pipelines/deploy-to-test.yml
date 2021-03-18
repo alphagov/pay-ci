@@ -60,6 +60,15 @@ resources:
       tag_regex: "(.*)-release"
       username: alphagov-pay-ci
       password: ((github-access-token))
+  - name: nginx-forward-proxy-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-nginx-forward-proxy
+      branch: main
+      tag_regex: "(.*)-release"
+      username: alphagov-pay-ci
+      password: ((github-access-token))
 
   # Github Releases
   - name: toolbox-git-release
@@ -154,14 +163,6 @@ resources:
       branch: master
       username: alphagov-pay-ci
       password: ((github-access-token))
-  - name: nginx-forward-proxy-dockerhub-release
-    type: updated-registry-image
-    icon: docker
-    source:
-      variant: alpine
-      repository: govukpay/nginx-forward-proxy
-      username: ((docker-username))
-      password: ((docker-password))
 
   # ECR registry resources
   - name: toolbox-ecr-registry-test
@@ -441,7 +442,7 @@ groups:
       - nginx-proxy-image-to-test-ecr
   - name: nginx-forward-proxy
     jobs:
-      - nginx-forward-proxy-image-to-test-ecr
+      - build-and-push-nginx-forward-proxy-to-test-ecr
   - name: telegraf
     jobs:
       - unit-test-telegraf
@@ -1863,18 +1864,31 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: nginx-proxy-git-release/.git/HEAD
-  - name: nginx-forward-proxy-image-to-test-ecr
+  - name: build-and-push-nginx-forward-proxy-to-test-ecr
     plan:
       - get: pay-ci
-      - get: nginx-forward-proxy-dockerhub-release
+      - get: nginx-forward-proxy-git-release
         trigger: true
+      - task: build-nginx-forward-proxy-image
+        privileged: true
         params:
-          format: oci
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
+            CONTEXT: nginx-forward-proxy-git-release
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: vito/oci-build-task
+          inputs:
+            - name: nginx-forward-proxy-git-release
+          outputs:
+            - name: image
+          run:
+            path: build
       - put: nginx-forward-proxy-ecr-registry-test
         params:
-          image: nginx-forward-proxy-dockerhub-release/image.tar
-          additional_tags: nginx-forward-proxy-dockerhub-release/tag
+          image: image/image.tar
+          additional_tags: nginx-forward-proxy-git-release/.git/ref
   - name: unit-test-telegraf
     plan:
       - get: pay-ci
