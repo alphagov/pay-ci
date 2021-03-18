@@ -175,10 +175,12 @@ groups:
     jobs:
       - deploy-connector-to-prod
       - smoke-test-connector-on-prod
+      - connector-pact-tag
   - name: selfservice
     jobs:
       - deploy-selfservice-to-prod
       - smoke-test-selfservice-on-prod
+      - selfservice-pact-tag
   - name: publicapi
     jobs:
       - deploy-publicapi-to-prod
@@ -242,6 +244,27 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on prod."
+  - name: selfservice-pact-tag
+    plan:
+      - get: selfservice-ecr-registry-prod
+        passed: [smoke-test-selfservice-on-prod]
+        trigger: true
+      - load_var: tag
+        file: selfservice-ecr-registry-prod/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: selfservice
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: selfservice
+          PACT_TAG: production-fargate
 
   - name: deploy-connector-to-prod
     plan:
@@ -287,7 +310,27 @@ jobs:
               - -ec
               - |
                 echo "Imagine we just smoked on prod."
-
+  - name: connector-pact-tag
+    plan:
+      - get: connector-ecr-registry-prod
+        passed: [smoke-test-connector-on-prod]
+        trigger: true
+      - load_var: tag
+        file: connector-ecr-registry-prod/tag
+      - get: pay-ci
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: connector
+          TAG: ((.:tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: connector
+          PACT_TAG: production-fargate
   - name: deploy-toolbox-to-prod
     plan:
       - get: toolbox-ecr-registry-prod
