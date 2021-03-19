@@ -803,7 +803,7 @@ jobs:
           run:
             path: node
             args:
-              - pay-ci/ci/scripts/run_ecs_db_migration.js
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
   - name: smoke-test-adminusers
     plan:
       - get: adminusers-ecr-registry-test
@@ -954,7 +954,7 @@ jobs:
           run:
             path: node
             args:
-              - pay-ci/ci/scripts/run_ecs_db_migration.js
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
   - name: smoke-test-connector
     plan:
       - get: connector-ecr-registry-test
@@ -1157,7 +1157,7 @@ jobs:
           run:
             path: node
             args:
-              - pay-ci/ci/scripts/run_ecs_db_migration.js
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
 
   - name: push-products-to-test-ecr
     plan:
@@ -1256,7 +1256,7 @@ jobs:
           run:
             path: node
             args:
-              - pay-ci/ci/scripts/run_ecs_db_migration.js
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
   - name: smoke-test-products
     plan:
       - get: products-ecr-registry-test
@@ -1613,7 +1613,7 @@ jobs:
           run:
             path: node
             args:
-              - pay-ci/ci/scripts/run_ecs_db_migration.js
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
   - name: smoke-test-publicauth
     plan:
       - get: publicauth-ecr-registry-test
