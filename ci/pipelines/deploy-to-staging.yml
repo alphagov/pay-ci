@@ -409,7 +409,6 @@ jobs:
   - name: deploy-connector-to-staging
     plan:
       - get: connector-ecr-registry-staging
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
@@ -679,6 +678,7 @@ jobs:
   - name: deploy-adminusers-to-staging
     plan:
       - get: adminusers-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
@@ -1145,6 +1145,7 @@ jobs:
   - name: deploy-ledger-to-staging
     plan:
       - get: ledger-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
