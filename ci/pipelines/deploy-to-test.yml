@@ -341,7 +341,13 @@ resources:
     source:
       repository: govukpay/docker-nginx-proxy
       <<: *aws_staging_config
-
+  - name: nginx-forward-proxy-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/nginx-forward-proxy
+      variant: release
+      <<: *aws_staging_config
 
 resource_types:
   # Custom resource type - this has been merged to the
@@ -1963,7 +1969,7 @@ jobs:
           format: oci
         trigger: true
         passed: [smoke-test-frontend]
-      - put: nginx-proxy-ecr-registry-staging
+      - put: nginx-forward-proxy-ecr-registry-staging
         params:
           image: nginx-forward-proxy-ecr-registry-test/image.tar
           additional_tags: nginx-forward-proxy-ecr-registry-test/tag
