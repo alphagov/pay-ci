@@ -295,7 +295,6 @@ jobs:
   - name: deploy-connector-to-prod
     plan:
       - get: connector-ecr-registry-prod
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
@@ -530,6 +529,7 @@ jobs:
   - name: deploy-adminusers-to-prod
     plan:
       - get: adminusers-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
@@ -928,6 +928,7 @@ jobs:
   - name: deploy-ledger-to-prod
     plan:
       - get: ledger-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
