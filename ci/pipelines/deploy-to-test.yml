@@ -348,6 +348,12 @@ resources:
       repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_staging_config
+  - name: slack-notification
+    type: slack-notification
+    source:
+      url: https://hooks.slack.com/services/((slack-notification-secret))
+
+
 
 resource_types:
   # Custom resource type - this has been merged to the
@@ -367,7 +373,11 @@ resource_types:
     source:
       repository: concourse/registry-image-resource
       tag: "1.1.0"
-
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
 groups:
   - name: update-deploy-to-test-pipeline
     jobs:
@@ -512,8 +522,11 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-toolbox
     plan:
+      - get: toolbox-git-release
+        passed: [push-toolbox-to-test-ecr]
       - get: toolbox-ecr-registry-test
         trigger: true
+        passed: [push-toolbox-to-test-ecr]
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: nginx-proxy-ecr-registry-test
@@ -526,6 +539,45 @@ jobs:
         file: telegraf-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: git_tag
+        file: toolbox-git-release/.git/ref
+      - task: create-messages
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: alpine
+          params:
+            APP_NAME: toolbox
+            APP_GIT_TAG: ((.:git_tag)
+            TELEGRAF_GIT_TAG: ((.:telegraf_image_tag)
+          outputs:
+            - name: message
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                cat <<EOT >> message/success
+                :green-circle: Deployment of ${APP_NAME} was successful :tada:
+
+                Versions:
+                  toolbox: https://github.com/alphagov/pay-${APP_NAME}/releases/tag/${APP_GIT_TAG}
+                  telegraf: https://github.com/alphagov/pay-telegraf/releases/tag/${TELEGRAF_GIT_TAG}
+                EOT
+
+                cat <<EOT >> message/failure
+                :red_circle: Deployment of ${APP_NAME} failed
+
+                Versions:
+                toolbox: https://github.com/alphagov/pay-${APP_NAME}/releases/tag/${APP_GIT_TAG}
+                telegraf: https://github.com/alphagov/pay-telegraf/releases/tag/((.:telegraf_image_tag))
+                EOT
+      - load_var: success_message
+        file: message/success
+      - load_var: failure_message
+        file: message/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -574,6 +626,20 @@ jobs:
           ENVIRONMENT: test-12
           AWS_REGION: eu-west-1
           <<: *aws_assumed_role_creds
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        text: "((.:success_message)) \n\n
+              Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        text: "((.:failure_message)) \n\n
+              Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+
+
   - name: smoke-test-toolbox
     plan:
       - get: toolbox-ecr-registry-test
