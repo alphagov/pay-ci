@@ -21,6 +21,22 @@ aws_assumed_role_creds: &aws_assumed_role_creds
   AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
   AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
+put_success_slack_notification: &put_success_slack_notification
+  on_success:
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-activity'
+      text: "((.:success_snippet)) \n\n
+            Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+  
+put_failure_slack_notification: &put_failure_slack_notification
+  on_failure:
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-activity'
+      text: "((.:failure_snippet)) \n\n
+            Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+  
 
 wait_for_deploy_params: &wait_for_deploy_params
   <<: *aws_assumed_role_creds
@@ -52,7 +68,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: PP-7889-test-pipeline-notifications-all-the-things
 
   # Github Releases
   - name: telegraf-git-release
@@ -578,11 +594,8 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-toolbox
     plan:
-      - get: toolbox-git-release
-        passed: [push-toolbox-to-test-ecr]
       - get: toolbox-ecr-registry-test
         trigger: true
-        passed: [push-toolbox-to-test-ecr]
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: nginx-proxy-ecr-registry-test
@@ -595,45 +608,19 @@ jobs:
         file: telegraf-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
-      - load_var: git_tag
-        file: toolbox-git-release/.git/ref
-      - task: create-messages
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source:
-              repository: alpine
-          params:
-            APP_NAME: toolbox
-            APP_GIT_TAG: ((.:git_tag)
-            TELEGRAF_GIT_TAG: ((.:telegraf_image_tag)
-          outputs:
-            - name: message
-          run:
-            path: sh
-            args:
-              - -c
-              - |
-                cat <<EOT >> message/success
-                :green-circle: Deployment of ${APP_NAME} was successful :tada:
-
-                Versions:
-                  toolbox: https://github.com/alphagov/pay-${APP_NAME}/releases/tag/${APP_GIT_TAG}
-                  telegraf: https://github.com/alphagov/pay-telegraf/releases/tag/${TELEGRAF_GIT_TAG}
-                EOT
-
-                cat <<EOT >> message/failure
-                :red_circle: Deployment of ${APP_NAME} failed
-
-                Versions:
-                toolbox: https://github.com/alphagov/pay-${APP_NAME}/releases/tag/${APP_GIT_TAG}
-                telegraf: https://github.com/alphagov/pay-telegraf/releases/tag/((.:telegraf_image_tag))
-                EOT
-      - load_var: success_message
-        file: message/success
-      - load_var: failure_message
-        file: message/failure
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: toolbox
+          ACTION_NAME: Deployment
+          ENV: test-12
+          APP_IMAGE_TAG: ((.:tag))
+          TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
+          NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -652,19 +639,8 @@ jobs:
         params:
           APP_NAME: toolbox
           <<: *wait_for_deploy_params
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-activity'
-        text: "((.:success_message)) \n\n
-              Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
-    on_failure:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        text: "((.:failure_message)) \n\n
-              Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
-
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: smoke-test-toolbox
     plan:
@@ -682,13 +658,14 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+
   - name: push-toolbox-to-staging-ecr
     plan:
       - get: toolbox-ecr-registry-test
+        passed: [smoke-test-toolbox]
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-toolbox]
       - put: toolbox-ecr-registry-staging
         params:
           image: toolbox-ecr-registry-test/image.tar
@@ -792,7 +769,7 @@ jobs:
         trigger: true
       - load_var: application_image_tag
         file: frontend-ecr-registry-test/tag
-      - get: pay-ci  
+      - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
