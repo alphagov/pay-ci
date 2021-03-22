@@ -624,7 +624,7 @@ jobs:
         params:
           GIT_SHA: ((.:git-sha))
           APP_NAME: adminusers
-          PACT_TAG: prod-fargate
+          PACT_TAG: production-fargate
 
   - name: deploy-products-to-prod
     plan:
@@ -702,7 +702,7 @@ jobs:
         params:
           GIT_SHA: ((.:git-sha))
           APP_NAME: products
-          PACT_TAG: prod-fargate
+          PACT_TAG: production-fargate
 
   - name: deploy-products-ui-to-prod
     plan:
@@ -780,7 +780,7 @@ jobs:
         params:
           GIT_SHA: ((.:git-sha))
           APP_NAME: products-ui
-          PACT_TAG: prod-fargate
+          PACT_TAG: production-fargate
 
   - name: deploy-publicauth-to-prod
     plan:
@@ -945,7 +945,7 @@ jobs:
         params:
           GIT_SHA: ((.:git-sha))
           APP_NAME: publicapi
-          PACT_TAG: prod-fargate
+          PACT_TAG: production-fargate
   - name: deploy-ledger-to-prod
     plan:
       - get: ledger-ecr-registry-prod
@@ -1023,4 +1023,4 @@ jobs:
         params:
           GIT_SHA: ((.:git-sha))
           APP_NAME: ledger
-          PACT_TAG: prod-fargate
+          PACT_TAG: production-fargate
