@@ -23,6 +23,59 @@ definitions:
     aws_ecr_registry_id: "((pay_aws_prod_account_id))"
     aws_region: eu-west-1
 
+  # Separate tasks for each combination of scenario/environment
+  smoke-test-run-all-on-production: &smoke-test-run-all-on-production
+    limit: 4
+    steps:
+      - task: run_create_card_payment_sandbox-production
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_sandbox_prod"
+      - task: run_create_card_payment_smartpay-production
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_smartpay_prod"
+      - task: run_create_card_payment_worldpay_with_3ds-production
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_wpay_3ds_prod"
+      - task: run_create_card_payment_worldpay_with_3ds2-production
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_wpay_3ds2_prod"
+      - task: run_create_card_payment_worldpay_with_3ds2_exemption-production
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_wpay_3ds2ex_prod"
+      - task: run_create_card_payment_worldpay_without_3ds-production
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_wpay_prod"
+      - task: run_cancel_card_payment_sandbox-production
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "cancel_sandbox_prod"
+      - task: run_use_payment_link_sandbox-production
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "pymntlnk_sandbox_prod"
+
 resources:
   - name: deploy-to-prod-pipeline-definition
     type: git
@@ -270,19 +323,16 @@ jobs:
       - get: selfservice-ecr-registry-prod
         trigger: true
         passed: [deploy-selfservice-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
   - name: selfservice-pact-tag
     plan:
       - get: selfservice-ecr-registry-prod
@@ -348,19 +398,16 @@ jobs:
       - get: connector-ecr-registry-prod
         trigger: true
         passed: [deploy-connector-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
   - name: connector-pact-tag
     plan:
       - get: connector-ecr-registry-prod
@@ -447,19 +494,16 @@ jobs:
       - get: toolbox-ecr-registry-prod
         trigger: true
         passed: [deploy-toolbox-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
 
   - name: deploy-frontend-to-prod
     plan:
@@ -513,19 +557,16 @@ jobs:
       - get: frontend-ecr-registry-prod
         trigger: true
         passed: [deploy-frontend-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
   - name: frontend-pact-tag
     plan:
       - get: frontend-ecr-registry-prod
@@ -591,19 +632,16 @@ jobs:
       - get: adminusers-ecr-registry-prod
         trigger: true
         passed: [deploy-adminusers-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
   - name: adminusers-pact-tag
     plan:
       - get: adminusers-ecr-registry-prod
@@ -669,19 +707,16 @@ jobs:
       - get: products-ecr-registry-prod
         trigger: true
         passed: [deploy-products-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
   - name: products-pact-tag
     plan:
       - get: products-ecr-registry-prod
@@ -747,19 +782,16 @@ jobs:
       - get: products-ui-ecr-registry-prod
         trigger: true
         passed: [deploy-products-ui-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
   - name: products-ui-pact-tag
     plan:
       - get: products-ui-ecr-registry-prod
@@ -812,19 +844,16 @@ jobs:
       - get: publicauth-ecr-registry-prod
         trigger: true
         passed: [deploy-publicauth-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
 
   - name: deploy-cardid-to-prod
     plan:
@@ -856,19 +885,16 @@ jobs:
       - get: cardid-ecr-registry-prod
         trigger: true
         passed: [deploy-cardid-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
   - name: deploy-publicapi-to-prod
     plan:
       - get: publicapi-ecr-registry-prod
@@ -912,19 +938,16 @@ jobs:
       - get: publicapi-ecr-registry-prod
         trigger: true
         passed: [deploy-publicapi-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
   - name: publicapi-pact-tag
     plan:
       - get: publicapi-ecr-registry-prod
@@ -990,19 +1013,16 @@ jobs:
       - get: ledger-ecr-registry-prod
         trigger: true
         passed: [deploy-ledger-to-prod]
-      - task: smoke-test-on-prod
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          run:
-            path: /bin/bash
-            args:
-            - -ec
-            - |
-              echo "Imagine we just smoked on prod."
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
   - name: ledger-pact-tag
     plan:
       - get: ledger-ecr-registry-prod
