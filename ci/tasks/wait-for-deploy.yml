@@ -13,6 +13,7 @@ params:
   AWS_REGION: eu-west-1
   APP_NAME:
   TAG:
+  NGINX_IMAGE_TAG:
   ENVIRONMENT:
 run:
   path: node

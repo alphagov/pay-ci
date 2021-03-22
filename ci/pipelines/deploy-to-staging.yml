@@ -7,11 +7,13 @@ definitions:
   wait_for_deploy_params: &wait_for_deploy_params
     <<: *aws_assumed_role_creds
     TAG: ((.:tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     ENVIRONMENT: staging-2
 
   deploy_params: &deploy_params
     <<: *aws_assumed_role_creds
     TAG: ((.:tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     ACCOUNT: staging
     ENVIRONMENT: staging-2
     
@@ -337,10 +339,13 @@ jobs:
     plan:
       - get: selfservice-ecr-registry-staging
         trigger: true
+      - get: nginx-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: selfservice-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -427,10 +432,13 @@ jobs:
   - name: deploy-connector-to-staging
     plan:
       - get: connector-ecr-registry-staging
+      - get: nginx-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: connector-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -642,7 +650,6 @@ jobs:
         file: pay-ci/ci/tasks/deploy-frontend.yml
         params:
           APP_NAME: frontend
-          NGINX_IMAGE_TAG: ((.:nginx_image_tag))
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *deploy_params
       - task: wait-for-deploy
@@ -708,10 +715,13 @@ jobs:
     plan:
       - get: adminusers-ecr-registry-staging
         trigger: true
+      - get: nginx-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: adminusers-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -797,10 +807,13 @@ jobs:
   - name: deploy-products-to-staging
     plan:
       - get: products-ecr-registry-staging
+      - get: nginx-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: products-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -886,10 +899,13 @@ jobs:
   - name: deploy-products-ui-to-staging
     plan:
       - get: products-ui-ecr-registry-staging
+      - get: nginx-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: products-ui-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -975,10 +991,13 @@ jobs:
   - name: deploy-publicauth-to-staging
     plan:
       - get: publicauth-ecr-registry-staging
+      - get: nginx-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: publicauth-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1030,10 +1049,13 @@ jobs:
   - name: deploy-cardid-to-staging
     plan:
       - get: cardid-ecr-registry-staging
+      - get: nginx-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: cardid-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1085,10 +1107,13 @@ jobs:
   - name: deploy-publicapi-to-staging
     plan:
       - get: publicapi-ecr-registry-staging
+      - get: nginx-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: publicapi-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1174,11 +1199,13 @@ jobs:
   - name: deploy-ledger-to-staging
     plan:
       - get: ledger-ecr-registry-staging
-        trigger: true
+      - get: nginx-proxy-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: ledger-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:

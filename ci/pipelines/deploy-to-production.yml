@@ -7,11 +7,13 @@ definitions:
   wait_for_deploy_params: &wait_for_deploy_params
     <<: *aws_assumed_role_creds
     TAG: ((.:tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     ENVIRONMENT: production-2
 
   deploy_params: &deploy_params
     <<: *aws_assumed_role_creds
     TAG: ((.:tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     ACCOUNT: production
     ENVIRONMENT: production-2
 
@@ -37,7 +39,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: PP-7915-Latest-nginx-all-env
   - name: pay-infra
     type: git
     icon: github
@@ -230,10 +232,13 @@ jobs:
     plan:
       - get: selfservice-ecr-registry-prod
         trigger: true
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: selfservice-ecr-registry-prod/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -308,10 +313,13 @@ jobs:
   - name: deploy-connector-to-prod
     plan:
       - get: connector-ecr-registry-prod
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: connector-ecr-registry-prod/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -499,7 +507,6 @@ jobs:
         file: pay-ci/ci/tasks/deploy-frontend.yml
         params:
           APP_NAME: frontend
-          NGINX_IMAGE_TAG: ((.:nginx_image_tag))
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *deploy_params
       - task: wait-for-deploy
@@ -551,10 +558,13 @@ jobs:
     plan:
       - get: adminusers-ecr-registry-prod
         trigger: true
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: adminusers-ecr-registry-prod/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -629,10 +639,13 @@ jobs:
   - name: deploy-products-to-prod
     plan:
       - get: products-ecr-registry-prod
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: products-ecr-registry-prod/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -707,10 +720,13 @@ jobs:
   - name: deploy-products-ui-to-prod
     plan:
       - get: products-ui-ecr-registry-prod
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: products-ui-ecr-registry-prod/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -785,10 +801,13 @@ jobs:
   - name: deploy-publicauth-to-prod
     plan:
       - get: publicauth-ecr-registry-prod
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: publicauth-ecr-registry-prod/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -829,10 +848,13 @@ jobs:
   - name: deploy-cardid-to-prod
     plan:
       - get: cardid-ecr-registry-prod
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: cardid-ecr-registry-prod/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -872,10 +894,13 @@ jobs:
   - name: deploy-publicapi-to-prod
     plan:
       - get: publicapi-ecr-registry-prod
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: publicapi-ecr-registry-prod/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -949,11 +974,13 @@ jobs:
   - name: deploy-ledger-to-prod
     plan:
       - get: ledger-ecr-registry-prod
-        trigger: true
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: ledger-ecr-registry-prod/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
