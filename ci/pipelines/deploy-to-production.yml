@@ -92,7 +92,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-7915-Latest-nginx-all-env
+      branch: master
   - name: pay-infra
     type: git
     icon: github
