@@ -25,6 +25,7 @@ aws_assumed_role_creds: &aws_assumed_role_creds
 wait_for_deploy_params: &wait_for_deploy_params
   <<: *aws_assumed_role_creds
   TAG: ((.:tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
   ENVIRONMENT: test-12
 
 deploy_params: &deploy_params
@@ -730,7 +731,6 @@ jobs:
         file: pay-ci/ci/tasks/deploy-frontend.yml
         params:
           APP_NAME: frontend
-          NGINX_IMAGE_TAG: ((.:nginx_image_tag))
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *deploy_params
       - task: wait-for-deploy
@@ -816,10 +816,14 @@ jobs:
     plan:
       - get: adminusers-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: adminusers-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -967,10 +971,14 @@ jobs:
     plan:
       - get: connector-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: connector-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1117,10 +1125,14 @@ jobs:
     plan:
       - get: ledger-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: ledger-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1269,10 +1281,14 @@ jobs:
     plan:
       - get: products-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: products-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1419,10 +1435,14 @@ jobs:
     plan:
       - get: products-ui-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: products-ui-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1529,10 +1549,14 @@ jobs:
     plan:
       - get: publicapi-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: publicapi-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1639,10 +1663,14 @@ jobs:
     plan:
       - get: publicauth-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: publicauth-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1753,10 +1781,14 @@ jobs:
     plan:
       - get: selfservice-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: selfservice-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1899,10 +1931,14 @@ jobs:
     plan:
       - get: cardid-ecr-registry-test
         trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: cardid-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
