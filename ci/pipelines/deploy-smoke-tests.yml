@@ -1,0 +1,240 @@
+aws_assumed_role_creds: &aws_assumed_role_creds
+  AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+  AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+  AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+resources:
+  - name: deploy-smoke-tests-pipeline-definition
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/deploy-smoke-tests.yml
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+  - name: pay-infra
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+  - name: smoke-tests-git-release
+    type: github-release
+    icon: github
+    source:
+      owner: alphagov
+      repository: pay-smoke-tests
+      access_token: ((github-access-token))
+      tag_filter: ^v(.*)
+
+jobs:
+  - name: update-smoke-tests-pipeline
+    plan:
+      - get: deploy-smoke-tests-pipeline-definition
+        trigger: true
+      - set_pipeline: deploy-smoke-tests
+        file: deploy-smoke-tests-pipeline-definition/ci/pipelines/deploy-smoke-tests.yml
+
+  - name: update-canaries-for-test-environment
+    plan:
+      - get: pay-infra
+      - get: pay-ci
+      - get: smoke-tests-git-release
+      - load_var: release_version
+        file: smoke-tests-git-release/tag
+      - task: get-and-extract-release
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: smoke-tests-git-release
+          outputs:
+            - name: zip-files-directory
+          params:
+            RELEASE_VERSION: ((.:release_version))
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Unzipping release ${RELEASE_VERSION} into zip-files-direcotry/${RELEASE_VERSION}"
+                mkdir "zip-files-directory/${RELEASE_VERSION}"
+                unzip smoke-tests-git-release/pay-smoke-tests-v*.zip -d "zip-files-directory/${RELEASE_VERSION}"
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_update_canary
+          AWS_ROLE_SESSION_NAME: terraform-update-canary
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: apply-the-terraform
+        config:
+          platform: linux
+          inputs:
+            - name: pay-infra
+            - name: zip-files-directory
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: 0.13.4
+          params:
+            ENVIRONMENT: test
+            SMOKE_TEST_VERSION: ((.:release_version))
+            <<: *aws_assumed_role_creds
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cd pay-infra/provisioning/terraform/deployments/deploy/deploy-6/management/smoke_tests
+                terraform init
+                terraform apply \
+                  -target=module.smoke_tests.module.test_env_smoke_tests \
+                  -var pay_smoke_tests_version=${SMOKE_TEST_VERSION} \
+                  -var zip_file_directory="../../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
+                  -auto-approve
+
+  - name: update-canaries-for-staging-environment
+    plan:
+      - get: pay-infra
+      - get: pay-ci
+      - get: smoke-tests-git-release
+        passed: [ update-canaries-for-test-environment ]
+      - load_var: release_version
+        file: smoke-tests-git-release/tag
+
+      - task: get-and-extract-release
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: smoke-tests-git-release
+          outputs:
+            - name: zip-files-directory
+          params:
+            RELEASE_VERSION: ((.:release_version))
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Unzipping release ${RELEASE_VERSION} into zip-files-direcotry/${RELEASE_VERSION}"
+                mkdir "zip-files-directory/${RELEASE_VERSION}"
+                unzip smoke-tests-git-release/pay-smoke-tests-v*.zip -d "zip-files-directory/${RELEASE_VERSION}"
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_update_canary
+          AWS_ROLE_SESSION_NAME: terraform-update-canary
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: apply-the-terraform
+        config:
+          platform: linux
+          inputs:
+            - name: pay-infra
+            - name: zip-files-directory
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: 0.13.4
+          params:
+            ENVIRONMENT: staging
+            SMOKE_TEST_VERSION: ((.:release_version))
+            <<: *aws_assumed_role_creds
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cd pay-infra/provisioning/terraform/deployments/deploy/deploy-6/management/smoke_tests
+                terraform init
+                terraform apply \
+                  -target=module.smoke_tests.module.staging_env_smoke_tests \
+                  -var pay_smoke_tests_version=${SMOKE_TEST_VERSION} \
+                  -var zip_file_directory="../../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
+                  -auto-approve
+
+  - name: update-canaries-for-production-environment
+    plan:
+      - get: pay-infra
+      - get: pay-ci
+      - get: smoke-tests-git-release
+        passed: [ update-canaries-for-staging-environment ]
+      - load_var: release_version
+        file: smoke-tests-git-release/tag
+      - task: get-and-extract-release
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: smoke-tests-git-release
+          outputs:
+            - name: zip-files-directory
+          params:
+            RELEASE_VERSION: ((.:release_version))
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Unzipping release ${RELEASE_VERSION} into zip-files-direcotry/${RELEASE_VERSION}"
+                mkdir "zip-files-directory/${RELEASE_VERSION}"
+                unzip smoke-tests-git-release/pay-smoke-tests-v*.zip -d "zip-files-directory/${RELEASE_VERSION}"
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_update_canary
+          AWS_ROLE_SESSION_NAME: terraform-update-canary
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: apply-the-terraform
+        config:
+          platform: linux
+          inputs:
+            - name: pay-infra
+            - name: zip-files-directory
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: 0.13.4
+          params:
+            ENVIRONMENT: production
+            SMOKE_TEST_VERSION: ((.:release_version))
+            <<: *aws_assumed_role_creds
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cd pay-infra/provisioning/terraform/deployments/deploy/deploy-6/management/smoke_tests
+                terraform init
+                terraform apply \
+                  -target=module.smoke_tests.module.production_env_smoke_tests \
+                  -var pay_smoke_tests_version=${SMOKE_TEST_VERSION} \
+                  -var zip_file_directory="../../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
+                  -auto-approve
+
