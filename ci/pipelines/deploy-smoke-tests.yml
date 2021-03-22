@@ -50,7 +50,8 @@ jobs:
       - get: smoke-tests-git-release
       - load_var: release_version
         file: smoke-tests-git-release/tag
-      - task: get-and-extract-release
+      - &get_and_extract_release
+        task: get-and-extract-release
         config:
           platform: linux
           image_resource:
@@ -116,27 +117,7 @@ jobs:
       - load_var: release_version
         file: smoke-tests-git-release/tag
 
-      - task: get-and-extract-release
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          inputs:
-            - name: smoke-tests-git-release
-          outputs:
-            - name: zip-files-directory
-          params:
-            RELEASE_VERSION: ((.:release_version))
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Unzipping release ${RELEASE_VERSION} into zip-files-direcotry/${RELEASE_VERSION}"
-                mkdir "zip-files-directory/${RELEASE_VERSION}"
-                unzip smoke-tests-git-release/pay-smoke-tests-v*.zip -d "zip-files-directory/${RELEASE_VERSION}"
+      - <<: *get_and_extract_release
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -181,27 +162,7 @@ jobs:
         passed: [ update-canaries-for-staging-environment ]
       - load_var: release_version
         file: smoke-tests-git-release/tag
-      - task: get-and-extract-release
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          inputs:
-            - name: smoke-tests-git-release
-          outputs:
-            - name: zip-files-directory
-          params:
-            RELEASE_VERSION: ((.:release_version))
-          run:
-            path: /bin/bash
-            args:
-              - -ec
-              - |
-                echo "Unzipping release ${RELEASE_VERSION} into zip-files-direcotry/${RELEASE_VERSION}"
-                mkdir "zip-files-directory/${RELEASE_VERSION}"
-                unzip smoke-tests-git-release/pay-smoke-tests-v*.zip -d "zip-files-directory/${RELEASE_VERSION}"
+      - <<: *get_and_extract_release
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
