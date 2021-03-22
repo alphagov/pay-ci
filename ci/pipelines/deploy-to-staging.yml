@@ -635,6 +635,7 @@ jobs:
       - get: toolbox-ecr-registry-staging
         trigger: true
         passed: [deploy-toolbox-to-staging]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -710,6 +711,7 @@ jobs:
       - get: nginx-forward-proxy-ecr-registry-staging
         trigger: true
         passed: [deploy-frontend-to-staging]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -800,6 +802,7 @@ jobs:
       - get: adminusers-ecr-registry-staging
         trigger: true
         passed: [deploy-adminusers-to-staging]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -889,6 +892,7 @@ jobs:
       - get: products-ecr-registry-staging
         trigger: true
         passed: [deploy-products-to-staging]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -978,6 +982,7 @@ jobs:
       - get: products-ui-ecr-registry-staging
         trigger: true
         passed: [deploy-products-ui-to-staging]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1054,6 +1059,7 @@ jobs:
       - get: publicauth-ecr-registry-staging
         trigger: true
         passed: [deploy-publicauth-to-staging]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1109,6 +1115,7 @@ jobs:
       - get: cardid-ecr-registry-staging
         trigger: true
         passed: [deploy-cardid-to-staging]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1177,6 +1184,7 @@ jobs:
       - get: publicapi-ecr-registry-staging
         trigger: true
         passed: [deploy-publicapi-to-staging]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1266,6 +1274,7 @@ jobs:
       - get: ledger-ecr-registry-staging
         trigger: true
         passed: [deploy-ledger-to-staging]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:

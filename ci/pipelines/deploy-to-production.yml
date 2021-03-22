@@ -328,6 +328,7 @@ jobs:
       - get: selfservice-ecr-registry-prod
         trigger: true
         passed: [deploy-selfservice-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -406,6 +407,7 @@ jobs:
       - get: connector-ecr-registry-prod
         trigger: true
         passed: [deploy-connector-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -502,6 +504,7 @@ jobs:
       - get: toolbox-ecr-registry-prod
         trigger: true
         passed: [deploy-toolbox-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -564,6 +567,7 @@ jobs:
       - get: frontend-ecr-registry-prod
         trigger: true
         passed: [deploy-frontend-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -642,6 +646,7 @@ jobs:
       - get: adminusers-ecr-registry-prod
         trigger: true
         passed: [deploy-adminusers-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -720,6 +725,7 @@ jobs:
       - get: products-ecr-registry-prod
         trigger: true
         passed: [deploy-products-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -798,6 +804,7 @@ jobs:
       - get: products-ui-ecr-registry-prod
         trigger: true
         passed: [deploy-products-ui-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -863,6 +870,7 @@ jobs:
       - get: publicauth-ecr-registry-prod
         trigger: true
         passed: [deploy-publicauth-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -907,6 +915,7 @@ jobs:
       - get: cardid-ecr-registry-prod
         trigger: true
         passed: [deploy-cardid-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -963,6 +972,7 @@ jobs:
       - get: publicapi-ecr-registry-prod
         trigger: true
         passed: [deploy-publicapi-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1040,6 +1050,7 @@ jobs:
       - get: ledger-ecr-registry-prod
         trigger: true
         passed: [deploy-ledger-to-prod]
+      - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
