@@ -465,11 +465,14 @@ jobs:
     plan:
       - get: frontend-ecr-registry-prod
       - get: nginx-forward-proxy-ecr-registry-prod
+      - get: nginx-proxy-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: frontend-ecr-registry-prod/tag
-      - load_var: nginx-forward-proxy-image-tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-prod/tag
+      - load_var: nginx_forward_proxy_image_tag
         file: nginx-forward-proxy-ecr-registry-prod/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -493,35 +496,12 @@ jobs:
         file: assume-role/assume-role.json
         format: json
       - task: deploy-to-prod
-        config:
-          platform: linux
-          inputs:
-            - name: pay-infra
-          image_resource:
-            type: registry-image
-            source:
-              repository: hashicorp/terraform
-              tag: 0.13.4
-          params:
-            APP_NAME: frontend
-            APP_IMAGE_TAG: ((.:tag))
-            NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx-forward-proxy-image-tag))
-            ACCOUNT: production
-            ENVIRONMENT: production-2
-            AWS_REGION: eu-west-1
-            <<: *aws_assumed_role_creds
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/microservices_v2/${APP_NAME}
-                terraform init
-                terraform apply \
-                  -var application_image_tag=${APP_IMAGE_TAG} \
-                  -var forward_proxy_image_tag=${NGINX_FORWARD_PROXY_IMAGE_TAG} \
-                  -var nginx_image_tag='' \
-                  -auto-approve
+        file: pay-ci/ci/tasks/deploy-frontend.yml
+        params:
+          APP_NAME: frontend
+          NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+          NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
