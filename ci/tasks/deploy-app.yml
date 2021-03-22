@@ -13,6 +13,7 @@ params:
   AWS_SESSION_TOKEN:
   AWS_REGION: eu-west-1
   TAG:
+  NGINX_IMAGE_TAG:
   APP_NAME:
   ACCOUNT:
   ENVIRONMENT:
@@ -25,5 +26,5 @@ run:
       terraform init
       terraform apply \
         -var application_image_tag=${TAG} \
-        -var nginx_image_tag='' \
+        -var nginx_image_tag=${NGINX_IMAGE_TAG} \
         -auto-approve
