@@ -9,6 +9,7 @@ const {
   TAG: appVersion,
   NGINX_IMAGE_TAG: nginxProxyVersion,
   NGINX_FORWARD_PROXY_IMAGE_TAG: nginxForwardProxyVersion,
+  TELEGRAF_IMAGE_TAG: telegrafVersion,
   ENVIRONMENT: env
 } = process.env
 
@@ -42,7 +43,8 @@ async function run () {
         taskDefinition,
         deploymentStatus: rolloutState,
         appVersion,
-        nginxProxyVersion
+        nginxProxyVersion,
+        telegrafVersion
       }
       if (nginxForwardProxyVersion) {
         deploymentDetails.nginxForwardProxyVersion = nginxForwardProxyVersion
