@@ -679,6 +679,7 @@ jobs:
           ACCOUNT: test
           ENVIRONMENT: test-12
           AWS_REGION: eu-west-1
+          NGINX_IMAGE_TAG: ((.:nginx_image_tag))
           <<: *aws_assumed_role_creds
     on_success:
       put: slack-notification
@@ -788,6 +789,7 @@ jobs:
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
           APP_NAME: frontend
+          NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *wait_for_deploy_params
 
   - name: smoke-test-frontend

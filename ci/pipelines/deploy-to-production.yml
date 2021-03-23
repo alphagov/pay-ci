@@ -560,6 +560,7 @@ jobs:
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
           APP_NAME: frontend
+          NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *wait_for_deploy_params
 
   - name: smoke-test-frontend-on-prod
