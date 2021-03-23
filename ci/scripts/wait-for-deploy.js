@@ -4,7 +4,13 @@ const AWS = require('aws-sdk')
 const ecs = new AWS.ECS()
 const MAX_RETRIES = 120
 const CHECK_INTERVAL = 5000
-const { APP_NAME: appName, TAG: appVersion, ENVIRONMENT: env } = process.env
+const {
+  APP_NAME: appName,
+  TAG: appVersion,
+  NGINX_IMAGE_TAG: nginxProxyVersion,
+  NGINX_FORWARD_PROXY_IMAGE_TAG: nginxForwardProxyVersion,
+  ENVIRONMENT: env
+} = process.env
 
 function describeServices () {
   const params = {
@@ -32,6 +38,15 @@ async function run () {
       clearInterval(deploymentChecker)
     } else {
       const { taskDefinition, rolloutState, rolloutStateReason } = uncompletedDeployments[0]
+      const deploymentDetails = {
+        taskDefinition,
+        deploymentStatus: rolloutState,
+        appVersion,
+        nginxProxyVersion
+      }
+      if (nginxForwardProxyVersion) {
+        deploymentDetails.nginxForwardProxyVersion = nginxForwardProxyVersion
+      }
       if (rolloutState === 'FAILED') {
         console.log(
           `Deployment failed.
@@ -42,7 +57,7 @@ async function run () {
       }
       if (rolloutState === 'IN_PROGRESS' && counter === 1) {
         console.log('Deployment details:')
-        console.table({ taskDefinition, deploymentStatus: rolloutState, appVersion })
+        console.table(deploymentDetails)
       }
     }
   }, CHECK_INTERVAL)
