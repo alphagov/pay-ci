@@ -816,6 +816,12 @@ jobs:
       - load_var: application_image_tag
         file: frontend-ecr-registry-test/tag
       - get: pay-ci
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: frontend
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -829,6 +835,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: frontend
           PACT_TAG: test-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-frontend-to-staging-ecr
     plan:
@@ -998,6 +1006,12 @@ jobs:
       - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - get: pay-ci
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: adminusers
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1011,6 +1025,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: adminusers
           PACT_TAG: test-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-adminusers-to-staging-ecr
     plan:
@@ -1180,6 +1196,12 @@ jobs:
       - load_var: application_image_tag
         file: connector-ecr-registry-test/tag
       - get: pay-ci
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: connector
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1193,6 +1215,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: connector
           PACT_TAG: test-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-connector-to-staging-ecr
     plan:
@@ -1312,7 +1336,6 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
-
   - name: ledger-pact-tag
     plan:
       - get: ledger-ecr-registry-test
@@ -1321,6 +1344,12 @@ jobs:
       - load_var: application_image_tag
         file: ledger-ecr-registry-test/tag
       - get: pay-ci
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: ledger
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1334,6 +1363,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: ledger
           PACT_TAG: test-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-ledger-to-staging-ecr
     plan:
@@ -1535,7 +1566,6 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
-
   - name: products-pact-tag
     plan:
       - get: products-ecr-registry-test
@@ -1544,6 +1574,12 @@ jobs:
       - load_var: application_image_tag
         file: products-ecr-registry-test/tag
       - get: pay-ci
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: products
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1557,6 +1593,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: products
           PACT_TAG: test-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-products-to-staging-ecr
     plan:
@@ -1676,7 +1714,6 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
-
   - name: products-ui-pact-tag
     plan:
       - get: products-ui-ecr-registry-test
@@ -1685,6 +1722,12 @@ jobs:
       - load_var: application_image_tag
         file: products-ui-ecr-registry-test/tag
       - get: pay-ci
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: products-ui
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1698,6 +1741,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: products-ui
           PACT_TAG: test-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-products-ui-to-staging-ecr
     plan:
@@ -1817,7 +1862,6 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
-
   - name: publicapi-pact-tag
     plan:
       - get: publicapi-ecr-registry-test
@@ -1826,6 +1870,12 @@ jobs:
       - load_var: application_image_tag
         file: publicapi-ecr-registry-test/tag
       - get: pay-ci
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: publicapi
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1839,6 +1889,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: publicapi
           PACT_TAG: test-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-publicapi-to-staging-ecr
     plan:
@@ -2112,6 +2164,12 @@ jobs:
       - load_var: application_image_tag
         file: selfservice-ecr-registry-test/tag
       - get: pay-ci
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: selfservice
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -2125,6 +2183,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: selfservice
           PACT_TAG: test-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-selfservice-to-staging-ecr
     plan:
