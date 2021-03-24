@@ -53,6 +53,16 @@ deploy_params: &deploy_params
   ACCOUNT: test
   ENVIRONMENT: test-12
 
+snippet_params_all_versions: &snippet_params_all_versions
+  ENV: test-12
+  APP_IMAGE_TAG: ((.:tag))
+  TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+
+snippet_params_app_version: &snippet_params_app_version
+  ENV: test-12
+  APP_IMAGE_TAG: ((.:tag))
+
 
 resources:
   - name: deploy-to-test-pipeline-definition
@@ -613,10 +623,7 @@ jobs:
         params:
           APP_NAME: toolbox
           ACTION_NAME: Deployment
-          ENV: test-12
-          APP_IMAGE_TAG: ((.:tag))
-          TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
-          NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+          <<: *snippet_params_all_versions
       - load_var: success_snippet
         file: snippet/success
       - load_var: failure_snippet
@@ -710,6 +717,14 @@ jobs:
         file: nginx-forward-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: frontend
+          ACTION_NAME: Deployment
+          NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -743,6 +758,8 @@ jobs:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: smoke-test-frontend
     plan:
@@ -831,6 +848,13 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: adminusers
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -862,6 +886,9 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: adminusers-db-migration
     plan:
       - get: pay-ci
@@ -988,6 +1015,13 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: connector
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1019,6 +1053,9 @@ jobs:
         params:
           APP_NAME: connector
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: connector-db-migration
     plan:
       - get: pay-ci
@@ -1144,6 +1181,13 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: ledger
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1175,6 +1219,9 @@ jobs:
         params:
           APP_NAME: ledger
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-ledger
     plan:
       - get: ledger-ecr-registry-test
@@ -1302,6 +1349,13 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: products
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1333,6 +1387,9 @@ jobs:
         params:
           APP_NAME: products
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: products-db-migration
     plan:
       - get: pay-ci
@@ -1458,6 +1515,13 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: products-ui
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1489,6 +1553,9 @@ jobs:
         params:
           APP_NAME: products-ui
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-products-ui
     plan:
       - get: products-ui-ecr-registry-test
@@ -1574,6 +1641,13 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: publicapi
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1605,6 +1679,9 @@ jobs:
         params:
           APP_NAME: publicapi
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-publicapi
     plan:
       - get: publicapi-ecr-registry-test
@@ -1690,6 +1767,13 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: publicauth
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1708,6 +1792,9 @@ jobs:
         params:
           APP_NAME: publicauth
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: publicauth-db-migration
     plan:
       - get: pay-ci
@@ -1810,6 +1897,13 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: selfservice
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1841,6 +1935,9 @@ jobs:
         params:
           APP_NAME: selfservice
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-selfservice
     plan:
       - get: selfservice-ecr-registry-test
@@ -1962,6 +2059,13 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: cardid
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1980,6 +2084,9 @@ jobs:
         params:
           APP_NAME: cardid
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-cardid
     plan:
       - get: cardid-ecr-registry-test
