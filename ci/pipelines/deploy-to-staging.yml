@@ -35,6 +35,47 @@ definitions:
     aws_ecr_registry_id: "((pay_aws_staging_account_id))"
     aws_region: eu-west-1
 
+  put_start_slack_notification: &put_start_slack_notification
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-announce'
+      text: "((.:start_snippet)) \n\n
+            Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+
+  put_success_slack_notification_p1: &put_success_slack_notification_p1
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        text: "((.:success_snippet)) \n\n
+              Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+
+  put_success_slack_notification: &put_success_slack_notification
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        text: "((.:success_snippet)) \n\n
+              Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+    
+  put_failure_slack_notification: &put_failure_slack_notification
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        text: "((.:failure_snippet)) \n\n
+              Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+  
+  snippet_params_all_versions: &snippet_params_all_versions
+    ENV: staging-2
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+    TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  
+  snippet_params_app_version: &snippet_params_app_version
+    ENV: staging-2
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+
   # Separate tasks for each combination of scenario/environment
   smoke-test-run-all-on-staging: &smoke-test-run-all-on-staging
     limit: 4
@@ -293,6 +334,10 @@ resources:
     source:
       repository: govukpay/nginx-forward-proxy
       <<: *aws_production_config
+  - name: slack-notification
+    type: slack-notification
+    source:
+      url: https://hooks.slack.com/services/((slack-notification-secret))
 
 resource_types:
   - name: registry-image-resource-1-1-0
@@ -300,6 +345,11 @@ resource_types:
     source:
       repository: concourse/registry-image-resource
       tag: "1.1.0"
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
 
 groups:
   - name: update-deploy-to-staging-pipeline
@@ -404,6 +454,19 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: selfservice
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -435,12 +498,27 @@ jobs:
         params:
           APP_NAME: selfservice
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-selfservice-on-staging
     plan:
       - get: selfservice-ecr-registry-staging
         trigger: true
         passed: [deploy-selfservice-to-staging]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: selfservice-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: selfservice
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -451,6 +529,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: selfservice-pact-tag
     plan:
       - get: selfservice-ecr-registry-staging
@@ -459,6 +540,16 @@ jobs:
       - load_var: application_image_tag
         file: selfservice-ecr-registry-staging/tag
       - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: selfservice
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -472,6 +563,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: selfservice
           PACT_TAG: staging-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-selfservice-to-production-ecr
     plan:
@@ -498,6 +591,19 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: connector
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -529,11 +635,26 @@ jobs:
         params:
           APP_NAME: connector
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-connector-on-staging
     plan:
       - get: connector-ecr-registry-staging
         trigger: true
         passed: [deploy-connector-to-staging]
+      - load_var: application_image_tag
+        file: connector-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: connector
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -544,6 +665,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: connector-pact-tag
     plan:
       - get: connector-ecr-registry-staging
@@ -552,6 +676,17 @@ jobs:
       - load_var: application_image_tag
         file: connector-ecr-registry-staging/tag
       - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: connector
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -565,6 +700,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: connector
           PACT_TAG: staging-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-connector-to-production-ecr
     plan:
@@ -594,6 +731,19 @@ jobs:
         file: telegraf-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: toolbox
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -612,12 +762,27 @@ jobs:
         params:
           APP_NAME: toolbox
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-toolbox-on-staging
     plan:
       - get: toolbox-ecr-registry-staging
         trigger: true
         passed: [deploy-toolbox-to-staging]
+      - load_var: application_image_tag
+        file: toolbox-ecr-registry-staging/tag
       - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: toolbox
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -628,6 +793,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-toolbox-to-production-ecr
     plan:
       - get: toolbox-ecr-registry-staging
@@ -656,6 +824,19 @@ jobs:
         file: nginx-forward-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: frontend
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -689,6 +870,9 @@ jobs:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-frontend-on-staging
     plan:
       - get: frontend-ecr-registry-staging
@@ -698,6 +882,18 @@ jobs:
         trigger: true
         passed: [deploy-frontend-to-staging]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: frontend-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: frontend
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -708,6 +904,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: frontend-pact-tag
     plan:
       - get: frontend-ecr-registry-staging
@@ -716,6 +915,16 @@ jobs:
       - load_var: application_image_tag
         file: frontend-ecr-registry-staging/tag
       - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: frontend
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -729,6 +938,9 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: frontend
           PACT_TAG: staging-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-frontend-to-production-ecr
     plan:
       - get: frontend-ecr-registry-staging
@@ -755,6 +967,19 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: adminusers
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start
+      - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -786,12 +1011,27 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-adminusers-on-staging
     plan:
       - get: adminusers-ecr-registry-staging
         trigger: true
         passed: [deploy-adminusers-to-staging]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: adminusers-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: adminusers
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -802,6 +1042,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: adminusers-pact-tag
     plan:
       - get: adminusers-ecr-registry-staging
@@ -810,6 +1053,16 @@ jobs:
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
       - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: adminusers
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -823,6 +1076,9 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: adminusers
           PACT_TAG: staging-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-adminusers-to-production-ecr
     plan:
       - get: adminusers-ecr-registry-staging
@@ -848,6 +1104,19 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: products
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -879,12 +1148,27 @@ jobs:
         params:
           APP_NAME: products
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-products-on-staging
     plan:
       - get: products-ecr-registry-staging
         trigger: true
         passed: [deploy-products-to-staging]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: products
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -895,6 +1179,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: products-pact-tag
     plan:
       - get: products-ecr-registry-staging
@@ -903,6 +1190,16 @@ jobs:
       - load_var: application_image_tag
         file: products-ecr-registry-staging/tag
       - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: products
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -916,6 +1213,9 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: products
           PACT_TAG: staging-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-products-to-production-ecr
     plan:
       - get: products-ecr-registry-staging
@@ -941,6 +1241,19 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: products-ui
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -972,12 +1285,27 @@ jobs:
         params:
           APP_NAME: products-ui
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-products-ui-on-staging
     plan:
       - get: products-ui-ecr-registry-staging
         trigger: true
         passed: [deploy-products-ui-to-staging]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ui-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: products-ui
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -988,6 +1316,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: products-ui-pact-tag
     plan:
       - get: products-ui-ecr-registry-staging
@@ -996,6 +1327,16 @@ jobs:
       - load_var: application_image_tag
         file: products-ui-ecr-registry-staging/tag
       - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: products-ui
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1009,6 +1350,9 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: products-ui
           PACT_TAG: staging-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-products-ui-to-production-ecr
     plan:
       - get: products-ui-ecr-registry-staging
@@ -1034,6 +1378,19 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: publicauth
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1052,12 +1409,27 @@ jobs:
         params:
           APP_NAME: publicauth
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-publicauth-on-staging
     plan:
       - get: publicauth-ecr-registry-staging
         trigger: true
         passed: [deploy-publicauth-to-staging]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: publicauth-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: publicauth
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1068,6 +1440,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-publicauth-to-production-ecr
     plan:
       - get: publicauth-ecr-registry-staging
@@ -1093,6 +1468,19 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: cardid
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1111,12 +1499,27 @@ jobs:
         params:
           APP_NAME: cardid
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-cardid-on-staging
     plan:
       - get: cardid-ecr-registry-staging
         trigger: true
         passed: [deploy-cardid-to-staging]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: cardid-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: cardid
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1127,6 +1530,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-cardid-to-production-ecr
     plan:
       - get: cardid-ecr-registry-staging
@@ -1152,6 +1558,19 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: publicapi
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1183,12 +1602,27 @@ jobs:
         params:
           APP_NAME: publicapi
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-publicapi-on-staging
     plan:
       - get: publicapi-ecr-registry-staging
         trigger: true
         passed: [deploy-publicapi-to-staging]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: publicapi-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: publicapi
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1199,6 +1633,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: publicapi-pact-tag
     plan:
       - get: publicapi-ecr-registry-staging
@@ -1207,6 +1644,17 @@ jobs:
       - load_var: application_image_tag
         file: publicapi-ecr-registry-staging/tag
       - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: publicapi
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1220,6 +1668,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: publicapi
           PACT_TAG: staging-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
           
   - name: push-publicapi-to-production-ecr
     plan:
@@ -1245,6 +1695,19 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: ledger
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start  
+      - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1276,12 +1739,27 @@ jobs:
         params:
           APP_NAME: ledger
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: smoke-test-ledger-on-staging
     plan:
       - get: ledger-ecr-registry-staging
         trigger: true
         passed: [deploy-ledger-to-staging]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: ledger-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: ledger
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1292,6 +1770,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: ledger-pact-tag
     plan:
       - get: ledger-ecr-registry-staging
@@ -1300,6 +1781,16 @@ jobs:
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
       - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: ledger
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1313,6 +1804,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: ledger
           PACT_TAG: staging-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
           
   - name: push-ledger-to-production-ecr
     plan:
