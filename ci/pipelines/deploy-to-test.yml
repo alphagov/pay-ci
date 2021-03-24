@@ -55,13 +55,13 @@ deploy_params: &deploy_params
 
 snippet_params_all_versions: &snippet_params_all_versions
   ENV: test-12
-  APP_IMAGE_TAG: ((.:tag))
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
 
 snippet_params_app_version: &snippet_params_app_version
   ENV: test-12
-  APP_IMAGE_TAG: ((.:tag))
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
 
 
 resources:
@@ -78,7 +78,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-7889-test-pipeline-notifications-all-the-things
+      branch: master
 
   # Github Releases
   - name: telegraf-git-release
@@ -655,7 +655,7 @@ jobs:
         trigger: true
         passed: [deploy-toolbox]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: toolbox-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -786,7 +786,7 @@ jobs:
         trigger: true
         passed: [deploy-frontend]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: frontend-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -978,7 +978,7 @@ jobs:
         trigger: true
         passed: [deploy-adminusers]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -1171,7 +1171,7 @@ jobs:
         trigger: true
         passed: [deploy-connector]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -1323,7 +1323,7 @@ jobs:
         trigger: true
         passed: [deploy-ledger]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: connector-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -1556,7 +1556,7 @@ jobs:
         trigger: true
         passed: [deploy-products]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: ledger-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -1707,7 +1707,7 @@ jobs:
         trigger: true
         passed: [deploy-products-ui]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -1858,7 +1858,7 @@ jobs:
         trigger: true
         passed: [deploy-publicapi]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: publicapi-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -2036,7 +2036,7 @@ jobs:
         trigger: true
         passed: [deploy-publicauth]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: publicauth-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -2157,7 +2157,7 @@ jobs:
         trigger: true
         passed: [deploy-selfservice]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
@@ -2332,7 +2332,7 @@ jobs:
         trigger: true
         passed: [deploy-cardid]
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: cardid-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml

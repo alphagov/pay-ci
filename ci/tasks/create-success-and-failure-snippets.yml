@@ -8,7 +8,7 @@ params:
   APP_NAME:
   ACTION_NAME:
   ENV:
-  APP_IMAGE_TAG:
+  APPLICATION_IMAGE_TAG:
   TELEGRAF_IMAGE_TAG:
   NGINX_IMAGE_TAG:
   NGINX_FORWARD_PROXY_IMAGE_TAG:
@@ -22,22 +22,23 @@ run:
       cat <<EOT >> snippet/success
       THIS MESSAGE RELATES TO FARGATE - IGNORE UNLESS WORKING ON MIGRATION
       :green-circle: ${ACTION_NAME} of ${APP_NAME} on ${ENV} was successful :tada:
+
       Version details:
       EOT
 
       cat <<EOT >> snippet/failure
       THIS MESSAGE RELATES TO FARGATE - IGNORE UNLESS WORKING ON MIGRATION
       :red_circle: ${ACTION_NAME} of ${APP_NAME} on ${ENV} failed
-      Version details:
 
+      Version details:
       EOT
 
-      APP_RELEASE_NUMBER=$(echo $APP_IMAGE_TAG| sed 's/-release//')
+      APP_RELEASE_NUMBER=$(echo ${APPLICATION_IMAGE_TAG} | sed 's/-release//')
       echo "${APP_NAME}: https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}" | \
       tee -a snippet/* || true
 
       [ -n "${NGINX_IMAGE_TAG}" ] && \
-      NGINX_RELEASE_NUMBER=$(echo $NGINX_IMAGE_TAG| sed 's/-release//') &&\
+      NGINX_RELEASE_NUMBER=$(echo ${NGINX_IMAGE_TAG} | sed 's/-release//') &&\
       echo "nginx proxy: https://github.com/alphagov/pay-nginx-proxy/releases/tag/alpha_release-${NGINX_RELEASE_NUMBER}" | \
       tee -a snippet/* ||  true
 
