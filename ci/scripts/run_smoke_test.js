@@ -67,8 +67,6 @@ async function run () {
     process.exit(1)
   }
 
-  const startedAt = Date.now()
-
   if (canaryStatus === 'wait') {
     // Wait 60 secs and continue
     console.log('Canary is not in a startable state. Wait 60s before starting.')
@@ -78,6 +76,8 @@ async function run () {
       console.log(error)
     }
   }
+
+  const startedAt = Date.now()
 
   try {
     console.log('Starting Canary')
