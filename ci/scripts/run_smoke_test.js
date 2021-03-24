@@ -4,13 +4,18 @@ const AWS = require('aws-sdk')
 const synthetics = new AWS.Synthetics()
 const s3 = new AWS.S3()
 const CHECK_INTERVAL = 5000
+const CANARY_TIMEOUT = 60000
 const { SMOKE_TEST_NAME } = process.env
 
 async function describeCanariesLastRun () {
   return synthetics.describeCanariesLastRun({}).promise()
 }
 
-function runCanary () {
+async function getCanary () {
+  return synthetics.getCanary({ Name: SMOKE_TEST_NAME }).promise()
+}
+
+function startCanary () {
   console.log(`Starting canary: ${SMOKE_TEST_NAME}`)
   // 'startCanary' should run it once then stop, according to its schedule config in terraform
   return synthetics.startCanary({ Name: SMOKE_TEST_NAME }).promise()
@@ -28,14 +33,65 @@ async function getS3Objects (splitLocation, prefix) {
   return s3.listObjects({ Bucket: splitLocation[0], Prefix: prefix }).promise()
 }
 
+function checkIfCanaryIsInStartableState (canary) {
+  const canaryStatus = canary.Canary.Status.State
+  switch (canaryStatus) {
+    case 'CREATING':
+    case 'STARTED':
+    case 'RUNNING':
+    case 'UPDATING':
+    case 'STOPPING':
+      return 'wait'
+    case 'STOPPED':
+      console.log('Canary is ready to start')
+      return 'ready'
+    case 'DELETING':
+    case 'ERROR':
+      throw new Error(`Unable to start canary in state ${canaryStatus}`)
+  }
+}
+
+function sleep (ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 async function run () {
-  const startedAt = Date.now()
+  // Assume the canary is ready for now
+  let canaryStatus = 'ready'
+
   try {
-    await runCanary()
+    const canary = await getCanary()
+    canaryStatus = checkIfCanaryIsInStartableState(canary)
   } catch (error) {
-    console.error(error)
-    process.exitCode = 1
-    return
+    console.log(error)
+    process.exit(1)
+  }
+
+  if (canaryStatus === 'wait') {
+    // Wait 60 secs and continue
+    console.log('Canary is not in a startable state. Wait 60s before starting.')
+    try {
+      await sleep(CANARY_TIMEOUT)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const startedAt = Date.now()
+
+  try {
+    console.log('Starting Canary')
+    await startCanary()
+  } catch (error) {
+    if (error.code === 'ConflictException') {
+      // Ignore subsequent ConflictExceptions, as we've already waited for a
+      // previous run to complete above.
+      // If the Canary has been started again by another process, use its results.
+      console.log('Canary is already running for this deploy')
+    } else {
+      console.log(error)
+      process.exit(1)
+    }
   }
 
   const deploymentChecker = setInterval(async () => {
