@@ -471,7 +471,6 @@ jobs:
         file: nginx-proxy-ecr-registry-prod/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-prod/tag
-      - task: get-git-sha-for-release-tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -485,6 +484,7 @@ jobs:
       - load_var: start_snippet
         file: snippet/start
       - <<: *put_start_slack_notification
+      - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: connector
@@ -1418,7 +1418,6 @@ jobs:
         file: snippet/success
       - load_var: failure_snippet
         file: snippet/failure
-      - task: get-git-sha-for-release-tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
