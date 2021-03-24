@@ -26,12 +26,14 @@ wait_for_deploy_params: &wait_for_deploy_params
   <<: *aws_assumed_role_creds
   TAG: ((.:tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   ENVIRONMENT: test-12
 
 deploy_params: &deploy_params
   <<: *aws_assumed_role_creds
   TAG: ((.:tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   ACCOUNT: test
   ENVIRONMENT: test-12
 
@@ -587,7 +589,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: toolbox_image_tag
+      - load_var: tag
         file: toolbox-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
@@ -641,46 +643,15 @@ jobs:
         file: assume-role/assume-role.json
         format: json
       - task: deploy-to-test
-        config:
-          platform: linux
-          inputs:
-            - name: pay-infra
-          image_resource:
-            type: registry-image
-            source:
-              repository: hashicorp/terraform
-              tag: 0.13.4
-          params:
-            APP_NAME: toolbox
-            APP_IMAGE_TAG: ((.:toolbox_image_tag))
-            TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
-            NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-            ACCOUNT: test
-            ENVIRONMENT: test-12
-            AWS_REGION: eu-west-1
-            <<: *aws_assumed_role_creds
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/microservices_v2/${APP_NAME}
-                terraform init
-                terraform apply \
-                  -var application_image_tag=${APP_IMAGE_TAG} \
-                  -var telegraf_image_tag=${TELEGRAF_IMAGE_TAG} \
-                  -var nginx_image_tag=${NGINX_IMAGE_TAG} \
-                  -auto-approve
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: toolbox
+          <<: *deploy_params
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
           APP_NAME: toolbox
-          TAG: ((.:toolbox_image_tag))
-          ACCOUNT: test
-          ENVIRONMENT: test-12
-          AWS_REGION: eu-west-1
-          NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-          <<: *aws_assumed_role_creds
+          <<: *wait_for_deploy_params
     on_success:
       put: slack-notification
       params:
@@ -750,6 +721,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
@@ -758,6 +731,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: nginx_forward_proxy_image_tag
         file: nginx-forward-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -869,12 +844,16 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: adminusers-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1022,12 +1001,16 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: connector-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1174,12 +1157,16 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: ledger-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1328,12 +1315,16 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: products-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1480,12 +1471,16 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: products-ui-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1592,12 +1587,16 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: publicapi-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1704,12 +1703,16 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: publicauth-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1820,12 +1823,16 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: selfservice-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1968,12 +1975,16 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: tag
         file: cardid-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
