@@ -655,6 +655,18 @@ jobs:
         trigger: true
         passed: [deploy-toolbox]
       - get: pay-ci
+      - load_var: tag
+        file: toolbox-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: toolbox
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -665,6 +677,8 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: push-toolbox-to-staging-ecr
     plan:
@@ -769,6 +783,18 @@ jobs:
         trigger: true
         passed: [deploy-frontend]
       - get: pay-ci
+      - load_var: tag
+        file: frontend-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: frontend
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -779,6 +805,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: frontend-pact-tag
     plan:
       - get: frontend-ecr-registry-test
@@ -935,6 +964,18 @@ jobs:
         trigger: true
         passed: [deploy-adminusers]
       - get: pay-ci
+      - load_var: tag
+        file: adminusers-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: adminusers
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -945,6 +986,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
 
   - name: adminusers-pact-tag
     plan:
@@ -1102,6 +1146,18 @@ jobs:
         trigger: true
         passed: [deploy-connector]
       - get: pay-ci
+      - load_var: tag
+        file: adminusers-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: adminusers
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1112,6 +1168,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
 
   - name: connector-pact-tag
     plan:
@@ -1228,6 +1287,18 @@ jobs:
         trigger: true
         passed: [deploy-ledger]
       - get: pay-ci
+      - load_var: tag
+        file: connector-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: connector
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1238,6 +1309,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
 
   - name: ledger-pact-tag
     plan:
@@ -1436,6 +1510,18 @@ jobs:
         trigger: true
         passed: [deploy-products]
       - get: pay-ci
+      - load_var: tag
+        file: ledger-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: ledger
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1446,6 +1532,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
 
   - name: products-pact-tag
     plan:
@@ -1562,6 +1651,18 @@ jobs:
         trigger: true
         passed: [deploy-products-ui]
       - get: pay-ci
+      - load_var: tag
+        file: products-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: products
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1572,6 +1673,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
 
   - name: products-ui-pact-tag
     plan:
@@ -1688,6 +1792,18 @@ jobs:
         trigger: true
         passed: [deploy-publicapi]
       - get: pay-ci
+      - load_var: tag
+        file: publicapi-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: publicapi
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1698,6 +1814,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
 
   - name: publicapi-pact-tag
     plan:
@@ -1841,6 +1960,18 @@ jobs:
         trigger: true
         passed: [deploy-publicauth]
       - get: pay-ci
+      - load_var: tag
+        file: publicauth-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: publicauth
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1851,6 +1982,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-publicauth-to-staging-ecr
     plan:
       - get: publicauth-ecr-registry-test
@@ -1944,6 +2078,18 @@ jobs:
         trigger: true
         passed: [deploy-selfservice]
       - get: pay-ci
+      - load_var: tag
+        file: adminusers-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: selfservice
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1954,6 +2100,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
 
   - name: selfservice-pact-tag
     plan:
@@ -2093,6 +2242,18 @@ jobs:
         trigger: true
         passed: [deploy-cardid]
       - get: pay-ci
+      - load_var: tag
+        file: cardid-ecr-registry-test/tag
+      - task: create-success-and-failure-snippets
+        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+        params:
+          APP_NAME: cardid
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -2103,6 +2264,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-cardid-to-staging-ecr
     plan:
       - get: cardid-ecr-registry-test
