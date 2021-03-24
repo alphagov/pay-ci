@@ -6,14 +6,14 @@ definitions:
 
   wait_for_deploy_params: &wait_for_deploy_params
     <<: *aws_assumed_role_creds
-    TAG: ((.:tag))
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
     ENVIRONMENT: staging-2
 
   deploy_params: &deploy_params
     <<: *aws_assumed_role_creds
-    TAG: ((.:tag))
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
     ACCOUNT: staging
@@ -408,7 +408,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: selfservice
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -463,7 +463,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: selfservice
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -502,7 +502,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: connector
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -556,7 +556,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: connector
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -660,7 +660,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: frontend
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -720,7 +720,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: frontend
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -759,7 +759,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: adminusers
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -814,7 +814,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: adminusers
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -852,7 +852,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -907,7 +907,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -945,7 +945,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products-ui
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1000,7 +1000,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products-ui
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1156,7 +1156,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: publicapi
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1211,7 +1211,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: publicapi
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1249,7 +1249,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: ledger
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1304,7 +1304,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: ledger
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact

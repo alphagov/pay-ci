@@ -3,7 +3,7 @@
 const fs = require('fs')
 const { Octokit } = require('@octokit/rest')
 const octokit = new Octokit()
-const { TAG: imageTag, APP_NAME: appName } = process.env
+const { APPLICATION_IMAGE_TAG: imageTag, APP_NAME: appName } = process.env
 
 async function run () {
   try {

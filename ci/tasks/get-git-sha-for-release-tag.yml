@@ -6,7 +6,7 @@ image_resource:
     repository: govukpay/node-runner
 params:
   APP_NAME:
-  TAG: #eg 1339-release
+  APPLICATION_IMAGE_TAG: #eg 1339-release
 inputs:
   - name: pay-ci
 outputs:

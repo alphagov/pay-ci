@@ -24,14 +24,14 @@ aws_assumed_role_creds: &aws_assumed_role_creds
 
 wait_for_deploy_params: &wait_for_deploy_params
   <<: *aws_assumed_role_creds
-  TAG: ((.:tag))
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
   TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   ENVIRONMENT: test-12
 
 deploy_params: &deploy_params
   <<: *aws_assumed_role_creds
-  TAG: ((.:tag))
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
   TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   ACCOUNT: test
@@ -589,7 +589,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: toolbox-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
@@ -725,7 +725,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: frontend-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
@@ -737,7 +737,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: frontend
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -790,14 +790,14 @@ jobs:
       - get: frontend-ecr-registry-test
         passed: [smoke-test-frontend]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: frontend-ecr-registry-test/tag
       - get: pay-ci  
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: frontend
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -848,7 +848,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
@@ -858,7 +858,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: adminusers
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -901,7 +901,7 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - load_var: tag
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - task: run-db-migration
         config:
@@ -920,7 +920,7 @@ jobs:
             AWS_REGION: "eu-west-1"
             CLUSTER_NAME: "test-12-fargate"
             APP_NAME: "adminusers"
-            TAG: ((.:tag))
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           run:
             path: node
             args:
@@ -947,14 +947,14 @@ jobs:
       - get: adminusers-ecr-registry-test
         passed: [smoke-test-adminusers]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: adminusers
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1005,7 +1005,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: connector-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
@@ -1015,7 +1015,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: connector
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1058,7 +1058,7 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - load_var: tag
+      - load_var: application_image_tag
         file: connector-ecr-registry-test/tag
       - task: run-db-migration
         config:
@@ -1077,7 +1077,7 @@ jobs:
             AWS_REGION: "eu-west-1"
             CLUSTER_NAME: "test-12-fargate"
             APP_NAME: "connector"
-            TAG: ((.:tag))
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           run:
             path: node
             args:
@@ -1104,14 +1104,14 @@ jobs:
       - get: connector-ecr-registry-test
         passed: [smoke-test-connector]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: connector-ecr-registry-test/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: connector
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1161,7 +1161,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: ledger-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
@@ -1171,7 +1171,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: ledger
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1220,14 +1220,14 @@ jobs:
       - get: ledger-ecr-registry-test
         passed: [smoke-test-ledger]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: ledger-ecr-registry-test/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: ledger
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1265,7 +1265,7 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - load_var: tag
+      - load_var: application_image_tag
         file: ledger-ecr-registry-test/tag
       - task: run-db-migration
         config:
@@ -1284,7 +1284,7 @@ jobs:
             AWS_REGION: "eu-west-1"
             CLUSTER_NAME: "test-12-fargate"
             APP_NAME: "ledger"
-            TAG: ((.:tag))
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           run:
             path: node
             args:
@@ -1319,7 +1319,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
@@ -1329,7 +1329,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1372,7 +1372,7 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ecr-registry-test/tag
       - task: run-db-migration
         config:
@@ -1391,7 +1391,7 @@ jobs:
             AWS_REGION: "eu-west-1"
             CLUSTER_NAME: "test-12-fargate"
             APP_NAME: "products"
-            TAG: ((.:tag))
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           run:
             path: node
             args:
@@ -1418,14 +1418,14 @@ jobs:
       - get: products-ecr-registry-test
         passed: [smoke-test-products]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ecr-registry-test/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1475,7 +1475,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ui-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
@@ -1485,7 +1485,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products-ui
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1534,14 +1534,14 @@ jobs:
       - get: products-ui-ecr-registry-test
         passed: [smoke-test-products-ui]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ui-ecr-registry-test/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products-ui
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1591,7 +1591,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: publicapi-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
@@ -1601,7 +1601,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: publicapi
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1650,14 +1650,14 @@ jobs:
       - get: publicapi-ecr-registry-test
         passed: [smoke-test-publicapi]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: publicapi-ecr-registry-test/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: publicapi
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1707,7 +1707,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: publicauth-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
@@ -1747,7 +1747,7 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - load_var: tag
+      - load_var: application_image_tag
         file: publicauth-ecr-registry-test/tag
       - task: run-db-migration
         config:
@@ -1766,7 +1766,7 @@ jobs:
             AWS_REGION: "eu-west-1"
             CLUSTER_NAME: "test-12-fargate"
             APP_NAME: "publicauth"
-            TAG: ((.:tag))
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           run:
             path: node
             args:
@@ -1827,7 +1827,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: selfservice-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
@@ -1837,7 +1837,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: selfservice
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1886,14 +1886,14 @@ jobs:
       - get: selfservice-ecr-registry-test
         passed: [smoke-test-selfservice]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: selfservice-ecr-registry-test/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: selfservice
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1979,7 +1979,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: cardid-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
