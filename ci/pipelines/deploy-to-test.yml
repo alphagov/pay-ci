@@ -33,7 +33,7 @@ put_failure_slack_notification: &put_failure_slack_notification
   on_failure:
     put: slack-notification
     params:
-      channel: '#govuk-pay-activity'
+      channel: '#govuk-pay-announce'
       text: "((.:failure_snippet)) \n\n
             Build: https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
   
@@ -739,6 +739,9 @@ jobs:
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -892,6 +895,9 @@ jobs:
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1082,6 +1088,9 @@ jobs:
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1271,6 +1280,9 @@ jobs:
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1461,6 +1473,9 @@ jobs:
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1649,6 +1664,9 @@ jobs:
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1797,6 +1815,9 @@ jobs:
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1945,6 +1966,9 @@ jobs:
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -2090,6 +2114,9 @@ jobs:
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -2275,6 +2302,9 @@ jobs:
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
       - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
