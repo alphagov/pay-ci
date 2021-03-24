@@ -26,6 +26,7 @@ async function run () {
   let counter = 0
   const deploymentChecker = setInterval(async () => {
     counter++
+    console.log(`Count ${counter} of ${MAX_RETRIES}`)
     if (counter === MAX_RETRIES) {
       console.log(`Deployment did not complete after ${MAX_RETRIES * CHECK_INTERVAL} seconds.`)
       process.exitCode = 1
@@ -34,21 +35,27 @@ async function run () {
     const data = await describeServices()
     uncompletedDeployments = data.services[0].deployments
       .filter(deployment => deployment.rolloutState !== 'COMPLETED')
+    const { taskDefinition, rolloutState, rolloutStateReason } = uncompletedDeployments[0]
+    const deploymentDetails = {
+      taskDefinition,
+      deploymentStatus: rolloutState,
+      appVersion,
+      nginxProxyVersion,
+      telegrafVersion
+    }
+    if (nginxForwardProxyVersion) {
+      deploymentDetails.nginxForwardProxyVersion = nginxForwardProxyVersion
+    }
+
+    if (counter === 1) {
+      console.log('Deployment details:')
+      console.table(deploymentDetails)
+    }
+
     if (uncompletedDeployments.length === 0) {
       console.log('Deployment successful')
       clearInterval(deploymentChecker)
     } else {
-      const { taskDefinition, rolloutState, rolloutStateReason } = uncompletedDeployments[0]
-      const deploymentDetails = {
-        taskDefinition,
-        deploymentStatus: rolloutState,
-        appVersion,
-        nginxProxyVersion,
-        telegrafVersion
-      }
-      if (nginxForwardProxyVersion) {
-        deploymentDetails.nginxForwardProxyVersion = nginxForwardProxyVersion
-      }
       if (rolloutState === 'FAILED') {
         console.log(
           `Deployment failed.
@@ -56,10 +63,6 @@ async function run () {
         )
         process.exitCode = 1
         clearInterval(deploymentChecker)
-      }
-      if (rolloutState === 'IN_PROGRESS' && counter === 1) {
-        console.log('Deployment details:')
-        console.table(deploymentDetails)
       }
     }
   }, CHECK_INTERVAL)
