@@ -398,7 +398,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: selfservice-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -456,7 +456,7 @@ jobs:
       - get: selfservice-ecr-registry-staging
         passed: [smoke-test-selfservice-on-staging]
         trigger: true
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: selfservice-ecr-registry-staging/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
@@ -492,7 +492,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: connector-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -549,7 +549,7 @@ jobs:
       - get: connector-ecr-registry-staging
         passed: [smoke-test-connector-on-staging]
         trigger: true
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: connector-ecr-registry-staging/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
@@ -588,7 +588,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: toolbox-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
@@ -648,7 +648,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: frontend-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -713,7 +713,7 @@ jobs:
       - get: frontend-ecr-registry-staging
         passed: [smoke-test-frontend-on-staging]
         trigger: true
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: frontend-ecr-registry-staging/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
@@ -749,7 +749,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -807,7 +807,7 @@ jobs:
       - get: adminusers-ecr-registry-staging
         passed: [smoke-test-adminusers-on-staging]
         trigger: true
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
@@ -842,7 +842,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: products-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -900,7 +900,7 @@ jobs:
       - get: products-ecr-registry-staging
         passed: [smoke-test-products-on-staging]
         trigger: true
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: products-ecr-registry-staging/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
@@ -935,7 +935,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: products-ui-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -993,7 +993,7 @@ jobs:
       - get: products-ui-ecr-registry-staging
         passed: [smoke-test-products-ui-on-staging]
         trigger: true
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: products-ui-ecr-registry-staging/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
@@ -1028,7 +1028,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: publicauth-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -1087,7 +1087,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: cardid-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -1146,7 +1146,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: publicapi-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -1204,7 +1204,7 @@ jobs:
       - get: publicapi-ecr-registry-staging
         passed: [smoke-test-publicapi-on-staging]
         trigger: true
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: publicapi-ecr-registry-staging/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
@@ -1239,7 +1239,7 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
@@ -1297,7 +1297,7 @@ jobs:
       - get: ledger-ecr-registry-staging
         passed: [smoke-test-ledger-on-staging]
         trigger: true
-      - load_var: ((.:application_image_tag))
+      - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
