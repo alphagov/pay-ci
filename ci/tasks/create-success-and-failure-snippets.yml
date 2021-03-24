@@ -20,13 +20,16 @@ run:
     - -c
     - |
       cat <<EOT >> snippet/success
+      THIS MESSAGE RELATES TO FARGATE - IGNORE UNLESS WORKING ON MIGRATION
       :green-circle: ${ACTION_NAME} of ${APP_NAME} on ${ENV} was successful :tada:
       Version details:
       EOT
 
       cat <<EOT >> snippet/failure
+      THIS MESSAGE RELATES TO FARGATE - IGNORE UNLESS WORKING ON MIGRATION
       :red_circle: ${ACTION_NAME} of ${APP_NAME} on ${ENV} failed
       Version details:
+
       EOT
 
       APP_RELEASE_NUMBER=$(echo $APP_IMAGE_TAG| sed 's/-release//')
@@ -46,3 +49,5 @@ run:
       [ -n "${NGINX_FORWARD_PROXY_IMAGE_TAG}" ] && \
       echo "nginx forward proxy: https://github.com/alphagov/pay-nginx-forward-proxy/releases/tag/${NGINX_FORWARD_PROXY_IMAGE_TAG}" | \
       tee -a snippet/* || true
+
+
