@@ -6,7 +6,7 @@ const MAX_RETRIES = 120
 const CHECK_INTERVAL = 5000
 const {
   APP_NAME: appName,
-  TAG: appVersion,
+  APPLICATION_IMAGE_TAG: appVersion,
   NGINX_IMAGE_TAG: nginxProxyVersion,
   NGINX_FORWARD_PROXY_IMAGE_TAG: nginxForwardProxyVersion,
   TELEGRAF_IMAGE_TAG: telegrafVersion,

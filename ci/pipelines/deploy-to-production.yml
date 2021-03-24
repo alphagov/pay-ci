@@ -6,14 +6,14 @@ definitions:
 
   wait_for_deploy_params: &wait_for_deploy_params
     <<: *aws_assumed_role_creds
-    TAG: ((.:tag))
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
     ENVIRONMENT: production-2
 
   deploy_params: &deploy_params
     <<: *aws_assumed_role_creds
-    TAG: ((.:tag))
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
     ACCOUNT: production
@@ -291,7 +291,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: selfservice-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -301,7 +301,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: selfservice
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -349,14 +349,14 @@ jobs:
       - get: selfservice-ecr-registry-prod
         passed: [smoke-test-selfservice-on-prod]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: selfservice-ecr-registry-prod/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: selfservice
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -373,7 +373,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: connector-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -383,7 +383,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: connector
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -431,14 +431,14 @@ jobs:
       - get: connector-ecr-registry-prod
         passed: [smoke-test-connector-on-prod]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: connector-ecr-registry-prod/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: connector
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -457,7 +457,7 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: toolbox-ecr-registry-prod/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-prod/tag
@@ -506,7 +506,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: frontend-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -518,7 +518,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: frontend
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -569,14 +569,14 @@ jobs:
       - get: frontend-ecr-registry-prod
         passed: [smoke-test-frontend-on-prod]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: frontend-ecr-registry-prod/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: frontend
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -593,7 +593,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -603,7 +603,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: adminusers
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -651,14 +651,14 @@ jobs:
       - get: adminusers-ecr-registry-prod
         passed: [smoke-test-adminusers-on-prod]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: adminusers-ecr-registry-prod/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: adminusers
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -675,7 +675,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -685,7 +685,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -733,14 +733,14 @@ jobs:
       - get: products-ecr-registry-prod
         passed: [smoke-test-products-on-prod]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ecr-registry-prod/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -757,7 +757,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ui-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -767,7 +767,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products-ui
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -815,14 +815,14 @@ jobs:
       - get: products-ui-ecr-registry-prod
         passed: [smoke-test-products-ui-on-prod]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: products-ui-ecr-registry-prod/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: products-ui
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -839,7 +839,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: publicauth-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -887,7 +887,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: cardid-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -934,7 +934,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: publicapi-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -944,7 +944,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: publicapi
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -992,14 +992,14 @@ jobs:
       - get: publicapi-ecr-registry-prod
         passed: [smoke-test-publicapi-on-prod]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: publicapi-ecr-registry-prod/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: publicapi
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1015,7 +1015,7 @@ jobs:
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
       - get: pay-ci
-      - load_var: tag
+      - load_var: application_image_tag
         file: ledger-ecr-registry-prod/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-prod/tag
@@ -1025,7 +1025,7 @@ jobs:
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: ledger
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1073,14 +1073,14 @@ jobs:
       - get: ledger-ecr-registry-prod
         passed: [smoke-test-ledger-on-prod]
         trigger: true
-      - load_var: tag
+      - load_var: application_image_tag
         file: ledger-ecr-registry-prod/tag
       - get: pay-ci
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
           APP_NAME: ledger
-          TAG: ((.:tag))
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
