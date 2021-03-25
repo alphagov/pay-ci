@@ -2158,7 +2158,7 @@ jobs:
         passed: [deploy-selfservice]
       - get: pay-ci
       - load_var: application_image_tag
-        file: adminusers-ecr-registry-test/tag
+        file: selfservice-ecr-registry-test/tag
       - task: create-success-and-failure-snippets
         file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
         params:
@@ -2197,6 +2197,10 @@ jobs:
           APP_NAME: selfservice
           ACTION_NAME: Pact tag
           <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
