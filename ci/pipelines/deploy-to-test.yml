@@ -636,6 +636,29 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-aws-sdk-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-12-fargate"
+            APP_NAME: "toolbox"
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+            TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
+            NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/check-release-versions.js
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
