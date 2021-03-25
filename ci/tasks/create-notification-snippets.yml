@@ -19,6 +19,13 @@ run:
   args:
     - -c
     - |
+      cat <<EOT >> snippet/start
+      THIS MESSAGE RELATES TO FARGATE - IGNORE UNLESS WORKING ON MIGRATION
+      :rocket: ${ACTION_NAME} of ${APP_NAME} on ${ENV} is beginning
+
+      Version details:
+      EOT
+
       cat <<EOT >> snippet/success
       THIS MESSAGE RELATES TO FARGATE - IGNORE UNLESS WORKING ON MIGRATION
       :green-circle: ${ACTION_NAME} of ${APP_NAME} on ${ENV} was successful :tada:
