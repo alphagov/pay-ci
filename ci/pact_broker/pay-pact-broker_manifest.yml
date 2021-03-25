@@ -9,7 +9,7 @@ applications:
     ') && ./entrypoint.sh config.ru
   disk_quota: 1G
   docker:
-    image: pactfoundation/pact-broker:2.54.0.0
+    image: pactfoundation/pact-broker:2.79.0.1
   env:
     PACT_BROKER_PUBLIC_HEARTBEAT: "true"
     PACT_BROKER_BASIC_AUTH_USERNAME: ((pact-broker-username))
