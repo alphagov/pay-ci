@@ -618,8 +618,8 @@ jobs:
         file: telegraf-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: toolbox
           ACTION_NAME: Deployment
@@ -657,8 +657,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: toolbox-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: toolbox
           ACTION_NAME: Smoke test
@@ -731,8 +731,8 @@ jobs:
         file: nginx-forward-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: frontend
           ACTION_NAME: Deployment
@@ -788,8 +788,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: frontend-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: frontend
           ACTION_NAME: Smoke test
@@ -819,8 +819,8 @@ jobs:
       - load_var: application_image_tag
         file: frontend-ecr-registry-test/tag
       - get: pay-ci
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: frontend
           ACTION_NAME: Pact tag
@@ -888,8 +888,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: adminusers
           ACTION_NAME: Deployment
@@ -980,8 +980,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: adminusers
           ACTION_NAME: Smoke test
@@ -1012,8 +1012,8 @@ jobs:
       - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - get: pay-ci
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: adminusers
           ACTION_NAME: Pact tag
@@ -1081,8 +1081,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: connector
           ACTION_NAME: Deployment
@@ -1173,8 +1173,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: adminusers
           ACTION_NAME: Smoke test
@@ -1205,8 +1205,8 @@ jobs:
       - load_var: application_image_tag
         file: connector-ecr-registry-test/tag
       - get: pay-ci
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: connector
           ACTION_NAME: Pact tag
@@ -1273,8 +1273,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: ledger
           ACTION_NAME: Deployment
@@ -1325,8 +1325,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: connector-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: connector
           ACTION_NAME: Smoke test
@@ -1356,8 +1356,8 @@ jobs:
       - load_var: application_image_tag
         file: ledger-ecr-registry-test/tag
       - get: pay-ci
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: ledger
           ACTION_NAME: Pact tag
@@ -1466,8 +1466,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: products
           ACTION_NAME: Deployment
@@ -1558,8 +1558,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: ledger-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: ledger
           ACTION_NAME: Smoke test
@@ -1589,8 +1589,8 @@ jobs:
       - load_var: application_image_tag
         file: products-ecr-registry-test/tag
       - get: pay-ci
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: products
           ACTION_NAME: Pact tag
@@ -1657,8 +1657,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: products-ui
           ACTION_NAME: Deployment
@@ -1709,8 +1709,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: products-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: products
           ACTION_NAME: Smoke test
@@ -1740,8 +1740,8 @@ jobs:
       - load_var: application_image_tag
         file: products-ui-ecr-registry-test/tag
       - get: pay-ci
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: products-ui
           ACTION_NAME: Pact tag
@@ -1808,8 +1808,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: publicapi
           ACTION_NAME: Deployment
@@ -1860,8 +1860,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: publicapi-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: publicapi
           ACTION_NAME: Smoke test
@@ -1891,8 +1891,8 @@ jobs:
       - load_var: application_image_tag
         file: publicapi-ecr-registry-test/tag
       - get: pay-ci
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: publicapi
           ACTION_NAME: Pact tag
@@ -1959,8 +1959,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: publicauth
           ACTION_NAME: Deployment
@@ -2038,8 +2038,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: publicauth-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: publicauth
           ACTION_NAME: Smoke test
@@ -2107,8 +2107,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: selfservice
           ACTION_NAME: Deployment
@@ -2159,8 +2159,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: selfservice-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: selfservice
           ACTION_NAME: Smoke test
@@ -2191,8 +2191,8 @@ jobs:
       - load_var: application_image_tag
         file: selfservice-ecr-registry-test/tag
       - get: pay-ci
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: selfservice
           ACTION_NAME: Pact tag
@@ -2299,8 +2299,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: cardid
           ACTION_NAME: Deployment
@@ -2338,8 +2338,8 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: cardid-ecr-registry-test/tag
-      - task: create-success-and-failure-snippets
-        file: pay-ci/ci/tasks/create-success-and-failure-snippets.yml
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: cardid
           ACTION_NAME: Smoke test
