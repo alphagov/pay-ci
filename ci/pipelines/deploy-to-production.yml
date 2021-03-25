@@ -19,6 +19,14 @@ definitions:
     ACCOUNT: production
     ENVIRONMENT: production-2
 
+  check_release_versions_params: &check_release_versions_params
+    <<: *aws_assumed_role_creds
+    AWS_REGION: "eu-west-1"
+    CLUSTER_NAME: "production-2-fargate"
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+    TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+
   aws_prod_config: &aws_prod_config
     aws_access_key_id: ((readonly_access_key_id))
     aws_secret_access_key: ((readonly_secret_access_key))
@@ -380,6 +388,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: selfservice
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -400,7 +413,7 @@ jobs:
         passed: [deploy-selfservice-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: selfservice-ecr-registry-staging/tag
+        file: selfservice-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -505,6 +518,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: connector
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -620,6 +638,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: toolbox
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -700,6 +723,12 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: frontend
+          NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-frontend.yml
         params:
@@ -828,6 +857,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: adminusers
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -951,6 +985,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: products
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -1075,6 +1114,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: products-ui
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -1187,6 +1231,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: publicauth
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -1265,6 +1314,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: cardid
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -1356,6 +1410,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: publicapi
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -1481,6 +1540,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: ledger
       - task: deploy-to-prod
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
