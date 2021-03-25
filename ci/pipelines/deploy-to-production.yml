@@ -1437,6 +1437,7 @@ jobs:
   - name: deploy-ledger-to-prod
     plan:
       - get: ledger-ecr-registry-prod
+        trigger: true
       - get: nginx-proxy-ecr-registry-prod
       - get: telegraf-ecr-registry-prod
       - get: pay-infra
