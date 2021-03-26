@@ -29,9 +29,9 @@ run:
         curl -v --fail -X PUT -H "Content-Type: application/json" \
         -d@"$pact" \
         --user ${broker_username}:${broker_password} \
-        https://pay-concourse-pact-broker.cloudapps.digital/pacts/provider/"${provider_name}"/consumer/"${consumer_name}"/version/"${version}"
+        https://pay-pact-broker.cloudapps.digital/pacts/provider/"${provider_name}"/consumer/"${consumer_name}"/version/"${version}"
         
         curl -v --fail -X PUT -H "Content-Type: application/json" \
         --user ${broker_username}:${broker_password} \
-        https://pay-concourse-pact-broker.cloudapps.digital/pacticipants/"${consumer_name}"/versions/"${version}"/tags/"${pr}"
+        https://pay-pact-broker.cloudapps.digital/pacticipants/"${consumer_name}"/versions/"${version}"/tags/"${pr}"
       done
