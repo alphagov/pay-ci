@@ -77,7 +77,7 @@ definitions:
 
   # Separate tasks for each combination of scenario/environment
   smoke-test-run-all-on-production: &smoke-test-run-all-on-production
-    limit: 4
+    limit: 8
     steps:
       - task: run_create_card_payment_sandbox-production
         file: pay-ci/ci/tasks/run-smoke-test.yml

@@ -529,7 +529,7 @@ definitions:
       APP_GIT_DIR: updateThisValue
   # Separate tasks for each combination of scenario/environment
   - &smoke-test-run-all-on-test
-    limit: 4
+    limit: 8
     steps:
       - task: run_create_card_payment_sandbox-test
         file: pay-ci/ci/tasks/run-smoke-test.yml

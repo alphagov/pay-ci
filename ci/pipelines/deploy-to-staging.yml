@@ -87,7 +87,7 @@ definitions:
 
   # Separate tasks for each combination of scenario/environment
   smoke-test-run-all-on-staging: &smoke-test-run-all-on-staging
-    limit: 4
+    limit: 8
     steps:
       - task: run_create_card_payment_sandbox-staging
         file: pay-ci/ci/tasks/run-smoke-test.yml
