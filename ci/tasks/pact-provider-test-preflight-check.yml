@@ -7,7 +7,7 @@ params:
   consumer:
   broker_username: ((pact-broker-username))
   broker_password: ((pact-broker-password))
-  broker_url: "https://pay-concourse-pact-broker.cloudapps.digital"
+  broker_url: "https://pay-pact-broker.cloudapps.digital"
 inputs:
   - name: src
 outputs:
@@ -34,7 +34,7 @@ run:
 
       if [[ -z "$consumer" || "$consumer" == null ]]; then
         echo "Pact tests being run in provider context. Creating parameters..."
-        echo main > pact_params/consumer_tag
+        echo master > pact_params/consumer_tag
         touch pact_params/verification_needed
       else
 
