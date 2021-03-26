@@ -661,8 +661,8 @@ jobs:
     plan:
       - get: connector-ecr-registry-staging
         trigger: true
-      - get: pay-ci
         passed: [deploy-connector-to-staging]
+      - get: pay-ci
       - load_var: application_image_tag
         file: connector-ecr-registry-staging/tag
       - task: create-notification-snippets
