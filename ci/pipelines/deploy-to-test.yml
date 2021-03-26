@@ -1772,7 +1772,7 @@ jobs:
         passed: [deploy-products-ui]
       - get: pay-ci
       - load_var: application_image_tag
-        file: products-ecr-registry-test/tag
+        file: products-ui-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
