@@ -1575,6 +1575,9 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-production
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
   - name: ledger-pact-tag
     plan:
       - get: ledger-ecr-registry-prod
