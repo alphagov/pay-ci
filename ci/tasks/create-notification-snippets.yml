@@ -36,12 +36,12 @@ run:
       [ -n "${NGINX_IMAGE_TAG}" ] && \
       NGINX_RELEASE_NUMBER=$(echo ${NGINX_IMAGE_TAG} | sed 's/-release//') &&\
       echo "<https://github.com/alphagov/pay-nginx-proxy/releases/tag/alpha_release-${NGINX_RELEASE_NUMBER}|nginx-proxy v${NGINX_RELEASE_NUMBER}>" | \
-      tee -a snippet/* || true
+      tee -a snippet/failure || true
 
       [ -n "${TELEGRAF_IMAGE_TAG}" ] && \
       echo " | <https://github.com/alphagov/pay-telegraf/releases/tag/${TELEGRAF_IMAGE_TAG}|telegraf v${TELEGRAF_IMAGE_TAG}>" | \
-      tee -a snippet/* || true
+      tee -a snippet/failure || true
 
       [ -n "${NGINX_FORWARD_PROXY_IMAGE_TAG}" ] && \
       echo " | <https://github.com/alphagov/pay-nginx-forward-proxy/releases/tag/${NGINX_FORWARD_PROXY_IMAGE_TAG}|nginx-forward-proxy v${NGINX_FORWARD_PROXY_IMAGE_TAG}>" | \
-      tee -a snippet/* || true
+      tee -a snippet/failure || true
