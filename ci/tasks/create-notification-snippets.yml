@@ -22,7 +22,7 @@ run:
       APP_RELEASE_NUMBER=$(echo ${APPLICATION_IMAGE_TAG} | sed 's/-release//')
 
       cat <<EOT >> snippet/start
-      :rocket: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} ${APP_RELEASE_NUMBER}-release> is beginning
+      :rocket: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} ${APP_RELEASE_NUMBER}-release> on ${ENV} is beginning
       EOT
 
       cat <<EOT >> snippet/success
