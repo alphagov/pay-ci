@@ -19,43 +19,29 @@ run:
   args:
     - -c
     - |
-      cat <<EOT >> snippet/start
-      THIS MESSAGE RELATES TO FARGATE - IGNORE UNLESS WORKING ON MIGRATION
-      :rocket: ${ACTION_NAME} of ${APP_NAME} on ${ENV} is beginning
+      APP_RELEASE_NUMBER=$(echo ${APPLICATION_IMAGE_TAG} | sed 's/-release//')
 
-      Version details:
+      cat <<EOT >> snippet/start
+      :rocket: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} ${APP_RELEASE_NUMBER}-release> on ${ENV} is beginning
       EOT
 
       cat <<EOT >> snippet/success
-      THIS MESSAGE RELATES TO FARGATE - IGNORE UNLESS WORKING ON MIGRATION
-      :green-circle: ${ACTION_NAME} of ${APP_NAME} on ${ENV} was successful :tada:
-
-      Version details:
+      :green-circle: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} was successful :tada:
       EOT
 
       cat <<EOT >> snippet/failure
-      THIS MESSAGE RELATES TO FARGATE - IGNORE UNLESS WORKING ON MIGRATION
-      :red_circle: ${ACTION_NAME} of ${APP_NAME} on ${ENV} failed
-
-      Version details:
+      :red_circle: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} failed. Version details:
       EOT
 
-      APP_RELEASE_NUMBER=$(echo ${APPLICATION_IMAGE_TAG} | sed 's/-release//')
-      echo "${APP_NAME}: https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}" | \
-      tee -a snippet/* || true
-
       [ -n "${NGINX_IMAGE_TAG}" ] && \
-      NGINX_RELEASE_NUMBER=$(echo ${NGINX_IMAGE_TAG} | sed 's/-release//') &&\
-      echo "nginx proxy: https://github.com/alphagov/pay-nginx-proxy/releases/tag/alpha_release-${NGINX_RELEASE_NUMBER}" | \
-      tee -a snippet/* ||  true
-
+      NGINX_RELEASE_NUMBER=$(echo ${NGINX_IMAGE_TAG} | sed 's/-release//') && \
+      echo "- <https://github.com/alphagov/pay-nginx-proxy/releases/tag/alpha_release-${NGINX_RELEASE_NUMBER}|nginx-proxy v${NGINX_IMAGE_TAG}>" | \
+      tee -a snippet/failure || true
 
       [ -n "${TELEGRAF_IMAGE_TAG}" ] && \
-      echo "telegraf: https://github.com/alphagov/pay-telegraf/releases/tag/${TELEGRAF_IMAGE_TAG}" | \
-      tee -a snippet/* || true
+      echo "- <https://github.com/alphagov/pay-telegraf/releases/tag/${TELEGRAF_IMAGE_TAG}|telegraf v${TELEGRAF_IMAGE_TAG}>" | \
+      tee -a snippet/failure || true
 
       [ -n "${NGINX_FORWARD_PROXY_IMAGE_TAG}" ] && \
-      echo "nginx forward proxy: https://github.com/alphagov/pay-nginx-forward-proxy/releases/tag/${NGINX_FORWARD_PROXY_IMAGE_TAG}" | \
-      tee -a snippet/* || true
-
-
+      echo "- <https://github.com/alphagov/pay-nginx-forward-proxy/releases/tag/${NGINX_FORWARD_PROXY_IMAGE_TAG}|nginx-forward-proxy v${NGINX_FORWARD_PROXY_IMAGE_TAG}>" | \
+      tee -a snippet/failure || true
