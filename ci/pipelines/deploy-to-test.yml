@@ -1209,11 +1209,11 @@ jobs:
         passed: [deploy-connector]
       - get: pay-ci
       - load_var: application_image_tag
-        file: adminusers-ecr-registry-test/tag
+        file: connector-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
-          APP_NAME: adminusers
+          APP_NAME: connector
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
       - load_var: success_snippet
