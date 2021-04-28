@@ -611,6 +611,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-toolbox
+    serial: true
     plan:
       - get: toolbox-ecr-registry-test
         trigger: true
@@ -725,6 +726,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-frontend
+    serial: true
     plan:
       - get: frontend-ecr-registry-test
         trigger: true
@@ -896,6 +898,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-adminusers
+    serial: true
     plan:
       - get: adminusers-ecr-registry-test
         trigger: true
@@ -1098,6 +1101,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-connector
+    serial: true
     plan:
       - get: connector-ecr-registry-test
         trigger: true
@@ -1299,6 +1303,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-ledger
+    serial: true
     plan:
       - get: ledger-ecr-registry-test
         trigger: true
@@ -1501,6 +1506,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-products
+    serial: true
     plan:
       - get: products-ecr-registry-test
         trigger: true
@@ -1701,6 +1707,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-products-ui
+    serial: true
     plan:
       - get: products-ui-ecr-registry-test
         trigger: true
@@ -1861,6 +1868,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-publicapi
+    serial: true
     plan:
       - get: publicapi-ecr-registry-test
         trigger: true
@@ -2021,6 +2029,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-publicauth
+    serial: true
     plan:
       - get: publicauth-ecr-registry-test
         trigger: true
@@ -2174,6 +2183,7 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
   - name: deploy-selfservice
+    serial: true
     plan:
       - get: selfservice-ecr-registry-test
         trigger: true
@@ -2371,6 +2381,7 @@ jobs:
          image: image/image.tar
          additional_tags: tags/tags
   - name: deploy-cardid
+    serial: true
     plan:
       - get: cardid-ecr-registry-test
         trigger: true

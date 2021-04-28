@@ -341,6 +341,7 @@ jobs:
         file: deploy-to-prod-pipeline-definition/ci/pipelines/deploy-to-production.yml
 
   - name: deploy-selfservice-to-prod
+    serial: true
     plan:
       - get: selfservice-ecr-registry-prod
         trigger: true
@@ -472,6 +473,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: deploy-connector-to-prod
+    serial: true
     plan:
       - get: connector-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -602,6 +604,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: deploy-toolbox-to-prod
+    serial: true
     plan:
       - get: toolbox-ecr-registry-prod
         trigger: true
@@ -674,6 +677,7 @@ jobs:
           <<: *smoke-test-run-all-on-production
 
   - name: deploy-frontend-to-prod
+    serial: true
     plan:
       - get: frontend-ecr-registry-prod
       - get: nginx-forward-proxy-ecr-registry-prod
@@ -810,6 +814,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: deploy-adminusers-to-prod
+    serial: true
     plan:
       - get: adminusers-ecr-registry-prod
         trigger: true
@@ -939,6 +944,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: deploy-products-to-prod
+    serial: true
     plan:
       - get: products-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1068,6 +1074,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: deploy-products-ui-to-prod
+    serial: true
     plan:
       - get: products-ui-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1198,6 +1205,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: deploy-publicauth-to-prod
+    serial: true
     plan:
       - get: publicauth-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1281,6 +1289,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: deploy-cardid-to-prod
+    serial: true
     plan:
       - get: cardid-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1364,6 +1373,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: deploy-publicapi-to-prod
+    serial: true
     plan:
       - get: publicapi-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1494,6 +1504,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: deploy-ledger-to-prod
+    serial: true
     plan:
       - get: ledger-ecr-registry-prod
         trigger: true
