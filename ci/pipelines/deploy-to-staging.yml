@@ -450,6 +450,7 @@ jobs:
         file: deploy-to-staging-pipeline-definition/ci/pipelines/deploy-to-staging.yml
         
   - name: deploy-selfservice-to-staging
+    serial: true
     plan:
       - get: selfservice-ecr-registry-staging
         trigger: true
@@ -593,6 +594,7 @@ jobs:
           additional_tags: selfservice-ecr-registry-staging/tag
 
   - name: deploy-connector-to-staging
+    serial: true
     plan:
       - get: connector-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -736,6 +738,7 @@ jobs:
           additional_tags: connector-ecr-registry-staging/tag
 
   - name: deploy-toolbox-to-staging
+    serial: true
     plan:
       - get: toolbox-ecr-registry-staging
         trigger: true
@@ -834,6 +837,7 @@ jobs:
           additional_tags: toolbox-ecr-registry-staging/tag
 
   - name: deploy-frontend-to-staging
+    serial: true
     plan:
       - get: frontend-ecr-registry-staging
       - get: nginx-forward-proxy-ecr-registry-staging
@@ -985,6 +989,7 @@ jobs:
           additional_tags: frontend-ecr-registry-staging/tag
           
   - name: deploy-adminusers-to-staging
+    serial: true
     plan:
       - get: adminusers-ecr-registry-staging
         trigger: true
@@ -1128,6 +1133,7 @@ jobs:
           additional_tags: adminusers-ecr-registry-staging/tag
           
   - name: deploy-products-to-staging
+    serial: true
     plan:
       - get: products-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1270,6 +1276,7 @@ jobs:
           additional_tags: products-ecr-registry-staging/tag
           
   - name: deploy-products-ui-to-staging
+    serial: true
     plan:
       - get: products-ui-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1412,6 +1419,7 @@ jobs:
           additional_tags: products-ui-ecr-registry-staging/tag
           
   - name: deploy-publicauth-to-staging
+    serial: true
     plan:
       - get: publicauth-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1507,6 +1515,7 @@ jobs:
           additional_tags: publicauth-ecr-registry-staging/tag
 
   - name: deploy-cardid-to-staging
+    serial: true
     plan:
       - get: cardid-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1602,6 +1611,7 @@ jobs:
           additional_tags: cardid-ecr-registry-staging/tag
           
   - name: deploy-publicapi-to-staging
+    serial: true
     plan:
       - get: publicapi-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1744,6 +1754,7 @@ jobs:
           image: publicapi-ecr-registry-staging/image.tar
           additional_tags: publicapi-ecr-registry-staging/tag
   - name: deploy-ledger-to-staging
+    serial: true
     plan:
       - get: ledger-ecr-registry-staging
         trigger: true
