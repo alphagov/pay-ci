@@ -408,6 +408,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-selfservice-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: selfservice-ecr-registry-prod
         trigger: true
@@ -539,6 +540,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-connector-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: connector-ecr-registry-prod
         trigger: true
@@ -660,6 +662,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-toolbox-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: toolbox-ecr-registry-prod
         trigger: true
@@ -749,6 +752,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-frontend-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: frontend-ecr-registry-prod
         trigger: true
@@ -881,6 +885,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-adminusers-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: adminusers-ecr-registry-prod
         trigger: true
@@ -1009,6 +1014,7 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
   - name: smoke-test-products-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: products-ecr-registry-prod
         trigger: true
@@ -1140,6 +1146,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-products-ui-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: products-ui-ecr-registry-prod
         trigger: true
@@ -1258,6 +1265,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-publicauth-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: publicauth-ecr-registry-prod
         trigger: true
@@ -1342,6 +1350,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-cardid-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: cardid-ecr-registry-prod
         trigger: true
@@ -1439,6 +1448,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-publicapi-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: publicapi-ecr-registry-prod
         trigger: true
@@ -1571,6 +1581,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: smoke-test-ledger-on-prod
+    serial_groups: [smoke-test]
     plan:
       - get: ledger-ecr-registry-prod
         trigger: true
