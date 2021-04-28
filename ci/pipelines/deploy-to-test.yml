@@ -1624,7 +1624,7 @@ jobs:
         passed: [deploy-products]
       - get: pay-ci
       - load_var: application_image_tag
-        file: ledger-ecr-registry-test/tag
+        file: products-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
