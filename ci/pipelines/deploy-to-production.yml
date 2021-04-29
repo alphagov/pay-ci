@@ -891,6 +891,8 @@ jobs:
         trigger: true
         passed: [deploy-adminusers-to-prod]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: adminusers-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
