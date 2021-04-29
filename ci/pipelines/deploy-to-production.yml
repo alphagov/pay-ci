@@ -1457,7 +1457,7 @@ jobs:
         passed: [deploy-publicapi-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: publicapi-ecr-registry-staging/tag
+        file: publicapi-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
