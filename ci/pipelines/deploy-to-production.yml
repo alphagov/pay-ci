@@ -547,7 +547,7 @@ jobs:
         passed: [deploy-connector-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: connector-ecr-registry-staging/tag
+        file: connector-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -759,7 +759,7 @@ jobs:
         passed: [deploy-frontend-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: frontend-ecr-registry-staging/tag
+        file: frontend-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -891,6 +891,8 @@ jobs:
         trigger: true
         passed: [deploy-adminusers-to-prod]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: adminusers-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1021,7 +1023,7 @@ jobs:
         passed: [deploy-products-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: products-ecr-registry-staging/tag
+        file: products-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1153,7 +1155,7 @@ jobs:
         passed: [deploy-products-ui-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: products-ui-ecr-registry-staging/tag
+        file: products-ui-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1272,7 +1274,7 @@ jobs:
         passed: [deploy-publicauth-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: publicauth-ecr-registry-staging/tag
+        file: publicauth-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1357,7 +1359,7 @@ jobs:
         passed: [deploy-cardid-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: cardid-ecr-registry-staging/tag
+        file: cardid-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1455,7 +1457,7 @@ jobs:
         passed: [deploy-publicapi-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: publicapi-ecr-registry-staging/tag
+        file: publicapi-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1587,6 +1589,18 @@ jobs:
         trigger: true
         passed: [deploy-ledger-to-prod]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: ledger-ecr-registry-prod/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: ledger
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
