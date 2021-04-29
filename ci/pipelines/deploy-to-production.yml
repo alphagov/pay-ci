@@ -1589,6 +1589,18 @@ jobs:
         trigger: true
         passed: [deploy-ledger-to-prod]
       - get: pay-ci
+      - load_var: application_image_tag
+        file: ledger-ecr-registry-prod/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: ledger
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
