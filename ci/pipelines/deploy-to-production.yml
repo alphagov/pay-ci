@@ -759,7 +759,7 @@ jobs:
         passed: [deploy-frontend-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
-        file: frontend-ecr-registry-staging/tag
+        file: frontend-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
