@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk')
 const ecs = new AWS.ECS()
 
-const { CLUSTER_NAME, APP_NAME, TAG } = process.env
+const { CLUSTER_NAME, APP_NAME, APPLICATION_IMAGE_TAG } = process.env
 
 const RUN_MIGRATION_OVERRIDES = {
   containerOverrides: [
@@ -68,7 +68,7 @@ const run = async function run () {
     const currentAppImage = taskDefinitionDetails.containerDefinitions.find(container => container.name === APP_NAME).image
     const currentAppRelease = currentAppImage.split(':')[1].split('-')[0]
     console.log(`Current task definition is using release: ${currentAppRelease}`)
-    const jobAppRelease = TAG.split('-')[0]
+    const jobAppRelease = APPLICATION_IMAGE_TAG.split('-')[0]
 
     if (currentAppRelease !== jobAppRelease) {
       throw new Error(`The input release ${jobAppRelease} number does not match the
