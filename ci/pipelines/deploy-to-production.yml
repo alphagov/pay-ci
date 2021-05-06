@@ -267,23 +267,31 @@ resource_types:
       tag: latest
 
 groups:
-  - name: pipeline-meta-update
-    jobs:
-      - update-deploy-to-prod-pipeline
-  - name: toolbox
-    jobs:
-      - deploy-toolbox-to-prod
-      - smoke-test-toolbox-on-prod
-  - name: frontend
-    jobs:
-      - deploy-frontend-to-prod
-      - smoke-test-frontend-on-prod
-      - frontend-pact-tag
   - name: adminusers
     jobs:
       - deploy-adminusers-to-prod
       - smoke-test-adminusers-on-prod
       - adminusers-pact-tag
+  - name: cardid
+    jobs:
+      - deploy-cardid-to-prod
+      - smoke-test-cardid-on-prod
+  - name: connector
+    jobs:
+      - deploy-connector-to-prod
+      - smoke-test-connector-on-prod
+      - connector-pact-tag
+  - name: frontend
+    jobs:
+      - deploy-frontend-to-prod
+      - smoke-test-frontend-on-prod
+      - frontend-pact-tag
+  - name: ledger
+    jobs:
+      - deploy-ledger-to-prod
+      - smoke-test-ledger-on-prod
+      - ledger-pact-tag
+      - ledger-db-migration-prod
   - name: products
     jobs:
       - deploy-products-to-prod
@@ -294,35 +302,24 @@ groups:
       - deploy-products-ui-to-prod
       - smoke-test-products-ui-on-prod
       - products-ui-pact-tag
-  - name: publicauth
-    jobs:
-      - deploy-publicauth-to-prod
-      - smoke-test-publicauth-on-prod
-  - name: cardid
-    jobs:
-      - deploy-cardid-to-prod
-      - smoke-test-cardid-on-prod
-  - name: connector
-    jobs:
-      - deploy-connector-to-prod
-      - smoke-test-connector-on-prod
-      - connector-pact-tag
-  - name: selfservice
-    jobs:
-      - deploy-selfservice-to-prod
-      - smoke-test-selfservice-on-prod
-      - selfservice-pact-tag
   - name: publicapi
     jobs:
       - deploy-publicapi-to-prod
       - smoke-test-publicapi-on-prod
       - publicapi-pact-tag
-  - name: ledger
+  - name: publicauth
     jobs:
-      - deploy-ledger-to-prod
-      - smoke-test-ledger-on-prod
-      - ledger-pact-tag
-      - ledger-db-migration-prod
+      - deploy-publicauth-to-prod
+      - smoke-test-publicauth-on-prod
+  - name: selfservice
+    jobs:
+      - deploy-selfservice-to-prod
+      - smoke-test-selfservice-on-prod
+      - selfservice-pact-tag
+  - name: toolbox
+    jobs:
+      - deploy-toolbox-to-prod
+      - smoke-test-toolbox-on-prod
   - name: telegraf
     jobs:
       - deploy-toolbox-to-prod
@@ -332,6 +329,9 @@ groups:
   - name: nginx-proxy
     jobs:
       - deploy-toolbox-to-prod
+  - name: pipeline-meta-update
+    jobs:
+      - update-deploy-to-prod-pipeline
 
 jobs:
   - name: update-deploy-to-prod-pipeline

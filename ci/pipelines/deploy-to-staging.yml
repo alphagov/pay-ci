@@ -361,26 +361,36 @@ resource_types:
       tag: latest
 
 groups:
-  - name: update-deploy-to-staging-pipeline
-    jobs:
-      - update-deploy-to-staging-pipeline
-  - name: toolbox
-    jobs:
-      - deploy-toolbox-to-staging
-      - smoke-test-toolbox-on-staging
-      - push-toolbox-to-production-ecr
-  - name: frontend
-    jobs:
-      - deploy-frontend-to-staging
-      - smoke-test-frontend-on-staging
-      - frontend-pact-tag
-      - push-frontend-to-production-ecr
   - name: adminusers
     jobs:
       - deploy-adminusers-to-staging
       - smoke-test-adminusers-on-staging
       - adminusers-pact-tag
       - push-adminusers-to-production-ecr
+  - name: cardid
+    jobs:
+      - deploy-cardid-to-staging
+      - smoke-test-cardid-on-staging
+      - push-cardid-to-production-ecr
+  - name: connector
+    jobs:
+      - deploy-connector-to-staging
+      - smoke-test-connector-on-staging
+      - connector-pact-tag
+      - push-connector-to-production-ecr
+  - name: frontend
+    jobs:
+      - deploy-frontend-to-staging
+      - smoke-test-frontend-on-staging
+      - frontend-pact-tag
+      - push-frontend-to-production-ecr
+  - name: ledger
+    jobs:
+      - deploy-ledger-to-staging
+      - smoke-test-ledger-on-staging
+      - ledger-pact-tag
+      - push-ledger-to-production-ecr
+      - ledger-db-migration-staging
   - name: products
     jobs:
       - deploy-products-to-staging
@@ -393,41 +403,28 @@ groups:
       - smoke-test-products-ui-on-staging
       - products-ui-pact-tag
       - push-products-ui-to-production-ecr
-  - name: publicauth
-    jobs:
-      - deploy-publicauth-to-staging
-      - smoke-test-publicauth-on-staging
-      - push-publicauth-to-production-ecr
-  - name: cardid
-    jobs:
-      - deploy-cardid-to-staging
-      - smoke-test-cardid-on-staging
-      - push-cardid-to-production-ecr
-  - name: connector
-    jobs:
-      - deploy-connector-to-staging
-      - smoke-test-connector-on-staging
-      - connector-pact-tag
-      - push-connector-to-production-ecr
-  - name: selfservice
-    jobs:
-      - deploy-selfservice-to-staging
-      - smoke-test-selfservice-on-staging
-      - selfservice-pact-tag
-      - push-selfservice-to-production-ecr
   - name: publicapi
     jobs:
       - deploy-publicapi-to-staging
       - smoke-test-publicapi-on-staging
       - publicapi-pact-tag
       - push-publicapi-to-production-ecr
-  - name: ledger
+  - name: publicauth
     jobs:
-      - deploy-ledger-to-staging
-      - smoke-test-ledger-on-staging
-      - ledger-pact-tag
-      - push-ledger-to-production-ecr
-      - ledger-db-migration-staging
+      - deploy-publicauth-to-staging
+      - smoke-test-publicauth-on-staging
+      - push-publicauth-to-production-ecr
+  - name: selfservice
+    jobs:
+      - deploy-selfservice-to-staging
+      - smoke-test-selfservice-on-staging
+      - selfservice-pact-tag
+      - push-selfservice-to-production-ecr
+  - name: toolbox
+    jobs:
+      - deploy-toolbox-to-staging
+      - smoke-test-toolbox-on-staging
+      - push-toolbox-to-production-ecr
   - name: telegraf
     jobs:
       - deploy-toolbox-to-staging
@@ -441,6 +438,9 @@ groups:
       - deploy-frontend-to-staging
       - smoke-test-frontend-on-staging
       - push-nginx-forward-proxy-to-production-ecr
+  - name: update-deploy-to-staging-pipeline
+    jobs:
+      - update-deploy-to-staging-pipeline
 
 jobs:
   - name: update-deploy-to-staging-pipeline

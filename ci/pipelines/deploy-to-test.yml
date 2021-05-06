@@ -391,8 +391,6 @@ resources:
     source:
       url: https://hooks.slack.com/services/((slack-notification-secret))
 
-
-
 resource_types:
   # Custom resource type - this has been merged to the
   # https://github.com/concourse/registry-image-resource repo,
@@ -417,22 +415,6 @@ resource_types:
       repository: cfcommunity/slack-notification-resource
       tag: latest
 groups:
-  - name: update-deploy-to-test-pipeline
-    jobs:
-      - update-deploy-to-test-pipeline
-  - name: toolbox
-    jobs:
-      - push-toolbox-to-test-ecr
-      - deploy-toolbox
-      - smoke-test-toolbox
-      - push-toolbox-to-staging-ecr
-  - name: frontend
-    jobs:
-      - push-frontend-to-test-ecr
-      - deploy-frontend
-      - smoke-test-frontend
-      - frontend-pact-tag
-      - push-frontend-to-staging-ecr
   - name: adminusers
     jobs:
       - push-adminusers-to-test-ecr
@@ -441,6 +423,12 @@ groups:
       - adminusers-pact-tag
       - push-adminusers-to-staging-ecr
       - adminusers-db-migration
+  - name: cardid
+    jobs:
+      - push-cardid-to-test-ecr
+      - deploy-cardid
+      - smoke-test-cardid
+      - push-cardid-to-staging-ecr
   - name: connector
     jobs:
       - push-connector-to-test-ecr
@@ -449,6 +437,13 @@ groups:
       - connector-pact-tag
       - push-connector-to-staging-ecr
       - connector-db-migration
+  - name: frontend
+    jobs:
+      - push-frontend-to-test-ecr
+      - deploy-frontend
+      - smoke-test-frontend
+      - frontend-pact-tag
+      - push-frontend-to-staging-ecr
   - name: ledger
     jobs:
       - push-ledger-to-test-ecr
@@ -493,12 +488,12 @@ groups:
       - smoke-test-selfservice
       - selfservice-pact-tag
       - push-selfservice-to-staging-ecr
-  - name: cardid
+  - name: toolbox
     jobs:
-      - push-cardid-to-test-ecr
-      - deploy-cardid
-      - smoke-test-cardid
-      - push-cardid-to-staging-ecr
+      - push-toolbox-to-test-ecr
+      - deploy-toolbox
+      - smoke-test-toolbox
+      - push-toolbox-to-staging-ecr
   - name: nginx-proxy
     jobs:
       - push-nginx-proxy-to-test-ecr
@@ -516,6 +511,9 @@ groups:
       - build-and-push-telegraf-to-test-ecr
       - deploy-toolbox
       - push-telegraf-to-staging-ecr
+  - name: update-deploy-to-test-pipeline
+    jobs:
+      - update-deploy-to-test-pipeline
 
 definitions:
   - &pull-image-from-dockerhub
