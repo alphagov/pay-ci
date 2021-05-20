@@ -344,6 +344,7 @@ jobs:
 
   - name: deploy-selfservice-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: selfservice-ecr-registry-prod
         trigger: true
@@ -477,6 +478,7 @@ jobs:
 
   - name: deploy-connector-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: connector-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -650,6 +652,7 @@ jobs:
 
   - name: deploy-toolbox-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: toolbox-ecr-registry-prod
         trigger: true
@@ -724,6 +727,7 @@ jobs:
 
   - name: deploy-frontend-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: frontend-ecr-registry-prod
       - get: nginx-forward-proxy-ecr-registry-prod
@@ -862,6 +866,7 @@ jobs:
 
   - name: deploy-adminusers-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: adminusers-ecr-registry-prod
         trigger: true
@@ -995,6 +1000,7 @@ jobs:
 
   - name: deploy-products-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: products-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1126,6 +1132,7 @@ jobs:
 
   - name: deploy-products-ui-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: products-ui-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1258,6 +1265,7 @@ jobs:
 
   - name: deploy-publicauth-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: publicauth-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1343,6 +1351,7 @@ jobs:
 
   - name: deploy-cardid-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: cardid-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1428,6 +1437,7 @@ jobs:
 
   - name: deploy-publicapi-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: publicapi-ecr-registry-prod
       - get: nginx-proxy-ecr-registry-prod
@@ -1560,6 +1570,7 @@ jobs:
 
   - name: deploy-ledger-to-prod
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: ledger-ecr-registry-prod
         trigger: true
