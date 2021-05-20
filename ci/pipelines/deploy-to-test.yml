@@ -610,6 +610,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-toolbox
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: toolbox-ecr-registry-test
         trigger: true
@@ -726,6 +727,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-frontend
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: frontend-ecr-registry-test
         trigger: true
@@ -899,6 +901,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-adminusers
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: adminusers-ecr-registry-test
         trigger: true
@@ -1103,6 +1106,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-connector
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: connector-ecr-registry-test
         trigger: true
@@ -1306,6 +1310,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-ledger
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: ledger-ecr-registry-test
         trigger: true
@@ -1510,6 +1515,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-products
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: products-ecr-registry-test
         trigger: true
@@ -1712,6 +1718,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-products-ui
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: products-ui-ecr-registry-test
         trigger: true
@@ -1874,6 +1881,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-publicapi
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: publicapi-ecr-registry-test
         trigger: true
@@ -2036,6 +2044,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-publicauth
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: publicauth-ecr-registry-test
         trigger: true
@@ -2191,6 +2200,7 @@ jobs:
           additional_tags: tags/tags
   - name: deploy-selfservice
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: selfservice-ecr-registry-test
         trigger: true
@@ -2390,6 +2400,7 @@ jobs:
          additional_tags: tags/tags
   - name: deploy-cardid
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: cardid-ecr-registry-test
         trigger: true
