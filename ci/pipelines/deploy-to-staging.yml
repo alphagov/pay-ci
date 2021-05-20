@@ -453,6 +453,7 @@ jobs:
         
   - name: deploy-selfservice-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: selfservice-ecr-registry-staging
         trigger: true
@@ -598,6 +599,7 @@ jobs:
 
   - name: deploy-connector-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: connector-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -784,6 +786,7 @@ jobs:
 
   - name: deploy-toolbox-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: toolbox-ecr-registry-staging
         trigger: true
@@ -884,6 +887,7 @@ jobs:
 
   - name: deploy-frontend-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: frontend-ecr-registry-staging
       - get: nginx-forward-proxy-ecr-registry-staging
@@ -1037,6 +1041,7 @@ jobs:
           
   - name: deploy-adminusers-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: adminusers-ecr-registry-staging
         trigger: true
@@ -1182,6 +1187,7 @@ jobs:
           
   - name: deploy-products-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: products-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1326,6 +1332,7 @@ jobs:
           
   - name: deploy-products-ui-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: products-ui-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1470,6 +1477,7 @@ jobs:
           
   - name: deploy-publicauth-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: publicauth-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1567,6 +1575,7 @@ jobs:
 
   - name: deploy-cardid-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: cardid-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1664,6 +1673,7 @@ jobs:
           
   - name: deploy-publicapi-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: publicapi-ecr-registry-staging
       - get: nginx-proxy-ecr-registry-staging
@@ -1808,6 +1818,7 @@ jobs:
           additional_tags: publicapi-ecr-registry-staging/tag
   - name: deploy-ledger-to-staging
     serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: ledger-ecr-registry-staging
         trigger: true
