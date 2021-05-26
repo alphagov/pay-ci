@@ -398,6 +398,7 @@ groups:
       - smoke-test-products-on-staging
       - products-pact-tag
       - push-products-to-production-ecr
+      - products-db-migration-staging
   - name: products-ui
     jobs:
       - deploy-products-ui-to-staging
@@ -1329,7 +1330,48 @@ jobs:
         params:
           image: products-ecr-registry-staging/image.tar
           additional_tags: products-ecr-registry-staging/tag
-          
+
+  - name: products-db-migration-staging
+    plan:
+      - get: pay-ci
+      - get: products-ecr-registry-staging
+        params:
+          format: oci
+        trigger: false
+        passed: [deploy-products-to-staging]
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: application_image_tag
+        file: products-ecr-registry-staging/tag
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-aws-sdk-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "staging-2-fargate"
+            APP_NAME: "products"
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
+
   - name: deploy-products-ui-to-staging
     serial: true
     serial_groups: [deploy-application]
