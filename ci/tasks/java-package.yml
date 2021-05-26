@@ -3,7 +3,7 @@ image_resource:
   type: registry-image
   source:
     repository: maven
-    tag: 3.8.1
+    tag: 3.8.1-adoptopenjdk-11
 caches:
   - path: src/.m2
 inputs:
