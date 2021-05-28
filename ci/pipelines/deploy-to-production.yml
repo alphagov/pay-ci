@@ -272,6 +272,7 @@ groups:
       - deploy-adminusers-to-prod
       - smoke-test-adminusers-on-prod
       - adminusers-pact-tag
+      - adminusers-db-migration-production
   - name: cardid
     jobs:
       - deploy-cardid-to-prod
@@ -932,6 +933,47 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: adminusers-db-migration-production
+    plan:
+      - get: pay-ci
+      - get: adminusers-ecr-registry-prod
+        params:
+          format: oci
+        trigger: false
+        passed: [deploy-adminusers-to-prod]
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: application_image_tag
+        file: adminusers-ecr-registry-prod/tag
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-aws-sdk-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "production-2-fargate"
+            APP_NAME: "adminusers"
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
 
   - name: smoke-test-adminusers-on-prod
     serial_groups: [smoke-test]
