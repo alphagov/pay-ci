@@ -36,7 +36,13 @@ put_failure_slack_notification: &put_failure_slack_notification
       channel: '#govuk-pay-announce'
       text: "((.:failure_snippet)) \n
             - <https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-  
+
+put_db_migration_slack_notification: &put_db_migration_slack_notification
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-announce'
+    text: ":postgres: FARGATE starting $BUILD_JOB_NAME on test-12\n
+          - <https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
 wait_for_deploy_params: &wait_for_deploy_params
   <<: *aws_assumed_role_creds
@@ -984,6 +990,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
@@ -1006,6 +1013,7 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+
   - name: smoke-test-adminusers
     serial_groups: [smoke-test]
     plan:
@@ -1189,6 +1197,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: connector-ecr-registry-test/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
@@ -1471,6 +1480,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: ledger-ecr-registry-test/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
@@ -1598,6 +1608,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: products-ecr-registry-test/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
@@ -2114,6 +2125,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: publicauth-ecr-registry-test/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
