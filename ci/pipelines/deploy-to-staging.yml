@@ -74,7 +74,14 @@ definitions:
         channel: '#govuk-pay-announce'
         text: "((.:failure_snippet)) \n
               - <https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-  
+
+  put_db_migration_slack_notification: &put_db_migration_slack_notification
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-announce'
+      text: ":postgres: FARGATE starting $BUILD_JOB_NAME on staging-2\n
+            - <https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
   snippet_params_all_versions: &snippet_params_all_versions
     ENV: staging-2
     APPLICATION_IMAGE_TAG: ((.:application_image_tag))
@@ -752,6 +759,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: connector-ecr-registry-staging/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
@@ -1128,6 +1136,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
@@ -1392,6 +1401,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: products-ecr-registry-staging/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
@@ -1664,6 +1674,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: publicauth-ecr-registry-staging/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
@@ -2094,6 +2105,7 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
+      - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
           platform: linux
