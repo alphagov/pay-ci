@@ -272,7 +272,7 @@ groups:
       - deploy-adminusers-to-prod
       - smoke-test-adminusers-on-prod
       - adminusers-pact-tag
-      - adminusers-db-migration-production
+      - adminusers-db-migration-prod
   - name: cardid
     jobs:
       - deploy-cardid-to-prod
@@ -935,7 +935,7 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
-  - name: adminusers-db-migration-production
+  - name: adminusers-db-migration-prod
     plan:
       - get: pay-ci
       - get: adminusers-ecr-registry-prod
