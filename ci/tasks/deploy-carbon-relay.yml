@@ -1,0 +1,29 @@
+---
+platform: linux
+inputs:
+  - name: pay-infra
+image_resource:
+  type: registry-image
+  source:
+    repository: hashicorp/terraform
+    tag: 0.13.4
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
+  CARBON_RELAY_IMAGE_TAG:
+  ACCOUNT:
+  ENVIRONMENT:
+run:
+  path: /bin/sh
+  args:
+    - -ec
+    - |
+      echo ${CARBON_RELAY_IMAGE_TAG}
+      cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/microservices_v2/carbon_relay
+      terraform init
+      terraform apply \
+        -var carbon_relay_image_tag=${CARBON_RELAY_IMAGE_TAG} \
+        -var stunnel_image_tag=1-stunnel-release \
+        -auto-approve
