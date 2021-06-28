@@ -386,6 +386,12 @@ resources:
     source:
       repository: govukpay/docker-nginx-proxy
       <<: *aws_staging_config
+  - name: carbon-relay-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/carbon-relay
+      <<: *aws_staging_config
   - name: nginx-forward-proxy-ecr-registry-staging
     type: dev-registry-image
     icon: docker
@@ -511,7 +517,7 @@ groups:
   - name: carbon-relay
     jobs:
       - deploy-carbon-relay
-      # - push-carbon-relay-to-staging-ecr
+      - push-carbon-relay-to-staging-ecr
   - name: nginx-proxy
     jobs:
       - push-nginx-proxy-to-test-ecr
@@ -688,7 +694,19 @@ jobs:
           <<: *aws_assumed_role_creds
           ENVIRONMENT: test-12
     <<: *put_failure_slack_notification
-    
+
+  - name: push-carbon-relay-to-staging-ecr
+    plan:
+      - get: carbon-relay-ecr-registry-test
+        passed: [deploy-carbon-relay]
+        params:
+          format: oci
+        trigger: true
+      - put: carbon-relay-ecr-registry-staging
+        params:
+          image: carbon-relay-ecr-registry-test/image.tar
+          additional_tags: carbon-relay-ecr-registry-test/tag
+
   - name: deploy-toolbox
     serial: true
     serial_groups: [deploy-application]
