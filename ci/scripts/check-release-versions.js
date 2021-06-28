@@ -42,7 +42,8 @@ async function run () {
     APPLICATION_IMAGE_TAG,
     TELEGRAF_IMAGE_TAG,
     NGINX_IMAGE_TAG,
-    NGINX_FORWARD_PROXY_IMAGE_TAG
+    NGINX_FORWARD_PROXY_IMAGE_TAG,
+    CARBON_RELAY_IMAGE_TAG
   } = process.env
 
   try {
@@ -56,9 +57,22 @@ async function run () {
       throw new Error('failed to get task definition details')
     }
 
-    checkReleaseVersion(APP_NAME, APPLICATION_IMAGE_TAG, containerDefinitions)
-    checkReleaseVersion('telegraf', TELEGRAF_IMAGE_TAG, containerDefinitions)
-    checkReleaseVersion('nginx', NGINX_IMAGE_TAG, containerDefinitions)
+    if (CARBON_RELAY_IMAGE_TAG) {
+      checkReleaseVersion('carbon-relay', CARBON_RELAY_IMAGE_TAG, containerDefinitions)
+    }
+
+    if (APPLICATION_IMAGE_TAG) {
+      checkReleaseVersion(APP_NAME, APPLICATION_IMAGE_TAG, containerDefinitions)
+    }
+    
+    if (TELEGRAF_IMAGE_TAG) {
+      checkReleaseVersion('telegraf', TELEGRAF_IMAGE_TAG, containerDefinitions)
+    }
+    
+    if (NGINX_IMAGE_TAG) {
+      checkReleaseVersion('nginx', NGINX_IMAGE_TAG, containerDefinitions)
+    }
+    
     if (NGINX_FORWARD_PROXY_IMAGE_TAG) {
       checkReleaseVersion('nginx-forward-proxy', NGINX_FORWARD_PROXY_IMAGE_TAG, containerDefinitions)
     }
