@@ -13,6 +13,7 @@ params:
   AWS_SESSION_TOKEN:
   AWS_REGION: eu-west-1
   CARBON_RELAY_IMAGE_TAG:
+  STUNNEL_IMAGE_TAG:
   ACCOUNT:
   ENVIRONMENT:
 run:
@@ -20,10 +21,9 @@ run:
   args:
     - -ec
     - |
-      echo ${CARBON_RELAY_IMAGE_TAG}
       cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/microservices_v2/carbon_relay
       terraform init
       terraform apply \
         -var carbon_relay_image_tag=${CARBON_RELAY_IMAGE_TAG} \
-        -var stunnel_image_tag=1-stunnel-release \
+        -var stunnel_image_tag=${STUNNEL_IMAGE_TAG} \
         -auto-approve

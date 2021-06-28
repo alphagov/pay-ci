@@ -168,6 +168,19 @@ resources:
       branch: master
       username: alphagov-pay-ci
       password: ((github-access-token))
+  - name: carbon-relay-ecr-registry-staging
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/carbon-relay
+      variant: carbon-relay-release
+      <<: *aws_staging_config
+  - name: carbon-relay-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/carbon-relay
+      <<: *aws_production_config
   - name: toolbox-ecr-registry-staging
     type: registry-image-resource-1-1-0
     icon: docker
@@ -436,6 +449,10 @@ groups:
       - deploy-toolbox-to-staging
       - smoke-test-toolbox-on-staging
       - push-toolbox-to-production-ecr
+  - name: carbon-relay
+    jobs:
+      - deploy-carbon-relay-to-staging
+      - push-carbon-relay-to-production-ecr
   - name: telegraf
     jobs:
       - deploy-toolbox-to-staging
@@ -460,7 +477,82 @@ jobs:
         trigger: true
       - set_pipeline: deploy-to-staging
         file: deploy-to-staging-pipeline-definition/ci/pipelines/deploy-to-staging.yml
-        
+
+  - name: deploy-carbon-relay-to-staging
+    plan:
+      - get: carbon-relay-ecr-registry-staging
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: carbon_relay_image_tag
+        file: carbon-relay-ecr-registry-staging/tag
+      - task: create-failure-notification-snippet
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: alpine
+          params:
+            CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
+            ENV: staging-2
+          outputs:
+            - name: snippet  
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                cat <<EOT >> snippet/failure
+                :red_circle: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${CARBON_RELAY_IMAGE_TAG}|carbon-relay v${CARBON_RELAY_IMAGE_TAG}> on ${ENV} failed. Version details:
+                EOT
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          CLUSTER_NAME: "staging-2-fargate"
+          APP_NAME: carbon-relay
+          CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
+      - task: deploy-to-staging
+        file: pay-ci/ci/tasks/deploy-carbon-relay.yml
+        params:
+          <<: *aws_assumed_role_creds
+          CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
+          STUNNEL_IMAGE_TAG: test
+          ACCOUNT: staging
+          ENVIRONMENT: staging-2
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: carbon-relay
+          CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
+          <<: *aws_assumed_role_creds
+          ENVIRONMENT: staging-2
+    <<: *put_failure_slack_notification
+
+  - name: push-carbon-relay-to-production-ecr
+    plan:
+      - get: carbon-relay-ecr-registry-staging
+        passed: [deploy-carbon-relay-to-staging]
+        params:
+          format: oci
+        trigger: true
+      - put: carbon-relay-ecr-registry-prod
+        params:
+          image: carbon-relay-ecr-registry-staging/image.tar
+          additional_tags: carbon-relay-ecr-registry-staging/tag
+
   - name: deploy-selfservice-to-staging
     serial: true
     serial_groups: [deploy-application]
