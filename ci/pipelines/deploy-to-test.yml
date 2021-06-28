@@ -286,6 +286,13 @@ resources:
       repository: govukpay/selfservice
       variant: release
       <<: *aws_test_config
+  - name: carbon-relay-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/carbon-relay
+      variant: carbon-relay-release
+      <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-test
     type: dev-registry-image
     icon: docker
@@ -373,12 +380,6 @@ resources:
     source:
       repository: govukpay/cardid
       <<: *aws_staging_config
-  - name: telegraf-ecr-registry-staging
-    type: dev-registry-image
-    icon: docker
-    source:
-      repository: govukpay/telegraf
-      <<: *aws_staging_config
   - name: nginx-proxy-ecr-registry-staging
     type: dev-registry-image
     icon: docker
@@ -391,6 +392,12 @@ resources:
     source:
       repository: govukpay/nginx-forward-proxy
       variant: release
+      <<: *aws_staging_config
+  - name: telegraf-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/telegraf
       <<: *aws_staging_config
   - name: slack-notification
     type: slack-notification
@@ -420,6 +427,7 @@ resource_types:
     source:
       repository: cfcommunity/slack-notification-resource
       tag: latest
+
 groups:
   - name: adminusers
     jobs:
@@ -500,6 +508,10 @@ groups:
       - deploy-toolbox
       - smoke-test-toolbox
       - push-toolbox-to-staging-ecr
+  - name: carbon-relay
+    jobs:
+      - deploy-carbon-relay
+      # - push-carbon-relay-to-staging-ecr
   - name: nginx-proxy
     jobs:
       - push-nginx-proxy-to-test-ecr
@@ -614,6 +626,40 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/tags
+  
+  - name: deploy-carbon-relay
+    plan:
+      - get: carbon-relay-ecr-registry-test
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: carbon_relay_image_tag
+        file: carbon-relay-ecr-registry-test/tag
+      #TODO - task: create notification snippets  
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+     # TODO - task: check release version for carbon-relay
+      - task: deploy-to-test
+        file: pay-ci/ci/tasks/deploy-carbon-relay.yml
+        params:
+          <<: *aws_assumed_role_creds
+          CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
+          ACCOUNT: test
+          ENVIRONMENT: test-12
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: carbon-relay
+          CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
+          <<: *aws_assumed_role_creds
+          ENVIRONMENT: test-12   
+
   - name: deploy-toolbox
     serial: true
     serial_groups: [deploy-application]
@@ -1046,7 +1092,6 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
-
   - name: adminusers-pact-tag
     plan:
       - get: adminusers-ecr-registry-test
@@ -1251,7 +1296,6 @@ jobs:
           <<: *smoke-test-run-all-on-test
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
-
 
   - name: connector-pact-tag
     plan:

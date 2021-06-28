@@ -7,6 +7,7 @@ const CHECK_INTERVAL = 5000
 const {
   APP_NAME: appName,
   APPLICATION_IMAGE_TAG: appVersion,
+  CARBON_RELAY_IMAGE_TAG: carbonRelayVersion,
   NGINX_IMAGE_TAG: nginxProxyVersion,
   NGINX_FORWARD_PROXY_IMAGE_TAG: nginxForwardProxyVersion,
   TELEGRAF_IMAGE_TAG: telegrafVersion,
@@ -41,10 +42,19 @@ async function run () {
       const { taskDefinition, rolloutState, rolloutStateReason } = uncompletedDeployments[0]
       const deploymentDetails = {
         taskDefinition,
-        deploymentStatus: rolloutState,
-        appVersion,
-        nginxProxyVersion,
-        telegrafVersion
+        deploymentStatus: rolloutState
+      }
+      if (appVersion) {
+        deploymentDetails.appVersion = appVersion
+      }
+      if (nginxProxyVersion) {
+        deploymentDetails.nginxProxyVersion = nginxProxyVersion
+      }
+      if (telegrafVersion) {
+        deploymentDetails.telegrafVersion = telegrafVersion
+      }
+      if (carbonRelayVersion) {
+        deploymentDetails.carbonRelayVersion = carbonRelayVersion
       }
       if (nginxForwardProxyVersion) {
         deploymentDetails.nginxForwardProxyVersion = nginxForwardProxyVersion
