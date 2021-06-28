@@ -665,7 +665,14 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-     # TODO - task: check release version for carbon-relay
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          CLUSTER_NAME: "test-12-fargate"
+          APP_NAME: carbon-relay
+          CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-carbon-relay.yml
         params:
