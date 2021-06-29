@@ -293,6 +293,13 @@ resources:
       repository: govukpay/carbon-relay
       variant: carbon-relay-release
       <<: *aws_test_config
+  - name: stunnel-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/stunnel
+      variant: stunnel-release
+      <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-test
     type: dev-registry-image
     icon: docker
@@ -391,6 +398,12 @@ resources:
     icon: docker
     source:
       repository: govukpay/carbon-relay
+      <<: *aws_staging_config
+  - name: stunnel-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/stunnel
       <<: *aws_staging_config
   - name: nginx-forward-proxy-ecr-registry-staging
     type: dev-registry-image
@@ -518,6 +531,7 @@ groups:
     jobs:
       - deploy-carbon-relay
       - push-carbon-relay-to-staging-ecr
+      - push-stunnel-to-staging-ecr
   - name: nginx-proxy
     jobs:
       - push-nginx-proxy-to-test-ecr
@@ -637,10 +651,14 @@ jobs:
     plan:
       - get: carbon-relay-ecr-registry-test
         trigger: true
+      - get: stunnel-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: carbon_relay_image_tag
         file: carbon-relay-ecr-registry-test/tag
+      - load_var: stunnel_image_tag
+        file: stunnel-ecr-registry-test/tag  
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-carbon-relay-notification-snippets.yml
         params:
@@ -671,7 +689,7 @@ jobs:
         params:
           <<: *aws_assumed_role_creds
           CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
-          STUNNEL_IMAGE_TAG: 1-stunnel-release
+          STUNNEL_IMAGE_TAG: ((.:stunnel_image_tag))
           ACCOUNT: test
           ENVIRONMENT: test-12
       - task: wait-for-deploy
@@ -695,6 +713,18 @@ jobs:
         params:
           image: carbon-relay-ecr-registry-test/image.tar
           additional_tags: carbon-relay-ecr-registry-test/tag
+
+  - name: push-stunnel-to-staging-ecr
+    plan:
+      - get: stunnel-ecr-registry-test
+        passed: [deploy-carbon-relay]
+        params:
+          format: oci
+        trigger: true
+      - put: stunnel-ecr-registry-staging
+        params:
+          image: stunnel-ecr-registry-test/image.tar
+          additional_tags: stunnel-ecr-registry-test/tag
 
   - name: deploy-toolbox
     serial: true

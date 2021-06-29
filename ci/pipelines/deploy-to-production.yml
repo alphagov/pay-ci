@@ -166,6 +166,13 @@ resources:
       repository: govukpay/carbon-relay
       variant: carbon-relay-release
       <<: *aws_prod_config    
+  - name: stunnel-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/stunnel
+      variant: stunnel-release
+      <<: *aws_prod_config    
   - name: toolbox-ecr-registry-prod
     type: registry-image-resource-1-1-0
     icon: docker
@@ -676,10 +683,14 @@ jobs:
     plan:
       - get: carbon-relay-ecr-registry-prod
         trigger: true
+      - get: stunnel-ecr-registry-prod
+        trigger: true  
       - get: pay-infra
       - get: pay-ci
       - load_var: carbon_relay_image_tag
         file: carbon-relay-ecr-registry-prod/tag
+      - load_var: stunnel_image_tag
+        file: stunnel-ecr-registry-prod/tag  
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-carbon-relay-notification-snippets.yml
         params:
@@ -713,7 +724,7 @@ jobs:
         params:
           <<: *aws_assumed_role_creds
           CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
-          STUNNEL_IMAGE_TAG: 0-stunnel
+          STUNNEL_IMAGE_TAG: ((.:stunnel_image_tag))
           ACCOUNT: production
           ENVIRONMENT: production-2
       - task: wait-for-deploy
