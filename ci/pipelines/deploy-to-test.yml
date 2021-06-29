@@ -641,28 +641,15 @@ jobs:
       - get: pay-ci
       - load_var: carbon_relay_image_tag
         file: carbon-relay-ecr-registry-test/tag
-      - task: create-failure-notification-snippet
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source:
-              repository: alpine
-          params:
-            CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
-            ENV: test-12
-          outputs:
-            - name: snippet  
-          run:
-            path: sh
-            args:
-              - -c
-              - |
-                cat <<EOT >> snippet/failure
-                :red_circle: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${CARBON_RELAY_IMAGE_TAG}|carbon-relay v${CARBON_RELAY_IMAGE_TAG}> on ${ENV} failed. Version details:
-                EOT
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-carbon-relay-notification-snippets.yml
+        params:
+          CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
+          ENV: test-12
       - load_var: failure_snippet
         file: snippet/failure
+      - load_var: success_snippet
+        file: snippet/success  
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -694,6 +681,7 @@ jobs:
           CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: test-12
+    <<: *put_success_slack_notification      
     <<: *put_failure_slack_notification
 
   - name: push-carbon-relay-to-staging-ecr
