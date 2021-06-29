@@ -684,9 +684,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: carbon-relay-ecr-registry-prod
-        trigger: true
       - get: stunnel-ecr-registry-prod
-        trigger: true  
       - get: pay-infra
       - get: pay-ci
       - load_var: carbon_relay_image_tag
