@@ -684,6 +684,7 @@ jobs:
         params:
           <<: *aws_assumed_role_creds
           CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
+          STUNNEL_IMAGE_TAG: 1-stunnel-release
           ACCOUNT: test
           ENVIRONMENT: test-12
       - task: wait-for-deploy
