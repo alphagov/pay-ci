@@ -490,11 +490,14 @@ jobs:
         file: pay-ci/ci/tasks/create-carbon-relay-notification-snippets.yml
         params:
           CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
-          ENV: test-12
+          ENV: staging-2
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: success_snippet
-        file: snippet/success    
+        file: snippet/success
+      - load_var: start_snippet
+        file: snippet/start    
+      - <<: *put_start_slack_notification  
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
