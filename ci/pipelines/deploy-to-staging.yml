@@ -181,6 +181,19 @@ resources:
     source:
       repository: govukpay/carbon-relay
       <<: *aws_production_config
+  - name: stunnel-ecr-registry-staging
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/stunnel
+      variant: stunnel-release
+      <<: *aws_staging_config
+  - name: stunnel-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/stunnel
+      <<: *aws_production_config
   - name: toolbox-ecr-registry-staging
     type: registry-image-resource-1-1-0
     icon: docker
@@ -453,6 +466,7 @@ groups:
     jobs:
       - deploy-carbon-relay-to-staging
       - push-carbon-relay-to-production-ecr
+      - push-stunnel-to-production-ecr
   - name: telegraf
     jobs:
       - deploy-toolbox-to-staging
@@ -482,10 +496,14 @@ jobs:
     plan:
       - get: carbon-relay-ecr-registry-staging
         trigger: true
+      - get: stunnel-ecr-registry-staging
+        trigger: true  
       - get: pay-infra
       - get: pay-ci
       - load_var: carbon_relay_image_tag
         file: carbon-relay-ecr-registry-staging/tag
+      - load_var: stunnel_image_tag
+        file: stunnel-ecr-registry-staging/tag  
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-carbon-relay-notification-snippets.yml
         params:
@@ -519,7 +537,7 @@ jobs:
         params:
           <<: *aws_assumed_role_creds
           CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
-          STUNNEL_IMAGE_TAG: test
+          STUNNEL_IMAGE_TAG: ((.:stunnel_image_tag))
           ACCOUNT: staging
           ENVIRONMENT: staging-2
       - task: wait-for-deploy
@@ -543,6 +561,18 @@ jobs:
         params:
           image: carbon-relay-ecr-registry-staging/image.tar
           additional_tags: carbon-relay-ecr-registry-staging/tag
+
+  - name: push-stunnel-to-production-ecr
+    plan:
+      - get: stunnel-ecr-registry-staging
+        passed: [deploy-carbon-relay-to-staging]
+        params:
+          format: oci
+        trigger: true
+      - put: stunnel-ecr-registry-prod
+        params:
+          image: stunnel-ecr-registry-staging/image.tar
+          additional_tags: stunnel-ecr-registry-staging/tag
 
   - name: deploy-selfservice-to-staging
     serial: true
