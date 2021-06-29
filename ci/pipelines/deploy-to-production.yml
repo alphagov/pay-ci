@@ -680,6 +680,8 @@ jobs:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
 
   - name: deploy-carbon-relay-to-prod
+    serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: carbon-relay-ecr-registry-prod
         trigger: true

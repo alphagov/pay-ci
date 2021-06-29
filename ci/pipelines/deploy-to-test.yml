@@ -648,6 +648,8 @@ jobs:
           additional_tags: tags/tags
   
   - name: deploy-carbon-relay
+    serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: carbon-relay-ecr-registry-test
         trigger: true

@@ -493,6 +493,8 @@ jobs:
         file: deploy-to-staging-pipeline-definition/ci/pipelines/deploy-to-staging.yml
 
   - name: deploy-carbon-relay-to-staging
+    serial: true
+    serial_groups: [deploy-application]
     plan:
       - get: carbon-relay-ecr-registry-staging
         trigger: true
