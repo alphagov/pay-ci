@@ -34,6 +34,7 @@ definitions:
     aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
     aws_ecr_registry_id: "((pay_aws_prod_account_id))"
     aws_region: eu-west-1
+    
   put_start_slack_notification: &put_start_slack_notification
     put: slack-notification
     params:
