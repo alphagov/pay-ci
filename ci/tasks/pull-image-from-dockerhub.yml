@@ -33,6 +33,8 @@ inputs:
     optional: true
   - name: nginx-proxy-git-release
     optional: true
+  - name: notifications-git-release
+    optional: true
 outputs:
   - name: image
   - name: docker_tags

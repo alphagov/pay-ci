@@ -199,6 +199,13 @@ resources:
       uri: https://github.com/alphagov/pay-nginx-proxy
       branch: master
       tag_regex: "alpha_release-(.*)"
+  - name: notifications-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-notifications
+      branch: master
+      tag_regex: "alpha_release-(.*)"
   - name: pay-infra
     type: git
     icon: github
@@ -319,6 +326,13 @@ resources:
     icon: docker
     source:
       repository: govukpay/telegraf
+      variant: release
+      <<: *aws_test_config
+  - name: notifications-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/notifications
       variant: release
       <<: *aws_test_config
   - name: toolbox-ecr-registry-staging
@@ -549,6 +563,9 @@ groups:
       - build-and-push-telegraf-to-test-ecr
       - deploy-toolbox
       - push-telegraf-to-staging-ecr
+  - name: notifications
+    jobs:
+      - push-notifications-to-test-ecr
   - name: update-deploy-to-test-pipeline
     jobs:
       - update-deploy-to-test-pipeline
@@ -2743,3 +2760,23 @@ jobs:
         params:
           image: telegraf-ecr-registry-test/image.tar
           additional_tags: telegraf-ecr-registry-test/tag
+
+  - name: push-notifications-to-test-ecr
+    plan:
+      - get: pay-ci
+      - get: notifications-git-release
+        trigger: true
+      # Temporarily fetch image from Dockerhub until Concourse can build its own
+      - <<: *pull-image-from-dockerhub
+        params:
+          DOCKER_REPOSITORY: govukpay/notifications
+          APP_GIT_DIR: notifications-git-release
+          <<: *docker_credentials
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: notifications-git-release
+      - put: notifications-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/tags
