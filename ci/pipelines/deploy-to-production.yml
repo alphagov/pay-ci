@@ -271,6 +271,13 @@ resources:
       repository: govukpay/publicapi
       variant: release
       <<: *aws_prod_config
+  - name: notifications-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/notifications
+      variant: release
+      <<: *aws_prod_config
   - name: slack-notification
     type: slack-notification
     source:
@@ -358,6 +365,10 @@ groups:
   - name: nginx-proxy
     jobs:
       - deploy-toolbox-to-prod
+  - name: notifications
+    jobs:
+      - deploy-notifications-to-prod
+      - smoke-test-notifications-on-prod
   - name: pipeline-meta-update
     jobs:
       - update-deploy-to-prod-pipeline
@@ -1956,3 +1967,116 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+
+  - name: deploy-notifications-to-prod
+    serial: true
+    serial_groups: [deploy-application]
+    plan:
+      - get: notifications-ecr-registry-prod
+        trigger: false
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: notifications-ecr-registry-prod/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          ACTION_NAME: Deployment
+          APP_NAME: notifications
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ENV: production-2
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: success_snippet
+        file: snippet/success 
+      - load_var: start_snippet
+        file: snippet/start
+      - <<: *put_start_slack_notification
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-production-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          CLUSTER_NAME: "production-2-fargate"
+          APP_NAME: notifications
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - task: deploy-to-production
+        params:
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ACCOUNT: production
+          ENVIRONMENT: production-2
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          AWS_REGION: eu-west-1
+        config:
+          platform: linux
+          inputs:
+            - name: pay-infra
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: 0.13.4
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/microservices_v2/notifications
+                terraform init
+                terraform apply \
+                  -var notifications_image_tag=${APPLICATION_IMAGE_TAG} \
+                  -auto-approve
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: notifications
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ENVIRONMENT: production-2
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
+  - name: smoke-test-notifications-on-prod
+    serial_groups: [smoke-test]
+    plan:
+      - get: notifications-ecr-registry-prod
+        trigger: true
+        passed: [deploy-notifications-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: notifications-ecr-registry-prod/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          ACTION_NAME: Smoke test
+          APP_NAME: notifications
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ENV: production-2
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
