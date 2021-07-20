@@ -103,7 +103,7 @@ jobs:
                 cd pay-infra/provisioning/terraform/deployments/deploy/management/smoke_tests
                 terraform init
                 terraform apply \
-                  -target=module.smoke_tests.module.test_env_smoke_tests \
+                  -target=module.smoke_tests.module.test_env_post_deploy_smoke_tests \
                   -var pay_smoke_tests_version=${SMOKE_TEST_VERSION} \
                   -var zip_file_directory="../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
                   -auto-approve
@@ -149,7 +149,9 @@ jobs:
                 cd pay-infra/provisioning/terraform/deployments/deploy/management/smoke_tests
                 terraform init
                 terraform apply \
-                  -target=module.smoke_tests.module.staging_env_smoke_tests \
+                  -target=module.smoke_tests.module.staging_env_post_deploy_smoke_tests \
+                  -target=module.smoke_tests.module.staging_env_scheduled_psp_smoke_tests \
+                  -target=module.smoke_tests.module.staging_env_scheduled_sandbox_smoke_tests \
                   -var pay_smoke_tests_version=${SMOKE_TEST_VERSION} \
                   -var zip_file_directory="../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
                   -auto-approve
@@ -194,7 +196,8 @@ jobs:
                 cd pay-infra/provisioning/terraform/deployments/deploy/management/smoke_tests
                 terraform init
                 terraform apply \
-                  -target=module.smoke_tests.module.production_env_smoke_tests \
+                  -target=module.smoke_tests.module.production_env_post_deploy_smoke_tests \
+                  -target=module.smoke_tests.module.production_env_scheduled_sandbox_smoke_tests \
                   -var pay_smoke_tests_version=${SMOKE_TEST_VERSION} \
                   -var zip_file_directory="../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
                   -auto-approve
