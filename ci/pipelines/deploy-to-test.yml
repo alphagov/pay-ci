@@ -588,7 +588,6 @@ definitions:
       DOCKER_USERNAME: updateThisValue
       DOCKER_AUTH_TOKEN: updateThisValue
       DOCKER_REPOSITORY: updateThisValue
-      APP_GIT_DIR: updateThisValue
   # Separate tasks for each combination of scenario/environment
   - &smoke-test-run-all-on-test
     limit: 8
@@ -660,9 +659,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: toolbox-git-release
         params:
           DOCKER_REPOSITORY: govukpay/toolbox
-          APP_GIT_DIR: toolbox-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -859,9 +859,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: frontend-git-release
         params:
           DOCKER_REPOSITORY: govukpay/frontend
-          APP_GIT_DIR: frontend-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -1033,9 +1034,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: adminuers-git-release
         params:
           DOCKER_REPOSITORY: govukpay/adminusers
-          APP_GIT_DIR: adminusers-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -1239,9 +1241,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: connector-git-release
         params:
           DOCKER_REPOSITORY: govukpay/connector
-          APP_GIT_DIR: connector-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -1443,9 +1446,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: ledger-git-release
         params:
           DOCKER_REPOSITORY: govukpay/ledger
-          APP_GIT_DIR: ledger-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -1649,9 +1653,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: products-git-release
         params:
           DOCKER_REPOSITORY: govukpay/products
-          APP_GIT_DIR: products-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -1853,9 +1858,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: products-ui-git-release
         params:
           DOCKER_REPOSITORY: govukpay/products-ui
-          APP_GIT_DIR: products-ui-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -2016,9 +2022,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: publicapi-git-release
         params:
           DOCKER_REPOSITORY: govukpay/publicapi
-          APP_GIT_DIR: publicapi-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -2179,9 +2186,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: publicauth-git-release
         params:
           DOCKER_REPOSITORY: govukpay/publicauth
-          APP_GIT_DIR: publicauth-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -2336,9 +2344,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: selfservice-git-release
         params:
           DOCKER_REPOSITORY: govukpay/selfservice
-          APP_GIT_DIR: selfservice-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -2536,9 +2545,10 @@ jobs:
                 sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
     # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: cardid-git-release
         params:
           DOCKER_REPOSITORY: govukpay/cardid
-          APP_GIT_DIR: cardid-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -2652,9 +2662,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: nginx-proxy-git-release
         params:
           DOCKER_REPOSITORY: govukpay/docker-nginx-proxy
-          APP_GIT_DIR: nginx-proxy-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
@@ -2777,9 +2788,10 @@ jobs:
         trigger: true
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
+        input_mapping:
+          git-release: notifications-git-release
         params:
           DOCKER_REPOSITORY: govukpay/notifications
-          APP_GIT_DIR: notifications-git-release
           <<: *docker_credentials
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
