@@ -7,34 +7,8 @@ params:
   DOCKER_USERNAME: DockerhubUsername
   DOCKER_AUTH_TOKEN: DockerhubAuthToken
   DOCKER_REPOSITORY: DockerhubRepositoryName
-  APP_GIT_DIR: AppName
 inputs:
-  - name: toolbox-git-release
-    optional: true
-  - name: frontend-git-release
-    optional: true
-  - name: adminusers-git-release
-    optional: true
-  - name: cardid-git-release
-    optional: true
-  - name: connector-git-release
-    optional: true
-  - name: ledger-git-release
-    optional: true
-  - name: products-git-release
-    optional: true
-  - name: products-ui-git-release
-    optional: true
-  - name: publicapi-git-release
-    optional: true
-  - name: publicauth-git-release
-    optional: true
-  - name: selfservice-git-release
-    optional: true
-  - name: nginx-proxy-git-release
-    optional: true
-  - name: notifications-git-release
-    optional: true
+  - name: git-release
 outputs:
   - name: image
   - name: docker_tags
@@ -58,10 +32,10 @@ run:
       echo "Authenticating with Docker Hub..."
       # TODO: use alternative auth method for docker
       echo "$DOCKER_AUTH_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
-      COMMIT_SHA=$(cat $APP_GIT_DIR/.git/HEAD)
+      COMMIT_SHA=$(cat git-release/.git/HEAD)
       docker pull $DOCKER_REPOSITORY:$COMMIT_SHA
 
       docker save $DOCKER_REPOSITORY:$COMMIT_SHA --output image/image.tar
 
-      GIT_TAG=$(cat $APP_GIT_DIR/.git/ref)
+      GIT_TAG=$(cat git-release/.git/ref)
       echo "$COMMIT_SHA $GIT_TAG" > docker_tags/docker_tags.txt
