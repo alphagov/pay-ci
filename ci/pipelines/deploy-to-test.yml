@@ -1052,7 +1052,7 @@ jobs:
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
-          git-release: adminuers-git-release
+          git-release: adminusers-git-release
         params:
           DOCKER_REPOSITORY: govukpay/adminusers
           <<: *docker_credentials
