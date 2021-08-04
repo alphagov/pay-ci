@@ -100,7 +100,7 @@ jobs:
             args:
               - -ec
               - |
-                cd pay-infra/provisioning/terraform/deployments/deploy/management/smoke_tests
+                cd pay-infra/provisioning/terraform/deployments/deploy/deploy-7/management/smoke_tests
                 terraform init
                 terraform apply \
                   -target=module.smoke_tests.module.test_env_post_deploy_smoke_tests \
@@ -146,7 +146,7 @@ jobs:
             args:
               - -ec
               - |
-                cd pay-infra/provisioning/terraform/deployments/deploy/management/smoke_tests
+                cd pay-infra/provisioning/terraform/deployments/deploy/deploy-7/management/smoke_tests
                 terraform init
                 terraform apply \
                   -target=module.smoke_tests.module.staging_env_post_deploy_smoke_tests \
@@ -193,7 +193,7 @@ jobs:
             args:
               - -ec
               - |
-                cd pay-infra/provisioning/terraform/deployments/deploy/management/smoke_tests
+                cd pay-infra/provisioning/terraform/deployments/deploy/deploy-7/management/smoke_tests
                 terraform init
                 terraform apply \
                   -target=module.smoke_tests.module.production_env_post_deploy_smoke_tests \
