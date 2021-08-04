@@ -90,7 +90,7 @@ jobs:
             type: registry-image
             source:
               repository: hashicorp/terraform
-              tag: 0.13.4
+              tag: 1.0.3
           params:
             ENVIRONMENT: test
             SMOKE_TEST_VERSION: ((.:release_version))
@@ -105,7 +105,7 @@ jobs:
                 terraform apply \
                   -target=module.smoke_tests.module.test_env_post_deploy_smoke_tests \
                   -var pay_smoke_tests_version=${SMOKE_TEST_VERSION} \
-                  -var zip_file_directory="../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
+                  -var zip_file_directory="../../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
                   -auto-approve
 
   - name: update-canaries-for-staging-environment
@@ -136,7 +136,7 @@ jobs:
             type: registry-image
             source:
               repository: hashicorp/terraform
-              tag: 0.13.4
+              tag: 1.0.3
           params:
             ENVIRONMENT: staging
             SMOKE_TEST_VERSION: ((.:release_version))
@@ -153,7 +153,7 @@ jobs:
                   -target=module.smoke_tests.module.staging_env_scheduled_psp_smoke_tests \
                   -target=module.smoke_tests.module.staging_env_scheduled_sandbox_smoke_tests \
                   -var pay_smoke_tests_version=${SMOKE_TEST_VERSION} \
-                  -var zip_file_directory="../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
+                  -var zip_file_directory="../../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
                   -auto-approve
 
   - name: update-canaries-for-production-environment
@@ -183,7 +183,7 @@ jobs:
             type: registry-image
             source:
               repository: hashicorp/terraform
-              tag: 0.13.4
+              tag: 1.0.3
           params:
             ENVIRONMENT: production
             SMOKE_TEST_VERSION: ((.:release_version))
@@ -199,6 +199,6 @@ jobs:
                   -target=module.smoke_tests.module.production_env_post_deploy_smoke_tests \
                   -target=module.smoke_tests.module.production_env_scheduled_sandbox_smoke_tests \
                   -var pay_smoke_tests_version=${SMOKE_TEST_VERSION} \
-                  -var zip_file_directory="../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
+                  -var zip_file_directory="../../../../../../../../zip-files-directory/${SMOKE_TEST_VERSION}" \
                   -auto-approve
 
