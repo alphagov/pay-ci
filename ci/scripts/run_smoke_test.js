@@ -106,21 +106,8 @@ async function run () {
     } else if (state === 'FAILED') {
       prettyPrintRunReport(result.LastRun)
       console.log('\n===FAILURE LOGS==============================================\n')
-      const splitLocation = result.LastRun.ArtifactS3Location.split('/')
-      const prefix = splitLocation.slice(1, splitLocation.size).reduce((a, b) => a + '/' + b)
-      console.log(`${prefix}${splitLocation[0]}`)
-
-      // Check failure details from S3 bucket
-      try {
-        const s3Objects = await getS3Objects(splitLocation, prefix)
-        const logFile = s3Objects.Contents.filter(obj => obj.Key.includes('.txt')).map(obj => obj.Key)[0]
-        const logStream = s3.getObject({ Bucket: splitLocation[0], Key: logFile }).createReadStream()
-        logStream.on('readable', () => {
-          console.log(`${logStream.read()}`)
-        })
-      } catch (error) {
-        console.log(error)
-      }
+      console.log('Check the AWS Cloudwatch console at ')
+      console.log(`https://eu-west-1.console.aws.amazon.com/cloudwatch/home?region=eu-west-1#synthetics:canary/detail/${SMOKE_TEST_NAME}`)
       console.log('\n============================================================\n')
 
       process.exitCode = 1
