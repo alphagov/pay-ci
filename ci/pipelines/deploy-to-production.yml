@@ -902,6 +902,9 @@ jobs:
       - get: frontend-ecr-registry-prod
         trigger: true
         passed: [deploy-frontend-to-prod]
+      - get: nginx-forward-proxy-ecr-registry-prod
+        trigger: true
+        passed: [deploy-frontend-to-prod]
       - get: pay-ci
       - load_var: application_image_tag
         file: frontend-ecr-registry-prod/tag
