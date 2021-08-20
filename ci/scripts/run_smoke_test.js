@@ -2,7 +2,6 @@
 
 const AWS = require('aws-sdk')
 const synthetics = new AWS.Synthetics()
-const s3 = new AWS.S3()
 const CHECK_INTERVAL = 5000
 const CANARY_TIMEOUT = 60000
 const { SMOKE_TEST_NAME } = process.env
@@ -27,10 +26,6 @@ function prettyPrintRunReport (runReport) {
   if (runReport.Status.State === 'FAILED') {
     console.log(`Failure Reason: ${runReport.Status.StateReason}`)
   }
-}
-
-async function getS3Objects (splitLocation, prefix) {
-  return s3.listObjects({ Bucket: splitLocation[0], Prefix: prefix }).promise()
 }
 
 function checkIfCanaryIsInStartableState (canary) {
