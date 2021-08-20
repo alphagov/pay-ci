@@ -1,0 +1,27 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: alpine
+params:
+  APPLICATION_IMAGE_TAG:
+  ENV:
+outputs:
+  - name: snippet
+run:
+  path: sh
+  args:
+    - -c
+    - |
+      cat <<EOT >> snippet/start
+      :rocket: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} is beginning
+      EOT
+
+      cat <<EOT >> snippet/success
+      :green-circle: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} was successful :tada:
+      EOT
+
+      cat <<EOT >> snippet/failure
+      :red_circle: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} failed. Version details:
+      EOT

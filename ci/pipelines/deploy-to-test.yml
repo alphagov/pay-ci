@@ -230,6 +230,13 @@ resources:
       repository: govukpay/toolbox
       variant: release
       <<: *aws_test_config
+  - name: egress-ecr-registry-test
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/egress
+      variant: egress-release
+      <<: *aws_test_config
   - name: frontend-ecr-registry-test
     type: dev-registry-image
     icon: docker
@@ -354,6 +361,12 @@ resources:
     icon: docker
     source:
       repository: govukpay/toolbox
+      <<: *aws_staging_config
+  - name: egress-ecr-registry-staging
+    type: dev-registry-image
+    icon: docker
+    source:
+      repository: govukpay/egress
       <<: *aws_staging_config
   - name: frontend-ecr-registry-staging
     type: dev-registry-image
@@ -504,6 +517,11 @@ groups:
       - connector-pact-tag
       - push-connector-to-staging-ecr
       - connector-db-migration
+  - name: egress
+    jobs:
+      - deploy-egress
+      - smoke-test-egress
+      - push-egress-to-staging-ecr
   - name: frontend
     jobs:
       - push-frontend-to-test-ecr
@@ -868,6 +886,102 @@ jobs:
         params:
           image: toolbox-ecr-registry-test/image.tar
           additional_tags: toolbox-ecr-registry-test/tag
+
+  - name: deploy-egress
+    serial: true
+    serial_groups: [deploy-application]
+    plan:
+      - get: egress-ecr-registry-test
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: egress-ecr-registry-test/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
+        params:
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ENV: test-12
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: success_snippet
+        file: snippet/success  
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          CLUSTER_NAME: "test-12-fargate"
+          APP_NAME: egress
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - task: deploy-to-test
+        file: pay-ci/ci/tasks/deploy-egress.yml
+        params:
+          <<: *aws_assumed_role_creds
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ACCOUNT: test
+          ENVIRONMENT: test-12
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: egress
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          <<: *aws_assumed_role_creds
+          ENVIRONMENT: test-12
+    <<: *put_success_slack_notification      
+    <<: *put_failure_slack_notification
+
+  - name: smoke-test-egress
+    serial_groups: [smoke-test]
+    plan:
+      - get: egress-ecr-registry-test
+        trigger: true
+        passed: [deploy-egress]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: egress-ecr-registry-test/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: egress
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
+  - name: push-egress-to-staging-ecr
+    plan:
+      - get: egress-ecr-registry-test
+        passed: [smoke-test-egress]
+        params:
+          format: oci
+        trigger: true
+      - put: egress-ecr-registry-staging
+        params:
+          image: egress-ecr-registry-test/image.tar
+          additional_tags: egress-ecr-registry-test/tag
 
   - name: push-frontend-to-test-ecr
     plan:
