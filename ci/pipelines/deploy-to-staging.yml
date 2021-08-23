@@ -223,7 +223,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/egress
-      variant: release
+      variant: egress-release
       <<: *aws_staging_config
   - name: egress-ecr-registry-prod
     type: registry-image-resource-1-1-0
@@ -1067,7 +1067,7 @@ jobs:
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
-        file: egress-ecr-registry-test/tag
+        file: egress-ecr-registry-staging/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
         params:
