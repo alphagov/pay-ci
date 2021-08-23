@@ -170,6 +170,13 @@ resources:
       branch: master
       username: alphagov-pay-ci
       password: ((github-access-token))
+  - name: egress-ecr-registry-prod
+    type: registry-image-resource-1-1-0
+    icon: docker
+    source:
+      repository: govukpay/egress
+      variant: egress-release
+      <<: *aws_prod_config      
   - name: carbon-relay-ecr-registry-prod
     type: registry-image-resource-1-1-0
     icon: docker
@@ -323,6 +330,10 @@ groups:
       - smoke-test-connector-on-prod
       - connector-pact-tag
       - connector-db-migration-prod
+  - name: egress
+    jobs:
+      - deploy-egress-to-prod
+      - smoke-test-egress-on-prod
   - name: frontend
     jobs:
       - deploy-frontend-to-prod
@@ -391,6 +402,93 @@ jobs:
         trigger: true
       - set_pipeline: deploy-to-production
         file: deploy-to-prod-pipeline-definition/ci/pipelines/deploy-to-production.yml
+
+  - name: deploy-egress-to-prod
+    serial: true
+    serial_groups: [deploy-application]
+    plan:
+      - get: egress-ecr-registry-prod
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: egress-ecr-registry-prod/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
+        params:
+          ACTION_NAME: Deployment
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ENV: production-2
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: start_snippet
+        file: snippet/start    
+      - <<: *put_start_slack_notification  
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          CLUSTER_NAME: "production-2-fargate"
+          APP_NAME: egress
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-egress.yml
+        params:
+          <<: *aws_assumed_role_creds
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ACCOUNT: production
+          ENVIRONMENT: production-2
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: egress
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          <<: *aws_assumed_role_creds
+          ENVIRONMENT: production-2
+    <<: *put_success_slack_notification_p1      
+    <<: *put_failure_slack_notification
+
+  - name: smoke-test-egress-on-prod
+    serial_groups: [smoke-test]
+    plan:
+      - get: egress-ecr-registry-prod
+        trigger: true
+        passed: [deploy-egress-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: egress-ecr-registry-prod/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
+        params:
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-production
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
 
   - name: deploy-selfservice-to-prod
     serial: true

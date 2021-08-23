@@ -5,6 +5,7 @@ image_resource:
   source:
     repository: alpine
 params:
+  ACTION_NAME:
   APPLICATION_IMAGE_TAG:
   ENV:
 outputs:
@@ -15,13 +16,13 @@ run:
     - -c
     - |
       cat <<EOT >> snippet/start
-      :rocket: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} is beginning
+      :rocket: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} is beginning
       EOT
 
       cat <<EOT >> snippet/success
-      :green-circle: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} was successful :tada:
+      :green-circle: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} was successful :tada:
       EOT
 
       cat <<EOT >> snippet/failure
-      :red_circle: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} failed. Version details:
+      :red_circle: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} failed. Version details:
       EOT
