@@ -1125,8 +1125,6 @@ jobs:
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
         params:
-          APP_NAME: egress
-          ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
       - load_var: success_snippet
         file: snippet/success
