@@ -468,7 +468,7 @@ jobs:
       - load_var: application_image_tag
         file: egress-ecr-registry-prod/tag
       - task: create-notification-snippets
-        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
         params:
           APP_NAME: egress
           ACTION_NAME: Smoke test
