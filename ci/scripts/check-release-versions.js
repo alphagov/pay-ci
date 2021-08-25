@@ -64,15 +64,15 @@ async function run () {
     if (APPLICATION_IMAGE_TAG) {
       checkReleaseVersion(APP_NAME, APPLICATION_IMAGE_TAG, containerDefinitions)
     }
-    
+
     if (TELEGRAF_IMAGE_TAG) {
       checkReleaseVersion('telegraf', TELEGRAF_IMAGE_TAG, containerDefinitions)
     }
-    
+
     if (NGINX_IMAGE_TAG) {
       checkReleaseVersion('nginx', NGINX_IMAGE_TAG, containerDefinitions)
     }
-    
+
     if (NGINX_FORWARD_PROXY_IMAGE_TAG) {
       checkReleaseVersion('nginx-forward-proxy', NGINX_FORWARD_PROXY_IMAGE_TAG, containerDefinitions)
     }
