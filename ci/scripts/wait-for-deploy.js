@@ -3,6 +3,7 @@
 const AWS = require('aws-sdk')
 const ecs = new AWS.ECS()
 const MAX_RETRIES = 120
+const EGRESS_MAX_RETRIES = 180
 const CHECK_INTERVAL = 5000
 const {
   APP_NAME: appName,
@@ -25,10 +26,16 @@ function describeServices () {
 async function run () {
   let uncompletedDeployments
   let counter = 0
+  let retries = MAX_RETRIES
+  if (appName === 'egress') {
+    // Egress sits behind an NLB which requires a longer timeout
+    retries = EGRESS_MAX_RETRIES
+  }
+
   const deploymentChecker = setInterval(async () => {
     counter++
-    if (counter === MAX_RETRIES) {
-      console.log(`Deployment did not complete after ${MAX_RETRIES * CHECK_INTERVAL} seconds.`)
+    if (counter === retries) {
+      console.log(`Deployment did not complete after ${retries * CHECK_INTERVAL} ms.`)
       process.exitCode = 1
       clearInterval(deploymentChecker)
     }
