@@ -99,12 +99,6 @@ definitions:
           <<: *aws_assumed_role_creds
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "card_smartpay_prod"
-      - task: run_create_card_payment_worldpay_with_3ds-production
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_3ds_prod"
       - task: run_create_card_payment_worldpay_with_3ds2-production
         file: pay-ci/ci/tasks/run-smoke-test.yml
         params:
