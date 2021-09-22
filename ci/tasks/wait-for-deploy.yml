@@ -5,7 +5,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: govukpay/node-aws-sdk-runner
+    repository: govukpay/node-runner
 params:
   AWS_ACCESS_KEY_ID:
   AWS_SECRET_ACCESS_KEY:
