@@ -1282,7 +1282,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-aws-sdk-runner
+              repository: govukpay/node-runner
           inputs:
             - name: pay-ci
           params:
@@ -1489,7 +1489,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-aws-sdk-runner
+              repository: govukpay/node-runner
           inputs:
             - name: pay-ci
           params:
@@ -1772,7 +1772,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-aws-sdk-runner
+              repository: govukpay/node-runner
           inputs:
             - name: pay-ci
           params:
@@ -1901,7 +1901,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-aws-sdk-runner
+              repository: govukpay/node-runner
           inputs:
             - name: pay-ci
           params:
@@ -2421,7 +2421,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-aws-sdk-runner
+              repository: govukpay/node-runner
           inputs:
             - name: pay-ci
           params:
