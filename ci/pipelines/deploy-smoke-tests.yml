@@ -3,6 +3,13 @@ aws_assumed_role_creds: &aws_assumed_role_creds
   AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
   AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
+resource_types:
+  - name: github-release-1-5-5
+    type: registry-image
+    source:
+      repository: concourse/github-release-resource
+      tag: 1.5.5
+
 resources:
   - name: deploy-smoke-tests-pipeline-definition
     type: git
@@ -27,7 +34,7 @@ resources:
       username: alphagov-pay-ci
       password: ((github-access-token))
   - name: smoke-tests-git-release
-    type: github-release
+    type: github-release-1-5-5
     icon: github
     source:
       owner: alphagov
