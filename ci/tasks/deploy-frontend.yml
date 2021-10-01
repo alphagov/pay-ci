@@ -6,7 +6,7 @@ image_resource:
   type: registry-image
   source:
     repository: hashicorp/terraform
-    tag: 0.14.11
+    tag: 1.0.8
 params:
   AWS_ACCESS_KEY_ID:
   AWS_SECRET_ACCESS_KEY:
