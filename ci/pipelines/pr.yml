@@ -398,12 +398,6 @@ groups:
       - products-products-e2e
       - record-products-build-time
 
-  - name: Direct Debit Connector
-    jobs:
-      - directdebit-connector-unit-test
-      - directdebit-connector-integration-test
-      - directdebit-connector-pact-provider-test
-
   - name: Products-UI
     jobs:
       - products-ui-test
@@ -417,10 +411,6 @@ groups:
       - card-frontend-card-e2e
       - card-frontend-pact-provider-verification
       - record-frontend-build-time
-
-  - name: Direct-Debit-Frontend
-    jobs:
-      - directdebit-frontend-test
 
   - name: Selfservice
     jobs:
@@ -488,12 +478,6 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-products
-      branch: master
-  - name: directdebit-connector-master
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-direct-debit-connector
       branch: master
   - name: pr-ci-pipeline
     type: git
@@ -669,12 +653,6 @@ resources:
       repository: alphagov/pay-cardid
 
   - <<: *pull-request
-    name: directdebit-connector-pull-request
-    source:
-      <<: *pull-request-source
-      repository: alphagov/pay-direct-debit-connector
-
-  - <<: *pull-request
     name: card-frontend-pull-request
     source:
       <<: *pull-request-source
@@ -691,12 +669,6 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-toolbox
-
-  - <<: *pull-request
-    name: directdebit-frontend-pull-request
-    source:
-      <<: *pull-request-source
-      repository: alphagov/pay-direct-debit-frontend
 
   - <<: *pull-request
     name: products-ui-pull-request
@@ -984,7 +956,6 @@ jobs:
       - <<: *get-ci
       - get: card-connector-master
       - get: ledger-master
-      - get: directdebit-connector-master
       - <<: *pact-provider-test-preflight-check
         params:
           consumer: publicapi
@@ -1003,13 +974,6 @@ jobs:
           params:
             consumer: publicapi
             provider: ledger
-        - <<: *pact-provider-verification
-          task: directdebit-connector provider pact verification
-          input_mapping:
-            test_target: directdebit-connector-master
-          params:
-            consumer: publicapi
-            provider: direct-debit-connector
         on_failure:
           <<: *put-pact-provider-failed-status
           put: publicapi-pull-request
@@ -1655,64 +1619,6 @@ jobs:
     - <<: *send-pr-build-time
 
   - <<: *job-definition
-    name: directdebit-connector-unit-test
-    serial_groups: [unit-test]
-    plan:
-    - <<: *get-pull-request
-      resource: directdebit-connector-pull-request
-    - <<: *get-ci
-    - <<: *put-unit-tests-pending-status
-      put: directdebit-connector-pull-request
-    - <<: *run-java-unit-test
-      params:
-        app_name: directdebit-connector
-      on_failure:
-        <<: *put-unit-test-failed-status
-        put: directdebit-connector-pull-request
-    - <<: *put-unit-test-success-status
-      put: directdebit-connector-pull-request
-
-  - <<: *job-definition
-    name: directdebit-connector-integration-test
-    serial_groups: [integration-test]
-    plan:
-    - <<: *get-pull-request
-      resource: directdebit-connector-pull-request
-    - <<: *put-integration-test-pending-status
-      put: directdebit-connector-pull-request
-    - <<: *get-ci
-    - <<: *run-java-integration-tests
-      on_failure:
-        <<: *put-integration-test-failed-status
-        put: directdebit-connector-pull-request
-    - <<: *publish-pacts
-      params:
-        consumer_name: directdebit-connector
-    - <<: *put-integration-test-success-status
-      put: directdebit-connector-pull-request
-      
-  - <<: *job-definition
-    name: directdebit-connector-pact-provider-test
-    serial_groups: [pact-test]
-    plan:
-    - <<: *get-pull-request
-      resource: directdebit-connector-pull-request
-    - <<: *put-pact-provider-pending-status
-      put: directdebit-connector-pull-request
-    - <<: *get-ci
-    - <<: *pact-provider-test-preflight-check
-    - <<: *pact-provider-verification
-      input_mapping:
-        test_target: src
-      params:
-        provider: directdebit-connector
-      on_failure:
-        <<: *put-pact-provider-failed-status
-        put: directdebit-connector-pull-request
-    - <<: *put-pact-provider-success-status
-      put: directdebit-connector-pull-request
-
-  - <<: *job-definition
     name: card-frontend-test
     serial_groups: [node-test]
     plan:
@@ -1857,7 +1763,6 @@ jobs:
     - get: ledger-master
     - get: adminusers-master
     - get: products-master
-    - get: directdebit-connector-master
     - <<: *get-ci
     - <<: *pact-provider-test-preflight-check
       params:
@@ -1870,13 +1775,6 @@ jobs:
         params:
           consumer: selfservice
           provider: connector
-      - <<: *pact-provider-verification
-        task: direct debit connector provider pact verification
-        input_mapping:
-          test_target: directdebit-connector-master
-        params:
-          consumer: selfservice
-          provider: direct-debit-connector
       - <<: *pact-provider-verification
         task: adminusers provider pact verification
         input_mapping:
@@ -2027,22 +1925,6 @@ jobs:
       resource: products-ui-pull-request
       passed: [products-ui-test, products-ui-pact-provider-verification]
     - <<: *send-pr-build-time
-
-  - <<: *job-definition
-    name: directdebit-frontend-test
-    serial_groups: [node-test]
-    plan:
-    - <<: *get-pull-request
-      resource: directdebit-frontend-pull-request
-    - <<: *get-ci
-    - <<: *put-test-pending-status
-      put: directdebit-frontend-pull-request
-    - <<: *node-test
-      on_failure:
-        <<: *put-test-failed-status
-        put: directdebit-frontend-pull-request
-    - <<: *put-test-success-status
-      put: directdebit-frontend-pull-request
 
   - <<: *job-definition
     name: ci-pr-test
