@@ -206,13 +206,6 @@ resources:
       uri: https://github.com/alphagov/pay-notifications
       branch: master
       tag_regex: "alpha_release-(.*)"
-  - name: tcp-proxy-git-release
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-tcp-proxy
-      branch: master
-      tag_regex: "alpha_release-(.*)"
   - name: pay-infra
     type: git
     icon: github
@@ -347,13 +340,6 @@ resources:
     icon: docker
     source:
       repository: govukpay/notifications
-      variant: release
-      <<: *aws_test_config
-  - name: tcp-proxy-ecr-registry-test
-    type: dev-registry-image
-    icon: docker
-    source:
-      repository: govukpay/tcp-proxy
       variant: release
       <<: *aws_test_config
   - name: toolbox-ecr-registry-staging
@@ -607,9 +593,6 @@ groups:
       - deploy-notifications
       - smoke-test-notifications
       - push-notifications-to-staging-ecr
-  - name: tcp-proxy
-    jobs:
-      - push-tcp-proxy-to-test-ecr
   - name: update-deploy-to-test-pipeline
     jobs:
       - update-deploy-to-test-pipeline
@@ -2935,27 +2918,6 @@ jobs:
         input_mapping:
           git-release: notifications-git-release
       - put: notifications-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: tags/tags
-
-  - name: push-tcp-proxy-to-test-ecr
-    plan:
-      - get: pay-ci
-      - get: tcp-proxy-git-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        input_mapping:
-          git-release: tcp-proxy-git-release
-        params:
-          DOCKER_REPOSITORY: govukpay/tcp-proxy
-          <<: *docker_credentials
-      - task: parse-release-tag
-        file: pay-ci/ci/tasks/parse-release-tag.yml
-        input_mapping:
-          git-release: tcp-proxy-git-release
-      - put: tcp-proxy-ecr-registry-test
         params:
           image: image/image.tar
           additional_tags: tags/tags
