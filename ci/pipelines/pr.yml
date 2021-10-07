@@ -366,7 +366,6 @@ groups:
     jobs:
       - cardid-unit-test
       - cardid-integration-test
-      - cardid-card-e2e
       - record-cardid-build-time
 
   - name: Ledger
@@ -1087,67 +1086,6 @@ jobs:
         consumer_name: cardid
     - <<: *put-integration-test-success-status
       put: cardid-pull-request
-
-  - <<: *job-definition
-    name: cardid-card-e2e
-    serial_groups: [e2e-test]
-    plan:
-      - <<: *get-pull-request
-        resource: cardid-pull-request
-        trigger: false
-      - <<: *get-ci
-      - <<: *put-card-e2e-pending-status
-        put: cardid-pull-request
-      - task: update submodule
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          inputs:
-            - name: src
-          params:
-            GH_ACCESS_TOKEN: ((github-access-token))
-          outputs:
-            - name: src
-          run:
-            path: bash
-            dir: src
-            args:
-              - -ec
-              - |
-                # cardid-data submodule's url is defined as ssh yet concourse
-                # is using oauth. Furthermore we need to avoid the password
-                # prompt from the git cli. Therefore rewrite the url for https
-                # and add the token. The risk of setting the token in the url is
-                # mitigated since these files are not committed, the container is ephemeral
-                # and anyone with access to read the files could read the token from
-                # environment variable. Furthermore we redact the token from the
-                # files after the update.
-                sed -i "s/git@github.com:/https:\/\/${GH_ACCESS_TOKEN}@github.com\//" .gitmodules
-                git submodule init -q data
-                git submodule update data
-                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
-                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
-
-      - <<: *run-java-package
-      - <<: *build-docker-image
-        params:
-          app_name: cardid
-      - <<: *get-all-docker-images
-      - <<: *run-e2e
-        input_mapping:
-          docker/cardid: local_image
-        params:
-          app_name: cardid
-          test_type: card
-        on_failure:
-          <<: *put-card-e2e-failed-status
-          put: cardid-pull-request
-      - <<: *put-card-e2e-success-status
-        put: cardid-pull-request
 
   - <<: *job-definition
     name: record-cardid-build-time
