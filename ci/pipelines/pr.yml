@@ -359,7 +359,6 @@ groups:
     jobs:
       - adminusers-unit-test
       - adminusers-integration-test
-      - adminusers-card-e2e
       - adminusers-pact-provider-test
       - record-adminusers-build-time
 
@@ -1042,34 +1041,6 @@ jobs:
         put: adminusers-pull-request
     - <<: *put-pact-provider-success-status
       put: adminusers-pull-request
-
-  - <<: *job-definition
-    name: adminusers-card-e2e
-    serial_groups: [e2e-test]
-    plan:
-      - <<: *get-pull-request
-        trigger: false
-        resource: adminusers-pull-request
-        passed: [adminusers-unit-test]
-      - <<: *get-ci
-      - <<: *put-card-e2e-pending-status
-        put: adminusers-pull-request
-      - <<: *run-java-package
-      - <<: *build-docker-image
-        params:
-          app_name: adminusers
-      - <<: *get-all-docker-images
-      - <<: *run-e2e
-        input_mapping:
-          docker/adminusers: local_image
-        params:
-          app_name: adminusers
-          test_type: card
-        on_failure:
-          <<: *put-card-e2e-failed-status
-          put: adminusers-pull-request
-      - <<: *put-card-e2e-success-status
-        put: adminusers-pull-request
 
   - <<: *job-definition
     name: record-adminusers-build-time
