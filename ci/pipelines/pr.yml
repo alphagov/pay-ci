@@ -393,7 +393,6 @@ groups:
   - name: Products-UI
     jobs:
       - products-ui-test
-      - products-ui-products-e2e
       - products-ui-pact-provider-verification
       - record-products-ui-build-time
 
@@ -1585,36 +1584,6 @@ jobs:
       params:
         consumer_name: products-ui
     - <<: *put-test-success-status
-      put: products-ui-pull-request
-
-  - <<: *job-definition
-    name: products-ui-products-e2e
-    serial_groups: [e2e-test]
-    plan:
-    - <<: *get-ci
-    - <<: *get-pull-request
-      resource: products-ui-pull-request
-      trigger: false
-    - <<: *put-products-e2e-pending-status
-      put: products-ui-pull-request
-    - <<: *node-build
-      on_failure:
-        <<: *put-products-e2e-failed-status
-        put: products-ui-pull-request
-    - <<: *build-docker-image
-      params:
-        app_name: products-ui
-    - <<: *get-all-docker-images
-    - <<: *run-e2e
-      input_mapping:
-        docker/products-ui: local_image
-      params:
-        app_name: productsui
-        test_type: products
-      on_failure:
-        <<: *put-products-e2e-failed-status
-        put: products-ui-pull-request
-    - <<: *put-products-e2e-success-status
       put: products-ui-pull-request
 
   - <<: *job-definition
