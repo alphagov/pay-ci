@@ -14,7 +14,6 @@ outputs:
   - name: pacts
 caches:
   - path: npm_cache
-  - path: cypress_cache
 params:
   skip_tests: false
 run:
@@ -34,7 +33,6 @@ run:
         node $(pwd)/scripts/generate-dev-environment.js local
       fi
 
-      export CYPRESS_CACHE_FOLDER=$(pwd)/../cypress_cache
       npm config set cache ../npm_cache
       npm rebuild node-sass
       npm ci
@@ -45,12 +43,6 @@ run:
       else
         npm run lint
         npm test -- --forbid-only --forbid-pending
-
-        if [ -f "cypress.json" ]; then
-          npm run cypress:server > /dev/null 2>&1 &
-          sleep 3
-          npm run cypress:test
-        fi
       fi
 
       cd ..
