@@ -381,7 +381,6 @@ groups:
     jobs:
       - publicauth-unit-test
       - publicauth-integration-test
-      - publicauth-card-e2e
       - record-publicauth-build-time
 
   - name: Products
@@ -1278,34 +1277,6 @@ jobs:
         consumer_name: publicauth
     - <<: *put-integration-test-success-status
       put: publicauth-pull-request
-
-  - <<: *job-definition
-    name: publicauth-card-e2e
-    serial_groups: [e2e-test]
-    plan:
-      - <<: *get-pull-request
-        resource: publicauth-pull-request
-        trigger: false
-        passed: [publicauth-unit-test]
-      - <<: *get-ci
-      - <<: *put-card-e2e-pending-status
-        put: publicauth-pull-request
-      - <<: *run-java-package
-      - <<: *build-docker-image
-        params:
-          app_name: publicauth
-      - <<: *get-all-docker-images
-      - <<: *run-e2e
-        input_mapping:
-          docker/publicauth: local_image
-        params:
-          app_name: publicauth
-          test_type: card
-        on_failure:
-          <<: *put-card-e2e-failed-status
-          put: publicauth-pull-request
-      - <<: *put-card-e2e-success-status
-        put: publicauth-pull-request
 
   - <<: *job-definition
     name: record-publicauth-build-time
