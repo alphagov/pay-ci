@@ -375,7 +375,6 @@ groups:
       - ledger-consumer-pact-test
       - ledger-pact-provider-test
       - ledger-pact-provider-verification
-      - ledger-card-e2e
       - record-ledger-build-time
 
   - name: Publicauth
@@ -1231,34 +1230,6 @@ jobs:
           <<: *put-pact-provider-failed-status
           put: ledger-pull-request
       - <<: *put-pact-provider-success-status
-        put: ledger-pull-request
-
-  - <<: *job-definition
-    name: ledger-card-e2e
-    serial_groups: [e2e-test]
-    plan:
-      - <<: *get-pull-request
-        resource: ledger-pull-request
-        trigger: false
-        passed: [ledger-unit-test]
-      - <<: *get-ci
-      - <<: *put-card-e2e-pending-status
-        put: ledger-pull-request
-      - <<: *run-java-package
-      - <<: *build-docker-image
-        params:
-          app_name: ledger
-      - <<: *get-all-docker-images
-      - <<: *run-e2e
-        input_mapping:
-          docker/ledger: local_image
-        params:
-          app_name: ledger
-          test_type: card
-        on_failure:
-          <<: *put-card-e2e-failed-status
-          put: ledger-pull-request
-      - <<: *put-card-e2e-success-status
         put: ledger-pull-request
 
   - <<: *job-definition
