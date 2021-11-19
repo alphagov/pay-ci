@@ -1072,6 +1072,7 @@ jobs:
     plan:
       - get: frontend-ecr-registry-test
         trigger: true
+        passed: [deploy-frontend]
       - get: nginx-forward-proxy-ecr-registry-test
         trigger: true
         passed: [deploy-frontend]
