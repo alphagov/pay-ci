@@ -385,7 +385,7 @@ groups:
     jobs:
       - deploy-notifications-to-prod
       - smoke-test-notifications-on-prod
-  - name: pipeline-meta-update
+  - name: update-deploy-to-prod-pipeline
     jobs:
       - update-deploy-to-prod-pipeline
 
