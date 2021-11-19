@@ -49,7 +49,7 @@ definitions:
     params:
       channel: '#govuk-pay-announce'
       text: "((.:start_snippet)) |
-            <https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+            <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
   put_success_slack_notification_p1: &put_success_slack_notification_p1
     on_success:
@@ -57,7 +57,7 @@ definitions:
       params:
         channel: '#govuk-pay-announce'
         text: "((.:success_snippet)) |
-              <https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+              <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
   put_success_slack_notification: &put_success_slack_notification
     on_success:
@@ -65,7 +65,7 @@ definitions:
       params:
         channel: '#govuk-pay-activity'
         text: "((.:success_snippet)) \n\n
-              <https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+              <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
     
   put_failure_slack_notification: &put_failure_slack_notification
     on_failure:
@@ -73,14 +73,14 @@ definitions:
       params:
         channel: '#govuk-pay-announce'
         text: "((.:failure_snippet)) \n
-              - <https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
   put_db_migration_slack_notification: &put_db_migration_slack_notification
     put: slack-notification
     params:
       channel: '#govuk-pay-announce'
       text: ":postgres: FARGATE starting $BUILD_JOB_NAME on staging-2\n
-            - <https://cd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
   snippet_params_all_versions: &snippet_params_all_versions
     ENV: staging-2
