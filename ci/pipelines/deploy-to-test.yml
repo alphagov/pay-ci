@@ -673,14 +673,14 @@ jobs:
   - name: update-deploy-to-test-pipeline
     plan:
       - get: deploy-to-test-pipeline-definition
-        trigger: true
+        trigger: false
       - set_pipeline: deploy-to-test
         file: deploy-to-test-pipeline-definition/ci/pipelines/deploy-to-test.yml
   - name: push-toolbox-to-test-ecr
     plan:
       - get: pay-ci
       - get: toolbox-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -702,9 +702,9 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: carbon-relay-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: stunnel-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: carbon_relay_image_tag
@@ -783,11 +783,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: toolbox-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -881,7 +881,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: egress-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -976,7 +976,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: frontend-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -997,13 +997,13 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: frontend-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-forward-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1072,6 +1072,7 @@ jobs:
     plan:
       - get: frontend-ecr-registry-test
         trigger: true
+        passed: [deploy-frontend]
       - get: nginx-forward-proxy-ecr-registry-test
         trigger: true
         passed: [deploy-frontend]
@@ -1151,7 +1152,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: adminusers-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -1172,11 +1173,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: adminusers-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1358,7 +1359,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: connector-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -1379,11 +1380,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: connector-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1563,7 +1564,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: ledger-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -1584,11 +1585,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: ledger-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1770,7 +1771,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: products-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -1791,11 +1792,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: products-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1975,7 +1976,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: products-ui-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -1996,11 +1997,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: products-ui-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2139,7 +2140,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: publicapi-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -2160,11 +2161,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: publicapi-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2303,7 +2304,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: publicauth-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -2324,11 +2325,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: publicauth-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2461,7 +2462,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: selfservice-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -2482,11 +2483,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: selfservice-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2627,7 +2628,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: cardid-git-release
-        trigger: true
+        trigger: false
         params:
           submodules: none
       - task: update-submodule
@@ -2683,11 +2684,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: cardid-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: nginx-proxy-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: telegraf-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2779,7 +2780,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: nginx-proxy-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -2811,7 +2812,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: nginx-forward-proxy-git-release
-        trigger: true
+        trigger: false
       - task: build-nginx-forward-proxy-image
         privileged: true
         params:
@@ -2848,7 +2849,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: telegraf-git-release
-        trigger: true
+        trigger: false
       - task: run-telegraf-unit-tests
         config:
           container_limits: {}
@@ -2905,7 +2906,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: notifications-git-release
-        trigger: true
+        trigger: false
       # Temporarily fetch image from Dockerhub until Concourse can build its own
       - <<: *pull-image-from-dockerhub
         input_mapping:
@@ -2927,7 +2928,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: notifications-ecr-registry-test
-        trigger: true
+        trigger: false
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
