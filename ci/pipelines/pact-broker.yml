@@ -11,7 +11,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: main
       paths:
         - ci/pipelines/pact-broker.yml
 
@@ -20,7 +20,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: main
       paths:
         - ci/pact_broker
 
@@ -51,7 +51,7 @@ jobs:
       - put: paas
         params:
           command: push
-          app_name: pay-concourse-pact-broker
+          app_name: pay-pact-broker
           manifest: pact-broker-manifest/ci/pact_broker/pay-pact-broker_manifest.yml
           vars:
             pact-broker-username: ((pact-broker-username))
