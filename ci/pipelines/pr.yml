@@ -1726,6 +1726,7 @@ jobs:
     serial_groups: [node-test]
     plan:
     - <<: *get-pull-request
+      trigger: true
       resource: selfservice-pull-request
     - <<: *get-ci
     - <<: *put-test-pending-status
@@ -1775,6 +1776,7 @@ jobs:
     serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
+      trigger: true
       resource: selfservice-pull-request
       passed: [selfservice-test]
     - <<: *put-pact-provider-pending-status
@@ -1826,6 +1828,7 @@ jobs:
     name: record-selfservice-build-time
     plan:
     - <<: *get-pull-request
+      trigger: true
       resource: selfservice-pull-request
       passed: [selfservice-test, selfservice-pact-provider-verification]
     - <<: *send-pr-build-time
