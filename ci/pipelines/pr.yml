@@ -1962,6 +1962,7 @@ jobs:
     name: stubs-test
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: stubs-pull-request
     - <<: *get-ci
     - <<: *put-test-pending-status
