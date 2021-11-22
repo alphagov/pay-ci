@@ -7,7 +7,7 @@ definitions:
   - &get-pull-request
     get: src
     resource: updateThisValue
-    trigger: true
+    trigger: false
     version: every
     params:
       integration_tool: checkout
@@ -1962,6 +1962,7 @@ jobs:
     name: stubs-test
     plan:
     - <<: *get-pull-request
+      trigger: true
       resource: stubs-pull-request
     - <<: *get-ci
     - <<: *put-test-pending-status
