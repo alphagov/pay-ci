@@ -722,6 +722,7 @@ jobs:
     serial_groups: [integration-test]
     plan:
     - <<: *get-pull-request
+      trigger: true
       resource: card-connector-pull-request
     - <<: *put-integration-test-pending-status
       put: card-connector-pull-request
