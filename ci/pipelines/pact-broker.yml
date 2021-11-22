@@ -11,7 +11,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: main
+      branch: master
       paths:
         - ci/pipelines/pact-broker.yml
 
@@ -20,7 +20,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: main
+      branch: master
       paths:
         - ci/pact_broker
 
