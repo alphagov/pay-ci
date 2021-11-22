@@ -887,6 +887,7 @@ jobs:
     serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: publicapi-pull-request
     - <<: *get-ci
     - <<: *put-unit-tests-pending-status
@@ -905,6 +906,7 @@ jobs:
     serial_groups: [integration-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: publicapi-pull-request
     - <<: *put-integration-test-pending-status
       put: publicapi-pull-request
@@ -951,6 +953,7 @@ jobs:
     serial_groups: [pact-test]
     plan:
       - <<: *get-pull-request
+        trigger: false
         resource: publicapi-pull-request
         passed: [publicapi-unit-test, publicapi-integration-test]
       - <<: *put-pact-provider-pending-status
@@ -1014,6 +1017,7 @@ jobs:
     name: record-publicapi-build-time
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: publicapi-pull-request
       passed: [publicapi-unit-test, publicapi-integration-test,
         publicapi-pact-provider-verification]
@@ -1080,6 +1084,7 @@ jobs:
     serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: adminusers-pull-request
     - <<: *get-ci
     - <<: *put-unit-tests-pending-status
@@ -1098,6 +1103,7 @@ jobs:
     serial_groups: [integration-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: adminusers-pull-request
     - <<: *put-integration-test-pending-status
       put: adminusers-pull-request
@@ -1117,6 +1123,7 @@ jobs:
     serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: adminusers-pull-request
     - <<: *put-pact-provider-pending-status
       put: adminusers-pull-request
@@ -1165,6 +1172,7 @@ jobs:
     name: record-adminusers-build-time
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: adminusers-pull-request
       passed: [adminusers-unit-test, adminusers-integration-test,
         adminusers-pact-provider-test]
