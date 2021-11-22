@@ -1289,6 +1289,7 @@ jobs:
     serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: ledger-pull-request
     - <<: *get-ci
     - <<: *put-unit-tests-pending-status
@@ -1307,6 +1308,7 @@ jobs:
     serial_groups: [integration-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: ledger-pull-request
     - <<: *put-integration-test-pending-status
       put: ledger-pull-request
@@ -1326,6 +1328,7 @@ jobs:
     serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: ledger-pull-request
     - <<: *put-pact-provider-pending-status
       put: ledger-pull-request
@@ -1347,6 +1350,7 @@ jobs:
     plan:
     - <<: *get-ci
     - <<: *get-pull-request
+      trigger: false
       resource: ledger-pull-request
     - task: run consumer pact tests
       privileged: true
@@ -1401,6 +1405,7 @@ jobs:
     plan:
       - <<: *get-ci
       - <<: *get-pull-request
+        trigger: false
         resource: ledger-pull-request
         passed: [ledger-consumer-pact-test]
       - <<: *put-pact-provider-pending-status
@@ -1454,6 +1459,7 @@ jobs:
     name: record-ledger-build-time
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: ledger-pull-request
       passed: [ledger-unit-test, ledger-integration-test,
         ledger-pact-provider-test, ledger-consumer-pact-test,
@@ -1849,6 +1855,7 @@ jobs:
     serial_groups: [node-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: products-ui-pull-request
     - <<: *get-ci
     - <<: *put-test-pending-status
@@ -1899,6 +1906,7 @@ jobs:
     plan:
     - <<: *get-ci
     - <<: *get-pull-request
+      trigger: false
       resource: products-ui-pull-request
       passed: [products-ui-test]
     - <<: *put-pact-provider-pending-status
@@ -1933,6 +1941,7 @@ jobs:
     name: record-products-ui-build-time
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: products-ui-pull-request
       passed: [products-ui-test, products-ui-pact-provider-verification]
     - <<: *send-pr-build-time
