@@ -703,6 +703,7 @@ jobs:
     serial_groups: [unit-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: card-connector-pull-request
     - <<: *get-ci
     - <<: *put-unit-tests-pending-status
@@ -721,6 +722,7 @@ jobs:
     serial_groups: [integration-test]
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: card-connector-pull-request
     - <<: *put-integration-test-pending-status
       put: card-connector-pull-request
@@ -1021,6 +1023,7 @@ jobs:
     name: java-commons-test
     plan:
     - <<: *get-pull-request
+      trigger: false
       resource: java-commons-pull-request
     - <<: *get-ci
     - <<: *put-integration-test-pending-status
