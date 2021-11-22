@@ -2002,6 +2002,6 @@ jobs:
   - name: update-pr-ci-pipeline
     plan:
       - get: pr-ci-pipeline
-        trigger: true
+        trigger: false
       - set_pipeline: pr-ci
         file: pr-ci-pipeline/ci/pipelines/pr.yml
