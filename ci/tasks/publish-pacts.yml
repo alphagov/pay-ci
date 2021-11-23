@@ -24,7 +24,8 @@ run:
       version="$(cat src/.git/resource/head_sha)"
       pr="$(cat src/.git/resource/pr)"
       cd pacts || exit 1
-      for pact in $(ls . | grep -v '\-to\-'); do
+
+      for pact in $(find . -mindepth 1 -maxdepth 1 -not -name '*-to-*' | sort); do
         provider_name=$(jq .provider.name < "$pact" | tr -d '"')
         curl -v --fail -X PUT -H "Content-Type: application/json" \
           -d@"$pact" \

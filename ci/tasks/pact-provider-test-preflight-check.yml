@@ -32,7 +32,7 @@ run:
       }
 
 
-      if [ -z "$consumer" ] || [ "$consumer" == null ]; then
+      if [ -z "$consumer" ] || [ "$consumer" = null ]; then
         echo "Pact tests being run in provider context. Creating parameters..."
         echo master > pact_params/consumer_tag
         touch pact_params/verification_needed
