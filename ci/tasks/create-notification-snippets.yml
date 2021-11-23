@@ -19,7 +19,7 @@ run:
   args:
     - -c
     - |
-      APP_RELEASE_NUMBER=$(echo ${APPLICATION_IMAGE_TAG} | sed 's/-release//')
+      APP_RELEASE_NUMBER=$(echo "${APPLICATION_IMAGE_TAG}" | sed 's/-release//')
 
       cat <<EOT >> snippet/start
       :rocket: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} ${APP_RELEASE_NUMBER}-release> on ${ENV} is beginning
@@ -33,15 +33,21 @@ run:
       :red_circle: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} failed. Version details:
       EOT
 
+      # Disable the shellcheck rull telling us this isn't an if-then-else. We know, and it's the desirable
+      # shellcheck disable=SC2015
       [ -n "${NGINX_IMAGE_TAG}" ] && \
-      NGINX_RELEASE_NUMBER=$(echo ${NGINX_IMAGE_TAG} | sed 's/-release//') && \
+      NGINX_RELEASE_NUMBER=$(echo "${NGINX_IMAGE_TAG}" | sed 's/-release//') && \
       echo "- <https://github.com/alphagov/pay-nginx-proxy/releases/tag/alpha_release-${NGINX_RELEASE_NUMBER}|nginx-proxy v${NGINX_IMAGE_TAG}>" | \
       tee -a snippet/failure || true
 
+      # Disable the shellcheck rull telling us this isn't an if-then-else. We know, and it's the desirable
+      # shellcheck disable=SC2015
       [ -n "${TELEGRAF_IMAGE_TAG}" ] && \
       echo "- <https://github.com/alphagov/pay-telegraf/releases/tag/${TELEGRAF_IMAGE_TAG}|telegraf v${TELEGRAF_IMAGE_TAG}>" | \
       tee -a snippet/failure || true
 
+      # Disable the shellcheck rull telling us this isn't an if-then-else. We know, and it's the desirable
+      # shellcheck disable=SC2015
       [ -n "${NGINX_FORWARD_PROXY_IMAGE_TAG}" ] && \
       echo "- <https://github.com/alphagov/pay-nginx-forward-proxy/releases/tag/${NGINX_FORWARD_PROXY_IMAGE_TAG}|nginx-forward-proxy v${NGINX_FORWARD_PROXY_IMAGE_TAG}>" | \
       tee -a snippet/failure || true
