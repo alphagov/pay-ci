@@ -4,6 +4,7 @@ RUN apk add --no-cache \
   aws-cli \
   bash \
   curl \
+  docker-compose \
   netcat-openbsd \
   git \
   python3 \
@@ -18,7 +19,6 @@ RUN apk add --no-cache \
   npm \
   maven \
   tini \
-  docker-compose>1.25.4-r1 \
   --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 
 RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
