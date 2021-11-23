@@ -19,7 +19,7 @@ run:
     cd src
 
     export MAVEN_HOME=/usr/lib/mvn
-    export PATH=$MAVEN_HOME/bin:$PATH
+    export PATH="$MAVEN_HOME/bin:$PATH"
     export MAVEN_REPO="$PWD/.m2"
 
     cat <<'EOF' >settings.xml
@@ -32,6 +32,5 @@ run:
     EOF
 
     mvn --global-settings settings.xml clean package -DskipTests
-    PR_NUMBER="PR-$(cat .git/resource/pr)"
     cd ..
     cp -R src/* build

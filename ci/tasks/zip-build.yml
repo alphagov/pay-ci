@@ -10,7 +10,7 @@ outputs:
 params:
   app_name:
 run:
-  path: sh
+  path: ash
   args:
     - -ec
     - |

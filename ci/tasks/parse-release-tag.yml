@@ -12,5 +12,5 @@ run:
   args:
     - -ec
     - |
-      RELEASE_NUMBER=$(cat git-release/.git/ref | sed 's/alpha_release-//')
+      RELEASE_NUMBER=$(sed 's/alpha_release-//' < git-release/.git/ref)
       echo "${RELEASE_NUMBER}-release" > tags/tags

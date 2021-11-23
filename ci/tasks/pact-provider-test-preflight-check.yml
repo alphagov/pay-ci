@@ -15,12 +15,12 @@ outputs:
 caches:
   - path: src/.m2
 run:
-  path: sh
+  path: ash
   args:
     - -ec
     - |
 
-      function pacts_already_verified(){
+      pacts_already_verified() {
           git_sha="$(cat src/.git/resource/head_sha)"
           can_deploy="$(pact-broker can-i-deploy \
             --pacticipant="$consumer" --version="$git_sha" \
@@ -32,7 +32,7 @@ run:
       }
 
 
-      if [[ -z "$consumer" || "$consumer" == null ]]; then
+      if [ -z "$consumer" ] || [ "$consumer" == null ]; then
         echo "Pact tests being run in provider context. Creating parameters..."
         echo master > pact_params/consumer_tag
         touch pact_params/verification_needed

@@ -27,11 +27,11 @@ run:
       for pact in $(ls . | grep -v '\-to\-'); do
         provider_name=$(jq .provider.name < "$pact" | tr -d '"')
         curl -v --fail -X PUT -H "Content-Type: application/json" \
-        -d@"$pact" \
-        --user ${broker_username}:${broker_password} \
-        https://pay-pact-broker.cloudapps.digital/pacts/provider/"${provider_name}"/consumer/"${consumer_name}"/version/"${version}"
+          -d@"$pact" \
+          --user "${broker_username}:${broker_password}" \
+          "https://pay-pact-broker.cloudapps.digital/pacts/provider/${provider_name}/consumer/${consumer_name}/version/${version}"
         
         curl -v --fail -X PUT -H "Content-Type: application/json" \
-        --user ${broker_username}:${broker_password} \
-        https://pay-pact-broker.cloudapps.digital/pacticipants/"${consumer_name}"/versions/"${version}"/tags/"${pr}"
+          --user "${broker_username}:${broker_password}" \
+          "https://pay-pact-broker.cloudapps.digital/pacticipants/${consumer_name}/versions/${version}/tags/${pr}"
       done
