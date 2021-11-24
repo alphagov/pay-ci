@@ -1351,7 +1351,7 @@ jobs:
         outputs:
           - name: pacts
         run:
-          path: sh
+          path: bash
           dir: src
           args:
             - -ec
@@ -1374,9 +1374,9 @@ jobs:
                         -DPACT_BROKER_URL=https://pact-broker-test.cloudapps.digital \
                         -DPACT_BROKER_USERNAME="" \
                         -DPACT_BROKER_PASSWORD="" \
-                        -DPACT_CONSUMER_VERSION=${commit} \
-                        -DPACT_CONSUMER_TAG=${pr} \
-                        -Dpact.provider.version=${commit} \
+                        -DPACT_CONSUMER_VERSION="${commit}" \
+                        -DPACT_CONSUMER_TAG="${pr}" \
+                        -Dpact.provider.version="${commit}" \
                         -DrunConsumerContractTests=true
               cp -R target/pacts/* ../pacts/ || true
 
