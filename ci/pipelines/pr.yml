@@ -1951,7 +1951,18 @@ jobs:
             - |
               apk add git shellcheck
               go get github.com/alphagov/paas-cf/tools/pipecleaner
-              pipecleaner --rubocop=false ci/pipelines/*.yml ci/tasks/*.yml
+
+              wget -c https://github.com/concourse/concourse/releases/download/v7.6.0/fly-7.6.0-linux-amd64.tgz -O - | \
+                tar -O -zxf - > /usr/local/bin/fly
+              chmod u+x /usr/local/bin/fly
+
+              pipecleaner --rubocop=false ci/tasks/*.yml
+
+              find ci/pipelines -name '*.yml' | while read -r PIPELINE; do
+                echo "Validating: $PIPELINE"
+                fly validate-pipeline -c "$PIPELINE"
+                echo
+              done
       on_failure:
         <<: *put-test-failed-status
         put: ci-pull-request
