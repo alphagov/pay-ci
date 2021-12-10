@@ -217,236 +217,236 @@ resources:
 
   # ECR registry resources
   - name: toolbox-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/toolbox
       variant: release
       <<: *aws_test_config
   - name: egress-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/egress
       variant: egress-release
       <<: *aws_test_config
   - name: frontend-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/frontend
       variant: release
       <<: *aws_test_config
   - name: adminusers-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/adminusers
       variant: release
       <<: *aws_test_config
   - name: cardid-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/cardid
       variant: release
       <<: *aws_test_config
   - name: connector-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/connector
       variant: release
       <<: *aws_test_config
   - name: ledger-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/ledger
       variant: release
       <<: *aws_test_config
   - name: products-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/products
       variant: release
       <<: *aws_test_config
   - name: products-ui-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/products-ui
       variant: release
       <<: *aws_test_config
   - name: publicapi-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/publicapi
       variant: release
       <<: *aws_test_config
   - name: publicauth-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/publicauth
       variant: release
       <<: *aws_test_config
   - name: selfservice-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/selfservice
       variant: release
       <<: *aws_test_config
   - name: carbon-relay-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/carbon-relay
       variant: carbon-relay-release
       <<: *aws_test_config
   - name: stunnel-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/stunnel
       variant: stunnel-release
       <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       variant: release
       repository: govukpay/docker-nginx-proxy
       <<: *aws_test_config
   - name: nginx-forward-proxy-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_test_config
   - name: telegraf-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/telegraf
       variant: release
       <<: *aws_test_config
   - name: notifications-ecr-registry-test
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/notifications
       variant: release
       <<: *aws_test_config
   - name: toolbox-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/toolbox
       <<: *aws_staging_config
   - name: egress-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/egress
       <<: *aws_staging_config
   - name: frontend-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/frontend
       <<: *aws_staging_config
   - name: adminusers-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/adminusers
       <<: *aws_staging_config
   - name: connector-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/connector
       <<: *aws_staging_config
   - name: ledger-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/ledger
       <<: *aws_staging_config
   - name: products-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/products
       <<: *aws_staging_config
   - name: products-ui-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/products-ui
       <<: *aws_staging_config
   - name: publicapi-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/publicapi
       <<: *aws_staging_config
   - name: publicauth-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/publicauth
       <<: *aws_staging_config
   - name: selfservice-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/selfservice
       <<: *aws_staging_config
   - name: cardid-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/cardid
       <<: *aws_staging_config
   - name: nginx-proxy-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/docker-nginx-proxy
       <<: *aws_staging_config
   - name: carbon-relay-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/carbon-relay
       <<: *aws_staging_config
   - name: stunnel-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/stunnel
       <<: *aws_staging_config
   - name: nginx-forward-proxy-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_staging_config
   - name: telegraf-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/telegraf
       <<: *aws_staging_config
   - name: notifications-ecr-registry-staging
-    type: dev-registry-image
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/notifications
@@ -457,23 +457,11 @@ resources:
       url: https://hooks.slack.com/services/((slack-notification-secret))
 
 resource_types:
-  # Custom resource type - this has been merged to the
-  # https://github.com/concourse/registry-image-resource repo,
-  # however is not yet in a stable release. Using this custom
-  # resource type allows us to support the ECR registry_id parameter
-  # This can be removed once registry_id is in stable release of 'registry-image'.
-  - name: dev-registry-image
+  - name: registry-image
     type: registry-image
     source:
       repository: concourse/registry-image-resource
-      username: ((docker-username))
-      password: ((docker-password))
-      tag: dev
-  - name: updated-registry-image
-    type: registry-image
-    source:
-      repository: concourse/registry-image-resource
-      tag: "1.1.0"
+      tag: "1.4.1"
   - name: slack-notification
     type: docker-image
     source:
