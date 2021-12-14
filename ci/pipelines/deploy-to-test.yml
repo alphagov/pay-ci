@@ -1895,7 +1895,7 @@ jobs:
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
-          APP_NAME: ledger
+          APP_NAME: products
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
       - load_var: success_snippet
@@ -2059,7 +2059,7 @@ jobs:
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
-          APP_NAME: products
+          APP_NAME: products-ui
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
       - load_var: success_snippet
