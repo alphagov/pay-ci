@@ -165,126 +165,126 @@ resources:
       username: alphagov-pay-ci
       password: ((github-access-token))
   - name: egress-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/egress
       variant: egress-release
       <<: *aws_prod_config      
   - name: carbon-relay-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/carbon-relay
       variant: carbon-relay-release
       <<: *aws_prod_config    
   - name: stunnel-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/stunnel
       variant: stunnel-release
       <<: *aws_prod_config    
   - name: toolbox-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/toolbox
       variant: release
       <<: *aws_prod_config
   - name: frontend-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/frontend
       variant: release
       <<: *aws_prod_config
   - name: adminusers-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/adminusers
       variant: release
       <<: *aws_prod_config
   - name: products-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/products
       variant: release
       <<: *aws_prod_config
   - name: products-ui-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/products-ui
       variant: release
       <<: *aws_prod_config
   - name: publicauth-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/publicauth
       variant: release
       <<: *aws_prod_config
   - name: cardid-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/cardid
       variant: release
       <<: *aws_prod_config
   - name: connector-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/connector
       variant: release
       <<: *aws_prod_config
   - name: selfservice-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/selfservice
       variant: release
       <<: *aws_prod_config
   - name: telegraf-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/telegraf
       variant: release
       <<: *aws_prod_config
   - name: nginx-proxy-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/docker-nginx-proxy
       variant: release
       <<: *aws_prod_config
   - name: nginx-forward-proxy-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_prod_config
   - name: ledger-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/ledger
       variant: release
       <<: *aws_prod_config
   - name: publicapi-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/publicapi
       variant: release
       <<: *aws_prod_config
   - name: notifications-ecr-registry-prod
-    type: registry-image-resource-1-1-0
+    type: registry-image
     icon: docker
     source:
       repository: govukpay/notifications
@@ -296,11 +296,11 @@ resources:
       url: https://hooks.slack.com/services/((slack-notification-secret))
 
 resource_types:
-  - name: registry-image-resource-1-1-0
+  - name: registry-image
     type: registry-image
     source:
       repository: concourse/registry-image-resource
-      tag: "1.1.0"
+      tag: "1.4.1"
   - name: slack-notification
     type: docker-image
     source:
