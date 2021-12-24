@@ -1,0 +1,16 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/node-runner
+inputs:
+  - name: pay-ci
+outputs:
+  - name: assume-role
+run:
+  dir: ((PACKAGE_DIR))
+  path: npm
+  args:
+    - ci
+    - --production
