@@ -150,6 +150,13 @@ definitions:
           <<: *aws_assumed_role_creds
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "card_stripe_3ds_stag"
+      - task: run_notifications_sandbox-stag
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "notifcatns_sndbx_stag"
+
 resources:
   - name: deploy-to-staging-pipeline-definition
     type: git
