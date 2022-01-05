@@ -93,6 +93,12 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
+  - name: pay-ci-PP-8980-trial-1-release_2022-01-05
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: PP-8980-trial-1-release_2022-01-05
 
   # Github Releases
   - name: telegraf-git-release
@@ -832,7 +838,7 @@ jobs:
       - get: toolbox-ecr-registry-test
         trigger: true
         passed: [deploy-toolbox]
-      - get: pay-ci
+      - get: pay-ci-PP-8980-trial-1-release_2022-01-05
       - load_var: application_image_tag
         file: toolbox-ecr-registry-test/tag
       - task: create-notification-snippets
