@@ -1,0 +1,44 @@
+---
+resources:
+  - name: node-runner-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/docker/node-runner/*
+
+  - name: node-runner
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/node-runner
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: latest
+
+# Builds and pushes the node-runner Docker image used by various Concourse CI pipelines
+jobs:
+  - name: build-and-push
+    plan:
+      - get: node-runner-src
+        trigger: true
+      - task: build
+        privileged: true
+        params: 
+          CONTEXT: node-runner-src/ci/docker/node-runner
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: vito/oci-build-task
+          inputs:
+          - name: node-runner-src
+          outputs:
+          - name: image
+          run:
+            path: build
+      - put: node-runner
+        params: {image: image/image.tar}
