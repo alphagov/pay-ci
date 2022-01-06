@@ -3,7 +3,8 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: govukpay/node-runner:1-release_2022-01-05
+    repository: govukpay/node-runner
+    tag: 1-release_2022-01-05
 inputs:
   - name: pay-ci
 outputs:
