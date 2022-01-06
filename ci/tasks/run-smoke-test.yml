@@ -18,9 +18,3 @@ params:
 run:
   path: node
   args: ['pay-ci/ci/scripts/run_smoke_test.js']
-run:
-  path: /bin/sh
-  args:
-    - -ec
-    - |
-      echo "Using govukpay/node-runner:1-release_2022-01-05"    
