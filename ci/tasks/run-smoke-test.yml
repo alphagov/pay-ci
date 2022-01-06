@@ -4,7 +4,6 @@ image_resource:
   type: registry-image
   source:
     repository: govukpay/node-runner
-    tag: 1-release_2022-01-05
 inputs:
   - name: pay-ci
 outputs:
@@ -17,4 +16,4 @@ params:
   SMOKE_TEST_NAME:
 run:
   path: node
-  args: ['pay-ci/ci/scripts/run_smoke_test.js']  
+  args: ['pay-ci/ci/scripts/run_smoke_test.js']
