@@ -829,6 +829,19 @@ jobs:
   - name: smoke-test-toolbox
     serial_groups: [smoke-test]
     plan:
+      - task: print-node-runner-version
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Using govukpay/node-runner:1-release_2022-01-05"    
       - get: toolbox-ecr-registry-test
         trigger: true
         passed: [deploy-toolbox]
