@@ -93,12 +93,6 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: PP-8980-trial-1-release_2022-01-05
-  # - name: pay-ci-2
-  #   type: git
-  #   icon: github
-  #   source:
-  #     uri: https://github.com/alphagov/pay-ci
-  #     branch: PP-8980-trial-1-release_2022-01-05
 
   # Github Releases
   - name: telegraf-git-release
