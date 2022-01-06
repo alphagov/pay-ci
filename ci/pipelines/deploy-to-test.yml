@@ -1003,6 +1003,19 @@ jobs:
     serial: true
     serial_groups: [deploy-application]
     plan:
+      - task: print-node-runner-version
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                echo "Using govukpay/node-runner:1-release_2022-01-05"    
       - get: frontend-ecr-registry-test
         trigger: true
       - get: nginx-forward-proxy-ecr-registry-test
