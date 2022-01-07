@@ -1,6 +1,15 @@
 version: 2
 - package-ecosystem: docker
-  directory: "/ci/docker"
+  directory: "/ci/docker/node-runner"
+  schedule:
+    interval: daily
+    time: "03:00"
+  open-pull-requests-limit: 10
+  labels:
+  - dependencies
+  - govuk-pay
+- package-ecosystem: docker
+  directory: "/ci/docker/concourse-runner"
   schedule:
     interval: daily
     time: "03:00"
