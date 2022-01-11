@@ -338,7 +338,7 @@ groups:
       - card-connector-unit-test
       - card-connector-integration-test
       - card-connector-pact-provider-test
-      - card-connector-pact-provider-verification
+      - card-connector-as-consumer-pact-test
       - card-connector-card-e2e
       - record-connector-build-time
 
@@ -379,7 +379,7 @@ groups:
       - ledger-integration-test
       - ledger-consumer-pact-test
       - ledger-pact-provider-test
-      - ledger-pact-provider-verification
+      - ledger-as-consumer-pact-test
       - ledger-card-e2e
       - record-ledger-build-time
 
@@ -757,15 +757,20 @@ jobs:
       put: card-connector-pull-request
 
   - <<: *job-definition
-    name: card-connector-pact-provider-verification
+    name: card-connector-as-consumer-pact-test
     serial_groups: [pact-test]
     plan:
       - <<: *get-ci
       - <<: *get-pull-request
         resource: card-connector-pull-request
         passed: [card-connector-unit-test, card-connector-integration-test]
-      - <<: *put-pact-provider-pending-status
-        put: card-connector-pull-request
+      - put: card-connector-pull-request
+        get_params:
+          skip_download: true
+        params:
+          path: src
+          status: pending
+          context: app-as-consumer pact verification
       - get: ledger-master
       - <<: *pact-provider-test-preflight-check
         params:
@@ -778,10 +783,16 @@ jobs:
           consumer: connector
           provider: ledger
         on_failure:
-          <<: *put-pact-provider-failed-status
           put: card-connector-pull-request
-      - <<: *put-pact-provider-success-status
-        put: card-connector-pull-request
+          params:
+            path: src
+            status: failure
+            context: app-as-consumer pact verification
+      - put: card-connector-pull-request
+        params:
+          path: src
+          status: success
+          context: app-as-consumer pact verification
 
   - <<: *job-definition
     name: card-connector-card-e2e
@@ -817,7 +828,7 @@ jobs:
     - <<: *get-pull-request
       resource: card-connector-pull-request
       passed: [card-connector-unit-test, card-connector-integration-test,
-        card-connector-pact-provider-test, card-connector-pact-provider-verification]
+        card-connector-pact-provider-test, card-connector-as-consumer-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
@@ -1385,15 +1396,20 @@ jobs:
         consumer_name: ledger
 
   - <<: *job-definition
-    name: ledger-pact-provider-verification
+    name: ledger-as-consumer-pact-test
     serial_groups: [pact-test]
     plan:
       - <<: *get-ci
       - <<: *get-pull-request
         resource: ledger-pull-request
         passed: [ledger-consumer-pact-test]
-      - <<: *put-pact-provider-pending-status
-        put: ledger-pull-request
+      - put: ledger-pull-request
+        get_params:
+          skip_download: true
+        params:
+          path: src
+          status: pending
+          context: app-as-consumer pact verification
       - get: card-connector-master
       - <<: *pact-provider-test-preflight-check
         params:
@@ -1406,10 +1422,16 @@ jobs:
           consumer: ledger
           provider: connector
         on_failure:
-          <<: *put-pact-provider-failed-status
           put: ledger-pull-request
-      - <<: *put-pact-provider-success-status
-        put: ledger-pull-request
+          params:
+            path: src
+            status: failure
+            context: app-as-consumer pact verification
+      - put: ledger-pull-request
+        params:
+          path: src
+          status: success
+          context: app-as-consumer pact verification
 
   - <<: *job-definition
     name: ledger-card-e2e
@@ -1446,7 +1468,7 @@ jobs:
       resource: ledger-pull-request
       passed: [ledger-unit-test, ledger-integration-test,
         ledger-pact-provider-test, ledger-consumer-pact-test,
-        ledger-pact-provider-verification]
+        ledger-as-consumer-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
