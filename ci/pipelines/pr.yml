@@ -208,7 +208,7 @@ definitions:
       pact-broker-username: ((pact-broker-username))
       pact-broker-password: ((pact-broker-password))
   - &publish-pacts
-    task: publish pacts
+    task: publish-pacts
     vars:
       <<: *pact-credentials
     params:
@@ -316,7 +316,7 @@ definitions:
       status: failure
       context: pact provider verification
   - &pact-provider-verification
-    task: pact verification
+    task: pact-verification
     privileged: true
     file: ci/ci/tasks/pact-provider-verification.yml
     vars:
@@ -325,7 +325,7 @@ definitions:
       consumer: updateThisValue
       provider: updateThisValue
   - &pact-provider-test-preflight-check
-    task: check is valid
+    task: check-is-valid
     file: ci/ci/tasks/pact-provider-test-preflight-check.yml
     vars:
       <<: *pact-credentials
@@ -333,7 +333,7 @@ definitions:
       consumer:
 
 groups:
-  - name: Card Connector
+  - name: card_connector
     jobs:
       - card-connector-unit-test
       - card-connector-integration-test
@@ -342,13 +342,13 @@ groups:
       - card-connector-card-e2e
       - record-connector-build-time
 
-  - name: End To End
+  - name: end_to_end
     jobs:
       - endtoend-card-e2e
       - endtoend-products-e2e
       - record-endtoend-build-time
 
-  - name: Publicapi
+  - name: publicapi
     jobs:
       - publicapi-unit-test
       - publicapi-integration-test
@@ -357,7 +357,7 @@ groups:
       - publicapi-as-consumer-pact-test
       - record-publicapi-build-time
 
-  - name: Adminusers
+  - name: adminusers
     jobs:
       - adminusers-unit-test
       - adminusers-integration-test
@@ -365,14 +365,14 @@ groups:
       - adminusers-as-provider-pact-test
       - record-adminusers-build-time
 
-  - name: Cardid
+  - name: cardid
     jobs:
       - cardid-unit-test
       - cardid-integration-test
       - cardid-card-e2e
       - record-cardid-build-time
 
-  - name: Ledger
+  - name: ledger
     jobs:
       - ledger-unit-test
       - ledger-integration-test
@@ -382,14 +382,14 @@ groups:
       - ledger-card-e2e
       - record-ledger-build-time
 
-  - name: Publicauth
+  - name: publicauth
     jobs:
       - publicauth-unit-test
       - publicauth-integration-test
       - publicauth-card-e2e
       - record-publicauth-build-time
 
-  - name: Products
+  - name: products
     jobs:
       - products-unit-test
       - products-integration-test
@@ -397,38 +397,38 @@ groups:
       - products-products-e2e
       - record-products-build-time
 
-  - name: Products-UI
+  - name: products_ui
     jobs:
       - products-ui-test
       - products-ui-products-e2e
       - products-ui-as-consumer-pact-test
       - record-products-ui-build-time
 
-  - name: Card-Frontend
+  - name: card_frontend
     jobs:
       - card-frontend-test
       - card-frontend-card-e2e
       - card-frontend-as-consumer-pact-test
       - record-frontend-build-time
 
-  - name: Selfservice
+  - name: selfservice
     jobs:
       - selfservice-test
       - selfservice-card-e2e
       - selfservice-as-consumer-pact-test
       - record-selfservice-build-time
 
-  - name: Toolbox
+  - name: toolbox
     jobs:
       - toolbox-test
       - record-toolbox-build-time
 
-  - name: Java-Commons
+  - name: java_commons
     jobs:
       - java-commons-test
       - record-java-commons-build-time
 
-  - name: Update-Pipeline
+  - name: update_pipeline
     jobs:
       - update-pr-ci-pipeline
 
@@ -436,7 +436,7 @@ groups:
     jobs:
       - ci-pr-test
 
-  - name: Stubs
+  - name: stubs
     jobs:
       - stubs-test
       - record-stubs-build-time
@@ -775,7 +775,7 @@ jobs:
         params:
           consumer: connector
       - <<: *pact-provider-verification
-        task: ledger provider pact verification
+        task: ledger-provider-pact-verification
         input_mapping:
           test_target: ledger-master
         params:
@@ -971,14 +971,14 @@ jobs:
           consumer: publicapi
       - in_parallel:
         - <<: *pact-provider-verification
-          task: connector provider pact verification
+          task: connector-provider-pact-verification
           input_mapping:
             test_target: card-connector-master
           params:
             consumer: publicapi
             provider: connector
         - <<: *pact-provider-verification
-          task: ledger provider pact verification
+          task: ledger-provider-pact-verification
           input_mapping:
             test_target: ledger-master
           params:
@@ -1414,7 +1414,7 @@ jobs:
         params:
           consumer: ledger
       - <<: *pact-provider-verification
-        task: connector provider pact verification
+        task: connector-provider-pact-verification
         input_mapping:
           test_target: card-connector-master
         params:
@@ -1702,7 +1702,7 @@ jobs:
       params:
         consumer: frontend
     - <<: *pact-provider-verification
-      task: connector provider pact verification
+      task: connector-provider-pact-verification
       input_mapping:
         test_target: card-connector-master
       params:
@@ -1790,7 +1790,7 @@ jobs:
         consumer: selfservice
     - in_parallel:
       - <<: *pact-provider-verification
-        task: connector provider pact verification
+        task: connector-provider-pact-verification
         input_mapping:
           test_target: card-connector-master
         params:
