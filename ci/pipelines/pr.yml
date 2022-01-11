@@ -337,11 +337,10 @@ groups:
     jobs:
       - card-connector-unit-test
       - card-connector-integration-test
-      - card-connector-pact-provider-test
+      - card-connector-as-provider-pact-test
       - card-connector-as-consumer-pact-test
       - card-connector-card-e2e
       - record-connector-build-time
-
 
   - name: End To End
     jobs:
@@ -355,7 +354,7 @@ groups:
       - publicapi-integration-test
       - publicapi-card-e2e
       - publicapi-products-e2e
-      - publicapi-pact-provider-verification
+      - publicapi-as-consumer-pact-test
       - record-publicapi-build-time
 
   - name: Adminusers
@@ -363,7 +362,7 @@ groups:
       - adminusers-unit-test
       - adminusers-integration-test
       - adminusers-card-e2e
-      - adminusers-pact-provider-test
+      - adminusers-as-provider-pact-test
       - record-adminusers-build-time
 
   - name: Cardid
@@ -378,7 +377,7 @@ groups:
       - ledger-unit-test
       - ledger-integration-test
       - ledger-consumer-pact-test
-      - ledger-pact-provider-test
+      - ledger-as-provider-pact-test
       - ledger-as-consumer-pact-test
       - ledger-card-e2e
       - record-ledger-build-time
@@ -394,7 +393,7 @@ groups:
     jobs:
       - products-unit-test
       - products-integration-test
-      - products-pact-provider-test
+      - products-as-provider-pact-test
       - products-products-e2e
       - record-products-build-time
 
@@ -402,21 +401,21 @@ groups:
     jobs:
       - products-ui-test
       - products-ui-products-e2e
-      - products-ui-pact-provider-verification
+      - products-ui-as-consumer-pact-test
       - record-products-ui-build-time
 
   - name: Card-Frontend
     jobs:
       - card-frontend-test
       - card-frontend-card-e2e
-      - card-frontend-pact-provider-verification
+      - card-frontend-as-consumer-pact-test
       - record-frontend-build-time
 
   - name: Selfservice
     jobs:
       - selfservice-test
       - selfservice-card-e2e
-      - selfservice-pact-provider-verification
+      - selfservice-as-consumer-pact-test
       - record-selfservice-build-time
 
   - name: Toolbox
@@ -736,7 +735,7 @@ jobs:
       put: card-connector-pull-request
 
   - <<: *job-definition
-    name: card-connector-pact-provider-test
+    name: card-connector-as-provider-pact-test
     serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
@@ -828,7 +827,7 @@ jobs:
     - <<: *get-pull-request
       resource: card-connector-pull-request
       passed: [card-connector-unit-test, card-connector-integration-test,
-        card-connector-pact-provider-test, card-connector-as-consumer-pact-test]
+        card-connector-as-provider-pact-test, card-connector-as-consumer-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
@@ -956,7 +955,7 @@ jobs:
       - <<: *put-card-e2e-success-status
         put: publicapi-pull-request
 
-  - name: publicapi-pact-provider-verification
+  - name: publicapi-as-consumer-pact-test
     serial_groups: [pact-test]
     plan:
       - <<: *get-pull-request
@@ -1025,7 +1024,7 @@ jobs:
     - <<: *get-pull-request
       resource: publicapi-pull-request
       passed: [publicapi-unit-test, publicapi-integration-test,
-        publicapi-pact-provider-verification]
+        publicapi-as-consumer-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
@@ -1121,7 +1120,7 @@ jobs:
       put: adminusers-pull-request
 
   - <<: *job-definition
-    name: adminusers-pact-provider-test
+    name: adminusers-as-provider-pact-test
     serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
@@ -1175,7 +1174,7 @@ jobs:
     - <<: *get-pull-request
       resource: adminusers-pull-request
       passed: [adminusers-unit-test, adminusers-integration-test,
-        adminusers-pact-provider-test]
+        adminusers-as-provider-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
@@ -1322,7 +1321,7 @@ jobs:
       put: ledger-pull-request
 
   - <<: *job-definition
-    name: ledger-pact-provider-test
+    name: ledger-as-provider-pact-test
     serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
@@ -1467,7 +1466,7 @@ jobs:
     - <<: *get-pull-request
       resource: ledger-pull-request
       passed: [ledger-unit-test, ledger-integration-test,
-        ledger-pact-provider-test, ledger-consumer-pact-test,
+        ledger-as-provider-pact-test, ledger-consumer-pact-test,
         ledger-as-consumer-pact-test]
     - <<: *send-pr-build-time
 
@@ -1583,7 +1582,7 @@ jobs:
 
 
   - <<: *job-definition
-    name: products-pact-provider-test
+    name: products-as-provider-pact-test
     serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
@@ -1637,7 +1636,7 @@ jobs:
     - <<: *get-pull-request
       resource: products-pull-request
       passed: [products-unit-test, products-integration-test,
-        products-pact-provider-test]
+        products-as-provider-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
@@ -1689,7 +1688,7 @@ jobs:
     - <<: *put-card-e2e-success-status
       put: card-frontend-pull-request
 
-  - name: card-frontend-pact-provider-verification
+  - name: card-frontend-as-consumer-pact-test
     serial_groups: [pact-test]
     plan:
     - <<: *get-ci
@@ -1720,7 +1719,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: card-frontend-pull-request
-      passed: [card-frontend-test, card-frontend-pact-provider-verification]
+      passed: [card-frontend-test, card-frontend-as-consumer-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
@@ -1773,7 +1772,7 @@ jobs:
       put: selfservice-pull-request
 
   - <<: *job-definition
-    name: selfservice-pact-provider-verification
+    name: selfservice-as-consumer-pact-test
     serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
@@ -1829,7 +1828,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: selfservice-pull-request
-      passed: [selfservice-test, selfservice-pact-provider-verification]
+      passed: [selfservice-test, selfservice-as-consumer-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
@@ -1905,7 +1904,7 @@ jobs:
       put: products-ui-pull-request
 
   - <<: *job-definition
-    name: products-ui-pact-provider-verification
+    name: products-ui-as-consumer-pact-test
     serial_groups: [pact-test]
     plan:
     - <<: *get-ci
@@ -1945,7 +1944,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: products-ui-pull-request
-      passed: [products-ui-test, products-ui-pact-provider-verification]
+      passed: [products-ui-test, products-ui-as-consumer-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
