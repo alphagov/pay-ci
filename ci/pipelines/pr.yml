@@ -235,23 +235,23 @@ definitions:
           resource: publicapi
           params:
             format: oci
-        - get: docker/frontend
+        - get: docker-frontend
           resource: card-frontend
           params:
             format: oci
-        - get: docker/reverse_proxy
+        - get: docker-reverse_proxy
           resource: reverse_proxy
           params:
             format: oci
-        - get: docker/postgres
+        - get: docker-postgres
           resource: postgres
           params:
             format: oci
-        - get: docker/sqs
+        - get: docker-sqs
           resource: sqs
           params:
             format: oci
-        - get: docker/adminusers
+        - get: docker-adminusers
           resource: adminusers
           params:
             format: oci
@@ -1158,7 +1158,7 @@ jobs:
       - <<: *get-all-docker-images
       - <<: *run-e2e
         input_mapping:
-          docker/adminusers: local_image
+          docker-adminusers: local_image
         params:
           app_name: adminusers
           test_type: card
@@ -1678,7 +1678,7 @@ jobs:
     - <<: *get-all-docker-images
     - <<: *run-e2e
       input_mapping:
-        docker/frontend: local_image
+        docker-frontend: local_image
       params:
         app_name: frontend
         test_type: card

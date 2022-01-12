@@ -35,7 +35,7 @@ resources:
 jobs:
   - name: test
     plan:
-      - get: docker/postgres
+      - get: docker-postgres
         resource: postgres
         params:
           format: oci
@@ -48,7 +48,7 @@ jobs:
             source:
               repository: govukpay/concourse-runner
             inputs:
-              - name: docker/postgres
+              - name: docker-postgres
           run:
             path: bash
             args:

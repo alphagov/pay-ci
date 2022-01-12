@@ -10,11 +10,11 @@ inputs:
   - name: src
   - name: ci
   - name: docker-publicapi
-  - name: docker/frontend
-  - name: docker/reverse_proxy
-  - name: docker/postgres
-  - name: docker/sqs
-  - name: docker/adminusers
+  - name: docker-frontend
+  - name: docker-reverse_proxy
+  - name: docker-postgres
+  - name: docker-sqs
+  - name: docker-adminusers
   - name: docker/selfservice
   - name: docker/connector
   - name: docker/ledger
