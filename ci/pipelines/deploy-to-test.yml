@@ -265,6 +265,13 @@ resources:
       repository: govukpay/ledger
       variant: release
       <<: *aws_test_config
+  - name: webhooks-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/webhooks
+      variant: test_release
+      <<: *aws_test_config
   - name: products-ecr-registry-test
     type: registry-image
     icon: docker
@@ -553,6 +560,9 @@ groups:
       - deploy-toolbox
       - smoke-test-toolbox
       - push-toolbox-to-staging-ecr
+  - name: webhooks
+    jobs:
+      - deploy-webhooks
   - name: carbon-relay
     jobs:
       - deploy-carbon-relay
@@ -2770,6 +2780,61 @@ jobs:
         params:
           image: cardid-ecr-registry-test/image.tar
           additional_tags: cardid-ecr-registry-test/tag
+          
+  - name: deploy-webhooks
+    serial: true
+    serial_groups: [deploy-application]
+    plan:
+      - get: webhooks-ecr-registry-test
+        trigger: true
+      - get: nginx-proxy-ecr-registry-test
+        trigger: true
+      - get: telegraf-ecr-registry-test
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-ecr-registry-test/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-test/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-test/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: webhooks
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: webhooks
+      - task: deploy-to-test
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: webhooks
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: webhooks
+          <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-nginx-proxy-to-test-ecr
     plan:
       - get: pay-ci
