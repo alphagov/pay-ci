@@ -231,7 +231,7 @@ definitions:
     in_parallel:
       fail_fast: true
       steps: &docker-image-list
-        - get: docker/publicapi
+        - get: docker-publicapi
           resource: publicapi
           params:
             format: oci
@@ -492,7 +492,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: bau-rename-docker-slash-identifier
       username: alphagov-pay-ci
       password: ((github-access-token))
 
@@ -945,7 +945,7 @@ jobs:
       - <<: *get-all-docker-images
       - <<: *run-e2e
         input_mapping:
-          docker/publicapi: local_image
+          docker-publicapi: local_image
         params:
           app_name: publicapi
           test_type: card
@@ -1008,7 +1008,7 @@ jobs:
       - <<: *get-all-docker-images
       - <<: *run-e2e
         input_mapping:
-          docker/publicapi: local_image
+          docker-publicapi: local_image
         params:
           app_name: publicapi
           test_type: products

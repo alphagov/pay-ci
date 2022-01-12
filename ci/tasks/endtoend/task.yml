@@ -9,7 +9,7 @@ image_resource:
 inputs:
   - name: src
   - name: ci
-  - name: docker/publicapi
+  - name: docker-publicapi
   - name: docker/frontend
   - name: docker/reverse_proxy
   - name: docker/postgres
