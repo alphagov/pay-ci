@@ -22,15 +22,15 @@ run:
       APP_RELEASE_NUMBER=$(echo "${APPLICATION_IMAGE_TAG}" | sed 's/-release//')
 
       cat <<EOT >> snippet/start
-      :rocket: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} ${APP_RELEASE_NUMBER}-release> on ${ENV} is beginning
+      :rocket: ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} ${APP_RELEASE_NUMBER}-release> on ${ENV} is beginning
       EOT
 
       cat <<EOT >> snippet/success
-      :green-circle: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} was successful :tada:
+      :green-circle: ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} was successful :tada:
       EOT
 
       cat <<EOT >> snippet/failure
-      :red_circle: FARGATE ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} failed. Version details:
+      :red_circle: ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} failed. Version details:
       EOT
 
       # Disable the shellcheck rull telling us this isn't an if-then-else. We know, and it's the desirable

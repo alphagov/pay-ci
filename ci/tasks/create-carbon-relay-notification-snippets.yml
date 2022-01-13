@@ -15,13 +15,13 @@ run:
     - -c
     - |
       cat <<EOT >> snippet/start
-      :rocket: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${CARBON_RELAY_IMAGE_TAG}|carbon-relay v${CARBON_RELAY_IMAGE_TAG}> on ${ENV} is beginning
+      :rocket: Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${CARBON_RELAY_IMAGE_TAG}|carbon-relay v${CARBON_RELAY_IMAGE_TAG}> on ${ENV} is beginning
       EOT
 
       cat <<EOT >> snippet/success
-      :green-circle: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${CARBON_RELAY_IMAGE_TAG}|carbon-relay v${CARBON_RELAY_IMAGE_TAG}> on ${ENV} was successful :tada:
+      :green-circle: Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${CARBON_RELAY_IMAGE_TAG}|carbon-relay v${CARBON_RELAY_IMAGE_TAG}> on ${ENV} was successful :tada:
       EOT
 
       cat <<EOT >> snippet/failure
-      :red_circle: FARGATE Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${CARBON_RELAY_IMAGE_TAG}|carbon-relay v${CARBON_RELAY_IMAGE_TAG}> on ${ENV} failed. Version details:
+      :red_circle: Deployment of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${CARBON_RELAY_IMAGE_TAG}|carbon-relay v${CARBON_RELAY_IMAGE_TAG}> on ${ENV} failed. Version details:
       EOT
