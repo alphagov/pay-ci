@@ -1424,11 +1424,11 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - task: check-release-versions
-        file: pay-ci/ci/tasks/check-release-versions.yml
-        params:
-          <<: *check_release_versions_params
-          APP_NAME: connector
+#       - task: check-release-versions
+#         file: pay-ci/ci/tasks/check-release-versions.yml
+#         params:
+#           <<: *check_release_versions_params
+#           APP_NAME: connector
       - task: deploy-to-test
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
