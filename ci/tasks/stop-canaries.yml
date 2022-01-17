@@ -18,11 +18,11 @@ run:
 
         status=$(aws --region $AWS_REGION synthetics get-canary --name $canary | jq -r '.Canary.Status.State')
         echo "status: $status"
-        if [ $status == "STOPPED" ]
+        if [ $status == "RUNNING" ]
         then
-          echo "Status of $canary is STOPPED, nothing to do."
-        else
           echo "Stopping canary $canary"
           aws --region $AWS_REGION synthetics stop-canary --name $canary
+        else
+          echo "Canary $canary is not running, nothing to do."
         fi
       done
