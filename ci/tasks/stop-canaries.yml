@@ -1,0 +1,26 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner
+run:
+  path: /bin/bash
+  args:
+    - -ec
+    - |
+      for canary in notifcatns_sndbx_test pymntlnk_sandbox_test cancel_sandbox_test card_wpay_3ds2ex_test \
+      card_wpay_3ds2_test card_wpay_3ds_test card_wpay_test card_stripe_3ds_test card_stripe_test card_sandbox_test \
+      s_card_stripe_test s_card_stripe_3d_test s_card_wpay_test s_card_wpay_3ds_test s_card_wpay_3ds2_test \
+      s_wpay_3ds2ex_test s_card_sandbox_test s_cancel_sandbox_test s_paylnk_sandbox_test s_notifications_test; do
+
+        status=$(aws synthetics get-canary --name $canary | jq -r '.Canary.Status.State')
+        echo "status: $status"
+        if [ $status == "STOPPED" ]
+        then
+          echo "Status of $canary is STOPPED, nothing to do."
+        else
+          echo "Stopping canary $canary"
+          aws synthetics stop-canary --name $canary
+        fi
+      done
