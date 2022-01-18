@@ -16,12 +16,16 @@ run:
     - |
       for canary in card_wpay_3ds_test card_wpay_test card_stripe_3ds_test card_stripe_test; do
 
-        status=$(aws --region $AWS_REGION synthetics get-canary --name $canary | jq -r '.Canary.Status.State')
+        status=$(aws --region "$AWS_REGION" synthetics get-canary --name $canary | jq -r '.Canary.Status.State')
         echo "status: $status"
         if [ "$status" == "RUNNING" ]
         then
           echo "Stopping canary $canary"
-          aws --region $AWS_REGION synthetics stop-canary --name $canary
+          aws --region "$AWS_REGION" synthetics stop-canary --name $canary
+        elif [ "$status" == "ERROR" ]
+        then  
+          echo "Canary $canary is in an errored state. It must be manually deleted and created - see https://pay-team-manual.cloudapps.digital/manual/tools/canary.html#updating-canary-tests-in-error-state."
+          exit 1
         else
           echo "Canary $canary is not running, nothing to do."
         fi
