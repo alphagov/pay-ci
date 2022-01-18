@@ -76,7 +76,7 @@ jobs:
             args:
               - -ec
               - |
-                echo "Unzipping release ${RELEASE_VERSION} into zip-files-direcotry/${RELEASE_VERSION}"
+                echo "Unzipping release ${RELEASE_VERSION} into zip-files-directory/${RELEASE_VERSION}"
                 mkdir "zip-files-directory/${RELEASE_VERSION}"
                 unzip smoke-tests-git-release/pay-smoke-tests-v*.zip -d "zip-files-directory/${RELEASE_VERSION}"
       - task: assume-role
@@ -87,6 +87,10 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - task: stop-all-running-canaries  
+        file: pay-ci/ci/tasks/stop-canaries.yml
+        params:
+          <<: *aws_assumed_role_creds
       - task: apply-the-terraform
         config:
           platform: linux
