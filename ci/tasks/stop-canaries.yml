@@ -15,21 +15,23 @@ run:
   args:
     - -ec
     - |
-      for canary in notifcatns_sndbx_$ENVIRONMENT pymntlnk_sandbox_$ENVIRONMENT cancel_sandbox_$ENVIRONMENT card_wpay_3ds2ex_$ENVIRONMENT \
-      card_wpay_3ds2_$ENVIRONMENT card_wpay_3ds_$ENVIRONMENT card_wpay_$ENVIRONMENT card_stripe_3ds_$ENVIRONMENT card_stripe_$ENVIRONMENT card_sandbox_$ENVIRONMENT \
-      s_card_stripe_$ENVIRONMENT s_card_stripe_3d_$ENVIRONMENT s_card_wpay_$ENVIRONMENT s_card_wpay_3ds_$ENVIRONMENT s_card_wpay_3ds2_$ENVIRONMENT \
-      s_wpay_3ds2ex_$ENVIRONMENT s_card_sandbox_$ENVIRONMENT s_cancel_sandbox_$ENVIRONMENT s_paylnk_sandbox_$ENVIRONMENT s_notifications_$ENVIRONMENT; do
+      for canary in notifcatns_sndbx pymntlnk_sandbox cancel_sandbox card_wpay_3ds2ex \
+      card_wpay_3ds2 card_wpay_3ds card_wpay card_stripe_3ds card_stripe card_sandbox \
+      s_card_stripe s_card_stripe_3d s_card_wpay s_card_wpay_3ds s_card_wpay_3ds2 \
+      s_wpay_3ds2ex s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_notifications; do
 
-        status=$(aws --region "$AWS_REGION" synthetics get-canary --name $canary | jq -r '.Canary.Status.State')
+        canary_name=$canary_$ENVIRONMENT
+
+        status=$(aws --region "$AWS_REGION" synthetics get-canary --name $canary_name | jq -r '.Canary.Status.State')
         if [ "$status" == "RUNNING" ]
         then
           echo "Stopping canary $canary"
-          aws --region "$AWS_REGION" synthetics stop-canary --name $canary
+          aws --region "$AWS_REGION" synthetics stop-canary --name $canary_name
         elif [ "$status" == "ERROR" ]
         then  
-          echo "Canary $canary is in an errored state. It must be manually deleted and created - see https://pay-team-manual.cloudapps.digital/manual/tools/canary.html#updating-canary-tests-in-error-state."
+          echo "Canary $canary_name is in an errored state. It must be manually deleted and created - see https://pay-team-manual.cloudapps.digital/manual/tools/canary.html#updating-canary-tests-in-error-state."
           exit 1
         else
-          echo "Canary $canary is not running, nothing to do."
+          echo "Canary $canary_name is not running, nothing to do."
         fi
       done
