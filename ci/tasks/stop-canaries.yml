@@ -20,7 +20,7 @@ run:
       s_card_stripe s_card_stripe_3d s_card_wpay s_card_wpay_3ds s_card_wpay_3ds2 \
       s_wpay_3ds2ex s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_notifications; do
 
-        canary_name="$canary_$ENVIRONMENT"
+        canary_name="${canary}_${ENVIRONMENT}"
 
         echo $canary_name
 
