@@ -9,18 +9,18 @@ params:
   AWS_SECRET_ACCESS_KEY:
   AWS_SESSION_TOKEN:    
   AWS_REGION: eu-west-1
+  ENVIRONMENT:
 run:
   path: /bin/bash
   args:
     - -ec
     - |
-      for canary in notifcatns_sndbx_test pymntlnk_sandbox_test cancel_sandbox_test card_wpay_3ds2ex_test \
-      card_wpay_3ds2_test card_wpay_3ds_test card_wpay_test card_stripe_3ds_test card_stripe_test card_sandbox_test \
-      s_card_stripe_test s_card_stripe_3d_test s_card_wpay_test s_card_wpay_3ds_test s_card_wpay_3ds2_test \
-      s_wpay_3ds2ex_test s_card_sandbox_test s_cancel_sandbox_test s_paylnk_sandbox_test s_notifications_test; do
+      for canary in notifcatns_sndbx_$ENVIRONMENT pymntlnk_sandbox_$ENVIRONMENT cancel_sandbox_$ENVIRONMENT card_wpay_3ds2ex_$ENVIRONMENT \
+      card_wpay_3ds2_$ENVIRONMENT card_wpay_3ds_$ENVIRONMENT card_wpay_$ENVIRONMENT card_stripe_3ds_$ENVIRONMENT card_stripe_$ENVIRONMENT card_sandbox_$ENVIRONMENT \
+      s_card_stripe_$ENVIRONMENT s_card_stripe_3d_$ENVIRONMENT s_card_wpay_$ENVIRONMENT s_card_wpay_3ds_$ENVIRONMENT s_card_wpay_3ds2_$ENVIRONMENT \
+      s_wpay_3ds2ex_$ENVIRONMENT s_card_sandbox_$ENVIRONMENT s_cancel_sandbox_$ENVIRONMENT s_paylnk_sandbox_$ENVIRONMENT s_notifications_$ENVIRONMENT; do
 
         status=$(aws --region "$AWS_REGION" synthetics get-canary --name $canary | jq -r '.Canary.Status.State')
-        echo "status: $status"
         if [ "$status" == "RUNNING" ]
         then
           echo "Stopping canary $canary"
