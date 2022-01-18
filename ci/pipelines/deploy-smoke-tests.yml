@@ -89,6 +89,8 @@ jobs:
         format: json
       - task: stop-all-running-canaries  
         file: pay-ci/ci/tasks/stop-canaries.yml
+        params:
+          <<: *aws_assumed_role_creds
       - task: apply-the-terraform
         config:
           platform: linux
