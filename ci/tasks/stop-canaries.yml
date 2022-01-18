@@ -22,12 +22,10 @@ run:
 
         canary_name="${canary}_${ENVIRONMENT}"
 
-        echo $canary_name
-
         status=$(aws --region "$AWS_REGION" synthetics get-canary --name $canary_name | jq -r '.Canary.Status.State')
         if [ "$status" == "RUNNING" ]
         then
-          echo "Stopping canary $canary"
+          echo "Stopping canary $canary_name"
           aws --region "$AWS_REGION" synthetics stop-canary --name $canary_name
         elif [ "$status" == "ERROR" ]
         then  
