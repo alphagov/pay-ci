@@ -27,5 +27,7 @@ run:
         then  
           echo "Canary $canary_name is in an errored state. It must be manually deleted and created - see https://pay-team-manual.cloudapps.digital/manual/tools/canary.html#updating-canary-tests-in-error-state."
           exit 1
-        fi
+        elif [ "$status" == *"Canary not found"* ]
+        then
+          echo "Canary $canary_name not found. This is ok if it's the test environment and the canary is a scheduled one."
       done
