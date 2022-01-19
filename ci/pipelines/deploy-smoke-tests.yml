@@ -87,8 +87,8 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - task: stop-all-running-canaries  
-        file: pay-ci/ci/tasks/stop-canaries.yml
+      - task: check-canaries-in-error-state  
+        file: pay-ci/ci/tasks/check-canaries-in-error-state.yml
         params:
           <<: *aws_assumed_role_creds
           ENVIRONMENT: test
@@ -138,8 +138,8 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - task: stop-all-running-canaries  
-        file: pay-ci/ci/tasks/stop-canaries.yml
+      - task: check-canaries-in-error-state
+        file: pay-ci/ci/tasks/check-canaries-in-error-state.yml
         params:
           <<: *aws_assumed_role_creds
           ENVIRONMENT: stag
@@ -190,8 +190,8 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - task: stop-all-running-canaries  
-        file: pay-ci/ci/tasks/stop-canaries.yml
+      - task: check-canaries-in-error-state
+        file: pay-ci/ci/tasks/check-canaries-in-error-state.yml
         params:
           <<: *aws_assumed_role_creds
           ENVIRONMENT: prod        

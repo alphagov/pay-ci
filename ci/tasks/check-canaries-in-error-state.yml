@@ -23,15 +23,9 @@ run:
         canary_name="${canary}_${ENVIRONMENT}"
 
         status=$(aws --region "$AWS_REGION" synthetics get-canary --name $canary_name | jq -r '.Canary.Status.State')
-        if [ "$status" == "RUNNING" ]
-        then
-          echo "Stopping canary $canary_name"
-          aws --region "$AWS_REGION" synthetics stop-canary --name $canary_name
-        elif [ "$status" == "ERROR" ]
+        if [ "$status" == "ERROR" ]
         then  
           echo "Canary $canary_name is in an errored state. It must be manually deleted and created - see https://pay-team-manual.cloudapps.digital/manual/tools/canary.html#updating-canary-tests-in-error-state."
           exit 1
-        else
-          echo "Canary $canary_name is not running, nothing to do."
         fi
       done
