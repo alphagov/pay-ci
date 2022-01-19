@@ -9,6 +9,7 @@ params:
   AWS_SECRET_ACCESS_KEY:
   AWS_SESSION_TOKEN:    
   AWS_REGION: eu-west-1
+  # ENVIRONMENT is one of "test", "stag" or "prod" as that's what the canaries are appended with (due to the character limitation)."
   ENVIRONMENT:
 run:
   path: /bin/bash
