@@ -27,6 +27,8 @@ run:
         CANARIES_FOR_ENV="$SCHEDULED_CANARIES $NON_SCHEDULED_CANARIES"
       fi
 
+      echo "$CANARIES_FOR_ENV"
+
       for canary in $CANARIES_FOR_ENV; do
 
         canary_name="${canary}_${ENVIRONMENT}"
