@@ -15,10 +15,19 @@ run:
   args:
     - -ec
     - |
-      for canary in notifcatns_sndbx pymntlnk_sandbox cancel_sandbox card_wpay_3ds2ex \
-      card_wpay_3ds2 card_wpay_3ds card_wpay card_stripe_3ds card_stripe card_sandbox \
-      s_card_stripe s_card_stripe_3d s_card_wpay s_card_wpay_3ds s_card_wpay_3ds2 \
-      s_wpay_3ds2ex s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_notifications; do
+      NON_SCHEDULED_CANARIES="notifcatns_sndbx pymntlnk_sandbox cancel_sandbox card_wpay_3ds2ex \
+      card_wpay_3ds2 card_wpay_3ds card_wpay card_stripe_3ds card_stripe card_sandbox"
+
+      SCHEDULED_CANARIES="s_card_stripe s_card_stripe_3d s_card_wpay s_card_wpay_3ds s_card_wpay_3ds2 \
+      s_wpay_3ds2ex s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_notifications"
+
+      if [ "$ENVIRONMENT" == "test" ]; then
+        CANARIES_FOR_ENV="$NON_SCHEDULED_CANARIES"
+      else
+        CANARIES_FOR_ENV="$SCHEDULED_CANARIES $NON_SCHEDULED_CANARIES"
+      fi
+
+      for canary in $CANARIES_FOR_ENV; do
 
         canary_name="${canary}_${ENVIRONMENT}"
 
@@ -27,7 +36,5 @@ run:
         then  
           echo "Canary $canary_name is in an errored state. It must be manually deleted and created - see https://pay-team-manual.cloudapps.digital/manual/tools/canary.html#updating-canary-tests-in-error-state."
           exit 1
-        else
-          echo "$canary_name is either ok or doesn't exist (ok if the canary is a scheduled one - we don't have scheduled canaries in the test environment)."
         fi
       done
