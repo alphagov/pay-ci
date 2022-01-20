@@ -1,0 +1,47 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:    
+  AWS_REGION: eu-west-1
+  # ENVIRONMENT is one of "test", "stag" or "prod" as that's what the canaries are appended with (due to the character limitation)."
+  ENVIRONMENT:
+run:
+  path: /bin/bash
+  args:
+    - -ec
+    - |
+      POST_DEPLOY_CANARIES="notifcatns_sndbx pymntlnk_sandbox cancel_sandbox card_wpay_3ds2ex \
+      card_wpay_3ds2 card_wpay_3ds card_wpay card_stripe_3ds card_stripe card_sandbox"
+
+      SCHEDULED_CANARIES_STAGING="s_card_stripe s_card_stripe_3d s_card_wpay s_card_wpay_3ds s_card_wpay_3ds2 \
+      s_wpay_3ds2ex s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_notifications"
+
+      SCHEDULED_CANARIES_PROD="s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_notifications"
+
+      if [ "$ENVIRONMENT" == "test" ]; then
+        CANARIES_FOR_ENV="$POST_DEPLOY_CANARIES"
+      elif [ "$ENVIRONMENT" == "stag" ]; then
+        CANARIES_FOR_ENV="$POST_DEPLOY_CANARIES $SCHEDULED_CANARIES_STAGING"
+      else
+        CANARIES_FOR_ENV="$POST_DEPLOY_CANARIES $SCHEDULED_CANARIES_PROD" 
+      fi
+
+      echo "Checking canaries: $CANARIES_FOR_ENV"
+
+      for canary in $CANARIES_FOR_ENV; do
+
+        canary_name="${canary}_${ENVIRONMENT}"
+
+        status=$(aws --region "$AWS_REGION" synthetics get-canary --name "$canary_name" | jq -r '.Canary.Status.State')
+        if [ "$status" == "ERROR" ]
+        then  
+          echo "Canary $canary_name is in an errored state. It must be manually deleted and created - see https://pay-team-manual.cloudapps.digital/manual/tools/canary.html#updating-canary-tests-in-error-state."
+          exit 1
+        fi
+      done
