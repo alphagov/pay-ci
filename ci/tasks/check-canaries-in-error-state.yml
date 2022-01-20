@@ -16,7 +16,7 @@ run:
   args:
     - -ec
     - |
-      NON_SCHEDULED_CANARIES="notifcatns_sndbx pymntlnk_sandbox cancel_sandbox card_wpay_3ds2ex \
+      POST_DEPLOY_CANARIES="notifcatns_sndbx pymntlnk_sandbox cancel_sandbox card_wpay_3ds2ex \
       card_wpay_3ds2 card_wpay_3ds card_wpay card_stripe_3ds card_stripe card_sandbox"
 
       SCHEDULED_CANARIES_STAGING="s_card_stripe s_card_stripe_3d s_card_wpay s_card_wpay_3ds s_card_wpay_3ds2 \
@@ -25,11 +25,11 @@ run:
       SCHEDULED_CANARIES_PROD="s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_notifications"
 
       if [ "$ENVIRONMENT" == "test" ]; then
-        CANARIES_FOR_ENV="$NON_SCHEDULED_CANARIES"
+        CANARIES_FOR_ENV="$POST_DEPLOY_CANARIES"
       elif [ "$ENVIRONMENT" == "stag" ]; then
-        CANARIES_FOR_ENV="$NON_SCHEDULED_CANARIES $SCHEDULED_CANARIES_STAGING"
+        CANARIES_FOR_ENV="$POST_DEPLOY_CANARIES $SCHEDULED_CANARIES_STAGING"
       else
-        CANARIES_FOR_ENV="$NON_SCHEDULED_CANARIES $SCHEDULED_CANARIES_PROD" 
+        CANARIES_FOR_ENV="$POST_DEPLOY_CANARIES $SCHEDULED_CANARIES_PROD" 
       fi
 
       echo "Checking canaries: $CANARIES_FOR_ENV"
