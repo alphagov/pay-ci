@@ -197,6 +197,13 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-selfservice
       branch: master
+      tag_regex: "alpha_release-(.*)"  
+  - name: webhooks-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-webhooks
+      branch: main
       tag_regex: "alpha_release-(.*)"
   - name: nginx-proxy-git-release
     type: git
@@ -276,7 +283,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/webhooks
-      variant: test_release
+      variant: release
       <<: *aws_test_config
   - name: products-ecr-registry-test
     type: registry-image
@@ -568,6 +575,7 @@ groups:
       - push-toolbox-to-staging-ecr
   - name: webhooks
     jobs:
+      - build-webhooks
       - deploy-webhooks
   - name: carbon-relay
     jobs:
@@ -2787,6 +2795,91 @@ jobs:
           image: cardid-ecr-registry-test/image.tar
           additional_tags: cardid-ecr-registry-test/tag
           
+  - name: build-webhooks
+    plan:
+      - get: webhooks-git-release
+        trigger: true
+      - get: pay-ci
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: webhooks-git-release
+      - task: build-jar
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: maven
+              tag: 3-openjdk-17
+          inputs:
+            - name: webhooks-git-release
+          outputs:
+            - name: jar
+          run:
+            path: bash
+            args:
+            - -ec
+            - |
+              ls -lrt
+              pwd
+
+              cd webhooks-git-release
+              mvn clean package
+              cp -r . ../jar
+
+      - task: build-image
+        privileged: true
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+              tag: latest
+          inputs:
+            - name: jar
+          outputs:
+            - name: local_image
+          params:
+            app_name: webhooks
+          run:
+            path: bash
+            args:
+            - -ec
+            - |
+              ls -lrt
+              pwd
+
+              source /docker-helpers.sh
+              start_docker
+
+              function cleanup {
+                echo "CLEANUP TRIGGERED"
+                clean_docker
+                stop_docker
+                echo "CLEANUP COMPLETE"
+              }
+
+              trap cleanup EXIT
+
+              file_suffix="PR-$(cat jar/.git/HEAD)"
+
+              cd jar
+
+              image_name="govukpay/${app_name}:test"
+              echo "BUILDING ${app_name} with tag ${image_name}"
+              docker build -t "$image_name" .
+              docker image ls
+              docker save "$image_name" -o ../local_image/image-"${app_name}"-"${file_suffix}".tar
+      - put: webhooks-ecr-registry-test
+        params:
+          image: local_image/*.tar
+          additional_tags: tags/tags
+
+
   - name: deploy-webhooks
     serial: true
     serial_groups: [deploy-application]
