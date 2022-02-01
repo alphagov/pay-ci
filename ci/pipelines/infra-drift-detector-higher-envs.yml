@@ -1,0 +1,127 @@
+resource_types:
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
+
+resources:
+  - name: pay-infra
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+  - name: every-morning-at-six
+    icon: alarm
+    source:
+      start: "06:00"
+      stop: "06:30"
+      location: Europe/London
+    type: time
+  - name: every-morning-at-six-thirty
+    icon: alarm
+    source:
+      start: "06:30"
+      stop: "07:00"
+      location: Europe/London
+    type: time
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+  - name: slack-notification
+    type: slack-notification
+    source:
+      url: https://hooks.slack.com/services/((slack-notification-secret))
+
+definitiions:
+  aws_assumed_role_creds: &aws_assumed_role_creds
+    AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+    AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+    AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+jobs:
+  - name: staging-2-bastion
+    serial: true
+    plan:
+    - in_parallel:
+      - get: every-morning-at-six
+        trigger: true
+      - get: pay-ci
+      - get: pay-infra
+    - task: assume-role
+      file: pay-ci/ci/tasks/assume-role.yml
+      params:
+        AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/pay-concourse-bastion-staging-2
+        AWS_ROLE_SESSION_NAME: pay-concourse-bastion-drift-detection
+    - load_var: role
+      file: assume-role/assume-role.json
+      format: json
+    - task: check-for-drift
+      file: pay-ci/ci/tasks/check-for-tf-drift.yml
+      params:
+        <<: *aws_assumed_role_creds
+        DEPLOYMENT_PATH: "staging/staging-2/environment/bastion"
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Drift detected for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":terraform:"
+        username: pay-concourse-drift-detector
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Terraform state consistent for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":terraform:"
+        username: pay-concourse-drift-detector
+
+  - name: production-2-bastion
+    serial: true
+    plan:
+    - in_parallel:
+      - get: every-morning-at-six-thirty
+        trigger: true
+      - get: pay-ci
+      - get: pay-infra
+    - task: assume-role
+      file: pay-ci/ci/tasks/assume-role.yml
+      params:
+        AWS_ROLE_ARN: arn:aws:iam::((pay_aws_production_account_id)):role/pay-concourse-bastion-production-2
+        AWS_ROLE_SESSION_NAME: pay-concourse-bastion-drift-detection
+    - load_var: role
+      file: assume-role/assume-role.json
+      format: json
+    - task: check-for-drift
+      file: pay-ci/ci/tasks/check-for-tf-drift.yml
+      params:
+        <<: *aws_assumed_role_creds
+        DEPLOYMENT_PATH: "production/production-2/environment/bastion"
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Drift detected for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":terraform:"
+        username: pay-concourse-drift-detector
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Terraform state consistent for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":terraform:"
+        username: pay-concourse-drift-detector

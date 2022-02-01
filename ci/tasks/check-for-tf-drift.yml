@@ -1,0 +1,31 @@
+---
+# This task is designed to fail if the terraform plan is not clean. You should decide what to do with that knowledge in
+# an on_failure hook
+#
+# The terraform to be planned with this must be able to be planned with no extra command line arguments
+platform: linux
+inputs:
+  - name: pay-infra
+image_resource:
+  type: registry-image
+  source:
+    repository: hashicorp/terraform
+    tag: 1.0.8
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
+  DEPLOYMENT_PATH:
+run:
+  path: /bin/sh
+  args:
+    - -euc
+    - |
+      cd "pay-infra/provisioning/terraform/deployments/${DEPLOYMENT_PATH}"
+      terraform init
+      # --detailed-exitcode returns:
+      #  0 on Success with empty diff
+      #  1 on error
+      #  2 on Success with changes
+      terraform plan -no-color -detailed-exitcode
