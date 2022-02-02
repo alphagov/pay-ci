@@ -39,7 +39,7 @@ resources:
     source:
       url: https://hooks.slack.com/services/((slack-notification-secret))
 
-definitiions:
+definitions:
   aws_assumed_role_creds: &aws_assumed_role_creds
     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
     AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
