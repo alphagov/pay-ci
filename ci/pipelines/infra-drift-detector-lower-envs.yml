@@ -76,6 +76,15 @@ jobs:
         text: ':red-circle: Drift detected for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":terraform:"
         username: pay-concourse-drift-detector
+    on_error:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Pipeline to detect drift for $BUILD_JOB_NAME failed to run <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":terraform:"
+        username: pay-concourse-drift-detector
     on_success:
       put: slack-notification
       attempts: 10
@@ -114,6 +123,15 @@ jobs:
         channel: '#govuk-pay-starling'
         silent: true
         text: ':red-circle: Drift detected for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":terraform:"
+        username: pay-concourse-drift-detector
+    on_error:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Pipeline to detect drift for $BUILD_JOB_NAME failed to run <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":terraform:"
         username: pay-concourse-drift-detector
     on_success:
