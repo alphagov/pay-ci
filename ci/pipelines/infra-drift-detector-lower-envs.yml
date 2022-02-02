@@ -57,7 +57,7 @@ jobs:
     - task: assume-role
       file: pay-ci/ci/tasks/assume-role.yml
       params:
-        AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-concourse-bastion-test-12
+        AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-concourse-bastion-read-only-test-12
         AWS_ROLE_SESSION_NAME: pay-concourse-bastion-drift-detection-test-12
     - load_var: role
       file: assume-role/assume-role.json
@@ -106,7 +106,7 @@ jobs:
     - task: assume-role
       file: pay-ci/ci/tasks/assume-role.yml
       params:
-        AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-concourse-bastion-test-perf-1
+        AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-concourse-bastion-read-only-test-perf-1
         AWS_ROLE_SESSION_NAME: pay-concourse-bastion-drift-detection-test-perf-1
     - load_var: role
       file: assume-role/assume-role.json
