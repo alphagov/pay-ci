@@ -19,4 +19,9 @@ const run = async function run () {
   }))
 }
 
+process.on('unhandledRejection', error => {
+  console.log('unhandledRejection, assume role failed: ', error.message)
+  process.exit(1)
+})
+
 run()
