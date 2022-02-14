@@ -1677,7 +1677,7 @@ jobs:
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
-          APP_NAME: connector
+          APP_NAME: ledger
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
       - load_var: success_snippet
