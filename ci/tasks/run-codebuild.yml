@@ -1,0 +1,20 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/node-runner
+inputs:
+  - name: pay-ci
+  - name: run-codebuild-configuration
+run:
+  dir: pay-ci/ci/scripts/run-codebuild/
+  path: sh
+  args:
+    - -eu
+    - -c
+    - |
+      echo "Installing NPM dependencies"
+      npm ci --quiet --production
+      echo "Running codebuild"
+      node run-codebuild.js

@@ -1,0 +1,68 @@
+---
+platform: linux
+inputs:
+  - name: pay-ci
+outputs:
+  - name: run-codebuild-configuration
+params:
+  CODEBUILD_PROJECT_NAME:
+  CODEBUILD_SOURCES_BUCKET:
+  PROJECT_UNDER_TEST:
+  RELEASE_TAG_UNDER_TEST:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+run:
+  path: /bin/bash
+  args:
+    - -euo
+    - pipefail
+    - -c
+    - |
+      echo "Installing zip"
+      apk add -q --no-progress zip
+      echo "Done"
+      echo
+
+      pushd "pay-ci" >> /dev/null
+      echo "Zipping pay-ci"
+      zip -qr "../pay-ci.zip" .
+      popd >> /dev/null
+
+      echo "Uploading pay-ci.zip to S3"
+      PAY_CI_VERSION_ID=$(
+        aws s3api put-object \
+          --bucket "${CODEBUILD_SOURCES_BUCKET}" \
+          --key "pay-${PROJECT_UNDER_TEST}/pay-ci.zip" \
+          --body "pay-ci.zip" \
+          --query 'VersionId' \
+          --output 'text'
+      )
+      echo "Uploaded pay-ci with version id $PAY_CI_VERSION_ID"
+      echo
+      echo "Products end to end test configuration"
+      cat <<EOF | tee ./run-codebuild-configuration/products.json
+      {
+        "projectName": "${CODEBUILD_PROJECT_NAME}",
+        "sourceVersion": "${PAY_CI_VERSION_ID}",
+        "secondarySourcesVersions": {},
+        "environmentVariables": {
+          "tag_${PROJECT_UNDER_TEST}": "${RELEASE_TAG_UNDER_TEST}",
+          "END_TO_END_TEST_SUITE": "products"
+        }
+      }
+      EOF
+
+      echo
+      echo "Card end to end test configuration"
+      cat <<EOF | tee ./run-codebuild-configuration/card.json
+      {
+        "projectName": "${CODEBUILD_PROJECT_NAME}",
+        "sourceVersion": "${PAY_CI_VERSION_ID}",
+        "secondarySourcesVersions": {},
+        "environmentVariables": {
+          "tag_${PROJECT_UNDER_TEST}": "${RELEASE_TAG_UNDER_TEST}",
+          "END_TO_END_TEST_SUITE": "card"
+        }
+      }
+      EOF
