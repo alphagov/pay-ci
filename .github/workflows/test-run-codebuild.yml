@@ -1,0 +1,35 @@
+name: Test run-codebuild ci script
+
+on:
+  pull_request:
+    paths:
+      - 'ci/scripts/run-codebuild/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'ci/scripts/run-codebuild/**'
+
+jobs:
+  test-script-run-codebuild:
+    runs-on: ubuntu-20.04
+    name: Test script run-codebuild
+    env:
+      working-directory: ci/scripts/run-codebuild
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
+      - name: Setup
+        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561
+        with:
+          node-version: 12.22.7
+      - name: Install dependencies
+        run: npm ci
+        working-directory: 'ci/scripts/run-codebuild'
+      - name: Lint check
+        run: npm run lint
+        working-directory: 'ci/scripts/run-codebuild'
+      - name: Unit tests
+        run: npm test
+        working-directory: 'ci/scripts/run-codebuild'
