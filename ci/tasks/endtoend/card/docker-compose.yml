@@ -6,7 +6,7 @@ networks:
 
 services:
   publicapi:
-    image: govukpay/publicapi:${tag_publicapi:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/publicapi:${tag_publicapi:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/publicapi.env
@@ -26,7 +26,7 @@ services:
       driver: "json-file"
 
   frontend:
-    image: govukpay/frontend:${tag_frontend:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/frontend:${tag_frontend:-latest-master}
     env_file: ../docker-config/frontend.env
     networks:
       pymnt_network:
@@ -41,7 +41,7 @@ services:
       driver: "json-file"
 
   frontend_proxy:
-    image: govukpay/reverse-proxy:latest-master
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/reverse-proxy:latest-master
     environment:
       - KEY_FILE=/ssl/keys/frontend.pymnt.localdomain.key
       - CERT_FILE=/ssl/certs/frontend.pymnt.localdomain.crt
@@ -62,7 +62,7 @@ services:
       driver: "json-file"
 
   postgres:
-    image: postgres:11-alpine
+    image: ${DOCKER_REGISTRY_URI:-}postgres:11-alpine
     environment:
       - POSTGRES_PASSWORD=mysecretpassword
     volumes:
@@ -77,7 +77,7 @@ services:
 
   sqs:
     # roribio16/alpine-sqs
-    image: roribio16/alpine-sqs:latest
+    image: ${DOCKER_REGISTRY_URI:-}roribio16/alpine-sqs:latest
     volumes:
       - "./../docker-config/elasticmq.conf:/opt/custom/elasticmq.conf"
     networks:
@@ -87,7 +87,7 @@ services:
     mem_limit: 500M
 
   adminusers:
-    image: govukpay/adminusers:${tag_adminusers:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/adminusers:${tag_adminusers:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/adminusers.env
@@ -110,7 +110,7 @@ services:
       driver: "json-file"
 
   selfservice:
-    image: govukpay/selfservice:${tag_selfservice:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/selfservice:${tag_selfservice:-latest-master}
     env_file: ../docker-config/selfservice.env
     environment:
       - NODE_ENV=${NODE_ENV:-production}
@@ -128,7 +128,7 @@ services:
       driver: "json-file"
 
   selfservice_proxy:
-    image: govukpay/reverse-proxy:latest-master
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/reverse-proxy:latest-master
     environment:
       - KEY_FILE=/ssl/keys/selfservice.pymnt.localdomain.key
       - CERT_FILE=/ssl/certs/selfservice.pymnt.localdomain.crt
@@ -149,7 +149,7 @@ services:
       driver: "json-file"
       
   connector:
-    image: govukpay/connector:${tag_connector:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/connector:${tag_connector:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/connector.env
@@ -174,7 +174,7 @@ services:
       driver: "json-file"
 
   ledger:
-    image: govukpay/ledger:${tag_ledger:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/ledger:${tag_ledger:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/ledger.env
@@ -197,7 +197,7 @@ services:
     logging:
       driver: "json-file"
   publicauth:
-    image: govukpay/publicauth:${tag_publicauth:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/publicauth:${tag_publicauth:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/publicauth.env
@@ -220,7 +220,7 @@ services:
       driver: "json-file"
 
   stubs:
-    image: govukpay/stubs:${tag_stubs:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/stubs:${tag_stubs:-latest-master}
     env_file: ../docker-config/stubs.env
     networks:
       pymnt_network:
@@ -231,7 +231,7 @@ services:
       driver: "json-file"
 
   stubs_proxy:
-    image: govukpay/reverse-proxy:latest-master
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/reverse-proxy:latest-master
     volumes:
       - "./../docker-config/ssl:/ssl"
     environment:
@@ -250,7 +250,7 @@ services:
       driver: "json-file"
 
   cardid:
-    image: govukpay/cardid:${tag_cardid:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/cardid:${tag_cardid:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/cardid.env
@@ -267,7 +267,7 @@ services:
     logging:
       driver: "json-file"
   endtoend:
-    image: govukpay/endtoend:${tag_endtoend:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}govukpay/endtoend:${tag_endtoend:-latest-master}
     env_file: ../docker-config/endtoend.env
     environment:
       - MAVEN_OPTS=${END_TO_END_JAVA_OPTS}
@@ -297,7 +297,7 @@ services:
       driver: "json-file"
 
   selenium:
-    image: selenium/standalone-chrome:3.141.59-iron
+    image: ${DOCKER_REGISTRY_URI:-}selenium/standalone-chrome:3.141.59-iron
     networks:
       - pymnt_network
     ports:
