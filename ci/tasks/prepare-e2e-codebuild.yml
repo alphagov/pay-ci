@@ -33,7 +33,7 @@ run:
       PAY_CI_VERSION_ID=$(
         aws s3api put-object \
           --bucket "${CODEBUILD_SOURCES_BUCKET}" \
-          --key "pay-${PROJECT_UNDER_TEST}/pay-ci.zip" \
+          --key "sources/endtoend/pay-ci.zip" \
           --body "pay-ci.zip" \
           --query 'VersionId' \
           --output 'text'
