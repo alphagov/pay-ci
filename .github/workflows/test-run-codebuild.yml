@@ -6,7 +6,7 @@ on:
       - 'ci/scripts/run-codebuild/**'
   push:
     branches:
-      - main
+      - master
     paths:
       - 'ci/scripts/run-codebuild/**'
 
