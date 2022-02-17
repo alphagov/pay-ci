@@ -1,0 +1,64 @@
+resource_types:
+  - name: pull-request
+    type: registry-image
+    source:
+      repository: teliaoss/github-pr-resource
+      tag: v0.21.0
+
+resources:
+  - name: concourse-runner
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/concourse-runner
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: latest
+
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: pp-8839-spike-e2e-tests-in-codebuild
+
+jobs:
+  - name: frontend
+    plan:
+      - in_parallel:
+        - get: pay-ci
+        - get: concourse-runner
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::223851549868:role/pay-cd-pay-dev-codebuild-executor-test-12
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role-e2e-spike
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: prepare-codebuild
+        image: concourse-runner
+        file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
+        params:
+          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
+          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
+          PROJECT_UNDER_TEST: frontend
+          RELEASE_TAG_UNDER_TEST: "1734-release"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - task: run-codebuild-product
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-card
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
