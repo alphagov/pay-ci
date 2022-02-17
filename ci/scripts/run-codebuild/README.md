@@ -35,5 +35,5 @@ field | description
 ---|----
 projectName | The AWS CodeBuild project name to run
 sourceVersion | The source version for the primary source of the CodeBuild project
-secondarySourcesVersions | A map with keys for the secondary source names and values as the versions to use for those sources
-environmentVariables | A map of with keys as environment variable names to set and values as the values of those environment variables
+secondarySourcesVersions | A JSON object, the attribute names are the secondary source names, the attribute values are the versions to use for those secondary sources
+environmentVariables | A JSON object, the attribute names are the environment variable names to set, the attribute values are the values of those environment variables
