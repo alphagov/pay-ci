@@ -7,6 +7,9 @@
     "test": "jest --silent=true",
     "lint": "standard"
   },
+  "engines": {
+    "node": ">=12.22.7"
+  },
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-codebuild": "^3.45.0",
