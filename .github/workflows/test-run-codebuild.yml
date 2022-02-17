@@ -21,8 +21,8 @@ jobs:
       matrix:
         node-version:
           - "12.22.7"
-          - "14.19.0"
-          - "16.14.0"
+          - "14"
+          - "16"
 
     steps:
       - name: Checkout
