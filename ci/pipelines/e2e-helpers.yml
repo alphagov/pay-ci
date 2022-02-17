@@ -12,6 +12,15 @@ resources:
         # Should trigger on any changes to this folder
         - images/proxy/*
 
+  - name: pay-infra-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+
   - name: reverse-proxy-ecr-registry-test
     type: registry-image
     icon: docker
@@ -25,6 +34,7 @@ resources:
       # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
+      tag: latest-master
 
 # Builds the reverse-proxy Docker image used by end-to-end tests and pushes to ECR
 jobs:
@@ -34,6 +44,34 @@ jobs:
       # - get: pay-ci
       - get: reverse-proxy-src
         trigger: true
+      - get: pay-infra-src
+      - task: find-and-compile-naxsi-rules
+        config:
+          container_limits: { }
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: pay-infra-src
+            - name: reverse-proxy-src
+          outputs:
+            - name: reverse-proxy-src
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cd reverse-proxy-src/images/proxy
+                ls -lrt
+                mkdir target
+
+                # Search pay-infra files for naxsi rules and copy to current 'target' directory
+                # See https://github.com/alphagov/pay-scripts/blob/master/images/proxy/build-latest-master.sh
+                prod_naxsi_rules_source=../../../pay-infra-src/provisioning/terraform/modules/pay_microservices_v2
+                find "$prod_naxsi_rules_source" -name \*.naxsi -exec cp {} target \;
+                ls -lrt
       - task: build-reverse-proxy-image
         privileged: true
         params:
@@ -53,4 +91,3 @@ jobs:
       - put: reverse-proxy-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: latest-master
