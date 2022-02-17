@@ -1,0 +1,56 @@
+---
+resources:
+  - name: reverse-proxy-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-scripts
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+      paths:
+        # Should trigger on any changes to this folder
+        - images/proxy/*
+
+  - name: reverse-proxy-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/reverse-proxy
+      variant: release
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      # Hardcode the test account registry ID for now. Needs to be a string, not a number
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+
+# Builds the reverse-proxy Docker image used by end-to-end tests and pushes to ECR
+jobs:
+  - name: build-and-push-reverse-proxy-to-test-ecr
+    plan:
+      # Not sure if we need this
+      # - get: pay-ci
+      - get: reverse-proxy-src
+        trigger: true
+      - task: build-reverse-proxy-image
+        privileged: true
+        params:
+          CONTEXT: reverse-proxy-src/images/proxy/
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: vito/oci-build-task
+          inputs:
+          - name: reverse-proxy-src
+          outputs:
+          - name: image
+          run:
+            path: build
+      - put: reverse-proxy-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: latest-master
