@@ -86,7 +86,7 @@ export class CodeBuildRunner {
 
       if (typeof build.logs.groupName !== 'undefined') {
         // Newline gives us a blank line after all the progress .'s
-        console.log(`\nLogs are now availabile at ${build.logs.deepLink} in group ${build.logs.groupName} and stream ${build.logs.streamName}`)
+        console.log(`\nLogs are now available at ${build.logs.deepLink} in group ${build.logs.groupName} and stream ${build.logs.streamName}`)
         return build
       }
 
