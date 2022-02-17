@@ -103,7 +103,7 @@ describe('CodeBuildRunner', () => {
 
     let batchGetBuildsCallCount = 0
 
-    cbMock.onAnyCommand().rejects('Unkown CodeBuild API Call')
+    cbMock.onAnyCommand().rejects('Unknown CodeBuild API Call')
     cbMock
       .on(StartBuildCommand, {
         projectName: 'mockProject',
@@ -198,7 +198,7 @@ describe('CodeBuildRunner', () => {
         ]
       }).resolves(mockResponses.startBuildCommandResponse)
       .on(BatchGetBuildsCommand, { ids: ['mockBuildId'] }).callsFake(input => {
-        if (batchGetBuildsCallCount === 0) {
+        if (batchGetBuildsCallCount <= 2) {
           batchGetBuildsCallCount++
           return mockResponses.batchGetBuildsCommandResponse
         } else {
@@ -222,6 +222,11 @@ describe('CodeBuildRunner', () => {
     )
 
     await expect(runner.runBuildAndLog()).rejects.toThrow('mocked rejection')
+
+    expect(process.stdout.write).toHaveBeenCalledWith('mock message 1 event 1')
+    expect(process.stdout.write).toHaveBeenCalledWith('mock message 1 event 2')
+    expect(process.stdout.write).toHaveBeenCalledWith('mock message 2 event 1')
+    expect(process.stdout.write).toHaveBeenCalledWith('mock message 2 event 2')
   })
 
   it('Allows the unhandled reject to bubble up if codebuild returns an error when starting the build', async () => {
