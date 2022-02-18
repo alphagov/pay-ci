@@ -95,9 +95,10 @@ jobs:
           - name: image
           run:
             path: build
-      - put: reverse-proxy-ecr-registry-test
-        params:
-          image: image/image.tar
-      - put: reverse-proxy-dockerhub
-        params:
-          image: image/image.tar
+      - in_parallel:
+        - put: reverse-proxy-ecr-registry-test
+          params:
+            image: image/image.tar
+        - put: reverse-proxy-dockerhub
+          params:
+            image: image/image.tar
