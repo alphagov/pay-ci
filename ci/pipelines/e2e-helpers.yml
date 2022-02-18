@@ -73,14 +73,12 @@ jobs:
               - -ec
               - |
                 cd reverse-proxy-src/images/proxy
-                ls -lrt
                 mkdir target
 
                 # Search pay-infra files for naxsi rules and copy to current 'target' directory
                 # See https://github.com/alphagov/pay-scripts/blob/master/images/proxy/build-latest-master.sh
                 prod_naxsi_rules_source=../../../pay-infra-src/provisioning/terraform/modules/pay_microservices_v2
                 find "$prod_naxsi_rules_source" -name \*.naxsi -exec cp {} target \;
-                ls -lrt
       - task: build-reverse-proxy-image
         privileged: true
         params:
