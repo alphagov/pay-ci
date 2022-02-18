@@ -12,6 +12,15 @@ resources:
         # Should trigger on any changes to this folder
         - images/proxy/*
 
+  - name: stubs-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-stubs
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+
   - name: pay-infra-src
     type: git
     icon: github
@@ -45,12 +54,34 @@ resources:
       password: ((docker-password))
       username: ((docker-username))
 
+  - name: stubs-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stubs
+      variant: release
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      # Hardcode the test account registry ID for now. Needs to be a string, not a number
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+      tag: latest-master
+
+  - name: stubs-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stubs
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
+
 # Builds the reverse-proxy Docker image used by end-to-end tests and pushes to ECR (and Dockerhub)
 jobs:
   - name: build-and-push-reverse-proxy-to-test-ecr
     plan:
-      # Not sure if we need this
-      # - get: pay-ci
       - get: reverse-proxy-src
         trigger: true
       - get: pay-infra-src
@@ -100,5 +131,33 @@ jobs:
           params:
             image: image/image.tar
         - put: reverse-proxy-dockerhub
+          params:
+            image: image/image.tar
+
+  - name: build-and-push-stubs-to-test-ecr
+    plan:
+      - get: stubs-src
+        trigger: true
+      - task: build-stubs-image
+        privileged: true
+        params:
+          CONTEXT: stubs-src
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: vito/oci-build-task
+          inputs:
+          - name: stubs-src
+          outputs:
+          - name: image
+          run:
+            path: build
+      - in_parallel:
+        - put: stubs-ecr-registry-test
+          params:
+            image: image/image.tar
+        - put: stubs-dockerhub
           params:
             image: image/image.tar
