@@ -1,3 +1,5 @@
 .idea/
 .DS_Store
-ci/scripts/node_modules/*
+ci/scripts/**/node_modules/*
+/venv
+/.venv
