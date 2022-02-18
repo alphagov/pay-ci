@@ -36,7 +36,16 @@ resources:
       aws_region: eu-west-1
       tag: latest-master
 
-# Builds the reverse-proxy Docker image used by end-to-end tests and pushes to ECR
+  - name: reverse-proxy-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/reverse-proxy
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
+
+# Builds the reverse-proxy Docker image used by end-to-end tests and pushes to ECR (and Dockerhub)
 jobs:
   - name: build-and-push-reverse-proxy-to-test-ecr
     plan:
@@ -89,5 +98,8 @@ jobs:
           run:
             path: build
       - put: reverse-proxy-ecr-registry-test
+        params:
+          image: image/image.tar
+      - put: reverse-proxy-dockerhub
         params:
           image: image/image.tar
