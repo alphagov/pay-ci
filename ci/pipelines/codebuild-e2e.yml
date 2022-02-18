@@ -20,7 +20,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: pp-8839-spike-e2e-tests-in-codebuild
+      branch: master
 
 jobs:
   - name: frontend
