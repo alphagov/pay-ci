@@ -1,0 +1,104 @@
+---
+resources:
+  - name: reverse-proxy-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-scripts
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+      paths:
+        # Should trigger on any changes to this folder
+        - images/proxy/*
+
+  - name: pay-infra-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+
+  - name: reverse-proxy-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/reverse-proxy
+      variant: release
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      # Hardcode the test account registry ID for now. Needs to be a string, not a number
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+      tag: latest-master
+
+  - name: reverse-proxy-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/reverse-proxy
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
+
+# Builds the reverse-proxy Docker image used by end-to-end tests and pushes to ECR (and Dockerhub)
+jobs:
+  - name: build-and-push-reverse-proxy-to-test-ecr
+    plan:
+      # Not sure if we need this
+      # - get: pay-ci
+      - get: reverse-proxy-src
+        trigger: true
+      - get: pay-infra-src
+      - task: find-and-compile-naxsi-rules
+        config:
+          container_limits: { }
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: pay-infra-src
+            - name: reverse-proxy-src
+          outputs:
+            - name: reverse-proxy-src
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cd reverse-proxy-src/images/proxy
+                mkdir target
+
+                # Search pay-infra files for naxsi rules and copy to current 'target' directory
+                # See https://github.com/alphagov/pay-scripts/blob/master/images/proxy/build-latest-master.sh
+                prod_naxsi_rules_source=../../../pay-infra-src/provisioning/terraform/modules/pay_microservices_v2
+                find "$prod_naxsi_rules_source" -name \*.naxsi -exec cp {} target \;
+      - task: build-reverse-proxy-image
+        privileged: true
+        params:
+          CONTEXT: reverse-proxy-src/images/proxy/
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: vito/oci-build-task
+          inputs:
+          - name: reverse-proxy-src
+          outputs:
+          - name: image
+          run:
+            path: build
+      - in_parallel:
+        - put: reverse-proxy-ecr-registry-test
+          params:
+            image: image/image.tar
+        - put: reverse-proxy-dockerhub
+          params:
+            image: image/image.tar
