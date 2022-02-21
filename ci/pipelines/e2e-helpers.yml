@@ -43,7 +43,7 @@ resources:
       # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
-      tag: latest-master
+      tag: latest
 
   - name: reverse-proxy-dockerhub
     type: registry-image
@@ -67,7 +67,7 @@ resources:
       # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
-      tag: latest-master
+      tag: latest
 
   - name: stubs-dockerhub
     type: registry-image
