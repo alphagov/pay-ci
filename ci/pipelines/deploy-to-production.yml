@@ -385,7 +385,6 @@ groups:
   - name: toolbox
     jobs:
       - deploy-toolbox-to-prod
-      - smoke-test-toolbox-on-prod
   - name: carbon-relay
     jobs:
       - deploy-carbon-relay-to-prod
@@ -923,24 +922,6 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
-
-  - name: smoke-test-toolbox-on-prod
-    serial_groups: [smoke-test]
-    plan:
-      - get: toolbox-ecr-registry-prod
-        trigger: true
-        passed: [deploy-toolbox-to-prod]
-      - get: pay-ci
-      - task: assume-role
-        file: pay-ci/ci/tasks/assume-role.yml
-        params:
-          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
-          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
-      - in_parallel:
-          <<: *smoke-test-run-all-on-production
 
   - name: deploy-frontend-to-prod
     serial: true

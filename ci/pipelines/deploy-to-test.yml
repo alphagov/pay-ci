@@ -571,7 +571,6 @@ groups:
     jobs:
       - push-toolbox-to-test-ecr
       - deploy-toolbox
-      - smoke-test-toolbox
       - push-toolbox-to-staging-ecr
   - name: webhooks
     jobs:
@@ -850,42 +849,10 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
-  - name: smoke-test-toolbox
-    serial_groups: [smoke-test]
-    plan:
-      - get: toolbox-ecr-registry-test
-        trigger: true
-        passed: [deploy-toolbox]
-      - get: pay-ci
-      - load_var: application_image_tag
-        file: toolbox-ecr-registry-test/tag
-      - task: create-notification-snippets
-        file: pay-ci/ci/tasks/create-notification-snippets.yml
-        params:
-          APP_NAME: toolbox
-          ACTION_NAME: Smoke test
-          <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - task: assume-role
-        file: pay-ci/ci/tasks/assume-role.yml
-        params:
-          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
-          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
-      - in_parallel:
-          <<: *smoke-test-run-all-on-test
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
-
   - name: push-toolbox-to-staging-ecr
     plan:
       - get: toolbox-ecr-registry-test
-        passed: [smoke-test-toolbox]
+        passed: [deploy-toolbox-to-test]
         params:
           format: oci
         trigger: true
