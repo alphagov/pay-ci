@@ -1,5 +1,14 @@
 ---
 resources:
+  - name: endtoend-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-endtoend
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+
   - name: reverse-proxy-src
     type: git
     icon: github
@@ -29,6 +38,30 @@ resources:
       branch: master
       username: alphagov-pay-ci
       password: ((github-access-token))
+
+  - name: endtoend-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/endtoend
+      variant: release
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      # Hardcode the test account registry ID for now. Needs to be a string, not a number
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+      tag: latest
+
+  - name: endtoend-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/endtoend
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
 
   - name: reverse-proxy-ecr-registry-test
     type: registry-image
@@ -78,8 +111,36 @@ resources:
       password: ((docker-password))
       username: ((docker-username))
 
-# Builds the reverse-proxy Docker image used by end-to-end tests and pushes to ECR (and Dockerhub)
+# Builds the Docker images used by end-to-end tests and pushes to ECR (and Dockerhub)
 jobs:
+  - name: build-and-push-endtoend-to-test-ecr
+    plan:
+      - get: endtoend-src
+        trigger: true
+      - task: build-endtoend-image
+        privileged: true
+        params:
+          CONTEXT: endtoend-src
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: vito/oci-build-task
+          inputs:
+            - name: endtoend-src
+          outputs:
+            - name: image
+          run:
+            path: build
+      - in_parallel:
+          - put: endtoend-ecr-registry-test
+            params:
+              image: image/image.tar
+          - put: endtoend-dockerhub
+            params:
+              image: image/image.tar
+
   - name: build-and-push-reverse-proxy-to-test-ecr
     plan:
       - get: reverse-proxy-src
