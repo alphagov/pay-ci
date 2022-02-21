@@ -852,7 +852,7 @@ jobs:
   - name: push-toolbox-to-staging-ecr
     plan:
       - get: toolbox-ecr-registry-test
-        passed: [deploy-toolbox-to-test]
+        passed: [deploy-toolbox]
         params:
           format: oci
         trigger: true
