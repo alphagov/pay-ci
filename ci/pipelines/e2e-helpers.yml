@@ -111,6 +111,81 @@ resources:
       password: ((docker-password))
       username: ((docker-username))
 
+  - name: postgres-11-alpine
+    type: registry-image
+    icon: docker
+    check_every: 1h
+    source:
+      repository: postgres
+      tag: 11-alpine
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - name: ecr-postgres-11-alpine
+    type: registry-image
+    icon: docker
+    check_every: never
+    source:
+      repository: postgres
+      tag: 11-alpine
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      # Hardcode the test account registry ID for now. Needs to be a string, not a number
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+
+  - name: roribio16-alpine-sqs-latest
+    type: registry-image
+    icon: docker
+    check_every: 1h
+    source:
+      repository: roribio16/alpine-sqs
+      tag: latest
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - name: ecr-roribio16-alpine-sqs-latest
+    type: registry-image
+    icon: docker
+    check_every: never
+    source:
+      repository: roribio16/alpine-sqs
+      tag: latest
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      # Hardcode the test account registry ID for now. Needs to be a string, not a number
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+
+  - name: selenium-standalone-chrome-3-141-59-iron
+    type: registry-image
+    icon: docker
+    check_every: 1h
+    source:
+      repository: selenium/standalone-chrome
+      tag: 3.141.59-iron
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - name: ecr-selenium-standalone-chrome-3-141-59-iron
+    type: registry-image
+    icon: docker
+    check_every: never
+    source:
+      repository: selenium/standalone-chrome
+      tag: 3.141.59-iron
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      # Hardcode the test account registry ID for now. Needs to be a string, not a number
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+
 # Builds the Docker images used by end-to-end tests and pushes to ECR (and Dockerhub)
 jobs:
   - name: build-and-push-endtoend-to-test-ecr
@@ -222,3 +297,33 @@ jobs:
         - put: stubs-dockerhub
           params:
             image: image/image.tar
+
+  - name: copy-postgres-11
+    plan:
+      - get: postgres-11-alpine
+        trigger: true
+        params:
+          format: oci
+      - put: ecr-postgres-11-alpine
+        params:
+          image: postgres-11-alpine/image.tar
+
+  - name: copy-roribio16-alpine-sqs-latest
+    plan:
+      - get: roribio16-alpine-sqs-latest
+        trigger: true
+        params:
+          format: oci
+      - put: ecr-roribio16-alpine-sqs-latest
+        params:
+          image: roribio16-alpine-sqs-latest/image.tar
+
+  - name: copy-selenium-standalone-chrome-3-141-59-iron
+    plan:
+      - get: selenium-standalone-chrome-3-141-59-iron
+        trigger: true
+        params:
+          format: oci
+      - put: ecr-selenium-standalone-chrome-3-141-59-iron
+        params:
+          image: selenium-standalone-chrome-3-141-59-iron/image.tar
