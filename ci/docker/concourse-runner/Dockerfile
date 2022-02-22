@@ -1,4 +1,4 @@
-FROM docker:19.03
+FROM docker:20.10.10
 
 RUN apk add --no-cache \
   aws-cli \
@@ -10,26 +10,19 @@ RUN apk add --no-cache \
   python3 \
   ca-certificates \
   jq \
-  # dockerd dependencies
-  iptables \
-  util-linux 
-
-RUN apk add --no-cache \
   openjdk11 \
   npm \
   maven \
   tini \
-  --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
-
-RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
-RUN wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.31-r0/glibc-2.31-r0.apk
-RUN apk add glibc-2.31-r0.apk
+  # dockerd dependencies
+  iptables \
+  util-linux
 
 RUN apk add --virtual build-dependencies build-base
 
-RUN curl -LO https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v1.86.0/pact-1.86.0-linux-x86_64.tar.gz
-RUN tar xzf pact-1.86.0-linux-x86_64.tar.gz
-RUN rm -rf pact-1.86.0-linux-x86_64.tar.gz
+RUN curl -LO https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v1.86.0/pact-1.86.0-linux-x86_64.tar.gz \
+    && tar xzf pact-1.86.0-linux-x86_64.tar.gz \
+    && rm -f pact-1.86.0-linux-x86_64.tar.gz
 
 RUN ln -s /pact/bin/pact /usr/local/bin \
     && ln -s /pact/bin/pact-broker /usr/local/bin \
