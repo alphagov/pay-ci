@@ -1,0 +1,74 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner
+inputs:
+  - name: pay-ci
+params:
+  # comma separated list of images (with tag) to sync
+  SYNC_IMAGES:
+
+  AWS_ACCOUNT_ID:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
+
+  DOCKERHUB_USERNAME:
+  DOCKERHUB_PASSWORD:
+run:
+  path: /bin/bash
+  args:
+    - -ec
+    - |
+      function heading {
+        echo -e "\n\n|====================================================================="
+        echo "| $1"
+        echo "|====================================================================="
+      }
+
+      # IFS sets the field separator
+      # Split the comma separated images to sync into an array
+      IFS=',' read -ra IMAGES <<< "$SYNC_IMAGES"
+      echo "Going to copy images ${IMAGES[*]}"
+
+      heading "Setting up docker"
+
+      source /docker-helpers.sh
+      start_docker
+
+      function cleanup {
+        heading "Docker Cleanup"
+        echo "CLEANUP TRIGGERED"
+        clean_docker
+        stop_docker
+        echo "CLEANUP COMPLETE"
+      }
+
+      trap cleanup EXIT
+
+      heading "Authenticating with dockerhub"
+      echo "$DOCKERHUB_PASSWORD" | docker login -u $DOCKERHUB_USERNAME --password-stdin
+
+      heading "Authenticating with ECR"
+      ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+      aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+      # Copy images
+      for IMAGE in "${IMAGES[@]}"; do
+        heading "Copying $IMAGE"
+        echo "Pulling $IMAGE from dockerhub"
+        docker pull -q "$IMAGE"
+
+        ECR_IMAGE="${ECR_REGISTRY}/${IMAGE}"
+
+        echo "Tagging $IMAGE as $ECR_IMAGE"
+        docker tag "$IMAGE" "$ECR_IMAGE"
+
+        echo "Pushing $ECR_IMAGE to ECR"
+        docker push "$ECR_IMAGE"
+      done
+
+      heading "Image copy complete"
+      echo "Copied images ${IMAGES[*]}"

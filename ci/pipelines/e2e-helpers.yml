@@ -111,6 +111,24 @@ resources:
       password: ((docker-password))
       username: ((docker-username))
 
+  - name: monday-morning
+    icon: alarm
+    type: time
+    source:
+      start: "17:00"
+      stop: "19:30"
+      days: [Monday]
+      location: Europe/London
+
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      # branch: master
+      branch: pp-9305-sync-dockerhub-images
+
+
 # Builds the Docker images used by end-to-end tests and pushes to ECR (and Dockerhub)
 jobs:
   - name: build-and-push-endtoend-to-test-ecr
@@ -222,3 +240,30 @@ jobs:
         - put: stubs-dockerhub
           params:
             image: image/image.tar
+
+  - name: sync-images-from-dockerhub-to-ecr
+    plan:
+      - get: monday-morning
+        trigger: true
+      - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: concourse-sync-dockerhub-to-ecr-test
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: sync-images
+        privileged: true
+        file: pay-ci/ci/tasks/sync-images-dockerhub-to-ecr.yml
+        params:
+          AWS_ACCOUNT_ID: ((pay_aws_test_account_id))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+          DOCKERHUB_USERNAME: ((docker-username))
+          DOCKERHUB_PASSWORD: ((docker-password))
+
+          SYNC_IMAGES: "postgres:11-alpine,roribio16/alpine-sqs:latest,selenium/standalone-chrome:3.141.59-iron"
