@@ -1,3 +1,10 @@
+# This task copies docker images from Docker Hub into an AWS ECR registry with the same name
+#
+# The list of images to copy is provided as a comma separated list in the SYNC_IMAGES param.
+#
+# e.g. if you provide SYNC_IMAGES as 'postgres:11-alpine,ubuntu:20.04' then postgres:11-alpine will be copied into
+# an ECR repository in the target AWS account named postgres with the 11-alpine tag, and the ubuntu:20.04 image will
+# be copied into an ECR repository in the target AWS account named ubuntu with the tag 20.04
 platform: linux
 image_resource:
   type: registry-image
