@@ -127,6 +127,18 @@ resources:
       uri: https://github.com/alphagov/pay-ci
       branch: master
 
+  - name: slack-notification
+    type: slack-notification
+    source:
+      url: https://hooks.slack.com/services/((slack-notification-secret))
+
+resource_types:
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
+
 # Builds the Docker images used by end-to-end tests and pushes to ECR (and Dockerhub)
 jobs:
   - name: build-and-push-endtoend-to-test-ecr
@@ -156,6 +168,24 @@ jobs:
           - put: endtoend-dockerhub
             params:
               image: image/image.tar
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Failed to build and push pay-endtoend - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Built and pushed pay-endtoend - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: build-and-push-reverse-proxy-to-test-ecr
     plan:
@@ -210,6 +240,25 @@ jobs:
         - put: reverse-proxy-dockerhub
           params:
             image: image/image.tar
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Failed to build and push pay-reverse-proxy - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Built and pushed pay-reverse-proxy - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
 
   - name: build-and-push-stubs-to-test-ecr
     plan:
@@ -238,6 +287,24 @@ jobs:
         - put: stubs-dockerhub
           params:
             image: image/image.tar
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Failed to build and push pay-stubs - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Built and pushed pay-stubs - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: sync-images-from-dockerhub-to-ecr
     plan:
@@ -265,3 +332,21 @@ jobs:
           DOCKERHUB_PASSWORD: ((docker-password))
 
           SYNC_IMAGES: "postgres:11-alpine,roribio16/alpine-sqs:latest,selenium/standalone-chrome:3.141.59-iron"
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Failed copying non-govukpay end to end images from Docker Hub to ECR  - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Copied non-govukpay end to end helper images from Docker Hub to ECR - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
