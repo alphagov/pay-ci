@@ -250,6 +250,13 @@ resources:
       repository: govukpay/frontend
       variant: release
       <<: *aws_test_config
+  - name: frontend-candidate-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/frontend
+      variant: candidate
+      <<: *aws_test_config
   - name: adminusers-ecr-registry-test
     type: registry-image
     icon: docker
@@ -519,6 +526,7 @@ groups:
   - name: frontend
     jobs:
       - push-frontend-to-test-ecr
+      - run-frontend-e2e
       - deploy-frontend
       - smoke-test-frontend
       - frontend-pact-tag
@@ -977,6 +985,50 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/tags
+
+  - name: run-frontend-e2e
+    plan:
+      - get: frontend-candidate-ecr-registry-test
+        trigger: true
+        # passed: [push-frontend-to-test-ecr]
+      - load_var: candidate_image_tag
+        file: frontend-candidate-ecr-registry-test/tag  
+      - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+          AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
+        params:
+          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
+          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
+          PROJECT_UNDER_TEST: frontend
+          RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - task: run-codebuild-product
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-card
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+
   - name: deploy-frontend
     serial: true
     serial_groups: [deploy-application]
