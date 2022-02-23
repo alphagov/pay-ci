@@ -10,7 +10,7 @@
 # The json configuration is written into the run-codebuild-configuration output for a later task to use as an input
 platform: linux
 image_resource:
-  type: registry-image
+  type: docker-image
   source:
     repository: govukpay/concourse-runner
 inputs:
