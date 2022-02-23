@@ -988,17 +988,19 @@ jobs:
 
   - name: run-frontend-e2e
     plan:
-      - get: frontend-candidate-ecr-registry-test
-        trigger: true
-        # passed: [push-frontend-to-test-ecr]
-      - load_var: candidate_image_tag
-        file: frontend-candidate-ecr-registry-test/tag  
-      - get: pay-ci
-      - task: assume-role
-        file: pay-ci/ci/tasks/assume-role.yml
-        params:
-          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
-          AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - in_parallel:
+        - get: frontend-candidate-ecr-registry-test
+          trigger: true
+          # passed: [push-frontend-to-test-ecr]
+        - get: pay-ci
+      - in_parallel:
+        - load_var: candidate_image_tag
+          file: frontend-candidate-ecr-registry-test/tag
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
       - load_var: role
         file: assume-role/assume-role.json
         format: json
