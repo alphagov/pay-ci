@@ -5,7 +5,7 @@ image_resource:
   type: registry-image
   source:
     repository: govukpay/concourse-runner
-    tag: latest
+    tag: 0-release_2022-01-21
 inputs:
   - name: src
   - name: ci
