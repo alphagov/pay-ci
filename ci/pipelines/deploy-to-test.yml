@@ -985,13 +985,17 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/tags
+      - put: frontend-candidate-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/candidate-tag
 
   - name: run-frontend-e2e
     plan:
       - in_parallel:
         - get: frontend-candidate-ecr-registry-test
           trigger: true
-          # passed: [push-frontend-to-test-ecr]
+          passed: [push-frontend-to-test-ecr]
         - get: pay-ci
       - in_parallel:
         - load_var: candidate_image_tag
