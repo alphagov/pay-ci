@@ -981,14 +981,15 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: frontend-git-release
-      - put: frontend-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: tags/tags
-      - put: frontend-candidate-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: tags/candidate-tag
+      - in_parallel:
+        - put: frontend-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+        - put: frontend-candidate-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/candidate-tag
 
   - name: run-frontend-e2e
     plan:
