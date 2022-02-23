@@ -257,6 +257,13 @@ resources:
       repository: govukpay/frontend
       variant: candidate
       <<: *aws_test_config
+  - name: frontend-latest-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/frontend
+      tag: latest
+      <<: *aws_test_config
   - name: adminusers-ecr-registry-test
     type: registry-image
     icon: docker
@@ -981,17 +988,24 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: frontend-git-release
-      - put: frontend-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: tags/tags
+      - in_parallel:
+        - put: frontend-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+        - put: frontend-candidate-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/candidate-tag
 
   - name: run-frontend-e2e
     plan:
       - in_parallel:
         - get: frontend-candidate-ecr-registry-test
+          params:
+            format: oci
           trigger: true
-          # passed: [push-frontend-to-test-ecr]
+          passed: [push-frontend-to-test-ecr]
         - get: pay-ci
       - in_parallel:
         - load_var: candidate_image_tag
@@ -1029,7 +1043,9 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-
+      - put: frontend-latest-ecr-registry-test
+        params:
+          image: frontend-candidate-ecr-registry-test/image.tar
 
   - name: deploy-frontend
     serial: true

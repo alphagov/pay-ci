@@ -13,4 +13,5 @@ run:
     - -ec
     - |
       RELEASE_NUMBER=$(sed 's/alpha_release-//' < git-release/.git/ref)
-      echo "${RELEASE_NUMBER}-release ${RELEASE_NUMBER}-candidate" > tags/tags
+      echo "${RELEASE_NUMBER}-release" > tags/tags
+      echo "${RELEASE_NUMBER}-candidate" > tags/candidate-tag
