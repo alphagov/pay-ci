@@ -411,6 +411,20 @@ resources:
       repository: govukpay/publicauth
       variant: release
       <<: *aws_test_config
+  - name: publicauth-candidate-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicauth
+      variant: candidate
+      <<: *aws_test_config
+  - name: publicauth-latest-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicauth
+      tag: latest
+      <<: *aws_test_config      
   - name: selfservice-ecr-registry-test
     type: registry-image
     icon: docker
@@ -675,6 +689,7 @@ groups:
   - name: publicauth
     jobs:
       - push-publicauth-to-test-ecr
+      - run-publicauth-e2e
       - deploy-publicauth
       - smoke-test-publicauth
       - push-publicauth-to-staging-ecr
@@ -2805,6 +2820,7 @@ jobs:
         params:
           image: publicapi-ecr-registry-test/image.tar
           additional_tags: publicapi-ecr-registry-test/tag
+
   - name: push-publicauth-to-test-ecr
     plan:
       - get: pay-ci
@@ -2821,10 +2837,75 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: publicauth-git-release
-      - put: publicauth-ecr-registry-test
+      - in_parallel:
+        - put: publicauth-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+        - put: publicauth-candidate-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/candidate-tag
+
+  - name: run-publicauth-e2e
+    plan:
+      - in_parallel:
+        - get: publicauth-candidate-ecr-registry-test
+          params:
+            format: oci
+          trigger: true
+          passed: [push-publicauth-to-test-ecr]
+        - get: pay-ci
+      - in_parallel:
+        - load_var: candidate_image_tag
+          file: publicauth-candidate-ecr-registry-test/tag
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          image: image/image.tar
-          additional_tags: tags/tags
+          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
+          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
+          PROJECT_UNDER_TEST: publicauth
+          RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-codebuild-card
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - put: publicauth-latest-ecr-registry-test
+        params:
+          image: publicauth-candidate-ecr-registry-test/image.tar
+#    on_failure:
+#      put: slack-notification
+#      attempts: 10
+#      params:
+#        channel: '#govuk-pay-announce'
+#        silent: true
+#        text: ':red-circle: publicauth candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+#        icon_emoji: ":concourse:"
+#        username: pay-concourse
+#    on_success:
+#      put: slack-notification
+#      attempts: 10
+#      params:
+#        channel: '#govuk-pay-activity'
+#        silent: true
+#        text: ':green-circle: publicauth candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+#        icon_emoji: ":concourse:"
+#        username: pay-concourse
+
   - name: deploy-publicauth
     serial: true
     serial_groups: [deploy-application]
