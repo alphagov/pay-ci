@@ -12,7 +12,6 @@ function printBuildSummary (build) {
   const durationMinutes = Math.floor(durationSeconds / 60)
   const durationSecondsRemaining = Math.round(durationSeconds % 60)
 
-  console.log(`Sent command to start build ${build.buildNumber} for ${build.projectName} at ${build.startTime}`)
   console.log('|----------------------------------------------------------------------------')
   console.log('| Build info')
   console.log('|----------------------------------------------------------------------------')
