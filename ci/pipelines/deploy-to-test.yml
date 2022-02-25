@@ -362,6 +362,20 @@ resources:
       repository: govukpay/products
       variant: release
       <<: *aws_test_config
+  - name: products-candidate-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products
+      variant: candidate
+      <<: *aws_test_config
+  - name: products-latest-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products
+      tag: latest
+      <<: *aws_test_config      
   - name: products-ui-ecr-registry-test
     type: registry-image
     icon: docker
@@ -369,6 +383,20 @@ resources:
       repository: govukpay/products-ui
       variant: release
       <<: *aws_test_config
+  - name: products-ui-candidate-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products-ui
+      variant: candidate
+      <<: *aws_test_config
+  - name: products-ui-latest-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products-ui
+      tag: latest
+      <<: *aws_test_config  
   - name: publicapi-ecr-registry-test
     type: registry-image
     icon: docker
@@ -623,6 +651,7 @@ groups:
   - name: products
     jobs:
       - push-products-to-test-ecr
+      - run-products-e2e
       - deploy-products
       - smoke-test-products
       - products-pact-tag
@@ -631,6 +660,7 @@ groups:
   - name: products-ui
     jobs:
       - push-products-ui-to-test-ecr
+      - run-products-ui-e2e
       - deploy-products-ui
       - smoke-test-products-ui
       - products-ui-pact-tag
@@ -2127,10 +2157,75 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: products-git-release
-      - put: products-ecr-registry-test
+      - in_parallel:
+        - put: products-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+        - put: products-candidate-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/candidate-tag
+
+  - name: run-products-e2e
+    plan:
+      - in_parallel:
+        - get: products-candidate-ecr-registry-test
+          params:
+            format: oci
+          trigger: true
+          passed: [push-products-to-test-ecr]
+        - get: pay-ci
+      - in_parallel:
+        - load_var: candidate_image_tag
+          file: products-candidate-ecr-registry-test/tag
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          image: image/image.tar
-          additional_tags: tags/tags
+          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
+          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
+          PROJECT_UNDER_TEST: products
+          RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-codebuild-product
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))          
+      - put: products-latest-ecr-registry-test
+        params:
+          image: products-candidate-ecr-registry-test/image.tar
+#    on_failure:
+#      put: slack-notification
+#      attempts: 10
+#      params:
+#        channel: '#govuk-pay-announce'
+#        silent: true
+#        text: ':red-circle: products candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+#        icon_emoji: ":concourse:"
+#        username: pay-concourse
+#    on_success:
+#      put: slack-notification
+#      attempts: 10
+#      params:
+#        channel: '#govuk-pay-activity'
+#        silent: true
+#        text: ':green-circle: products candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+#        icon_emoji: ":concourse:"
+#        username: pay-concourse
+
   - name: deploy-products
     serial: true
     serial_groups: [deploy-application]
@@ -2316,6 +2411,7 @@ jobs:
         params:
           image: products-ecr-registry-test/image.tar
           additional_tags: products-ecr-registry-test/tag
+
   - name: push-products-ui-to-test-ecr
     plan:
       - get: pay-ci
@@ -2332,10 +2428,75 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: products-ui-git-release
-      - put: products-ui-ecr-registry-test
+      - in_parallel:
+        - put: products-ui-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+        - put: products-ui-candidate-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/candidate-tag    
+
+  - name: run-products-ui-e2e
+    plan:
+      - in_parallel:
+        - get: products-ui-candidate-ecr-registry-test
+          params:
+            format: oci
+          trigger: true
+          passed: [push-products-ui-to-test-ecr]
+        - get: pay-ci
+      - in_parallel:
+        - load_var: candidate_image_tag
+          file: products-ui-candidate-ecr-registry-test/tag
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          image: image/image.tar
-          additional_tags: tags/tags
+          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
+          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
+          PROJECT_UNDER_TEST: products-ui
+          RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-codebuild-product
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))          
+      - put: products-ui-latest-ecr-registry-test
+        params:
+          image: products-ui-candidate-ecr-registry-test/image.tar
+#    on_failure:
+#      put: slack-notification
+#      attempts: 10
+#      params:
+#        channel: '#govuk-pay-announce'
+#        silent: true
+#        text: ':red-circle: products-ui candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+#        icon_emoji: ":concourse:"
+#        username: pay-concourse
+#    on_success:
+#      put: slack-notification
+#      attempts: 10
+#      params:
+#        channel: '#govuk-pay-activity'
+#        silent: true
+#        text: ':green-circle: products-ui candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+#        icon_emoji: ":concourse:"
+#        username: pay-concourse       
+
   - name: deploy-products-ui
     serial: true
     serial_groups: [deploy-application]
