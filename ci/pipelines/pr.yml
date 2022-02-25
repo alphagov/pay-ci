@@ -916,8 +916,6 @@ jobs:
             pay-ci: ci
           params:
             PR_BUILD: true
-            CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-            CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
             PROJECT_UNDER_TEST: endtoend
             RELEASE_TAG_UNDER_TEST: ((.:image_tag))
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
