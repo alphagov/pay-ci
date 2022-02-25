@@ -456,7 +456,7 @@ resource_types:
 resources:
   - name: pull-request-builds-ecr
     type: registry-image
-    icon: dockerhub
+    icon: docker
     source:
       repository: govukpay/pull-request-builds
       aws_access_key_id: ((readonly_access_key_id))
@@ -506,7 +506,8 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      # branch: master
+      branch: pp-9338-run-pr-e2e-tests-in-codebuild
       username: alphagov-pay-ci
       password: ((github-access-token))
 
