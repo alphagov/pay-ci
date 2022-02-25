@@ -41,7 +41,7 @@ services:
       driver: "json-file"
 
   frontend_proxy:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse-proxy:-govukpay/reverse-proxy}:latest-master
+    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-govukpay/reverse-proxy}:latest-master
     environment:
       - KEY_FILE=/ssl/keys/frontend.pymnt.localdomain.key
       - CERT_FILE=/ssl/certs/frontend.pymnt.localdomain.crt
@@ -128,7 +128,7 @@ services:
       driver: "json-file"
 
   selfservice_proxy:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse-proxy:-govukpay/reverse-proxy}:latest-master
+    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-govukpay/reverse-proxy}:latest-master
     environment:
       - KEY_FILE=/ssl/keys/selfservice.pymnt.localdomain.key
       - CERT_FILE=/ssl/certs/selfservice.pymnt.localdomain.crt
@@ -231,7 +231,7 @@ services:
       driver: "json-file"
 
   stubs_proxy:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse-proxy:-govukpay/reverse-proxy}:latest-master
+    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-govukpay/reverse-proxy}:latest-master
     volumes:
       - "./../docker-config/ssl:/ssl"
     environment:
@@ -291,7 +291,7 @@ services:
       driver: "json-file"
 
   productsui:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_products-ui:-govukpay/products-ui}:${tag_productsui:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_products_ui:-govukpay/products-ui}:${tag_productsui:-latest-master}
     env_file: ../docker-config/productsui.env
     environment:
       - NODE_ENV=${NODE_ENV:-production}
