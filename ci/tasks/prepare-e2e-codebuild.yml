@@ -68,7 +68,7 @@ run:
       echo "Card end to end test configuration"
       cat <<EOF | tee ./run-codebuild-configuration/card.json
       {
-        "projectName": "${CODEBUILD_PROJECT_NAME}",
+        "projectName": "endtoend-tests-test-12",
         "sourceVersion": "${PAY_CI_VERSION_ID}",
         "secondarySourcesVersions": {},
         "environmentVariables": {
