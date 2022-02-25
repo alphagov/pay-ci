@@ -20,6 +20,7 @@ outputs:
 params:
   PROJECT_UNDER_TEST:
   RELEASE_TAG_UNDER_TEST:
+  PR_BUILD: "false"
   AWS_ACCESS_KEY_ID:
   AWS_SECRET_ACCESS_KEY:
   AWS_SESSION_TOKEN:
@@ -49,6 +50,13 @@ run:
           --query 'VersionId' \
           --output 'text'
       )
+
+      if [ "$PR_BUILD" == "true" ]; then
+        SOURCE_REPO_CONFIG="\"repo_${PROJECT_UNDER_TEST}\": \"govukpay/pull-request-builds\","
+      else
+        SOURCE_REPO_CONFIG=""
+      fi
+
       echo "Uploaded pay-ci with version id $PAY_CI_VERSION_ID"
       echo
       echo "Products end to end test configuration"
@@ -58,6 +66,7 @@ run:
         "sourceVersion": "${PAY_CI_VERSION_ID}",
         "secondarySourcesVersions": {},
         "environmentVariables": {
+          $SOURCE_REPO_CONFIG
           "tag_${PROJECT_UNDER_TEST}": "${RELEASE_TAG_UNDER_TEST}",
           "END_TO_END_TEST_SUITE": "products"
         }
@@ -72,6 +81,7 @@ run:
         "sourceVersion": "${PAY_CI_VERSION_ID}",
         "secondarySourcesVersions": {},
         "environmentVariables": {
+          $SOURCE_REPO_CONFIG
           "tag_${PROJECT_UNDER_TEST}": "${RELEASE_TAG_UNDER_TEST}",
           "END_TO_END_TEST_SUITE": "card"
         }
