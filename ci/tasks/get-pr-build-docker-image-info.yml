@@ -1,7 +1,7 @@
 ---
 # This task runs after a PR end to end test job has created an image build.
 #
-# The task parses information from the source repo to produce unique image tag name and
+# The task parses information from the source repo to produce a unique image tag name and
 # also to put the image filename into a file which can be used by an image-registry put.
 #
 # The 2 files created from this are:
