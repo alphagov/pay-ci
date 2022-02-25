@@ -1156,8 +1156,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: frontend
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -1405,8 +1403,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: adminusers
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -1677,8 +1673,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: connector
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -1948,8 +1942,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: ledger
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -2220,8 +2212,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: products
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -2491,8 +2481,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: products-ui
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -2721,8 +2709,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: publicapi
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -2959,8 +2945,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: publicauth
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -3183,8 +3167,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: selfservice
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -3457,8 +3439,6 @@ jobs:
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: cardid
           RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))

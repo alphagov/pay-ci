@@ -18,8 +18,6 @@ inputs:
 outputs:
   - name: run-codebuild-configuration
 params:
-  CODEBUILD_PROJECT_NAME:
-  CODEBUILD_SOURCES_BUCKET:
   PROJECT_UNDER_TEST:
   RELEASE_TAG_UNDER_TEST:
   AWS_ACCESS_KEY_ID:
@@ -45,7 +43,7 @@ run:
       echo "Uploading pay-ci.zip to S3"
       PAY_CI_VERSION_ID=$(
         aws s3api put-object \
-          --bucket "${CODEBUILD_SOURCES_BUCKET}" \
+          --bucket "pay-govuk-codebuild-test-12" \
           --key "sources/endtoend/pay-ci.zip" \
           --body "pay-ci.zip" \
           --query 'VersionId' \
@@ -56,7 +54,7 @@ run:
       echo "Products end to end test configuration"
       cat <<EOF | tee ./run-codebuild-configuration/products.json
       {
-        "projectName": "${CODEBUILD_PROJECT_NAME}",
+        "projectName": "endtoend-tests-test-12",
         "sourceVersion": "${PAY_CI_VERSION_ID}",
         "secondarySourcesVersions": {},
         "environmentVariables": {
