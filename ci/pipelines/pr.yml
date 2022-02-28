@@ -602,7 +602,6 @@ jobs:
 
   - <<: *job-definition
     name: card-connector-e2e
-    serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         resource: card-connector-pull-request
@@ -679,7 +678,6 @@ jobs:
 
   - <<: *job-definition
     name: endtoend-e2e
-    serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         resource: endtoend-pull-request
@@ -801,7 +799,6 @@ jobs:
 
   - <<: *job-definition
     name: publicapi-e2e
-    serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
@@ -1037,7 +1034,6 @@ jobs:
 
   - <<: *job-definition
     name: adminusers-e2e
-    serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         trigger: false
@@ -1152,7 +1148,6 @@ jobs:
 
   - <<: *job-definition
     name: cardid-e2e
-    serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         resource: cardid-pull-request
@@ -1409,7 +1404,6 @@ jobs:
 
   - <<: *job-definition
     name: ledger-e2e
-    serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         resource: ledger-pull-request
@@ -1524,7 +1518,6 @@ jobs:
 
   - <<: *job-definition
     name: publicauth-e2e
-    serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         resource: publicauth-pull-request
@@ -1659,7 +1652,6 @@ jobs:
 
   - <<: *job-definition
     name: products-e2e
-    serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         resource: products-pull-request
@@ -1756,7 +1748,6 @@ jobs:
 
   - <<: *job-definition
     name: card-frontend-e2e
-    serial_groups: [e2e-test]
     plan:
     - <<: *get-pull-request
       resource: card-frontend-pull-request
@@ -1887,7 +1878,6 @@ jobs:
 
   - <<: *job-definition
     name: selfservice-e2e
-    serial_groups: [e2e-test]
     plan:
     - <<: *get-pull-request
       resource: selfservice-pull-request
@@ -2057,7 +2047,6 @@ jobs:
 
   - <<: *job-definition
     name: products-ui-e2e
-    serial_groups: [e2e-test]
     plan:
     - <<: *get-pull-request
       resource: products-ui-pull-request
