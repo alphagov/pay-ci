@@ -529,8 +529,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      # branch: master
-      branch: pp-9338-change-other-e2e-tests-to-run-in-codebuild
+      branch: master
       username: alphagov-pay-ci
       password: ((github-access-token))
 
