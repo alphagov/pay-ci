@@ -375,8 +375,7 @@ groups:
     jobs:
       - publicapi-unit-test
       - publicapi-integration-test
-      - publicapi-card-e2e
-      - publicapi-products-e2e
+      - publicapi-e2e
       - publicapi-as-consumer-pact-test
       - record-publicapi-build-time
 
@@ -1030,32 +1029,83 @@ jobs:
       put: publicapi-pull-request
 
   - <<: *job-definition
-    name: publicapi-card-e2e
+    name: publicapi-e2e
     serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
         trigger: false
         passed: [publicapi-unit-test]
-      - <<: *get-ci
-      - <<: *put-card-e2e-pending-status
-        put: publicapi-pull-request
+      - in_parallel:
+        - <<: *get-ci
+        - <<: *put-e2e-pending-status
+          put: publicapi-pull-request
       - <<: *run-java-package
       - <<: *build-docker-image
         params:
           app_name: publicapi
-      - <<: *get-all-docker-images
-      - <<: *run-e2e
-        input_mapping:
-          docker/publicapi: local_image
-        params:
-          app_name: publicapi
-          test_type: card
-        on_failure:
-          <<: *put-card-e2e-failed-status
-          put: publicapi-pull-request
-      - <<: *put-card-e2e-success-status
+      - in_parallel:
+        - task: get-docker-image-info
+          file: ci/ci/tasks/get-pr-build-docker-image-info.yml
+          params:
+            app_name: publicapi
+        - task: assume-role
+          file: ci/ci/tasks/assume-role.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+        - load_var: image_filename
+          file: image_info/image_filename
+        - load_var: image_tag
+          file: image_info/tag
+      - in_parallel:
+        - put: pull-request-builds-ecr
+          params:
+            image: local_image/((.:image_filename))
+            additional_tags: image_info/tag
+          get_params:
+            skip_download: true
+        - task: prepare-codebuild
+          file: ci/ci/tasks/prepare-e2e-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PR_BUILD: true
+            PROJECT_UNDER_TEST: publicapi
+            RELEASE_TAG_UNDER_TEST: ((.:image_tag))
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - task: run-card-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-products-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - <<: *put-e2e-success-status
         put: publicapi-pull-request
+    on_failure:
+      <<: *put-e2e-failed-status
+      put: publicapi-pull-request
+
 
   - name: publicapi-as-consumer-pact-test
     serial_groups: [pact-test]
@@ -1090,34 +1140,6 @@ jobs:
           <<: *put-pact-provider-failed-status
           put: publicapi-pull-request
       - <<: *put-pact-provider-success-status
-        put: publicapi-pull-request
-
-  - <<: *job-definition
-    name: publicapi-products-e2e
-    serial_groups: [e2e-test]
-    plan:
-      - <<: *get-pull-request
-        resource: publicapi-pull-request
-        trigger: false
-        passed: [publicapi-unit-test]
-      - <<: *get-ci
-      - <<: *put-products-e2e-pending-status
-        put: publicapi-pull-request
-      - <<: *run-java-package
-      - <<: *build-docker-image
-        params:
-          app_name: publicapi
-      - <<: *get-all-docker-images
-      - <<: *run-e2e
-        input_mapping:
-          docker/publicapi: local_image
-        params:
-          app_name: publicapi
-          test_type: products
-        on_failure:
-          <<: *put-products-e2e-failed-status
-          put: publicapi-pull-request
-      - <<: *put-products-e2e-success-status
         put: publicapi-pull-request
 
   - <<: *job-definition
