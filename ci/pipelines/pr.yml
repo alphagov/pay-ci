@@ -850,25 +850,66 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: endtoend-pull-request
-      - <<: *get-ci
-      - <<: *put-products-e2e-pending-status
-        put: endtoend-pull-request
+      - in_parallel:
+        - <<: *get-ci
+        - <<: *put-products-e2e-pending-status
+          put: endtoend-pull-request
       - <<: *run-java-package
       - <<: *build-docker-image
         params:
           app_name: endtoend
-      - <<: *get-all-docker-images
-      - <<: *run-e2e
+      - in_parallel:
+        - task: get-docker-image-info
+          file: ci/ci/tasks/get-pr-build-docker-image-info.yml
+          params:
+            app_name: endtoend
+        - task: assume-role
+          file: ci/ci/tasks/assume-role.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+        - load_var: image_filename
+          file: image_info/image_filename
+        - load_var: image_tag
+          file: image_info/tag
+      - in_parallel:
+        - put: pull-request-builds-ecr
+          params:
+            image: local_image/((.:image_filename))
+            additional_tags: image_info/tag
+          get_params:
+            skip_download: true
+        - task: prepare-codebuild
+          file: ci/ci/tasks/prepare-e2e-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PR_BUILD: true
+            PROJECT_UNDER_TEST: endtoend
+            RELEASE_TAG_UNDER_TEST: ((.:image_tag))
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-codebuild
+        file: ci/ci/tasks/run-codebuild.yml
         input_mapping:
-          docker/endtoend: local_image
+          pay-ci: ci
         params:
-          app_name: endtoend
-          test_type: products
-        on_failure:
-          <<: *put-products-e2e-failed-status
-          put: endtoend-pull-request
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put-products-e2e-success-status
         put: endtoend-pull-request
+
+    on_failure:
+      <<: *put-products-e2e-failed-status
+      put: endtoend-pull-request
 
   - <<: *job-definition
     name: endtoend-card-e2e
