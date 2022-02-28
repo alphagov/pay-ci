@@ -1,0 +1,43 @@
+---
+# This task runs after a PR end to end test job has created an image build.
+#
+# The task parses information from the source repo to produce a unique image tag name and
+# also to put the image filename into a file which can be used by an image-registry put.
+#
+# The 2 files created from this are:
+#
+# image_info/tag - Contains the unique tag to apply to the docker image when pushing to a registry
+# image_info/image_filename - The filename which the built image has been written to
+#
+# It uses a single param:
+#
+# app_name - The name of the app under test, this is used as part of the unique tag name and the filename
+
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner
+inputs:
+  - name: src
+outputs:
+  - name: image_info
+params:
+  app_name:
+run:
+  path: /bin/bash
+  args:
+    - -ec
+    - |
+      mkdir -p image_info/
+
+      pr_number=$(cat src/.git/resource/pr)
+      head_sha=$(cat src/.git/resource/head_sha)
+
+      # We cannot access the concourse build number in a task but we need a unique
+      # tag for our build so lets just use a UUIDv4
+      build_uuid=$(uuidgen -r)
+
+      echo "${app_name}-pr-${pr_number}-uuid-${build_uuid}" | tee image_info/tag
+      echo "image-${app_name}-PR-${pr_number}-GIT-SHA-${head_sha}.tar" | tee image_info/image_filename
+
