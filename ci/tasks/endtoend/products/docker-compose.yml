@@ -291,7 +291,7 @@ services:
       driver: "json-file"
 
   productsui:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_products_ui:-govukpay/products-ui}:${tag_productsui:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_products_ui:-govukpay/products-ui}:${tag_products_ui:-latest-master}
     env_file: ../docker-config/productsui.env
     environment:
       - NODE_ENV=${NODE_ENV:-production}
