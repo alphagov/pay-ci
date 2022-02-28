@@ -115,39 +115,6 @@ definitions:
     passed: [updateThisValue]
     params:
       filename: image-updateThisValue-*.tar
-  - &put-card-e2e-pending-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: pending
-      context: card e2e tests
-  - &run-e2e
-    task: run e2e tests
-    privileged: true
-    file: ci/ci/tasks/endtoend/task.yml
-    input_mapping:
-      docker/connector: updateThisValue
-    params:
-      app_name: updateThisValue
-      test_type: updateThisValue
-  - &put-card-e2e-failed-status
-    put: card-connector-pull-request
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: failure
-      context: card e2e tests
-  - &put-card-e2e-success-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: success
-      context: card e2e tests
   - &put-test-failed-status
     put: card-connector-pull-request
     get_params:
@@ -172,14 +139,6 @@ definitions:
       path: src
       status: pending
       context: test
-  - &put-products-e2e-pending-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: pending
-      context: products e2e tests
   - &put-e2e-pending-status
     put: updateThisValue
     get_params:
@@ -188,14 +147,6 @@ definitions:
       path: src
       status: pending
       context: e2e tests
-  - &put-products-e2e-failed-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: failure
-      context: products e2e tests
   - &put-e2e-failed-status
     put: updateThisValue
     get_params:
@@ -204,14 +155,6 @@ definitions:
       path: src
       status: failure
       context: e2e tests
-  - &put-products-e2e-success-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: success
-      context: products e2e tests
   - &put-e2e-success-status
     put: updateThisValue
     get_params:
