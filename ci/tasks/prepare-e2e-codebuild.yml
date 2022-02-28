@@ -51,14 +51,14 @@ run:
           --output 'text'
       )
 
+      # Some projects have a - in their name, for the end var this needs to be an underscore
+      PROJECT_UNDER_TEST_ENV_VAR_NAME=$(echo "$PROJECT_UNDER_TEST" | tr "-" "_")
+
       if [ "$PR_BUILD" == "true" ]; then
-        SOURCE_REPO_CONFIG="\"repo_${PROJECT_UNDER_TEST}\": \"govukpay/pull-request-builds\","
+        SOURCE_REPO_CONFIG="\"repo_${PROJECT_UNDER_TEST_ENV_VAR_NAME}\": \"govukpay/pull-request-builds\","
       else
         SOURCE_REPO_CONFIG=""
       fi
-
-      # Some projects have a - in their name, for the end var this needs to be an underscore
-      PROJECT_UNDER_TEST_ENV_VAR_NAME=$(echo "$PROJECT_UNDER_TEST" | tr "-" "_")
 
       echo "Uploaded pay-ci with version id $PAY_CI_VERSION_ID"
       echo
