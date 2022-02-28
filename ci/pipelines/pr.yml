@@ -180,6 +180,14 @@ definitions:
       path: src
       status: pending
       context: products e2e tests
+  - &put-e2e-pending-status
+    put: updateThisValue
+    get_params:
+      skip_download: true
+    params:
+      path: src
+      status: pending
+      context: e2e tests
   - &put-products-e2e-failed-status
     put: updateThisValue
     get_params:
@@ -188,6 +196,14 @@ definitions:
       path: src
       status: failure
       context: products e2e tests
+  - &put-e2e-failed-status
+    put: updateThisValue
+    get_params:
+      skip_download: true
+    params:
+      path: src
+      status: failure
+      context: e2e tests
   - &put-products-e2e-success-status
     put: updateThisValue
     get_params:
@@ -196,6 +212,14 @@ definitions:
       path: src
       status: success
       context: products e2e tests
+  - &put-e2e-success-status
+    put: updateThisValue
+    get_params:
+      skip_download: true
+    params:
+      path: src
+      status: success
+      context: e2e tests
   - &node-test
     task: test
     file: ci/ci/tasks/node-build-pr.yml
@@ -344,8 +368,7 @@ groups:
 
   - name: end_to_end
     jobs:
-      - endtoend-card-e2e
-      - endtoend-products-e2e
+      - endtoend-e2e
       - record-endtoend-build-time
 
   - name: publicapi
@@ -845,40 +868,14 @@ jobs:
     - <<: *send-pr-build-time
 
   - <<: *job-definition
-    name: endtoend-products-e2e
-    serial_groups: [e2e-test]
-    plan:
-      - <<: *get-pull-request
-        resource: endtoend-pull-request
-      - <<: *get-ci
-      - <<: *put-products-e2e-pending-status
-        put: endtoend-pull-request
-      - <<: *run-java-package
-      - <<: *build-docker-image
-        params:
-          app_name: endtoend
-      - <<: *get-all-docker-images
-      - <<: *run-e2e
-        input_mapping:
-          docker/endtoend: local_image
-        params:
-          app_name: endtoend
-          test_type: products
-        on_failure:
-          <<: *put-products-e2e-failed-status
-          put: endtoend-pull-request
-      - <<: *put-products-e2e-success-status
-        put: endtoend-pull-request
-
-  - <<: *job-definition
-    name: endtoend-card-e2e
+    name: endtoend-e2e
     serial_groups: [e2e-test]
     plan:
       - <<: *get-pull-request
         resource: endtoend-pull-request
       - in_parallel:
         - <<: *get-ci
-        - <<: *put-card-e2e-pending-status
+        - <<: *put-e2e-pending-status
           put: endtoend-pull-request
       - <<: *run-java-package
       - <<: *build-docker-image
@@ -921,19 +918,30 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: run-codebuild
-        file: ci/ci/tasks/run-codebuild.yml
-        input_mapping:
-          pay-ci: ci
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - <<: *put-card-e2e-success-status
+      - in_parallel:
+        - task: run-card-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-products-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - <<: *put-e2e-success-status
         put: endtoend-pull-request
+
     on_failure:
-      <<: *put-card-e2e-failed-status
+      <<: *put-e2e-failed-status
       put: endtoend-pull-request
 
   - <<: *job-definition
@@ -941,7 +949,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: endtoend-pull-request
-      passed: [endtoend-products-e2e, endtoend-card-e2e]
+      passed: [endtoend-e2e]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
