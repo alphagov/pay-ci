@@ -115,39 +115,6 @@ definitions:
     passed: [updateThisValue]
     params:
       filename: image-updateThisValue-*.tar
-  - &put-card-e2e-pending-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: pending
-      context: card e2e tests
-  - &run-e2e
-    task: run e2e tests
-    privileged: true
-    file: ci/ci/tasks/endtoend/task.yml
-    input_mapping:
-      docker/connector: updateThisValue
-    params:
-      app_name: updateThisValue
-      test_type: updateThisValue
-  - &put-card-e2e-failed-status
-    put: card-connector-pull-request
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: failure
-      context: card e2e tests
-  - &put-card-e2e-success-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: success
-      context: card e2e tests
   - &put-test-failed-status
     put: card-connector-pull-request
     get_params:
@@ -172,14 +139,6 @@ definitions:
       path: src
       status: pending
       context: test
-  - &put-products-e2e-pending-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: pending
-      context: products e2e tests
   - &put-e2e-pending-status
     put: updateThisValue
     get_params:
@@ -188,14 +147,6 @@ definitions:
       path: src
       status: pending
       context: e2e tests
-  - &put-products-e2e-failed-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: failure
-      context: products e2e tests
   - &put-e2e-failed-status
     put: updateThisValue
     get_params:
@@ -204,14 +155,6 @@ definitions:
       path: src
       status: failure
       context: e2e tests
-  - &put-products-e2e-success-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: success
-      context: products e2e tests
   - &put-e2e-success-status
     put: updateThisValue
     get_params:
@@ -251,74 +194,6 @@ definitions:
       path: src
       status: failure
       context: node test
-  - &get-all-docker-images
-    in_parallel:
-      fail_fast: true
-      steps: &docker-image-list
-        - get: docker/publicapi
-          resource: publicapi
-          params:
-            format: oci
-        - get: docker/frontend
-          resource: card-frontend
-          params:
-            format: oci
-        - get: docker/reverse_proxy
-          resource: reverse_proxy
-          params:
-            format: oci
-        - get: docker/postgres
-          resource: postgres
-          params:
-            format: oci
-        - get: docker/sqs
-          resource: sqs
-          params:
-            format: oci
-        - get: docker/adminusers
-          resource: adminusers
-          params:
-            format: oci
-        - get: docker/selfservice
-          resource: selfservice
-          params:
-            format: oci
-        - get: docker/connector
-          resource: card-connector
-          params:
-            format: oci
-        - get: docker/ledger
-          resource: ledger
-          params:
-            format: oci
-        - get: docker/publicauth
-          resource: publicauth
-          params:
-            format: oci
-        - get: docker/stubs
-          resource: stubs
-          params:
-            format: oci
-        - get: docker/cardid
-          resource: cardid
-          params:
-            format: oci
-        - get: docker/endtoend
-          resource: endtoend
-          params:
-            format: oci
-        - get: docker/selenium
-          resource: selenium
-          params:
-            format: oci
-        - get: docker/products
-          resource: products
-          params:
-            format: oci
-        - get: docker/products-ui
-          resource: products-ui
-          params:
-            format: oci
   - &put-pact-provider-pending-status
     put: updateThisValue
     get_params:
@@ -422,7 +297,7 @@ groups:
   - name: products_ui
     jobs:
       - products-ui-test
-      - products-ui-products-e2e
+      - products-ui-e2e
       - products-ui-as-consumer-pact-test
       - record-products-ui-build-time
 
@@ -531,110 +406,6 @@ resources:
       branch: master
       username: alphagov-pay-ci
       password: ((github-access-token))
-
-  - &image
-    name: adminusers
-    type: registry-image
-    icon: docker
-    source: &image-source
-      repository: govukpay/adminusers
-      tag: latest-master
-      password: ((docker-password))
-      username: ((docker-username))
-
-  - <<: *image
-    name: cardid
-    source:
-      <<: *image-source
-      repository: govukpay/cardid
-
-  - <<: *image
-    name: card-connector
-    source:
-      <<: *image-source
-      repository: govukpay/connector
-
-  - <<: *image
-    name: card-frontend
-    source:
-      <<: *image-source
-      repository: govukpay/frontend
-
-  - <<: *image
-    name: ledger
-    source:
-      <<: *image-source
-      repository: govukpay/ledger
-
-  - <<: *image
-    name: publicapi
-    source:
-      <<: *image-source
-      repository: govukpay/publicapi
-
-  - <<: *image
-    name: publicauth
-    source:
-      <<: *image-source
-      repository: govukpay/publicauth
-
-  - <<: *image
-    name: products-ui
-    source:
-      <<: *image-source
-      repository: govukpay/products-ui
-
-  - <<: *image
-    name: products
-    source:
-      <<: *image-source
-      repository: govukpay/products
-
-  - <<: *image
-    name: selfservice
-    source:
-      <<: *image-source
-      repository: govukpay/selfservice
-
-  - <<: *image
-    name: reverse_proxy
-    source:
-      <<: *image-source
-      repository: govukpay/reverse-proxy
-
-  - <<: *image
-    name: stubs
-    source:
-      <<: *image-source
-      repository: govukpay/stubs
-
-  - <<: *image
-    name: sqs
-    source:
-      <<: *image-source
-      repository: roribio16/alpine-sqs
-      tag: latest
-
-  - <<: *image
-    name: postgres
-    source:
-      <<: *image-source
-      repository: postgres
-      tag: 11-alpine
-
-  - <<: *image
-    name: selenium
-    source:
-      <<: *image-source
-      repository: selenium/standalone-chrome
-      tag: 3.141.59-iron
-
-  - <<: *image
-    name: endtoend
-    source:
-      <<: *image-source
-      repository: govukpay/endtoend
-      tag: latest-master
 
   - &pull-request
     name: card-connector-pull-request
@@ -2285,34 +2056,72 @@ jobs:
       put: products-ui-pull-request
 
   - <<: *job-definition
-    name: products-ui-products-e2e
+    name: products-ui-e2e
     serial_groups: [e2e-test]
     plan:
-    - <<: *get-ci
     - <<: *get-pull-request
       resource: products-ui-pull-request
       trigger: false
-    - <<: *put-products-e2e-pending-status
-      put: products-ui-pull-request
-    - <<: *node-build
-      on_failure:
-        <<: *put-products-e2e-failed-status
+    - in_parallel:
+      - <<: *get-ci
+      - <<: *put-e2e-pending-status
         put: products-ui-pull-request
+    - <<: *node-build
     - <<: *build-docker-image
       params:
         app_name: products-ui
-    - <<: *get-all-docker-images
-    - <<: *run-e2e
+    - in_parallel:
+      - task: get-docker-image-info
+        file: ci/ci/tasks/get-pr-build-docker-image-info.yml
+        params:
+          app_name: products-ui
+      - task: assume-role
+        file: ci/ci/tasks/assume-role.yml
+        input_mapping:
+          pay-ci: ci
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+          AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+    - in_parallel:
+      - load_var: role
+        file: assume-role/assume-role.json
+      - load_var: image_filename
+        file: image_info/image_filename
+      - load_var: image_tag
+        file: image_info/tag
+    - in_parallel:
+      - put: pull-request-builds-ecr
+        params:
+          image: local_image/((.:image_filename))
+          additional_tags: image_info/tag
+        get_params:
+          skip_download: true
+      - task: prepare-codebuild
+        file: ci/ci/tasks/prepare-e2e-codebuild.yml
+        input_mapping:
+          pay-ci: ci
+        params:
+          PR_BUILD: true
+          PROJECT_UNDER_TEST: products-ui
+          RELEASE_TAG_UNDER_TEST: ((.:image_tag))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    - task: run-products-e2e-tests
+      file: ci/ci/tasks/run-codebuild.yml
       input_mapping:
-        docker/products-ui: local_image
+        pay-ci: ci
       params:
-        app_name: productsui
-        test_type: products
-      on_failure:
-        <<: *put-products-e2e-failed-status
-        put: products-ui-pull-request
-    - <<: *put-products-e2e-success-status
+        PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+        AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+        AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+        AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    - <<: *put-e2e-success-status
       put: products-ui-pull-request
+    on_failure:
+      <<: *put-e2e-failed-status
+      put: products-ui-pull-request
+
 
   - <<: *job-definition
     name: products-ui-as-consumer-pact-test

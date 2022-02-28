@@ -51,8 +51,11 @@ run:
           --output 'text'
       )
 
+      # Some projects have a - in their name, for the end var this needs to be removed
+      PROJECT_UNDER_TEST_ENV_VAR_NAME=$(echo "$PROJECT_UNDER_TEST" | tr -d "-")
+
       if [ "$PR_BUILD" == "true" ]; then
-        SOURCE_REPO_CONFIG="\"repo_${PROJECT_UNDER_TEST}\": \"govukpay/pull-request-builds\","
+        SOURCE_REPO_CONFIG="\"repo_${PROJECT_UNDER_TEST_ENV_VAR_NAME}\": \"govukpay/pull-request-builds\","
       else
         SOURCE_REPO_CONFIG=""
       fi
@@ -67,7 +70,7 @@ run:
         "secondarySourcesVersions": {},
         "environmentVariables": {
           $SOURCE_REPO_CONFIG
-          "tag_${PROJECT_UNDER_TEST}": "${RELEASE_TAG_UNDER_TEST}",
+          "tag_${PROJECT_UNDER_TEST_ENV_VAR_NAME}": "${RELEASE_TAG_UNDER_TEST}",
           "END_TO_END_TEST_SUITE": "products"
         }
       }
@@ -82,7 +85,7 @@ run:
         "secondarySourcesVersions": {},
         "environmentVariables": {
           $SOURCE_REPO_CONFIG
-          "tag_${PROJECT_UNDER_TEST}": "${RELEASE_TAG_UNDER_TEST}",
+          "tag_${PROJECT_UNDER_TEST_ENV_VAR_NAME}": "${RELEASE_TAG_UNDER_TEST}",
           "END_TO_END_TEST_SUITE": "card"
         }
       }
