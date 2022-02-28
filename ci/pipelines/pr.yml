@@ -429,7 +429,7 @@ groups:
   - name: card_frontend
     jobs:
       - card-frontend-test
-      - card-frontend-card-e2e
+      - card-frontend-e2e
       - card-frontend-as-consumer-pact-test
       - record-frontend-build-time
 
@@ -1984,34 +1984,82 @@ jobs:
       put: card-frontend-pull-request
 
   - <<: *job-definition
-    name: card-frontend-card-e2e
+    name: card-frontend-e2e
     serial_groups: [e2e-test]
     plan:
-    - <<: *get-ci
     - <<: *get-pull-request
       resource: card-frontend-pull-request
       trigger: false
-    - <<: *put-card-e2e-pending-status
-      put: card-frontend-pull-request
-    - <<: *node-build
-      on_failure:
-        <<: *put-card-e2e-failed-status
+    - in_parallel:
+      - <<: *get-ci
+      - <<: *put-e2e-pending-status
         put: card-frontend-pull-request
+    - <<: *node-build
     - <<: *build-docker-image
       params:
         app_name: frontend
-    - <<: *get-all-docker-images
-    - <<: *run-e2e
-      input_mapping:
-        docker/frontend: local_image
-      params:
-        app_name: frontend
-        test_type: card
-      on_failure:
-        <<: *put-card-e2e-failed-status
-        put: card-frontend-pull-request
-    - <<: *put-card-e2e-success-status
+    - in_parallel:
+      - task: get-docker-image-info
+        file: ci/ci/tasks/get-pr-build-docker-image-info.yml
+        params:
+          app_name: frontend
+      - task: assume-role
+        file: ci/ci/tasks/assume-role.yml
+        input_mapping:
+          pay-ci: ci
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+          AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+    - in_parallel:
+      - load_var: role
+        file: assume-role/assume-role.json
+      - load_var: image_filename
+        file: image_info/image_filename
+      - load_var: image_tag
+        file: image_info/tag
+    - in_parallel:
+      - put: pull-request-builds-ecr
+        params:
+          image: local_image/((.:image_filename))
+          additional_tags: image_info/tag
+        get_params:
+          skip_download: true
+      - task: prepare-codebuild
+        file: ci/ci/tasks/prepare-e2e-codebuild.yml
+        input_mapping:
+          pay-ci: ci
+        params:
+          PR_BUILD: true
+          PROJECT_UNDER_TEST: frontend
+          RELEASE_TAG_UNDER_TEST: ((.:image_tag))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    - in_parallel:
+      - task: run-card-e2e-tests
+        file: ci/ci/tasks/run-codebuild.yml
+        input_mapping:
+          pay-ci: ci
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-products-e2e-tests
+        file: ci/ci/tasks/run-codebuild.yml
+        input_mapping:
+          pay-ci: ci
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    - <<: *put-e2e-success-status
       put: card-frontend-pull-request
+    on_failure:
+      <<: *put-e2e-failed-status
+      put: card-frontend-pull-request
+
 
   - name: card-frontend-as-consumer-pact-test
     serial_groups: [pact-test]
