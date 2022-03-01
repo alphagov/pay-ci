@@ -232,28 +232,6 @@ definitions:
       consumer:
 
 groups:
-  - name: card_connector
-    jobs:
-      - card-connector-unit-test
-      - card-connector-integration-test
-      - card-connector-as-provider-pact-test
-      - card-connector-as-consumer-pact-test
-      - card-connector-e2e
-      - record-connector-build-time
-
-  - name: end_to_end
-    jobs:
-      - endtoend-e2e
-      - record-endtoend-build-time
-
-  - name: publicapi
-    jobs:
-      - publicapi-unit-test
-      - publicapi-integration-test
-      - publicapi-e2e
-      - publicapi-as-consumer-pact-test
-      - record-publicapi-build-time
-
   - name: adminusers
     jobs:
       - adminusers-unit-test
@@ -269,6 +247,27 @@ groups:
       - cardid-e2e
       - record-cardid-build-time
 
+  - name: connector
+    jobs:
+      - card-connector-unit-test
+      - card-connector-integration-test
+      - card-connector-as-provider-pact-test
+      - card-connector-as-consumer-pact-test
+      - card-connector-e2e
+      - record-connector-build-time
+
+  - name: end_to_end
+    jobs:
+      - endtoend-e2e
+      - record-endtoend-build-time
+
+  - name: frontend
+    jobs:
+      - card-frontend-test
+      - card-frontend-e2e
+      - card-frontend-as-consumer-pact-test
+      - record-frontend-build-time
+
   - name: ledger
     jobs:
       - ledger-unit-test
@@ -278,13 +277,6 @@ groups:
       - ledger-as-consumer-pact-test
       - ledger-e2e
       - record-ledger-build-time
-
-  - name: publicauth
-    jobs:
-      - publicauth-unit-test
-      - publicauth-integration-test
-      - publicauth-e2e
-      - record-publicauth-build-time
 
   - name: products
     jobs:
@@ -301,12 +293,20 @@ groups:
       - products-ui-as-consumer-pact-test
       - record-products-ui-build-time
 
-  - name: card_frontend
+  - name: publicapi
     jobs:
-      - card-frontend-test
-      - card-frontend-e2e
-      - card-frontend-as-consumer-pact-test
-      - record-frontend-build-time
+      - publicapi-unit-test
+      - publicapi-integration-test
+      - publicapi-e2e
+      - publicapi-as-consumer-pact-test
+      - record-publicapi-build-time
+
+  - name: publicauth
+    jobs:
+      - publicauth-unit-test
+      - publicauth-integration-test
+      - publicauth-e2e
+      - record-publicauth-build-time
 
   - name: selfservice
     jobs:
@@ -320,23 +320,23 @@ groups:
       - toolbox-test
       - record-toolbox-build-time
 
+  - name: ci
+    jobs:
+      - ci-pr-test
+
   - name: java_commons
     jobs:
       - java-commons-test
       - record-java-commons-build-time
 
-  - name: update_pipeline
-    jobs:
-      - update-pr-ci-pipeline
-
-  - name: ci
-    jobs:
-      - ci-pr-test
-
   - name: stubs
     jobs:
       - stubs-test
       - record-stubs-build-time
+
+  - name: update_pipeline
+    jobs:
+      - update-pr-ci-pipeline
 
 resource_types:
   - name: pull-request
