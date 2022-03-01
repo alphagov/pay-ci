@@ -1,0 +1,37 @@
+name: Create alpha_release tag
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  tag-release:
+    needs: unit-tests
+    runs-on: ubuntu-20.04
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
+        with:
+          fetch-depth: '0'
+      - name: Tag release
+        run: |
+          LATEST_RELEASE_NUMBER=$(git describe --abbrev=0 --tags --match "alpha_release-*" | awk -F- '{print $2}' || true)
+          number_regex='^[0-9]+$'
+          if ! [[ ${LATEST_RELEASE_NUMBER} =~ $number_regex ]]; then
+           LATEST_RELEASE_NUMBER=0
+          fi
+          NEW_RELEASE_NUMBER=$((LATEST_RELEASE_NUMBER + 1))
+          TAG_NAME=alpha_release-${NEW_RELEASE_NUMBER}
+          echo "TAG_NAME: ${TAG_NAME}"
+          git config user.email payments-team@digital.cabinet-office.gov.uk
+          git config user.name pay-github-actions
+          DATE=$(date +%Y-%m-%d:%H:%M:%S)
+          git tag -a ${TAG_NAME} ${GITHUB_SHA} -m "Release candidate tag created on ${DATE}"
+          git push origin --tags
+
