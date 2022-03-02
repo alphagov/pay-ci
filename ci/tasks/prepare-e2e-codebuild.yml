@@ -90,3 +90,18 @@ run:
         }
       }
       EOF
+
+      echo
+      echo "Zap test configuration"
+      cat <<EOF | tee ./run-codebuild-configuration/zap.json
+      {
+        "projectName": "endtoend-tests-test-12",
+        "sourceVersion": "${PAY_CI_VERSION_ID}",
+        "secondarySourcesVersions": {},
+        "environmentVariables": {
+          $SOURCE_REPO_CONFIG
+          "tag_${PROJECT_UNDER_TEST_ENV_VAR_NAME}": "${RELEASE_TAG_UNDER_TEST}",
+          "END_TO_END_TEST_SUITE": "zap"
+        }
+      }
+      EOF

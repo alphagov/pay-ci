@@ -276,6 +276,8 @@ services:
       - pymnt_network
     mem_limit: ${END_TO_END_MEM_LIMIT}
     depends_on:
+      zap:
+        condition: service_started
       selenium:
         condition: service_started
       cardid:
@@ -307,3 +309,15 @@ services:
       driver: "json-file"
     volumes:
       - /dev/shm:/dev/shm
+
+  zap:
+    image: ${DOCKER_REGISTRY_URI:-}${repo_zap:-govukpay/zap}:${tag_zap:-latest}
+    # args passed to zap.sh, which can accept -Xmx
+    # https://github.com/zaproxy/zaproxy/blob/develop/src/zap.sh#L90
+    command: "-Xmx2G"
+    networks:
+      pymnt_network:
+        aliases:
+          - zap.pymnt.localdomain
+    logging:
+      driver: "json-file"
