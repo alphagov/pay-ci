@@ -40,8 +40,6 @@ jobs:
         image: concourse-runner
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CODEBUILD_PROJECT_NAME: endtoend-tests-test-12
-          CODEBUILD_SOURCES_BUCKET: pay-govuk-codebuild-test-12
           PROJECT_UNDER_TEST: frontend
           RELEASE_TAG_UNDER_TEST: "1734-release"
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
