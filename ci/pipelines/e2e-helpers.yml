@@ -44,8 +44,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      # branch: master
-      branch: pp-9335-run-e2e-tests-on-helpers
+      branch: master
       username: alphagov-pay-ci
       password: ((github-access-token))
 
