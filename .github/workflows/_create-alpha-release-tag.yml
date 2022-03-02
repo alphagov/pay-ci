@@ -26,7 +26,6 @@ permissions:
 
 jobs:
   tag-release:
-    needs: unit-tests
     runs-on: ubuntu-20.04
 
     permissions:
