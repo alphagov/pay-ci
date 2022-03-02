@@ -107,7 +107,6 @@ resources:
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
       aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
 
@@ -120,7 +119,6 @@ resources:
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
       aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
       variant: candidate
