@@ -1,3 +1,24 @@
+# This workflow runs tests against a node project.
+#
+# It will run:
+#   1. npm ci
+#   2. npm run lint
+#   3. npm test
+#
+# You should configure what to run the various commands with in your package.json to invoke
+# your linter and test framework of choice.
+#
+# Usage:
+# jobs:
+#   run-node-12-tests:
+#     uses: alphagov/pay-ci/.github/workflows/_run-node-unit-tests.yml@master
+#     with:
+#       node_version: "12.22.10"
+#   run-node-16-tests:
+#     uses: alphagov/pay-ci/.github/workflows/_run-node-unit-tests.yml@master
+#     with:
+#       node_version: "16"
+#
 name: Node Unit Tests
 
 on:

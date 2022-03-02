@@ -1,3 +1,15 @@
+# This workflow creates an alpha_release-XXX tag on the repository it's called from at the head of master.
+# The number to suffix is discovered by finding the previous highest and then incrementing by 1, or in the
+# case that no release tag exists already by starting at 1.
+#
+# NOTE: This requires repository write permissions so you should pin to the master branch
+#
+# Usage:
+#
+# jobs:
+#   create-release-tag:
+#     uses: alphagov/pay-ci/.github/workflows/_run-node-unit-tests.yml@master
+#
 name: Create alpha_release tag
 
 on:
