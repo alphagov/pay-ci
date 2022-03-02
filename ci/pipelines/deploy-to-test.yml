@@ -1176,6 +1176,13 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-zap
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - put: frontend-latest-ecr-registry-test
         params:
           image: frontend-candidate-ecr-registry-test/image.tar
@@ -2729,6 +2736,13 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-zap
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - put: publicapi-latest-ecr-registry-test
         params:
           image: publicapi-candidate-ecr-registry-test/image.tar
@@ -2950,13 +2964,21 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: run-codebuild-card
-        file: pay-ci/ci/tasks/run-codebuild.yml
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:    
+        - task: run-codebuild-card
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-zap
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - put: publicauth-latest-ecr-registry-test
         params:
           image: publicauth-candidate-ecr-registry-test/image.tar
@@ -3444,13 +3466,21 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: run-codebuild-card
-        file: pay-ci/ci/tasks/run-codebuild.yml
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:    
+        - task: run-codebuild-card
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-zap    
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - put: cardid-latest-ecr-registry-test
         params:
           image: cardid-candidate-ecr-registry-test/image.tar

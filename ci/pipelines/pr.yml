@@ -868,6 +868,13 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-zap-tests
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put-e2e-success-status
         put: publicapi-pull-request
     on_failure:
@@ -1230,15 +1237,23 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: run-card-e2e-tests
-        file: ci/ci/tasks/run-codebuild.yml
-        input_mapping:
-          pay-ci: ci
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:      
+        - task: run-card-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-zap-tests
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put-e2e-success-status
         put: cardid-pull-request
     on_failure:
@@ -1568,15 +1583,23 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: run-card-e2e-tests
-        file: ci/ci/tasks/run-codebuild.yml
-        input_mapping:
-          pay-ci: ci
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:      
+        - task: run-card-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-zap-tests
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))            
       - <<: *put-e2e-success-status
         put: publicauth-pull-request
     on_failure:
@@ -1830,7 +1853,6 @@ jobs:
     on_failure:
       <<: *put-e2e-failed-status
       put: card-frontend-pull-request
-
 
   - name: card-frontend-as-consumer-pact-test
     serial_groups: [pact-test]
