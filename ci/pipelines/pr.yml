@@ -605,7 +605,6 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: card-connector-pull-request
-        trigger: true
       - in_parallel:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
