@@ -869,7 +869,7 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
         - task: run-zap-tests
-          file: pay-ci/ci/tasks/run-codebuild.yml
+          file: ci/ci/tasks/run-codebuild.yml
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -1248,7 +1248,7 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
         - task: run-zap-tests
-          file: pay-ci/ci/tasks/run-codebuild.yml
+          file: ci/ci/tasks/run-codebuild.yml
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -1594,7 +1594,7 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
         - task: run-zap-tests
-          file: pay-ci/ci/tasks/run-codebuild.yml
+          file: ci/ci/tasks/run-codebuild.yml
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
