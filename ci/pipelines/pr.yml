@@ -605,8 +605,7 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: card-connector-pull-request
-        trigger: false
-        passed: [card-connector-unit-test]
+        trigger: true
       - in_parallel:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
@@ -802,8 +801,6 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
-        trigger: false
-        passed: [publicapi-unit-test]
       - in_parallel:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
@@ -1043,9 +1040,7 @@ jobs:
     name: adminusers-e2e
     plan:
       - <<: *get-pull-request
-        trigger: false
         resource: adminusers-pull-request
-        passed: [adminusers-unit-test]
       - in_parallel:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
@@ -1158,7 +1153,6 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: cardid-pull-request
-        trigger: false
       - in_parallel:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
@@ -1422,8 +1416,6 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: ledger-pull-request
-        trigger: false
-        passed: [ledger-unit-test]
       - in_parallel:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
@@ -1536,8 +1528,6 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: publicauth-pull-request
-        trigger: false
-        passed: [publicauth-unit-test]
       - in_parallel:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
@@ -1678,8 +1668,6 @@ jobs:
     plan:
       - <<: *get-pull-request
         resource: products-pull-request
-        trigger: false
-        passed: [products-unit-test]
       - in_parallel:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
@@ -1774,7 +1762,6 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: card-frontend-pull-request
-      trigger: false
     - in_parallel:
       - <<: *get-ci
       - <<: *put-e2e-pending-status
@@ -1912,7 +1899,6 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: selfservice-pull-request
-      trigger: false
     - in_parallel:
       - <<: *get-ci
       - <<: *put-e2e-pending-status
@@ -2081,7 +2067,6 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: products-ui-pull-request
-      trigger: false
     - in_parallel:
       - <<: *get-ci
       - <<: *put-e2e-pending-status
