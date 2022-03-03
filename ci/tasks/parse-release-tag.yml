@@ -14,4 +14,4 @@ run:
     - |
       RELEASE_NUMBER=$(cut -f 2 -d "-" < git-release/.git/ref)
       echo "${RELEASE_NUMBER}-release" | tee tags/tags
-      echo "${RELEASE_NUMBER}-candidate" > tags/candidate-tag
+      echo "${RELEASE_NUMBER}-candidate" | tee tags/candidate-tag
