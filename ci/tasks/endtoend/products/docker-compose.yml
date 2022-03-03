@@ -76,10 +76,10 @@ services:
       driver: "json-file"
 
   sqs:
-    # roribio16/alpine-sqs
-    image: ${DOCKER_REGISTRY_URI:-}roribio16/alpine-sqs:latest
+    # softwaremill/elasticmq
+    image: ${DOCKER_REGISTRY_URI:-}softwaremill/elasticmq:latest
     volumes:
-      - "./../docker-config/elasticmq.conf:/opt/custom/elasticmq.conf"
+      - "./../docker-config/elasticmq.conf:/opt/elasticmq.conf"
     networks:
       pymnt_network:
         aliases:
