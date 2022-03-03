@@ -1,0 +1,23 @@
+# This task parses the candidate tag from an ecr resource and turns it into the final release tag
+#
+# Files written:
+#   parse-candidate-tag/release-tag : The actual release tag (e.g. 123-release)
+#   parse-candidate-tag/release-number : The number of the candidate release (e.g. in the case of 123-candidate, this is 123)
+#
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+inputs:
+  - name: ecr-repo
+outputs:
+  - name: parse-candidate-tag
+run:
+  path: sh
+  args:
+    - -ec
+    - |
+      RELEASE_NUMBER=$(cut -f 1 -d "-" < ecr-repo/tag)
+      echo "${RELEASE_NUMBER}-release" | tee parse-candidate-tag/release-tag
+      echo "$RELEASE_NUMBER" > parse-candidate-tag/release-number

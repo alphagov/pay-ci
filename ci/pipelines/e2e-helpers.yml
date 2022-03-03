@@ -1,32 +1,32 @@
 ---
 resources:
-  - name: endtoend-src
+  - name: endtoend-git-release
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-endtoend
       branch: master
+      tag_regex: "alpha_release-(.*)"
       username: alphagov-pay-ci
       password: ((github-access-token))
 
-  - name: reverse-proxy-src
+  - name: reverse-proxy-git-release
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-scripts
       branch: master
+      tag_regex: "reverse_proxy_alpha_release-(.*)"
       username: alphagov-pay-ci
       password: ((github-access-token))
-      paths:
-        # Should trigger on any changes to this folder
-        - images/proxy/*
 
-  - name: stubs-src
+  - name: stubs-git-release
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-stubs
       branch: master
+      tag_regex: "alpha_release-(.*)"
       username: alphagov-pay-ci
       password: ((github-access-token))
 
@@ -39,20 +39,27 @@ resources:
       username: alphagov-pay-ci
       password: ((github-access-token))
 
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+
   - name: endtoend-ecr-registry-test
     type: registry-image
     icon: docker
     source:
       repository: govukpay/endtoend
-      variant: release
+      tag: latest
       aws_access_key_id: ((readonly_access_key_id))
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
       aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
-      tag: latest
 
   - name: endtoend-dockerhub
     type: registry-image
@@ -63,20 +70,31 @@ resources:
       password: ((docker-password))
       username: ((docker-username))
 
+  - name: endtoend-candidate-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/endtoend
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+      variant: candidate
+
   - name: reverse-proxy-ecr-registry-test
     type: registry-image
     icon: docker
     source:
       repository: govukpay/reverse-proxy
-      variant: release
+      tag: latest
       aws_access_key_id: ((readonly_access_key_id))
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
       aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
-      tag: latest
 
   - name: reverse-proxy-dockerhub
     type: registry-image
@@ -87,20 +105,44 @@ resources:
       password: ((docker-password))
       username: ((docker-username))
 
+  - name: reverse-proxy-candidate-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/reverse-proxy
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+      variant: candidate
+
   - name: stubs-ecr-registry-test
     type: registry-image
     icon: docker
     source:
       repository: govukpay/stubs
-      variant: release
+      tag: latest
       aws_access_key_id: ((readonly_access_key_id))
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
       aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
-      tag: latest
+
+  - name: stubs-candidate-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stubs
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+      variant: candidate
 
   - name: stubs-dockerhub
     type: registry-image
@@ -132,7 +174,6 @@ resources:
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
       aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
 
@@ -157,7 +198,6 @@ resources:
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
       aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
 
@@ -182,7 +222,6 @@ resources:
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
       aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      # Hardcode the test account registry ID for now. Needs to be a string, not a number
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
 
@@ -200,40 +239,46 @@ resource_types:
 
 # Builds the Docker images used by end-to-end tests and pushes to ECR (and Dockerhub)
 jobs:
-  - name: build-and-push-endtoend-to-test-ecr
+  - name: build-and-push-endtoend-candidate
     plan:
-      - get: endtoend-src
-        trigger: true
-      - task: build-endtoend-image
-        privileged: true
-        params:
-          CONTEXT: endtoend-src
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: vito/oci-build-task
-          inputs:
-            - name: endtoend-src
-          outputs:
-            - name: image
-          run:
-            path: build
       - in_parallel:
-          - put: endtoend-ecr-registry-test
-            params:
-              image: image/image.tar
-          - put: endtoend-dockerhub
-            params:
-              image: image/image.tar
+        - get: endtoend-git-release
+          trigger: true
+        - get: pay-ci
+      - in_parallel:
+        - task: build-endtoend-image
+          privileged: true
+          params:
+            CONTEXT: endtoend-git-release
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source:
+                repository: vito/oci-build-task
+            inputs:
+              - name: endtoend-git-release
+            outputs:
+              - name: image
+            run:
+              path: build
+        - task: parse-release-tag
+          file: pay-ci/ci/tasks/parse-release-tag.yml
+          input_mapping:
+            git-release: endtoend-git-release
+      - put: endtoend-candidate-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
       params:
         channel: '#govuk-pay-starling'
         silent: true
-        text: ':red-circle: Failed to build and push pay-endtoend - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        text: ':red-circle: Failed to build and push pay-endtoend candidate image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
     on_success:
@@ -242,70 +287,250 @@ jobs:
       params:
         channel: '#govuk-pay-activity'
         silent: true
-        text: ':green-circle: Built and pushed pay-endtoend - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        text: ':green-circle: Built and pushed pay-endtoend candidate image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
 
-  - name: build-and-push-reverse-proxy-to-test-ecr
+  - name: endtoend-e2e
     plan:
-      - get: reverse-proxy-src
-        trigger: true
-      - get: pay-infra-src
-      - task: find-and-compile-naxsi-rules
-        config:
-          container_limits: { }
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: govukpay/concourse-runner
-          inputs:
-            - name: pay-infra-src
-            - name: reverse-proxy-src
-          outputs:
-            - name: reverse-proxy-src
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                cd reverse-proxy-src/images/proxy
-                mkdir target
-
-                # Search pay-infra files for naxsi rules and copy to current 'target' directory
-                # See https://github.com/alphagov/pay-scripts/blob/master/images/proxy/build-latest-master.sh
-                prod_naxsi_rules_source=../../../pay-infra-src/provisioning/terraform/modules/pay_microservices_v2
-                find "$prod_naxsi_rules_source" -name \*.naxsi -exec cp {} target \;
-      - task: build-reverse-proxy-image
-        privileged: true
+      - in_parallel:
+        - get: endtoend-candidate-ecr-registry-test 
+          passed: [build-and-push-endtoend-candidate]
+          trigger: true
+          params:
+            format: oci
+        - get: pay-ci
+      - in_parallel:
+        - task: parse-candidate-tag
+          file: pay-ci/ci/tasks/parse-candidate-tag.yml
+          input_mapping:
+            ecr-repo: endtoend-candidate-ecr-registry-test
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - in_parallel:
+        - load_var: candidate_image_tag
+          file: endtoend-candidate-ecr-registry-test/tag
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
-          CONTEXT: reverse-proxy-src/images/proxy/
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: vito/oci-build-task
-          inputs:
-          - name: reverse-proxy-src
-          outputs:
-          - name: image
-          run:
-            path: build
+          PROJECT_UNDER_TEST: endtoend
+          RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - task: run-codebuild-card
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-products
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-zap
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - put: endtoend-ecr-registry-test
+          params:
+            image: endtoend-candidate-ecr-registry-test/image.tar
+            additional_tags: parse-candidate-tag/release-tag
+          get_params:
+            skip_download: true
+        - put: endtoend-dockerhub
+          params:
+            image: endtoend-candidate-ecr-registry-test/image.tar
+          get_params:
+            skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: pay-endtoend failed post-merge e2e tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: pay-endtoend passed post-merge e2e tests and was pushed as a final release - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: build-and-push-reverse-proxy-candidate
+    plan:
+      - in_parallel:
+        - get: reverse-proxy-git-release
+          trigger: true
+        - get: pay-infra-src
+        - get: pay-ci
+      - in_parallel:
+        - do:
+          - task: find-and-compile-naxsi-rules
+            config:
+              container_limits: { }
+              platform: linux
+              image_resource:
+                type: registry-image
+                source:
+                  repository: govukpay/concourse-runner
+              inputs:
+                - name: pay-infra-src
+                - name: reverse-proxy-git-release
+              outputs:
+                - name: reverse-proxy-git-release
+              run:
+                path: /bin/sh
+                args:
+                  - -ec
+                  - |
+                    cd reverse-proxy-git-release/images/reverse_proxy
+                    mkdir target
+
+                    # Search pay-infra files for naxsi rules and copy to current 'target' directory
+                    # See https://github.com/alphagov/pay-scripts/blob/master/images/proxy/build-latest-master.sh
+                    prod_naxsi_rules_source=../../../pay-infra-src/provisioning/terraform/modules/pay_microservices_v2
+                    find "$prod_naxsi_rules_source" -name \*.naxsi -exec cp {} target \;
+          - task: build-reverse-proxy-image
+            privileged: true
+            params:
+              CONTEXT: reverse-proxy-git-release/images/reverse_proxy/
+            config:
+              platform: linux
+              image_resource:
+                type: registry-image
+                source:
+                  repository: vito/oci-build-task
+              inputs:
+              - name: reverse-proxy-git-release
+              outputs:
+              - name: image
+              run:
+                path: build
+        - task: parse-release-tag
+          file: pay-ci/ci/tasks/parse-release-tag.yml
+          input_mapping:
+            git-release: reverse-proxy-git-release
+      - in_parallel:
+        - put: reverse-proxy-candidate-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/candidate-tag
+          get_params:
+            skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Failed to build and push e2e helper reverse-proxy - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Built and pushed e2e helper reverse-proxy - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: reverse-proxy-e2e
+    plan:
+      - in_parallel:
+        - get: reverse-proxy-candidate-ecr-registry-test 
+          passed: [build-and-push-reverse-proxy-candidate]
+          trigger: true
+          params:
+            format: oci
+        - get: pay-ci
+      - in_parallel:
+        - task: parse-candidate-tag
+          file: pay-ci/ci/tasks/parse-candidate-tag.yml
+          input_mapping:
+            ecr-repo: reverse-proxy-candidate-ecr-registry-test
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - in_parallel:
+        - load_var: candidate_image_tag
+          file: reverse-proxy-candidate-ecr-registry-test/tag
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
+        params:
+          PROJECT_UNDER_TEST: reverse-proxy
+          RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - task: run-codebuild-card
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-products
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-zap
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
         - put: reverse-proxy-ecr-registry-test
           params:
-            image: image/image.tar
+            image: reverse-proxy-candidate-ecr-registry-test/image.tar
+            additional_tags: parse-candidate-tag/release-tag
+          get_params:
+            skip_download: true
         - put: reverse-proxy-dockerhub
           params:
-            image: image/image.tar
+            image: reverse-proxy-candidate-ecr-registry-test/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
       params:
         channel: '#govuk-pay-starling'
         silent: true
-        text: ':red-circle: Failed to build and push pay-reverse-proxy - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        text: ':red-circle: e2e helper reverse-proxy failed post-merge e2e tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
     on_success:
@@ -314,44 +539,50 @@ jobs:
       params:
         channel: '#govuk-pay-activity'
         silent: true
-        text: ':green-circle: Built and pushed pay-reverse-proxy - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        text: ':green-circle: e2e helper reverse-proxy passed post-merge e2e tests and was pushed as a final release - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
 
-  - name: build-and-push-stubs-to-test-ecr
+  - name: build-and-push-stubs-candidate
     plan:
-      - get: stubs-src
-        trigger: true
-      - task: build-stubs-image
-        privileged: true
-        params:
-          CONTEXT: stubs-src
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: vito/oci-build-task
-          inputs:
-          - name: stubs-src
-          outputs:
-          - name: image
-          run:
-            path: build
       - in_parallel:
-        - put: stubs-ecr-registry-test
+        - get: stubs-git-release
+          trigger: true
+        - get: pay-ci
+      - in_parallel:
+        - task: build-stubs-image
+          privileged: true
           params:
-            image: image/image.tar
-        - put: stubs-dockerhub
-          params:
-            image: image/image.tar
+            CONTEXT: stubs-git-release
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source:
+                repository: vito/oci-build-task
+            inputs:
+            - name: stubs-git-release
+            outputs:
+            - name: image
+            run:
+              path: build
+        - task: parse-release-tag
+          file: pay-ci/ci/tasks/parse-release-tag.yml
+          input_mapping:
+            git-release: stubs-git-release
+      - put: stubs-candidate-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
       params:
         channel: '#govuk-pay-starling'
         silent: true
-        text: ':red-circle: Failed to build and push pay-stubs - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        text: ':red-circle: Failed to build and push pay-stubs candidate image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
     on_success:
@@ -360,7 +591,86 @@ jobs:
       params:
         channel: '#govuk-pay-activity'
         silent: true
-        text: ':green-circle: Built and pushed pay-stubs - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        text: ':green-circle: Built and pushed pay-stubs candidate image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: stubs-e2e
+    plan:
+      - in_parallel:
+        - get: stubs-candidate-ecr-registry-test 
+          passed: [build-and-push-stubs-candidate]
+          trigger: true
+          params:
+            format: oci
+        - get: pay-ci
+      - in_parallel:
+        - task: parse-candidate-tag
+          file: pay-ci/ci/tasks/parse-candidate-tag.yml
+          input_mapping:
+            ecr-repo: stubs-candidate-ecr-registry-test
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+      - in_parallel:
+        - load_var: candidate_image_tag
+          file: stubs-candidate-ecr-registry-test/tag
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
+        params:
+          PROJECT_UNDER_TEST: stubs
+          RELEASE_TAG_UNDER_TEST: ((.:candidate_image_tag))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - task: run-codebuild-card
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-products
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - put: stubs-ecr-registry-test
+          params:
+            image: stubs-candidate-ecr-registry-test/image.tar
+            additional_tags: parse-candidate-tag/release-tag
+          get_params:
+            skip_download: true
+        - put: stubs-dockerhub
+          params:
+            image: stubs-candidate-ecr-registry-test/image.tar
+          get_params:
+            skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: pay-stubs failed post-merge e2e tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: pay-stubs passed post-merge e2e tests and was pushed as a final release - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
 
