@@ -870,6 +870,8 @@ jobs:
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
         - task: run-zap-tests
           file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -1249,6 +1251,8 @@ jobs:
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
         - task: run-zap-tests
           file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -1595,6 +1599,8 @@ jobs:
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
         - task: run-zap-tests
           file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
