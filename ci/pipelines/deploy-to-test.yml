@@ -1434,7 +1434,7 @@ jobs:
           - put: adminusers-ecr-registry-test
             params:
               image: adminusers-candidate/image.tar
-              additional_tags: parse-candidate-tags/release-tag
+              additional_tags: parse-candidate-tag/release-tag
           - put: adminusers-latest
             params:
               image: adminusers-candidate/image.tar
