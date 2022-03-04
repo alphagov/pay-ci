@@ -279,14 +279,14 @@ resources:
       repository: govukpay/adminusers
       variant: release
       <<: *aws_test_config
-  - name: adminusers-candidate-ecr-registry-test
+  - name: adminusers-candidate
     type: registry-image
     icon: docker
     source:
       repository: govukpay/adminusers
       variant: candidate
       <<: *aws_test_config
-  - name: adminusers-latest-ecr-registry-test
+  - name: adminusers-latest
     type: registry-image
     icon: docker
     source:
@@ -1385,7 +1385,7 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: adminusers-git-release
-      - put: adminusers-candidate-ecr-registry-test
+      - put: adminusers-candidate
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag
@@ -1393,7 +1393,7 @@ jobs:
   - name: run-adminusers-e2e
     plan:
       - in_parallel:
-        - get: adminusers-candidate-ecr-registry-test
+        - get: adminusers-candidate
           params:
             format: oci
           trigger: true
@@ -1403,9 +1403,9 @@ jobs:
         - task: parse-candidate-tag
           file: pay-ci/ci/tasks/parse-candidate-tag.yml
           input_mapping:
-            ecr-repo: adminusers-candidate-ecr-registry-test
+            ecr-repo: adminusers-candidate
         - load_var: candidate_image_tag
-          file: adminusers-candidate-ecr-registry-test/tag
+          file: adminusers-candidate/tag
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
@@ -1433,14 +1433,14 @@ jobs:
         - do:
           - put: adminusers-ecr-registry-test
             params:
-              image: adminusers-candidate-ecr-registry-test/image.tar
+              image: adminusers-candidate/image.tar
               additional_tags: parse-candidate-tags/release-tag
-          - put: adminusers-latest-ecr-registry-test
+          - put: adminusers-latest
             params:
-              image: adminusers-candidate-ecr-registry-test/image.tar
+              image: adminusers-candidate/image.tar
         - put: adminusers-dockerhub
           params:
-              image: adminusers-candidate-ecr-registry-test/image.tar
+              image: adminusers-candidate/image.tar
 #    on_failure:
 #      put: slack-notification
 #      attempts: 10
