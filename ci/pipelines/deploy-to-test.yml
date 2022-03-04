@@ -264,6 +264,14 @@ resources:
       repository: govukpay/frontend
       tag: latest
       <<: *aws_test_config
+  - name: adminusers-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adminusers
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
   - name: adminusers-ecr-registry-test
     type: registry-image
     icon: docker
@@ -631,7 +639,7 @@ resource_types:
 groups:
   - name: adminusers
     jobs:
-      - push-adminusers-to-test-ecr
+      - push-adminusers-candidate-to-test-ecr
       - run-adminusers-e2e
       - deploy-adminusers
       - smoke-test-adminusers
@@ -1361,7 +1369,7 @@ jobs:
           image: frontend-ecr-registry-test/image.tar
           additional_tags: frontend-ecr-registry-test/tag
 
-  - name: push-adminusers-to-test-ecr
+  - name: push-adminusers-candidate-to-test-ecr
     plan:
       - get: pay-ci
       - get: adminusers-git-release
@@ -1377,15 +1385,10 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: adminusers-git-release
-      - in_parallel:
-        - put: adminusers-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/tags
-        - put: adminusers-candidate-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/candidate-tag
+      - put: adminusers-candidate-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/candidate-tag
 
   - name: run-adminusers-e2e
     plan:
@@ -1394,9 +1397,13 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [push-adminusers-to-test-ecr]
+          passed: [push-adminusers-candidate-to-test-ecr]
         - get: pay-ci
       - in_parallel:
+        - task: parse-candidate-tag
+          file: pay-ci/ci/tasks/parse-candidate-tag.yml
+          input_mapping:
+            ecr-repo: adminusers-candidate-ecr-registry-test
         - load_var: candidate_image_tag
           file: adminusers-candidate-ecr-registry-test/tag
         - task: assume-role
@@ -1422,9 +1429,18 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - put: adminusers-latest-ecr-registry-test
-        params:
-          image: adminusers-candidate-ecr-registry-test/image.tar
+      - in_parallel:
+        - do:
+          - put: adminusers-ecr-registry-test
+            params:
+              image: adminusers-candidate-ecr-registry-test/image.tar
+              additional_tags: parse-candidate-tags/release-tag
+          - put: adminusers-latest-ecr-registry-test
+            params:
+              image: adminusers-candidate-ecr-registry-test/image.tar
+        - put: adminusers-dockerhub
+          params:
+              image: adminusers-candidate-ecr-registry-test/image.tar
 #    on_failure:
 #      put: slack-notification
 #      attempts: 10
@@ -1450,6 +1466,7 @@ jobs:
     plan:
       - get: adminusers-ecr-registry-test
         trigger: true
+        passed: [run-adminusers-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: telegraf-ecr-registry-test
