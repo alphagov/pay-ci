@@ -1397,6 +1397,8 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
 
   - name: run-adminusers-e2e
     plan:
@@ -1443,12 +1445,18 @@ jobs:
             params:
               image: adminusers-candidate/image.tar
               additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
           - put: adminusers-latest
             params:
               image: adminusers-candidate/image.tar
+            get_params:
+              skip_download: true
         - put: adminusers-dockerhub
           params:
               image: adminusers-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -3457,6 +3465,8 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag         
+        get_params:
+          skip_download: true
 
   - name: run-cardid-e2e
     plan:
@@ -3511,12 +3521,18 @@ jobs:
             params:
               image: cardid-candidate/image.tar
               additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
           - put: cardid-latest
             params:
               image: cardid-candidate/image.tar
+            get_params:
+              skip_download: true
         - put: cardid-dockerhub
           params:
             image: cardid-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
