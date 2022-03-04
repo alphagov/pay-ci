@@ -78,7 +78,7 @@ definitions:
         status: failure
         context: integration tests
   - &send-pr-build-time
-    task: send pr build time to Hosted Graphite
+    task: send-pr-build-time-to-hosted-graphite
     params:
       GITHUB_API_TOKEN: ((github-access-token))
       HOSTED_GRAPHITE_ACCOUNT_ID: ((HOSTED_GRAPHITE_ACCOUNT_ID))
@@ -1158,7 +1158,7 @@ jobs:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
           put: cardid-pull-request
-        - task: update submodule
+        - task: update-submodule
           config:
             container_limits: {}
             platform: linux
@@ -1329,7 +1329,7 @@ jobs:
     - <<: *get-ci
     - <<: *get-pull-request
       resource: ledger-pull-request
-    - task: run consumer pact tests
+    - task: run-consumer-pact-tests
       privileged: true
       config:
         container_limits: {}
@@ -1991,21 +1991,21 @@ jobs:
           consumer: selfservice
           provider: connector
       - <<: *pact-provider-verification
-        task: adminusers provider pact verification
+        task: adminusers-provider-pact-verification
         input_mapping:
           test_target: adminusers-master
         params:
           consumer: selfservice
           provider: adminusers
       - <<: *pact-provider-verification
-        task: ledger provider pact verification
+        task: ledger-provider-pact-verification
         input_mapping:
           test_target: ledger-master
         params:
           consumer: selfservice
           provider: ledger
       - <<: *pact-provider-verification
-        task: products provider pact verification
+        task: products-provider-pact-verification
         input_mapping:
           test_target: products-master
         params:
@@ -2150,14 +2150,14 @@ jobs:
         consumer: products-ui
     - in_parallel:
       - <<: *pact-provider-verification
-        task: products provider pact verification
+        task: products-provider-pact-verification
         input_mapping:
           test_target: products-master
         params:
           consumer: products-ui
           provider: products
       - <<: *pact-provider-verification
-        task: adminusers provider pact verification
+        task: adminusers-provider-pact-verification
         input_mapping:
           test_target: adminusers-master
         params:
@@ -2184,7 +2184,7 @@ jobs:
       resource: ci-pull-request
     - <<: *put-test-pending-status
       put: ci-pull-request
-    - task: check pipelines & tasks
+    - task: check-pipelines-and-tasks
       config:
         platform: linux
         image_resource:
@@ -2234,7 +2234,7 @@ jobs:
     - <<: *get-ci
     - <<: *put-test-pending-status
       put: stubs-pull-request
-    - task: run tests
+    - task: run-tests
       config:
         platform: linux
         image_resource:
