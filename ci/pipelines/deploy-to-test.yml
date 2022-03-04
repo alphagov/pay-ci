@@ -1717,6 +1717,8 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
 
   - name: run-connector-e2e
     plan:
