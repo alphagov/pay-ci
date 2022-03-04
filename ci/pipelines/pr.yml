@@ -201,19 +201,19 @@ definitions:
     params:
       path: src
       status: pending
-      context: pact-provider-verification
+      context: pact provider verification
   - &put-pact-provider-success-status
     put: updateThisValue
     params:
       path: src
       status: success
-      context: pact-provider-verification
+      context: pact provider verification
   - &put-pact-provider-failed-status
     put: updateThisValue
     params:
       path: src
       status: failure
-      context: pact-provider-verification
+      context: pact provider verification
   - &pact-provider-verification
     task: pact-verification
     privileged: true
