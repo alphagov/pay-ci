@@ -243,6 +243,14 @@ resources:
       repository: govukpay/egress
       variant: egress-release
       <<: *aws_test_config
+  - name: frontend-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/frontend
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
   - name: frontend-ecr-registry-test
     type: registry-image
     icon: docker
@@ -250,14 +258,14 @@ resources:
       repository: govukpay/frontend
       variant: release
       <<: *aws_test_config
-  - name: frontend-candidate-ecr-registry-test
+  - name: frontend-candidate
     type: registry-image
     icon: docker
     source:
       repository: govukpay/frontend
       variant: candidate
       <<: *aws_test_config
-  - name: frontend-latest-ecr-registry-test
+  - name: frontend-latest
     type: registry-image
     icon: docker
     source:
@@ -322,6 +330,14 @@ resources:
       repository: govukpay/cardid
       tag: latest
       <<: *aws_test_config      
+  - name: connector-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/connector
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
   - name: connector-ecr-registry-test
     type: registry-image
     icon: docker
@@ -329,14 +345,14 @@ resources:
       repository: govukpay/connector
       variant: release
       <<: *aws_test_config
-  - name: connector-candidate-ecr-registry-test
+  - name: connector-candidate
     type: registry-image
     icon: docker
     source:
       repository: govukpay/connector
       variant: candidate
       <<: *aws_test_config
-  - name: connector-latest-ecr-registry-test
+  - name: connector-latest
     type: registry-image
     icon: docker
     source:
@@ -663,7 +679,7 @@ groups:
       - push-cardid-to-staging-ecr
   - name: connector
     jobs:
-      - push-connector-to-test-ecr
+      - push-connector-candidate-to-test-ecr
       - run-connector-e2e
       - deploy-connector
       - smoke-test-connector
@@ -677,7 +693,7 @@ groups:
       - push-egress-to-staging-ecr
   - name: frontend
     jobs:
-      - push-frontend-to-test-ecr
+      - push-frontend-candidate-to-test-ecr
       - run-frontend-e2e
       - deploy-frontend
       - smoke-test-frontend
@@ -1123,7 +1139,7 @@ jobs:
           image: egress-ecr-registry-test/image.tar
           additional_tags: egress-ecr-registry-test/tag
 
-  - name: push-frontend-to-test-ecr
+  - name: push-frontend-candidate-to-test-ecr
     plan:
       - get: pay-ci
       - get: frontend-git-release
@@ -1139,28 +1155,29 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: frontend-git-release
-      - in_parallel:
-        - put: frontend-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/tags
-        - put: frontend-candidate-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/candidate-tag
+      - put: frontend-candidate
+        params:
+          image: image/image.tar
+          additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
 
   - name: run-frontend-e2e
     plan:
       - in_parallel:
-        - get: frontend-candidate-ecr-registry-test
+        - get: frontend-candidate
           params:
             format: oci
           trigger: true
-          passed: [push-frontend-to-test-ecr]
+          passed: [push-frontend-candidate-to-test-ecr]
         - get: pay-ci
       - in_parallel:
+        - task: parse-candidate-tag
+          file: pay-ci/ci/tasks/parse-candidate-tag.yml
+          input_mapping:
+            ecr-repo: frontend-candidate
         - load_var: candidate_image_tag
-          file: frontend-candidate-ecr-registry-test/tag
+          file: frontend-candidate/tag
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
@@ -1199,27 +1216,42 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - put: frontend-latest-ecr-registry-test
-        params:
-          image: frontend-candidate-ecr-registry-test/image.tar
-#    on_failure:
-#      put: slack-notification
-#      attempts: 10
-#      params:
-#        channel: '#govuk-pay-announce'
-#        silent: true
-#        text: ':red-circle: frontend candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-#        icon_emoji: ":concourse:"
-#        username: pay-concourse
-#    on_success:
-#      put: slack-notification
-#      attempts: 10
-#      params:
-#        channel: '#govuk-pay-activity'
-#        silent: true
-#        text: ':green-circle: frontend candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-#        icon_emoji: ":concourse:"
-#        username: pay-concourse
+      - in_parallel:
+        - do:
+          - put: frontend-ecr-registry-test
+            params:
+              image: frontend-candidate/image.tar
+              additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
+          - put: frontend-latest
+            params:
+              image: frontend-candidate/image.tar
+            get_params:
+              skip_download: true
+        - put: frontend-dockerhub
+          params:
+            image: frontend-candidate/image.tar
+          get_params:
+            skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: frontend candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: frontend candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: deploy-frontend
     serial: true
@@ -1227,6 +1259,7 @@ jobs:
     plan:
       - get: frontend-ecr-registry-test
         trigger: true
+        passed: [run-frontend-e2e]
       - get: nginx-forward-proxy-ecr-registry-test
         trigger: true
       - get: nginx-proxy-ecr-registry-test
@@ -1397,6 +1430,8 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
 
   - name: run-adminusers-e2e
     plan:
@@ -1443,12 +1478,18 @@ jobs:
             params:
               image: adminusers-candidate/image.tar
               additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
           - put: adminusers-latest
             params:
               image: adminusers-candidate/image.tar
+            get_params:
+              skip_download: true
         - put: adminusers-dockerhub
           params:
               image: adminusers-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -1656,7 +1697,7 @@ jobs:
           image: adminusers-ecr-registry-test/image.tar
           additional_tags: adminusers-ecr-registry-test/tag
 
-  - name: push-connector-to-test-ecr
+  - name: push-connector-candidate-to-test-ecr
     plan:
       - get: pay-ci
       - get: connector-git-release
@@ -1672,28 +1713,29 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: connector-git-release
-      - in_parallel:
-        - put: connector-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/tags
-        - put: connector-candidate-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/candidate-tag
+      - put: connector-candidate
+        params:
+          image: image/image.tar
+          additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
 
   - name: run-connector-e2e
     plan:
       - in_parallel:
-        - get: connector-candidate-ecr-registry-test
+        - get: connector-candidate
           params:
             format: oci
           trigger: true
-          passed: [push-connector-to-test-ecr]
+          passed: [push-connector-candidate-to-test-ecr]
         - get: pay-ci
       - in_parallel:
+        - task: parse-candidate-tag
+          file: pay-ci/ci/tasks/parse-candidate-tag.yml
+          input_mapping:
+            ecr-repo: connector-candidate
         - load_var: candidate_image_tag
-          file: connector-candidate-ecr-registry-test/tag
+          file: connector-candidate/tag
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
@@ -1717,27 +1759,42 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - put: connector-latest-ecr-registry-test
-        params:
-          image: connector-candidate-ecr-registry-test/image.tar
-#    on_failure:
-#      put: slack-notification
-#      attempts: 10
-#      params:
-#        channel: '#govuk-pay-announce'
-#        silent: true
-#        text: ':red-circle: connector candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-#        icon_emoji: ":concourse:"
-#        username: pay-concourse
-#    on_success:
-#      put: slack-notification
-#      attempts: 10
-#      params:
-#        channel: '#govuk-pay-activity'
-#        silent: true
-#        text: ':green-circle: connector candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-#        icon_emoji: ":concourse:"
-#        username: pay-concourse
+      - in_parallel:
+        - do:
+          - put: connector-ecr-registry-test
+            params:
+              image: connector-candidate/image.tar
+              additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
+          - put: connector-latest
+            params:
+              image: connector-candidate/image.tar
+            get_params:
+              skip_download: true
+        - put: connector-dockerhub
+          params:
+            image: connector-candidate/image.tar
+          get_params:
+            skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: connector candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: connector candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: deploy-connector
     serial: true
@@ -1745,6 +1802,7 @@ jobs:
     plan:
       - get: connector-ecr-registry-test
         trigger: true
+        passed: [run-connector-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: telegraf-ecr-registry-test
@@ -3457,6 +3515,8 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag         
+        get_params:
+          skip_download: true
 
   - name: run-cardid-e2e
     plan:
@@ -3511,12 +3571,18 @@ jobs:
             params:
               image: cardid-candidate/image.tar
               additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
           - put: cardid-latest
             params:
               image: cardid-candidate/image.tar
+            get_params:
+              skip_download: true
         - put: cardid-dockerhub
           params:
             image: cardid-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
