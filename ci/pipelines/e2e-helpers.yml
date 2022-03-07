@@ -683,6 +683,8 @@ jobs:
       - put: ecr-postgres-11-alpine
         params:
           image: postgres-11-alpine/image.tar
+        get_params:
+          skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -711,6 +713,8 @@ jobs:
       - put: ecr-softwaremill-elasticmq-latest
         params:
           image: softwaremill-elasticmq-latest/image.tar
+        get_params:
+          skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -739,6 +743,8 @@ jobs:
       - put: ecr-selenium-standalone-chrome-3-141-59
         params:
           image: selenium-standalone-chrome-3-141-59/image.tar
+        get_params:
+          skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
