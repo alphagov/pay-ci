@@ -359,6 +359,14 @@ resources:
       repository: govukpay/connector
       tag: latest
       <<: *aws_test_config      
+  - name: ledger-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/ledger
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
   - name: ledger-ecr-registry-test
     type: registry-image
     icon: docker
@@ -366,14 +374,14 @@ resources:
       repository: govukpay/ledger
       variant: release
       <<: *aws_test_config
-  - name: ledger-candidate-ecr-registry-test
+  - name: ledger-candidate
     type: registry-image
     icon: docker
     source:
       repository: govukpay/ledger
       variant: candidate
       <<: *aws_test_config
-  - name: ledger-latest-ecr-registry-test
+  - name: ledger-latest
     type: registry-image
     icon: docker
     source:
@@ -471,6 +479,14 @@ resources:
       repository: govukpay/publicauth
       tag: latest
       <<: *aws_test_config      
+  - name: selfservice-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/selfservice
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
   - name: selfservice-ecr-registry-test
     type: registry-image
     icon: docker
@@ -478,14 +494,14 @@ resources:
       repository: govukpay/selfservice
       variant: release
       <<: *aws_test_config
-  - name: selfservice-candidate-ecr-registry-test
+  - name: selfservice-candidate
     type: registry-image
     icon: docker
     source:
       repository: govukpay/selfservice
       variant: candidate
       <<: *aws_test_config
-  - name: selfservice-latest-ecr-registry-test
+  - name: selfservice-latest
     type: registry-image
     icon: docker
     source:
@@ -701,7 +717,7 @@ groups:
       - push-frontend-to-staging-ecr
   - name: ledger
     jobs:
-      - push-ledger-to-test-ecr
+      - push-ledger-candidate-to-test-ecr
       - run-ledger-e2e
       - deploy-ledger
       - smoke-test-ledger
@@ -743,7 +759,7 @@ groups:
       - publicauth-db-migration
   - name: selfservice
     jobs:
-      - push-selfservice-to-test-ecr
+      - push-selfservice-candidate-to-test-ecr
       - run-selfservice-e2e
       - deploy-selfservice
       - smoke-test-selfservice
@@ -1983,7 +1999,7 @@ jobs:
           image: connector-ecr-registry-test/image.tar
           additional_tags: connector-ecr-registry-test/tag
 
-  - name: push-ledger-to-test-ecr
+  - name: push-ledger-candidate-to-test-ecr
     plan:
       - get: pay-ci
       - get: ledger-git-release
@@ -1999,28 +2015,29 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: ledger-git-release
-      - in_parallel:
-        - put: ledger-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/tags
-        - put: ledger-candidate-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/candidate-tag
+      - put: ledger-candidate
+        params:
+          image: image/image.tar
+          additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
 
   - name: run-ledger-e2e
     plan:
       - in_parallel:
-        - get: ledger-candidate-ecr-registry-test
+        - get: ledger-candidate
           params:
             format: oci
           trigger: true
-          passed: [push-ledger-to-test-ecr]
+          passed: [push-ledger-candidate-to-test-ecr]
         - get: pay-ci
       - in_parallel:
+        - task: parse-candidate-tag
+          file: pay-ci/ci/tasks/parse-candidate-tag.yml
+          input_mapping:
+            ecr-repo: ledger-candidate
         - load_var: candidate_image_tag
-          file: ledger-candidate-ecr-registry-test/tag
+          file: ledger-candidate/tag
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
@@ -2044,27 +2061,42 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - put: ledger-latest-ecr-registry-test
-        params:
-          image: ledger-candidate-ecr-registry-test/image.tar
-#    on_failure:
-#      put: slack-notification
-#      attempts: 10
-#      params:
-#        channel: '#govuk-pay-announce'
-#        silent: true
-#        text: ':red-circle: ledger candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-#        icon_emoji: ":concourse:"
-#        username: pay-concourse
-#    on_success:
-#      put: slack-notification
-#      attempts: 10
-#      params:
-#        channel: '#govuk-pay-activity'
-#        silent: true
-#        text: ':green-circle: ledger candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-#        icon_emoji: ":concourse:"
-#        username: pay-concourse
+      - in_parallel:
+        - do:
+          - put: ledger-ecr-registry-test
+            params:
+              image: ledger-candidate/image.tar
+              additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
+          - put: ledger-latest
+            params:
+              image: ledger-candidate/image.tar
+            get_params:
+              skip_download: true
+        - put: ledger-dockerhub
+          params:
+            image: ledger-candidate/image.tar
+          get_params:
+            skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: ledger candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: ledger candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: deploy-ledger
     serial: true
@@ -2072,6 +2104,7 @@ jobs:
     plan:
       - get: ledger-ecr-registry-test
         trigger: true
+        passed: [run-ledger-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: telegraf-ecr-registry-test
@@ -3223,7 +3256,7 @@ jobs:
           image: publicauth-ecr-registry-test/image.tar
           additional_tags: publicauth-ecr-registry-test/tag
 
-  - name: push-selfservice-to-test-ecr
+  - name: push-selfservice-candidate-to-test-ecr
     plan:
       - get: pay-ci
       - get: selfservice-git-release
@@ -3239,28 +3272,29 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: selfservice-git-release
-      - in_parallel:    
-        - put: selfservice-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/tags
-        - put: selfservice-candidate-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/candidate-tag
+      - put: selfservice-candidate
+        params:
+          image: image/image.tar
+          additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
 
   - name: run-selfservice-e2e
     plan:
       - in_parallel:
-        - get: selfservice-candidate-ecr-registry-test
+        - get: selfservice-candidate
           params:
             format: oci
           trigger: true
-          passed: [push-selfservice-to-test-ecr]
+          passed: [push-selfservice-candidate-to-test-ecr]
         - get: pay-ci
       - in_parallel:
+        - task: parse-candidate-tag
+          file: pay-ci/ci/tasks/parse-candidate-tag.yml
+          input_mapping:
+            ecr-repo: selfservice-candidate
         - load_var: candidate_image_tag
-          file: selfservice-candidate-ecr-registry-test/tag
+          file: selfservice-candidate/tag
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
@@ -3292,27 +3326,42 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - put: selfservice-latest-ecr-registry-test
-        params:
-          image: selfservice-candidate-ecr-registry-test/image.tar
-#    on_failure:
-#      put: slack-notification
-#      attempts: 10
-#      params:
-#        channel: '#govuk-pay-announce'
-#        silent: true
-#        text: ':red-circle: selfservice candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-#        icon_emoji: ":concourse:"
-#        username: pay-concourse
-#    on_success:
-#      put: slack-notification
-#      attempts: 10
-#      params:
-#        channel: '#govuk-pay-activity'
-#        silent: true
-#        text: ':green-circle: selfservice candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-#        icon_emoji: ":concourse:"
-#        username: pay-concourse            
+      - in_parallel:
+        - do:
+          - put: selfservice-ecr-registry-test
+            params:
+              image: selfservice-candidate/image.tar
+              additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
+          - put: selfservice-latest
+            params:
+              image: selfservice-candidate/image.tar
+            get_params:
+              skip_download: true
+        - put: selfservice-dockerhub
+          params:
+            image: selfservice-candidate/image.tar
+          get_params:
+            skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: selfservice candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: selfservice candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: deploy-selfservice
     serial: true
@@ -3320,6 +3369,7 @@ jobs:
     plan:
       - get: selfservice-ecr-registry-test
         trigger: true
+        passed: [run-selfservice-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: telegraf-ecr-registry-test
