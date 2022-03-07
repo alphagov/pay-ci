@@ -2322,6 +2322,8 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
 
   - name: run-products-e2e
     plan:
@@ -2368,12 +2370,19 @@ jobs:
             params:
               image: products-candidate/image.tar
               additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
           - put: products-latest
             params:
               image: products-candidate/image.tar
+            get_params:
+              skip_download: true
         - put: products-dockerhub
           params:
             image: products-candidate/image.tar
+          get_params:
+            skip_download: true
+
     on_failure:
       put: slack-notification
       attempts: 10
@@ -2828,6 +2837,8 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag
+        get_params:
+          skip_download: true
 
   - name: run-publicapi-e2e
     plan:
@@ -2889,12 +2900,18 @@ jobs:
             params:
               image: publicapi-candidate/image.tar
               additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
           - put: publicapi-latest
             params:
               image: publicapi-candidate/image.tar
+            get_params:
+              skip_download: true
         - put: publicapi-dockerhub
           params:
             image: publicapi-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
