@@ -298,7 +298,7 @@ services:
       driver: "json-file"
 
   selenium:
-    image: ${DOCKER_REGISTRY_URI:-}selenium/standalone-chrome:3.141.59-iron
+    image: ${DOCKER_REGISTRY_URI:-}selenium/standalone-chrome:3.141.59
     networks:
       - pymnt_network
     ports:
