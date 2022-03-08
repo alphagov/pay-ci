@@ -4144,10 +4144,14 @@ jobs:
             - name: image
           run:
             path: build
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: notifications-git-release            
       - put: notifications-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: notifications-git-release/.git/ref
+          additional_tags: tags/tags
 
   - name: deploy-notifications
     serial: true
