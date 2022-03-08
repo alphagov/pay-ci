@@ -4039,7 +4039,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: vito/oci-build-task
+              repository: concourse/oci-build-task
           inputs:
             - name: nginx-forward-proxy-git-release
           outputs:
@@ -4098,7 +4098,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: vito/oci-build-task
+              repository: concourse/oci-build-task
           inputs:
             - name: telegraf-git-release
           outputs:
