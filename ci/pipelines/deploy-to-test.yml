@@ -121,6 +121,13 @@ resources:
       password: ((github-access-token))
 
   # Github Releases
+  - name: stream-s3-sqs-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-stream-s3-sqs
+      branch: master
+      tag_regex: "alpha_release-(.*)"
   - name: toolbox-git-release
     type: git
     icon: github
@@ -229,6 +236,13 @@ resources:
       password: ((github-access-token))
 
   # ECR registry resources
+  - name: stream-s3-sqs-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stream-s3-sqs
+      variant: release
+      <<: *aws_test_config
   - name: toolbox-ecr-registry-test
     type: registry-image
     icon: docker
@@ -709,6 +723,9 @@ resource_types:
       tag: latest
 
 groups:
+  - name: stream-s3-sqs
+    jobs:
+      - build-and-push-stream-s3-sqs-to-test-ecr
   - name: adminusers
     jobs:
       - push-adminusers-candidate-to-test-ecr
@@ -917,12 +934,43 @@ docker_credentials: &docker_credentials
   DOCKER_AUTH_TOKEN: ((docker-password))
 
 jobs:
+  - name: build-and-push-stream-s3-sqs-to-test-ecr
+    plan:
+      - get: pay-ci
+      - get: stream-s3-sqs-git-release
+        trigger: true
+      - task: build-stream-s3-sqs-proxy-image
+        privileged: true
+        params:
+            CONTEXT: stream-s3-sqs-git-release
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: stream-s3-sqs-git-release
+          outputs:
+            - name: image
+          run:
+            path: build
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: stream-s3-sqs-git-release            
+      - put: stream-s3-sqs-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/tags
+
   - name: update-deploy-to-test-pipeline
     plan:
       - get: deploy-to-test-pipeline-definition
         trigger: true
       - set_pipeline: deploy-to-test
         file: deploy-to-test-pipeline-definition/ci/pipelines/deploy-to-test.yml
+  
   - name: push-toolbox-to-test-ecr
     plan:
       - get: pay-ci
