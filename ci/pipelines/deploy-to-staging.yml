@@ -424,6 +424,20 @@ resources:
     source:
       repository: govukpay/notifications
       <<: *aws_production_config
+  - name: stream-s3-sqs-ecr-registry-staging
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stream-s3-sqs
+      variant: release
+      <<: *aws_staging_config
+  - name: stream-s3-sqs-ecr-registry-prod
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stream-s3-sqs
+      variant: release
+      <<: *aws_production_config            
   - name: slack-notification
     type: slack-notification
     source:
@@ -537,11 +551,25 @@ groups:
       - deploy-notifications-to-staging
       - smoke-test-notifications-on-staging
       - push-notifications-to-production-ecr
+  - name: stream-s3-sqs
+    jobs:
+      - push-stream-s3-sqs-to-production-ecr
   - name: update-deploy-to-staging-pipeline
     jobs:
       - update-deploy-to-staging-pipeline
 
 jobs:
+  - name: push-stream-s3-sqs-to-production-ecr
+    plan:        
+      - get: stream-s3-sqs-ecr-registry-staging
+        params:
+          format: oci
+        trigger: true
+      - put: stream-s3-sqs-ecr-registry-prod
+        params:
+          image: stream-s3-sqs-ecr-registry-staging/image.tar
+          additional_tags: stream-s3-sqs-ecr-registry-staging/tag
+
   - name: update-deploy-to-staging-pipeline
     plan:
       - get: deploy-to-staging-pipeline-definition
