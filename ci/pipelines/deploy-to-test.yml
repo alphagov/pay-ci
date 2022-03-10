@@ -723,9 +723,6 @@ resource_types:
       tag: latest
 
 groups:
-  - name: stream-s3-sqs
-    jobs:
-      - build-and-push-stream-s3-sqs-to-test-ecr
   - name: adminusers
     jobs:
       - push-adminusers-candidate-to-test-ecr
@@ -839,18 +836,21 @@ groups:
       - smoke-test-frontend
       - build-and-push-nginx-forward-proxy-to-test-ecr
       - push-nginx-forward-proxy-to-staging-ecr
-  - name: telegraf
-    jobs:
-      - unit-test-telegraf
-      - build-and-push-telegraf-to-test-ecr
-      - deploy-toolbox
-      - push-telegraf-to-staging-ecr
   - name: notifications
     jobs:
       - build-and-push-notifications-to-test-ecr
       - deploy-notifications
       - smoke-test-notifications
       - push-notifications-to-staging-ecr
+  - name: stream-s3-sqs
+    jobs:
+      - build-and-push-stream-s3-sqs-to-test-ecr
+  - name: telegraf
+    jobs:
+      - unit-test-telegraf
+      - build-and-push-telegraf-to-test-ecr
+      - deploy-toolbox
+      - push-telegraf-to-staging-ecr
   - name: update-deploy-to-test-pipeline
     jobs:
       - update-deploy-to-test-pipeline
