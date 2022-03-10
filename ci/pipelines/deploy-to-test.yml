@@ -971,6 +971,8 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: tags/tags
+        get_params:
+          skip_download: true  
 
   - name: push-stream-s3-sqs-to-staging-ecr
     plan:        
@@ -983,6 +985,8 @@ jobs:
         params:
           image: stream-s3-sqs-ecr-registry-test/image.tar
           additional_tags: stream-s3-sqs-ecr-registry-test/tag
+        get_params:
+          skip_download: true    
 
   - name: update-deploy-to-test-pipeline
     plan:
