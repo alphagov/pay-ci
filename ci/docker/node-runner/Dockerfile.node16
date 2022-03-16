@@ -1,0 +1,7 @@
+FROM node:16.14.0-alpine3.15@sha256:425c81a04546a543da824e67c91d4a603af16fbc3d875ee2f276acf8ec2b1577
+
+# As of node 15 the docker container fails to npm install without either a WORKDIR or -g
+WORKDIR /node-runner
+
+RUN npm install aws-sdk@^2.x.x
+RUN npm install @octokit/rest@^18.x.x
