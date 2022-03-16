@@ -9,14 +9,14 @@ resources:
       paths:
         - ci/docker/node-runner/*
 
-#  - name: node-runner-latest
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/node-runner
-#      username: ((docker-username))
-#      password: ((docker-password))
-#      tag: latest
+  - name: node-runner-latest
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/node-runner
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: latest
 
   - name: node-runner-node12
     type: registry-image
@@ -51,7 +51,7 @@ jobs:
           privileged: true
           output_mapping:
             image: node12-image
-          params: 
+          params:
             CONTEXT: node-runner-src/ci/docker/node-runner
             BUILD_ARG_SOURCE_CONTAINER_IMAGE_VERSION: "((.:source_container_versions.node12.amd64))"
           config:
@@ -70,7 +70,7 @@ jobs:
           privileged: true
           output_mapping:
             image: node16-image
-          params: 
+          params:
             CONTEXT: node-runner-src/ci/docker/node-runner
             BUILD_ARG_SOURCE_CONTAINER_IMAGE_VERSION: "((.:source_container_versions.node16.amd64))"
           config:
@@ -88,17 +88,17 @@ jobs:
       - in_parallel:
         - do:
           - put: node-runner-node12
-            params: 
+            params:
               image: node12-image/image.tar
             get_params:
               skip_download: true
-          # - put: node-runner-latest
-          #   params: 
-          #     image: node12-image/image.tar
-          #   get_params:
-          #     skip_download: true
+          - put: node-runner-latest
+            params:
+              image: node12-image/image.tar
+            get_params:
+              skip_download: true
         - put: node-runner-node16
-          params: 
+          params:
             image: node16-image/image.tar
           get_params:
             skip_download: true
