@@ -42,10 +42,6 @@ jobs:
     plan:
       - get: node-runner-src
         trigger: true
-      - load_var: source_container_image_versions
-        file: node-runner-src/ci/docker/node-runner/source_container_image_versions.json
-        format: json
-        reveal: true
       - in_parallel:
         - task: build-node-12
           privileged: true
@@ -53,7 +49,7 @@ jobs:
             image: node12-image
           params:
             CONTEXT: node-runner-src/ci/docker/node-runner
-            BUILD_ARG_SOURCE_CONTAINER_IMAGE_VERSION: "((.:source_container_image_versions.node12.amd64))"
+            DOCKERFILE: node-runner-src/ci/docker/node-runner/Dockerfile.node12
           config:
             platform: linux
             image_resource:
@@ -72,7 +68,7 @@ jobs:
             image: node16-image
           params:
             CONTEXT: node-runner-src/ci/docker/node-runner
-            BUILD_ARG_SOURCE_CONTAINER_IMAGE_VERSION: "((.:source_container_image_versions.node16.amd64))"
+            DOCKERFILE: node-runner-src/ci/docker/node-runner/Dockerfile.node16
           config:
             platform: linux
             image_resource:
