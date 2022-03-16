@@ -10,8 +10,9 @@ To build this image you will need to provide a build argument to choose which so
 For the currently in use versions see the `container_image_versions.json` file.
 
 ```
-NODE12_AMD64_VERSION=$(jq '.node12.amd64' < source_container_image_verisons.json)
-docker build --build-arg "SOURCE_CONTAINER_IMAGE_VERSION=$NODE12_AMD64_VERSION" govukpay/node-runner:local .
+NODE12_AMD64_VERSION=$(jq -r '.node12.amd64' < source_container_image_versions.json)
+NODE16_AMD64_VERSION=$(jq -r '.node16.amd64' < source_container_image_versions.json)
+docker build --build-arg "SOURCE_CONTAINER_IMAGE_VERSION=$NODE12_AMD64_VERSION" -t govukpay/node-runner:local .
 ```
 
 As part of the deployment pipeline both node12 and node16 versions will be produced, the source container versions will
