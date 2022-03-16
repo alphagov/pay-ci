@@ -3,17 +3,11 @@
 This Docker container is used to run [JS scripts](https://github.com/alphagov/pay-ci/tree/master/ci/scripts)
 within tasks on Concourse CI.
 
-## Building
+Note there are 2 Dockerfiles in this repository for now, one is for node12 and one for node16. The symbolic link of
+Dockerfile to Dockerfile.node12 ensures node12 is still the default.
 
-To build this image you will need to provide a build argument to choose which source image version you want.
-
-For the currently in use versions see the `source_container_image_versions.json` file.
+You can build the node16 version by providing the `--file` flag to docker build:
 
 ```
-NODE12_AMD64_VERSION=$(jq -r '.node12.amd64' < source_container_image_versions.json)
-NODE16_AMD64_VERSION=$(jq -r '.node16.amd64' < source_container_image_versions.json)
-docker build --build-arg "SOURCE_CONTAINER_IMAGE_VERSION=$NODE12_AMD64_VERSION" -t govukpay/node-runner:local .
+docker build -f Dockerfile.node16 -t govukpay/node-runner:node16-local .
 ```
-
-As part of the deployment pipeline both node12 and node16 versions will be produced, the source container versions will
-be read from the `source_container_image_versions.json` file.
