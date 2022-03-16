@@ -9,14 +9,14 @@ resources:
       paths:
         - ci/docker/node-runner/*
 
-  - name: node-runner-latest
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/node-runner
-      username: ((docker-username))
-      password: ((docker-password))
-      tag: latest
+#  - name: node-runner-latest
+#    type: registry-image
+#    icon: docker
+#    source:
+#      repository: govukpay/node-runner
+#      username: ((docker-username))
+#      password: ((docker-password))
+#      tag: latest
 
   - name: node-runner-node12
     type: registry-image
@@ -25,7 +25,7 @@ resources:
       repository: govukpay/node-runner
       username: ((docker-username))
       password: ((docker-password))
-      tag: node16
+      tag: node12
 
   - name: node-runner-node16
     type: registry-image
@@ -92,11 +92,11 @@ jobs:
               image: node12-image/image.tar
             get_params:
               skip_download: true
-          - put: node-runner-latest
-            params: 
-              image: node12-image/image.tar
-            get_params:
-              skip_download: true
+          # - put: node-runner-latest
+          #   params: 
+          #     image: node12-image/image.tar
+          #   get_params:
+          #     skip_download: true
         - put: node-runner-node16
           params: 
             image: node16-image/image.tar
