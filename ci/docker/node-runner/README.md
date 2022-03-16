@@ -7,7 +7,7 @@ within tasks on Concourse CI.
 
 To build this image you will need to provide a build argument to choose which source image version you want.
 
-For the currently in use versions see the `container_image_versions.json` file.
+For the currently in use versions see the `source_container_image_versions.json` file.
 
 ```
 NODE12_AMD64_VERSION=$(jq -r '.node12.amd64' < source_container_image_versions.json)
