@@ -834,7 +834,7 @@ groups:
       - push-stunnel-to-staging-ecr
   - name: nginx-proxy
     jobs:
-      - push-nginx-proxy-to-test-ecr
+      - build-and-push-nginx-proxy-to-test-ecr
       - deploy-toolbox
       - push-nginx-proxy-to-staging-ecr
   - name: nginx-forward-proxy
@@ -4063,18 +4063,27 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
-  - name: push-nginx-proxy-to-test-ecr
+  - name: build-and-push-nginx-proxy-to-test-ecr
     plan:
       - get: pay-ci
       - get: nginx-proxy-git-release
         trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        input_mapping:
-          git-release: nginx-proxy-git-release
+      - task: build-nginx-proxy-image
+        privileged: true
         params:
-          DOCKER_REPOSITORY: govukpay/docker-nginx-proxy
-          <<: *docker_credentials
+          CONTEXT: nginx-proxy-git-release
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: nginx-proxy-git-release
+          outputs:
+            - name: image
+          run:
+            path: build
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
