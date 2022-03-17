@@ -4084,10 +4084,14 @@ jobs:
             - name: image
           run:
             path: build
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: nginx-proxy-git-release
       - put: nginx-proxy-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: nginx-proxy-git-release/.git/ref
+          additional_tags: tags/tags
 
   - name: push-nginx-proxy-to-staging-ecr
     plan:
