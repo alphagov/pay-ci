@@ -37,7 +37,6 @@ resources:
       aws_access_key_id: ((readonly_access_key_id))
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
-      # Need to create the role for the concourse user to assume in the test account
       aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
