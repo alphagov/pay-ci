@@ -28,6 +28,20 @@ resources:
       password: ((docker-password))
       tag: latest
 
+  - name: pay-control-plane-ecr
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/control-plane
+      tag: latest
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      # Need to create the role for the concourse user to assume in the test account
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+
   - name: every-morning
     type: time
     icon: alarm
@@ -103,12 +117,19 @@ jobs:
           - name: image
         run:
           path: build
-    - put: pay-control-plane-latest
-      params:
-        image: pay-control-plane-image/image.tar
-        additional_tags: pay-control-plane-src/.git/ref
-      get_params:
-        skip_download: true
+    - in_parallel:
+      - put: pay-control-plane-latest
+        params:
+          image: pay-control-plane-image/image.tar
+          additional_tags: pay-control-plane-src/.git/ref
+        get_params:
+          skip_download: true
+      - put: pay-control-plane-ecr
+        params:
+          image: pay-control-plane-image/image.tar
+          additional_tags: pay-control-plane-src/.git/ref
+        get_params:
+          skip_download: true
     - put: pay-control-plane-paas
       params:
         command: push
