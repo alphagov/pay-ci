@@ -106,6 +106,7 @@ jobs:
     - put: pay-control-plane-latest
       params:
         image: pay-control-plane-image/image.tar
+        additional_tags: pay-control-plane-src/.git/ref
       get_params:
         skip_download: true
     - put: pay-control-plane-paas
