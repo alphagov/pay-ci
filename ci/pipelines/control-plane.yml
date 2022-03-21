@@ -85,8 +85,8 @@ jobs:
     serial: true
     plan:
     - get: pay-control-plane-src
-      trigger: false # Change this once we're confident
-    - task: build-control-plane-image # Simple build - doesn't tag or push
+      trigger: true
+    - task: build-control-plane-image
       privileged: true
       output_mapping:
         image: pay-control-plane-image
