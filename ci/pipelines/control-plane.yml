@@ -10,6 +10,24 @@ resources:
       username: ((cf-username))
       password: ((cf-password))
 
+  - name: pay-control-plane-src
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/alphagov/pay-control-plane
+      branch: master
+      username: alphagov-pay-ci
+      password: ((github-access-token))
+
+  - name: pay-control-plane-latest
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/control-plane
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: latest
+
   - name: every-morning
     type: time
     icon: alarm
@@ -60,5 +78,57 @@ jobs:
         channel: '#govuk-pay-activity'
         silent: true
         text: ':green-circle: Control plane restarted - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: deploy-control-plane
+    serial: true
+    plan:
+    - get: pay-control-plane-src
+      trigger: false # Change this once we're confident
+    - task: build-control-plane-image # Simple build - doesn't tag or push
+      privileged: true
+      output_mapping:
+        image: pay-control-plane-image
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: concourse/oci-build-task
+        inputs:
+          - name: pay-control-plane-src
+            path: .
+        outputs:
+          - name: image
+        run:
+          path: build
+    - put: pay-control-plane-latest
+      params:
+        image: pay-control-plane-image/image.tar
+      get_params:
+        skip_download: true
+    - put: pay-control-plane-paas
+      params:
+        command: push
+        app_name: pay-control-plane
+        docker_image: govukpay/control-plane:latest
+        manifest: pay-control-plane-src/manifest.yml
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-starling'
+        silent: true
+        text: ':red-circle: Failed to deploy Control Plane - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Control plane deployed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
