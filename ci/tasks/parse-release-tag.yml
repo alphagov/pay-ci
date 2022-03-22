@@ -16,3 +16,6 @@ run:
       echo "${RELEASE_NUMBER}-release" | tee tags/tags
       echo "${RELEASE_NUMBER}-candidate" | tee tags/candidate-tag
       echo "${RELEASE_NUMBER}" > tags/release-number
+
+      cd git-release
+      git rev-parse HEAD | tee ../tags/release-sha

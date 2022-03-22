@@ -204,7 +204,7 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-selfservice
       branch: master
-      tag_regex: "alpha_release-(.*)"  
+      tag_regex: "alpha_release-(.*)"
   - name: webhooks-git-release
     type: git
     icon: github
@@ -3452,7 +3452,7 @@ jobs:
         - load_var: release-name
           file: selfservice-git-release/.git/ref
         - load_var: release-sha
-          file: selfservice-git-release/commit
+          file: tags/release-sha
       - task: build
         privileged: true
         params:
