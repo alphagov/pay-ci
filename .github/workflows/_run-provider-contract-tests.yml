@@ -40,4 +40,5 @@ jobs:
           mvn test -DrunContractTests -DPACT_CONSUMER_TAG=master \
           -DPACT_BROKER_USERNAME=${{ secrets.pact_broker_username }} \
           -DPACT_BROKER_PASSWORD=${{ secrets.pact_broker_password }} \
+          -Dpact.provider.version=${{ github.sha }} \
           -Dpact.verifier.publishResults=true
