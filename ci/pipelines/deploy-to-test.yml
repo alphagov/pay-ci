@@ -561,13 +561,6 @@ resources:
       repository: govukpay/selfservice
       tag: latest
       <<: *aws_test_config
-  - name: selfservice-starling-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/selfservice
-      tag: starling-test
-      <<: *aws_test_config
   - name: carbon-relay-ecr-registry-test
     type: registry-image
     icon: docker
@@ -819,7 +812,6 @@ groups:
       - publicauth-db-migration
   - name: selfservice
     jobs:
-      - push-selfservice-candidate-to-test-ecr
       - build-and-push-selfservice-candidate
       - run-selfservice-e2e
       - deploy-selfservice
@@ -3441,7 +3433,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: selfservice-git-release
-        trigger: false
+        trigger: true
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
@@ -3472,30 +3464,6 @@ jobs:
             - name: image
           run:
             path: build
-      - put: selfservice-starling-test
-        params:
-          image: image/image.tar
-          additional_tags: tags/candidate-tag
-        get_params:
-          skip_download: true
-      # Add step to push to dockerhub with git SHA as tag
-
-  - name: push-selfservice-candidate-to-test-ecr
-    plan:
-      - get: pay-ci
-      - get: selfservice-git-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        input_mapping:
-          git-release: selfservice-git-release
-        params:
-          DOCKER_REPOSITORY: govukpay/selfservice
-          <<: *docker_credentials
-      - task: parse-release-tag
-        file: pay-ci/ci/tasks/parse-release-tag.yml
-        input_mapping:
-          git-release: selfservice-git-release
       - put: selfservice-candidate
         params:
           image: image/image.tar
@@ -3510,7 +3478,7 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [push-selfservice-candidate-to-test-ecr]
+          passed: [build-and-push-selfservice-candidate]
         - get: pay-ci
       - in_parallel:
         - task: parse-candidate-tag
