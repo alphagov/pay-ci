@@ -3445,6 +3445,8 @@ jobs:
           file: selfservice-git-release/.git/ref
         - load_var: release-sha
           file: tags/release-sha
+        - load_var: candidate-image-tag
+          file: tags/candidate-tag
       - task: build
         privileged: true
         params:
@@ -3476,7 +3478,7 @@ jobs:
       params:
         channel: '#govuk-pay-announce'
         silent: true
-        text: ':red-circle: selfservice candidate image ((.:candidate_image_tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        text: ':red-circle: selfservice candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
     on_success:
@@ -3485,7 +3487,7 @@ jobs:
       params:
         channel: '#govuk-pay-activity'
         silent: true
-        text: ':hammer: selfservice candidate image ((.:candidate_image_tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        text: ':hammer: selfservice candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
 
