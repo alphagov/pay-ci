@@ -788,7 +788,7 @@ groups:
       - products-db-migration
   - name: products-ui
     jobs:
-      - push-products-ui-candidate-to-test-ecr
+      - build-and-push-products-ui-candidate
       - run-products-ui-e2e
       - deploy-products-ui
       - smoke-test-products-ui
@@ -2961,28 +2961,68 @@ jobs:
           image: products-ecr-registry-test/image.tar
           additional_tags: products-ecr-registry-test/tag
 
-  - name: push-products-ui-candidate-to-test-ecr
+  - name: build-and-push-products-ui-candidate
     plan:
-      - get: pay-ci
-      - get: products-ui-git-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        input_mapping:
-          git-release: products-ui-git-release
-        params:
-          DOCKER_REPOSITORY: govukpay/products-ui
-          <<: *docker_credentials
+      - in_parallel:
+        - get: pay-ci
+        - get: products-ui-git-release
+          trigger: true
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: products-ui-git-release
+      - in_parallel:
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-name
+          file: products-ui-git-release/.git/ref
+        - load_var: release-sha
+          file: tags/release-sha
+        - load_var: candidate-image-tag
+          file: tags/candidate-tag
+      - task: build
+        privileged: true
+        params:
+          LABEL_release_number: ((.:release-number))
+          LABEL_release_name: ((.:release-name))
+          LABEL_release_sha: ((.:release-sha))
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: products-ui-git-release
+              path: .
+          outputs:
+            - name: image
+          run:
+            path: build
       - put: products-ui-candidate
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag
         get_params:
           skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: products-ui candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: products-ui candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-products-ui-e2e
     plan:
@@ -2991,7 +3031,7 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [push-products-ui-candidate-to-test-ecr]
+          passed: [build-and-push-products-ui-candidate]
         - get: pay-ci
       - in_parallel:
         - task: parse-candidate-tag
