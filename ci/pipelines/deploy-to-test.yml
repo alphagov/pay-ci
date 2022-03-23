@@ -741,7 +741,7 @@ groups:
       - adminusers-db-migration
   - name: cardid
     jobs:
-      - push-cardid-candidate-to-test-ecr
+      - build-and-push-cardid-candidate
       - run-cardid-e2e
       - deploy-cardid
       - smoke-test-cardid
@@ -4090,13 +4090,14 @@ jobs:
           image: selfservice-ecr-registry-test/image.tar
           additional_tags: selfservice-ecr-registry-test/tag
 
-  - name: push-cardid-candidate-to-test-ecr
+  - name: build-and-push-cardid-candidate
     plan:
-      - get: pay-ci
-      - get: cardid-git-release
-        trigger: true
-        params:
-          submodules: none
+      - in_parallel:
+        - get: pay-ci
+        - get: cardid-git-release
+          trigger: true
+          params:
+            submodules: none
       - task: update-submodule
         config:
           container_limits: {}
@@ -4104,19 +4105,20 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/concourse-runner
+              repository: alpine
           inputs:
             - name: cardid-git-release
           params:
             GH_ACCESS_TOKEN: ((github-access-token))
           outputs:
-            - name: image
+            - name: cardid-git-release-with-submodules
           run:
-            path: bash
+            path: ash
             dir: cardid-git-release
             args:
               - -ec
               - |
+                apk add --quiet --no-progress git
                 # cardid-data submodule's url is defined as ssh yet concourse
                 # is using oauth. Furthermore we need to avoid the password
                 # prompt from the git cli. Therefore rewrite the url for https
@@ -4130,23 +4132,85 @@ jobs:
                 git submodule update data
                 sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
                 sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
-    # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        input_mapping:
-          git-release: cardid-git-release
-        params:
-          DOCKER_REPOSITORY: govukpay/cardid
-          <<: *docker_credentials
+
+                cp -r . ../cardid-git-release-with-submodules
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
-         git-release: cardid-git-release
+          git-release: cardid-git-release
+      - in_parallel:
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-name
+          file: cardid-git-release-with-submodules/.git/ref
+        - load_var: release-sha
+          file: tags/release-sha
+        - load_var: candidate-image-tag
+          file: tags/candidate-tag
+      - task: build-jar
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: maven
+              tag: 3-openjdk-11
+          inputs:
+            - name: cardid-git-release-with-submodules
+          outputs:
+            - name: build-jar
+          run:
+            path: bash
+            dir: cardid-git-release-with-submodules
+            args:
+            - -ec
+            - |
+              mvn clean package
+              cp -r . ../build-jar
+      - task: build-image
+        privileged: true
+        params:
+          LABEL_release_number: ((.:release-number))
+          LABEL_release_name: ((.:release-name))
+          LABEL_release_sha: ((.:release-sha))
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: build-jar
+              path: .
+          outputs:
+            - name: image
+          run:
+            path: build
       - put: cardid-candidate
         params:
           image: image/image.tar
-          additional_tags: tags/candidate-tag         
+          additional_tags: tags/candidate-tag
         get_params:
           skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: cardid candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: cardid candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-cardid-e2e
     plan:
@@ -4155,7 +4219,7 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [push-cardid-candidate-to-test-ecr]
+          passed: [build-and-push-cardid-candidate]
         - get: pay-ci
       - in_parallel:
         - task: parse-candidate-tag
