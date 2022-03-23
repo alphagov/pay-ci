@@ -4027,13 +4027,23 @@ jobs:
           
   - name: build-webhooks
     plan:
-      - get: webhooks-git-release
-        trigger: true
-      - get: pay-ci
+      - in_parallel:
+        - get: webhooks-git-release
+          trigger: true
+        - get: pay-ci
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: webhooks-git-release
+      - in_parallel:
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-name
+          file: webhooks-git-release/.git/ref
+        - load_var: release-sha
+          file: tags/release-sha
+        - load_var: release-tag
+          file: tags/tags
       - task: build-jar
         config:
           container_limits: {}
@@ -4046,68 +4056,58 @@ jobs:
           inputs:
             - name: webhooks-git-release
           outputs:
-            - name: jar
+            - name: build-jar
           run:
             path: bash
+            dir: webhooks-git-release
             args:
             - -ec
             - |
-              ls -lrt
-              pwd
-
-              cd webhooks-git-release
               mvn clean package
-              cp -r . ../jar
-
+              cp -r . ../build-jar
       - task: build-image
         privileged: true
+        params:
+          LABEL_release_number: ((.:release-number))
+          LABEL_release_name: ((.:release-name))
+          LABEL_release_sha: ((.:release-sha))
         config:
-          container_limits: {}
           platform: linux
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/concourse-runner
-              tag: latest
+              repository: concourse/oci-build-task
           inputs:
-            - name: jar
+            - name: build-jar
+              path: .
           outputs:
-            - name: local_image
-          params:
-            app_name: webhooks
+            - name: image
           run:
-            path: bash
-            args:
-            - -ec
-            - |
-              ls -lrt
-              pwd
-
-              source /docker-helpers.sh
-              start_docker
-
-              function cleanup {
-                echo "CLEANUP TRIGGERED"
-                clean_docker
-                stop_docker
-                echo "CLEANUP COMPLETE"
-              }
-
-              trap cleanup EXIT
-
-              file_suffix="PR-$(cat jar/.git/HEAD)"
-
-              cd jar
-
-              image_name="govukpay/${app_name}:test"
-              echo "BUILDING ${app_name} with tag ${image_name}"
-              docker build -t "$image_name" .
-              docker image ls
-              docker save "$image_name" -o ../local_image/image-"${app_name}"-"${file_suffix}".tar
+            path: build
       - put: webhooks-ecr-registry-test
         params:
-          image: local_image/*.tar
+          image: image/image.tar
           additional_tags: tags/tags
+        get_params:
+          skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: webhooks image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: webhooks image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
 
   - name: deploy-webhooks
