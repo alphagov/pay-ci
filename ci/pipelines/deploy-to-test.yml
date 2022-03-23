@@ -796,7 +796,7 @@ groups:
       - push-products-ui-to-staging-ecr
   - name: publicapi
     jobs:
-      - push-publicapi-candidate-to-test-ecr
+      - build-and-push-publicapi-candidate
       - run-publicapi-e2e
       - deploy-publicapi
       - smoke-test-publicapi
@@ -3166,28 +3166,89 @@ jobs:
           image: products-ui-ecr-registry-test/image.tar
           additional_tags: products-ui-ecr-registry-test/tag
 
-  - name: push-publicapi-candidate-to-test-ecr
+  - name: build-and-push-publicapi-candidate
     plan:
-      - get: pay-ci
-      - get: publicapi-git-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        input_mapping:
-          git-release: publicapi-git-release
-        params:
-          DOCKER_REPOSITORY: govukpay/publicapi
-          <<: *docker_credentials
+      - in_parallel:
+        - get: pay-ci
+        - get: publicapi-git-release
+          trigger: true
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: publicapi-git-release
+      - in_parallel:
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-name
+          file: publicapi-git-release/.git/ref
+        - load_var: release-sha
+          file: tags/release-sha
+        - load_var: candidate-image-tag
+          file: tags/candidate-tag
+      - task: build-jar
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: maven
+              tag: 3-openjdk-11
+          inputs:
+            - name: publicapi-git-release
+          outputs:
+            - name: build-jar
+          run:
+            path: bash
+            dir: publicapi-git-release
+            args:
+            - -ec
+            - |
+              mvn clean package
+              cp -r . ../build-jar
+      - task: build-image
+        privileged: true
+        params:
+          LABEL_release_number: ((.:release-number))
+          LABEL_release_name: ((.:release-name))
+          LABEL_release_sha: ((.:release-sha))
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: build-jar
+              path: .
+          outputs:
+            - name: image
+          run:
+            path: build
       - put: publicapi-candidate
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag
         get_params:
           skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: publicapi candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: publicapi candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-publicapi-e2e
     plan:
@@ -3196,7 +3257,7 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [push-publicapi-candidate-to-test-ecr]
+          passed: [build-and-push-publicapi-candidate]
         - get: pay-ci
       - in_parallel:
         - task: parse-candidate-tag
