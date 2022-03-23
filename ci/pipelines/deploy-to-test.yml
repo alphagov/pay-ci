@@ -3797,9 +3797,10 @@ jobs:
 
   - name: build-and-push-selfservice-candidate
     plan:
-      - get: pay-ci
-      - get: selfservice-git-release
-        trigger: true
+      - in_parallel:
+        - get: pay-ci
+        - get: selfservice-git-release
+          trigger: true
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
