@@ -804,7 +804,7 @@ groups:
       - push-publicapi-to-staging-ecr
   - name: publicauth
     jobs:
-      - push-publicauth-candidate-to-test-ecr
+      - build-and-push-publicauth-candidate
       - run-publicauth-e2e
       - deploy-publicauth
       - smoke-test-publicauth
@@ -3487,28 +3487,89 @@ jobs:
           image: publicapi-ecr-registry-test/image.tar
           additional_tags: publicapi-ecr-registry-test/tag
 
-  - name: push-publicauth-candidate-to-test-ecr
+  - name: build-and-push-publicauth-candidate
     plan:
-      - get: pay-ci
-      - get: publicauth-git-release
-        trigger: true
-      # Temporarily fetch image from Dockerhub until Concourse can build its own
-      - <<: *pull-image-from-dockerhub
-        input_mapping:
-          git-release: publicauth-git-release
-        params:
-          DOCKER_REPOSITORY: govukpay/publicauth
-          <<: *docker_credentials
+      - in_parallel:
+        - get: pay-ci
+        - get: publicauth-git-release
+          trigger: true
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: publicauth-git-release
+      - in_parallel:
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-name
+          file: publicauth-git-release/.git/ref
+        - load_var: release-sha
+          file: tags/release-sha
+        - load_var: candidate-image-tag
+          file: tags/candidate-tag
+      - task: build-jar
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: maven
+              tag: 3-openjdk-11
+          inputs:
+            - name: publicauth-git-release
+          outputs:
+            - name: build-jar
+          run:
+            path: bash
+            dir: publicauth-git-release
+            args:
+            - -ec
+            - |
+              mvn clean package
+              cp -r . ../build-jar
+      - task: build-image
+        privileged: true
+        params:
+          LABEL_release_number: ((.:release-number))
+          LABEL_release_name: ((.:release-name))
+          LABEL_release_sha: ((.:release-sha))
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: build-jar
+              path: .
+          outputs:
+            - name: image
+          run:
+            path: build
       - put: publicauth-candidate
         params:
           image: image/image.tar
           additional_tags: tags/candidate-tag
         get_params:
           skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: publicauth candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: publicauth candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-publicauth-e2e
     plan:
@@ -3517,7 +3578,7 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [push-publicauth-candidate-to-test-ecr]
+          passed: [build-and-push-publicauth-candidate]
         - get: pay-ci
       - in_parallel:
         - task: parse-candidate-tag
