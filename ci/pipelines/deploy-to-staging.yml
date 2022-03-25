@@ -2463,6 +2463,9 @@ jobs:
         file: snippet/failure
       - load_var: success_snippet
         file: snippet/success 
+      - load_var: start_snippet
+        file: snippet/start
+      - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
