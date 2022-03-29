@@ -113,24 +113,28 @@ definitions:
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "card_sandbox_stag"
       - task: run_create_card_payment_worldpay_with_3ds-staging
+        attempts: 10
         file: pay-ci/ci/tasks/run-smoke-test.yml
         params:
           <<: *aws_assumed_role_creds
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "card_wpay_3ds_stag"
       - task: run_create_card_payment_worldpay_with_3ds2-staging
+        attempts: 10
         file: pay-ci/ci/tasks/run-smoke-test.yml
         params:
           <<: *aws_assumed_role_creds
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "card_wpay_3ds2_stag"
       - task: run_create_card_payment_worldpay_with_3ds2_exemption-staging
+        attempts: 10
         file: pay-ci/ci/tasks/run-smoke-test.yml
         params:
           <<: *aws_assumed_role_creds
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "card_wpay_3ds2ex_stag"
       - task: run_create_card_payment_worldpay_without_3ds-staging
+        attempts: 10
         file: pay-ci/ci/tasks/run-smoke-test.yml
         params:
           <<: *aws_assumed_role_creds
