@@ -651,6 +651,7 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - task: run-card-e2e-tests
+        attempts: 3
         file: ci/ci/tasks/run-codebuild.yml
         input_mapping:
           pay-ci: ci
@@ -726,6 +727,7 @@ jobs:
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
         - task: run-card-e2e-tests
+          attempts: 3
           file: ci/ci/tasks/run-codebuild.yml
           input_mapping:
             pay-ci: ci
@@ -856,6 +858,7 @@ jobs:
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
         - task: run-card-e2e-tests
+          attempts: 3
           file: ci/ci/tasks/run-codebuild.yml
           input_mapping:
             pay-ci: ci
@@ -1097,6 +1100,7 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - task: run-card-e2e-tests
+        attempts: 3
         file: ci/ci/tasks/run-codebuild.yml
         input_mapping:
           pay-ci: ci
@@ -1243,6 +1247,7 @@ jobs:
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:      
         - task: run-card-e2e-tests
+          attempts: 3
           file: ci/ci/tasks/run-codebuild.yml
           input_mapping:
             pay-ci: ci
@@ -1474,6 +1479,7 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - task: run-card-e2e-tests
+        attempts: 3
         file: ci/ci/tasks/run-codebuild.yml
         input_mapping:
           pay-ci: ci
@@ -1587,6 +1593,7 @@ jobs:
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:      
         - task: run-card-e2e-tests
+          attempts: 3
           file: ci/ci/tasks/run-codebuild.yml
           input_mapping:
             pay-ci: ci
@@ -1823,6 +1830,7 @@ jobs:
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
     - in_parallel:
       - task: run-card-e2e-tests
+        attempts: 3
         file: ci/ci/tasks/run-codebuild.yml
         input_mapping:
           pay-ci: ci
@@ -1959,6 +1967,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
     - task: run-card-e2e-tests
+      attempts: 3
       file: ci/ci/tasks/run-codebuild.yml
       input_mapping:
         pay-ci: ci
