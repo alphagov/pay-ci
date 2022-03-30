@@ -326,6 +326,7 @@ jobs:
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
         - task: run-codebuild-card
+          attempts: 3
           file: pay-ci/ci/tasks/run-codebuild.yml
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
@@ -492,6 +493,7 @@ jobs:
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
         - task: run-codebuild-card
+          attempts: 3
           file: pay-ci/ci/tasks/run-codebuild.yml
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
@@ -630,6 +632,7 @@ jobs:
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
         - task: run-codebuild-card
+          attempts: 3
           file: pay-ci/ci/tasks/run-codebuild.yml
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
