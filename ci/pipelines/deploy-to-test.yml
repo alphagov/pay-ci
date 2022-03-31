@@ -951,6 +951,12 @@ jobs:
       - get: pay-ci
       - get: stream-s3-sqs-git-release
         trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: stream-s3-sqs-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-stream-s3-sqs-proxy-image
         privileged: true
         params:
@@ -967,10 +973,6 @@ jobs:
             - name: image
           run:
             path: build
-      - task: parse-release-tag
-        file: pay-ci/ci/tasks/parse-release-tag.yml
-        input_mapping:
-          git-release: stream-s3-sqs-git-release            
       - put: stream-s3-sqs-ecr-registry-test
         params:
           image: image/image.tar
@@ -4690,6 +4692,12 @@ jobs:
       - get: pay-ci
       - get: nginx-proxy-git-release
         trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: nginx-proxy-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-nginx-proxy-image
         privileged: true
         params:
@@ -4706,10 +4714,6 @@ jobs:
             - name: image
           run:
             path: build
-      - task: parse-release-tag
-        file: pay-ci/ci/tasks/parse-release-tag.yml
-        input_mapping:
-          git-release: nginx-proxy-git-release
       - put: nginx-proxy-ecr-registry-test
         params:
           image: image/image.tar
@@ -4752,6 +4756,12 @@ jobs:
       - get: pay-ci
       - get: nginx-forward-proxy-git-release
         trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: nginx-forward-proxy-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-nginx-forward-proxy-image
         privileged: true
         params:
@@ -4829,6 +4839,12 @@ jobs:
       - get: telegraf-git-release
         trigger: true
         passed: [unit-test-telegraf]
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: telegraf-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-telegraf-image
         privileged: true
         params:
@@ -4887,6 +4903,12 @@ jobs:
       - get: pay-ci
       - get: notifications-git-release
         trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: notifications-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-notifications-image
         privileged: true
         params:
@@ -4903,10 +4925,6 @@ jobs:
             - name: image
           run:
             path: build
-      - task: parse-release-tag
-        file: pay-ci/ci/tasks/parse-release-tag.yml
-        input_mapping:
-          git-release: notifications-git-release            
       - put: notifications-ecr-registry-test
         params:
           image: image/image.tar
