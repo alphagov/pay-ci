@@ -329,11 +329,6 @@ groups:
       - java-commons-test
       - record-java-commons-build-time
 
-  - name: stubs
-    jobs:
-      - stubs-test
-      - record-stubs-build-time
-
   - name: update_pipeline
     jobs:
       - update-pr-ci-pipeline
@@ -487,12 +482,6 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-products
-
-  - <<: *pull-request
-    name: stubs-pull-request
-    source:
-      <<: *pull-request-source
-      repository: alphagov/pay-stubs
 
   - <<: *pull-request
     name: ci-pull-request
@@ -2243,46 +2232,6 @@ jobs:
         put: ci-pull-request
     - <<: *put-test-success-status
       put: ci-pull-request
-
-  - <<: *job-definition
-    name: stubs-test
-    plan:
-    - <<: *get-pull-request
-      resource: stubs-pull-request
-    - <<: *get-ci
-    - <<: *put-test-pending-status
-      put: stubs-pull-request
-    - task: run-tests
-      config:
-        platform: linux
-        image_resource:
-          type: registry-image
-          source:
-            repository: node
-            tag: 12-stretch
-        inputs:
-          - name: src
-        run:
-          path: sh
-          dir: src
-          args:
-            - -ec
-            - |
-              npm ci
-              npm test
-      on_failure:
-        <<: *put-test-failed-status
-        put: stubs-pull-request
-    - <<: *put-test-success-status
-      put: stubs-pull-request
-
-  - <<: *job-definition
-    name: record-stubs-build-time
-    plan:
-    - <<: *get-pull-request
-      resource: stubs-pull-request
-      passed: [stubs-test]
-    - <<: *send-pr-build-time
 
   - name: update-pr-ci-pipeline
     plan:
