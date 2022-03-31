@@ -976,7 +976,25 @@ jobs:
           image: image/image.tar
           additional_tags: tags/tags
         get_params:
-          skip_download: true  
+          skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: stream-s3-sqs image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: stream-s3-sqs image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: push-stream-s3-sqs-to-staging-ecr
     plan:        
@@ -990,7 +1008,7 @@ jobs:
           image: stream-s3-sqs-ecr-registry-test/image.tar
           additional_tags: stream-s3-sqs-ecr-registry-test/tag
         get_params:
-          skip_download: true    
+          skip_download: true
 
   - name: update-deploy-to-test-pipeline
     plan:
