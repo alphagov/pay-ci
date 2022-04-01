@@ -951,6 +951,12 @@ jobs:
       - get: pay-ci
       - get: stream-s3-sqs-git-release
         trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: stream-s3-sqs-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-stream-s3-sqs-proxy-image
         privileged: true
         params:
@@ -967,16 +973,30 @@ jobs:
             - name: image
           run:
             path: build
-      - task: parse-release-tag
-        file: pay-ci/ci/tasks/parse-release-tag.yml
-        input_mapping:
-          git-release: stream-s3-sqs-git-release            
       - put: stream-s3-sqs-ecr-registry-test
         params:
           image: image/image.tar
           additional_tags: tags/tags
         get_params:
-          skip_download: true  
+          skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: stream-s3-sqs image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: stream-s3-sqs image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: push-stream-s3-sqs-to-staging-ecr
     plan:        
@@ -990,7 +1010,7 @@ jobs:
           image: stream-s3-sqs-ecr-registry-test/image.tar
           additional_tags: stream-s3-sqs-ecr-registry-test/tag
         get_params:
-          skip_download: true    
+          skip_download: true
 
   - name: update-deploy-to-test-pipeline
     plan:
@@ -4672,6 +4692,12 @@ jobs:
       - get: pay-ci
       - get: nginx-proxy-git-release
         trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: nginx-proxy-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-nginx-proxy-image
         privileged: true
         params:
@@ -4688,14 +4714,29 @@ jobs:
             - name: image
           run:
             path: build
-      - task: parse-release-tag
-        file: pay-ci/ci/tasks/parse-release-tag.yml
-        input_mapping:
-          git-release: nginx-proxy-git-release
       - put: nginx-proxy-ecr-registry-test
         params:
           image: image/image.tar
           additional_tags: tags/tags
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: nginx-proxy image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: nginx-proxy image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
 
   - name: push-nginx-proxy-to-staging-ecr
     plan:
@@ -4715,6 +4756,12 @@ jobs:
       - get: pay-ci
       - get: nginx-forward-proxy-git-release
         trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: nginx-forward-proxy-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-nginx-forward-proxy-image
         privileged: true
         params:
@@ -4735,6 +4782,24 @@ jobs:
         params:
           image: image/image.tar
           additional_tags: nginx-forward-proxy-git-release/.git/ref
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: nginx-forward-proxy image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: nginx-forward-proxy image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: push-nginx-forward-proxy-to-staging-ecr
     plan:
@@ -4774,6 +4839,12 @@ jobs:
       - get: telegraf-git-release
         trigger: true
         passed: [unit-test-telegraf]
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: telegraf-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-telegraf-image
         privileged: true
         params:
@@ -4794,6 +4865,25 @@ jobs:
         params:
          image: image/image.tar
          additional_tags: telegraf-git-release/.git/ref
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: telegraf image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: telegraf image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
 
   - name: push-telegraf-to-staging-ecr
     plan:
@@ -4813,6 +4903,12 @@ jobs:
       - get: pay-ci
       - get: notifications-git-release
         trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: notifications-git-release
+      - load_var: release-tag
+        file: tags/tags
       - task: build-notifications-image
         privileged: true
         params:
@@ -4829,14 +4925,28 @@ jobs:
             - name: image
           run:
             path: build
-      - task: parse-release-tag
-        file: pay-ci/ci/tasks/parse-release-tag.yml
-        input_mapping:
-          git-release: notifications-git-release            
       - put: notifications-ecr-registry-test
         params:
           image: image/image.tar
           additional_tags: tags/tags
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: notifications image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: notifications image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: deploy-notifications
     serial: true
