@@ -324,11 +324,6 @@ groups:
     jobs:
       - ci-pr-test
 
-  - name: java_commons
-    jobs:
-      - java-commons-test
-      - record-java-commons-build-time
-
   - name: update_pipeline
     jobs:
       - update-pr-ci-pipeline
@@ -416,12 +411,6 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-endtoend
-
-  - <<: *pull-request
-    name: java-commons-pull-request
-    source:
-      <<: *pull-request-source
-      repository: alphagov/pay-java-commons
 
   - <<: *pull-request
     name: adminusers-pull-request
@@ -923,61 +912,6 @@ jobs:
       resource: publicapi-pull-request
       passed: [publicapi-unit-test, publicapi-integration-test,
         publicapi-as-consumer-pact-test]
-    - <<: *send-pr-build-time
-
-  - <<: *job-definition
-    name: java-commons-test
-    plan:
-    - <<: *get-pull-request
-      resource: java-commons-pull-request
-    - <<: *get-ci
-    - <<: *put-integration-test-pending-status
-      put: java-commons-pull-request
-    - task: test
-      config:
-        container_limits: {}
-        image_resource:
-          type: registry-image
-          source:
-            repository: maven
-            tag: 3.8.1-adoptopenjdk-11
-        caches:
-          - path: src/.m2
-        inputs:
-          - name: src
-        platform: linux
-        run:
-          path: bash
-          dir: src
-          args:
-          - -ec
-          - |
-            export MAVEN_HOME=/usr/lib/mvn
-            export PATH=$MAVEN_HOME/bin:$PATH
-            export MAVEN_REPO="$PWD/.m2"
-
-            cat <<'EOF' >settings.xml
-            <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-                                      https://maven.apache.org/xsd/settings-1.0.0.xsd">
-                  <localRepository>${env.MAVEN_REPO}</localRepository>
-            </settings>
-            EOF
-
-            mvn --global-settings settings.xml clean install
-      on_failure:
-        <<: *put-integration-test-failed-status
-        put: java-commons-pull-request
-    - <<: *put-integration-test-success-status
-      put: java-commons-pull-request
-
-  - <<: *job-definition
-    name: record-java-commons-build-time
-    plan:
-    - <<: *get-pull-request
-      resource: java-commons-pull-request
-      passed: [java-commons-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
