@@ -1,5 +1,14 @@
 ---
 resources:
+  - name: concourse-runner-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/concourse-runner.yml
+
   - name: concourse-runner-src
     type: git
     icon: github
@@ -42,3 +51,10 @@ jobs:
             path: build
       - put: concourse-runner
         params: {image: image/image.tar}
+
+  - name: update-concourse-runner-pipeline
+    plan:
+      - get: concourse-runner-pipeline
+        trigger: true
+      - set_pipeline: concourse-runner
+        file: concourse-runner-pipeline/ci/pipelines/concourse-runner.yml

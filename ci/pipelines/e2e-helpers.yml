@@ -1,5 +1,14 @@
 ---
 resources:
+  - name: e2e-helpers-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/e2e-helpers.yml
+
   - name: endtoend-git-release
     type: git
     icon: github
@@ -766,3 +775,10 @@ jobs:
         text: ':green-circle: Copied selenium/standalone-chrome:3-141-59 image from Docker Hub to ECR - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
+
+  - name: update-e2e-helpers-pipeline
+    plan:
+      - get: e2e-helpers-pipeline
+        trigger: true
+      - set_pipeline: e2e-helpers
+        file: e2e-helpers-pipeline/ci/pipelines/e2e-helpers.yml

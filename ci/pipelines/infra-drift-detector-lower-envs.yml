@@ -6,6 +6,15 @@ resource_types:
       tag: latest
 
 resources:
+  - name: infra-drift-detector-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/infra-drift-detector-lower-envs.yml
+
   - name: pay-infra
     type: git
     icon: github
@@ -143,3 +152,10 @@ jobs:
         text: ':green-circle: Terraform state consistent for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":terraform:"
         username: pay-concourse-drift-detector
+
+  - name: update-infra-drift-detector-pipeline
+    plan:
+      - get: infra-drift-detector-pipeline
+        trigger: true
+      - set_pipeline: infra-drift-detector
+        file: infra-drift-detector-pipeline/ci/pipelines/infra-drift-detector-lower-envs.yml

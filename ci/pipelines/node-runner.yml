@@ -1,5 +1,14 @@
 ---
 resources:
+  - name: node-runner-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/node-runner.yml
+
   - name: node-runner-src
     type: git
     icon: github
@@ -98,3 +107,10 @@ jobs:
             image: node16-image/image.tar
           get_params:
             skip_download: true
+
+  - name: update-node-runner-pipeline
+    plan:
+      - get: node-runner-pipeline
+        trigger: true
+      - set_pipeline: node-runner
+        file: node-runner-pipeline/ci/pipelines/node-runner.yml
