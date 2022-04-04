@@ -1,5 +1,14 @@
 ---
 resources:
+  - name: control-plane-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/control-plane.yml
+
   - name: pay-control-plane-paas
     type: cf-cli
     icon: cloud-upload-outline
@@ -153,3 +162,10 @@ jobs:
         text: ':green-circle: Control plane deployed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
+
+  - name: update-control-plane-pipeline
+    plan:
+      - get: control-plane-pipeline
+        trigger: true
+      - set_pipeline: control-plane
+        file: control-plane-pipeline/ci/pipelines/control-plane.yml
