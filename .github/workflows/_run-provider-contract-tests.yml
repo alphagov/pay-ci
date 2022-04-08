@@ -35,10 +35,26 @@ jobs:
       - name: Pull docker image dependencies
         run: |
           docker pull govukpay/postgres:11.1
+      - name: Set Pact Provider Version
+        id: set-pact-provider-version
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Github actually creates a phantom merge commit on PR actions, but we want to record
+            # in the pact broker something we can actually trace back to a PR, using the _actual_
+            # phantom merge commit sha (github.sha) would make this essentially impossible for us
+            PROVIDER_VERSION=${{ github.event.pull_request.head.sha }}
+          elif [[ "${{ github.ref }}" == "refs/heads/master" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            PROVIDER_VERSION=${{ github.sha }}
+          else
+            echo "Unknown type to get provider tag from, failing on purpose"
+            exit 1
+          fi
+          echo "Setting Provider version to ${PROVIDER_VERSION}"
+          echo "::set-output name=pact-provider-version::${PROVIDER_VERSION}"
       - name: Run provider contract tests
         run: |
           mvn test -DrunContractTests -DPACT_CONSUMER_TAG=master \
           -DPACT_BROKER_USERNAME=${{ secrets.pact_broker_username }} \
           -DPACT_BROKER_PASSWORD=${{ secrets.pact_broker_password }} \
-          -Dpact.provider.version=${{ github.sha }} \
+          -Dpact.provider.version=${{ steps.set-pact-provider-version.outputs.pact-provider-version }} \
           -Dpact.verifier.publishResults=true
