@@ -43,7 +43,7 @@ jobs:
             # in the pact broker something we can actually trace back to a PR, using the _actual_
             # phantom merge commit sha (github.sha) would make this essentially impossible for us
             PROVIDER_VERSION=${{ github.event.pull_request.head.sha }}
-          elif [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+          elif [[ "${{ github.ref }}" == "refs/heads/master" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             PROVIDER_VERSION=${{ github.sha }}
           else
             echo "Unknown type to get provider tag from, failing on purpose"
