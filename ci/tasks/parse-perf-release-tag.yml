@@ -1,0 +1,21 @@
+# This task parses the candidate tag from an ecr resource and turns it into a *-perf release tag
+#
+# File written:
+#   parse-perf-release-tag/tag : The perf release tag (e.g. 123-perf)
+#
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+inputs:
+  - name: ecr-repo
+outputs:
+  - name: parse-perf-release-tag
+run:
+  path: sh
+  args:
+    - -ec
+    - |
+      RELEASE_NUMBER=$(cut -f 1 -d "-" < ecr-repo/tag)
+      echo "${RELEASE_NUMBER}-perf" | tee parse-perf-release-tag/tag
