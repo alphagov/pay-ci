@@ -184,7 +184,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-8295-tag-image-with-xxx-perf
+      branch: master
   - name: pay-infra
     type: git
     icon: github
