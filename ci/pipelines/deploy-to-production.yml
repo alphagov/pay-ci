@@ -240,7 +240,6 @@ resources:
     icon: docker
     source:
       repository: govukpay/adminusers
-      variant: release
       <<: *aws_test_config
   - name: products-ecr-registry-prod
     type: registry-image
