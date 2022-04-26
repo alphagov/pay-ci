@@ -264,6 +264,13 @@ resources:
       repository: govukpay/egress
       variant: egress-release
       <<: *aws_test_config
+  - name: egress-ecr-registry-test-jfharden-debug
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/egress
+      variant: jfharden-debug
+      <<: *aws_test_config
   - name: frontend-dockerhub
     type: registry-image
     icon: docker
@@ -1233,11 +1240,12 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: egress-ecr-registry-test
-        trigger: true
+        trigger: false
+      - get: egress-ecr-registry-test-jfharden-debug
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
-        file: egress-ecr-registry-test/tag
+        file: egress-ecr-registry-test-jfharden-debug/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
         params:
