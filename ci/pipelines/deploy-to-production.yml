@@ -200,6 +200,12 @@ resources:
       repository: govukpay/egress
       variant: egress-release
       <<: *aws_prod_config      
+  - name: egress-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/egress
+      <<: *aws_test_config      
   - name: carbon-relay-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -207,6 +213,12 @@ resources:
       repository: govukpay/carbon-relay
       variant: carbon-relay-release
       <<: *aws_prod_config    
+  - name: carbon-relay-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/carbon-relay
+      <<: *aws_test_config    
   - name: stunnel-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -214,6 +226,12 @@ resources:
       repository: govukpay/stunnel
       variant: stunnel-release
       <<: *aws_prod_config    
+  - name: stunnel-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stunnel
+      <<: *aws_test_config
   - name: toolbox-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -338,6 +356,12 @@ resources:
       repository: govukpay/telegraf
       variant: release
       <<: *aws_prod_config
+  - name: telegraf-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/telegraf
+      <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -345,6 +369,12 @@ resources:
       repository: govukpay/docker-nginx-proxy
       variant: release
       <<: *aws_prod_config
+  - name: nginx-proxy-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/docker-nginx-proxy
+      <<: *aws_test_config
   - name: nginx-forward-proxy-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -352,6 +382,12 @@ resources:
       repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_prod_config
+  - name: nginx-forward-proxy-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/nginx-forward-proxy
+      <<: *aws_test_config
   - name: ledger-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -385,6 +421,12 @@ resources:
       repository: govukpay/notifications
       variant: release
       <<: *aws_prod_config
+  - name: notifications-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/notifications
+      <<: *aws_test_config
   - name: slack-notification
     type: slack-notification
     source:
@@ -426,6 +468,7 @@ groups:
     jobs:
       - deploy-egress-to-prod
       - smoke-test-egress-on-prod
+      - retag-egress-image-for-test-perf
   - name: frontend
     jobs:
       - deploy-frontend-to-prod
@@ -477,19 +520,25 @@ groups:
   - name: carbon-relay
     jobs:
       - deploy-carbon-relay-to-prod
+      - retag-carbon-relay-image-for-test-perf
+      - retag-stunnel-image-for-test-perf
   - name: telegraf
     jobs:
       - deploy-toolbox-to-prod
+      - retag-telegraf-image-for-test-perf
   - name: nginx-forward-proxy
     jobs:
       - deploy-frontend-to-prod
+      - retag-nginx-forward-proxy-image-for-test-perf
   - name: nginx-proxy
     jobs:
       - deploy-toolbox-to-prod
+      - retag-nginx-proxy-image-for-test-perf
   - name: notifications
     jobs:
       - deploy-notifications-to-prod
       - smoke-test-notifications-on-prod
+      - retag-notifications-for-test-perf
   - name: update-deploy-to-prod-pipeline
     jobs:
       - update-deploy-to-prod-pipeline
@@ -587,6 +636,23 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-egress-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: egress-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-egress-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: egress-ecr-registry-prod        
+      - put: egress-ecr-registry-test
+        params:
+          image: egress-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag        
 
   - name: deploy-selfservice-to-prod
     serial: true
@@ -989,6 +1055,40 @@ jobs:
     <<: *put_success_slack_notification_p1      
     <<: *put_failure_slack_notification              
 
+  - name: retag-carbon-relay-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: carbon-relay-ecr-registry-prod
+        params:
+          format: oci
+        passed: [deploy-carbon-relay-to-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: carbon-relay-ecr-registry-prod
+      - put: carbon-relay-ecr-registry-test
+        params:
+          image: carbon-relay-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+
+  - name: retag-stunnel-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: stunnel-ecr-registry-prod
+        params:
+          format: oci
+        passed: [deploy-carbon-relay-to-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: stunnel-ecr-registry-prod
+      - put: stunnel-ecr-registry-test
+        params:
+          image: stunnel-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag          
+
   - name: deploy-toolbox-to-prod
     serial: true
     serial_groups: [deploy-application]
@@ -1046,6 +1146,23 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: retag-telegraf-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: telegraf-ecr-registry-prod
+        params:
+          format: oci
+        passed: [deploy-toolbox-to-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: telegraf-ecr-registry-prod        
+      - put: telegraf-ecr-registry-test
+        params:
+          image: telegraf-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+
   - name: retag-toolbox-image-for-test-perf
     plan:
       - get: pay-ci
@@ -1061,6 +1178,23 @@ jobs:
       - put: toolbox-ecr-registry-test
         params:
           image: toolbox-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+
+  - name: retag-nginx-proxy-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: nginx-proxy-ecr-registry-prod
+        params:
+          format: oci
+        passed: [deploy-toolbox-to-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: nginx-proxy-ecr-registry-prod
+      - put: nginx-proxy-ecr-registry-test
+        params:
+          image: nginx-proxy-ecr-registry-prod/image.tar
           additional_tags: parse-perf-release-tag/tag
 
   - name: deploy-frontend-to-prod
@@ -1186,6 +1320,23 @@ jobs:
       - put: frontend-ecr-registry-test
         params:
           image: frontend-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+
+  - name: retag-nginx-forward-proxy-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: nginx-forward-proxy-ecr-registry-prod
+        params:
+          format: oci
+        passed: [deploy-frontend-to-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: nginx-forward-proxy-ecr-registry-prod
+      - put: nginx-forward-proxy-ecr-registry-test
+        params:
+          image: nginx-forward-proxy-ecr-registry-prod/image.tar
           additional_tags: parse-perf-release-tag/tag
 
   - name: frontend-pact-tag
@@ -2460,3 +2611,20 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-notifications-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: notifications-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-notifications-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: notifications-ecr-registry-prod
+      - put: notifications-ecr-registry-test
+        params:
+          image: notifications-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
