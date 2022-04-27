@@ -35,6 +35,14 @@ definitions:
     aws_ecr_registry_id: "((pay_aws_prod_account_id))"
     aws_region: eu-west-1
 
+  aws_test_config: &aws_test_config
+    aws_access_key_id: ((readonly_access_key_id))
+    aws_secret_access_key: ((readonly_secret_access_key))
+    aws_session_token: ((readonly_session_token))
+    aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse_deploy_worker_ecr_access
+    aws_ecr_registry_id: "((pay_aws_test_account_id))"
+    aws_region: eu-west-1
+
   put_start_slack_notification: &put_start_slack_notification
     put: slack-notification
     params:
@@ -227,6 +235,12 @@ resources:
       repository: govukpay/adminusers
       variant: release
       <<: *aws_prod_config
+  - name: adminusers-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adminusers
+      <<: *aws_test_config
   - name: products-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -335,6 +349,7 @@ groups:
       - smoke-test-adminusers-on-prod
       - adminusers-pact-tag
       - adminusers-db-migration-prod
+      - retag-adminusers-image-for-test-perf
   - name: cardid
     jobs:
       - deploy-cardid-to-prod
@@ -1210,6 +1225,23 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-adminusers-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: adminusers-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-adminusers-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: adminusers-ecr-registry-prod        
+      - put: adminusers-ecr-registry-test
+        params:
+          image: adminusers-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag        
 
   - name: adminusers-pact-tag
     plan:
