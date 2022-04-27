@@ -221,6 +221,12 @@ resources:
       repository: govukpay/toolbox
       variant: release
       <<: *aws_prod_config
+  - name: toolbox-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/toolbox
+      <<: *aws_test_config
   - name: frontend-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -228,6 +234,12 @@ resources:
       repository: govukpay/frontend
       variant: release
       <<: *aws_prod_config
+  - name: frontend-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/frontend
+      <<: *aws_test_config
   - name: adminusers-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -248,6 +260,12 @@ resources:
       repository: govukpay/products
       variant: release
       <<: *aws_prod_config
+  - name: products-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products
+      <<: *aws_test_config
   - name: products-ui-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -255,6 +273,12 @@ resources:
       repository: govukpay/products-ui
       variant: release
       <<: *aws_prod_config
+  - name: products-ui-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products-ui
+      <<: *aws_test_config
   - name: publicauth-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -262,6 +286,12 @@ resources:
       repository: govukpay/publicauth
       variant: release
       <<: *aws_prod_config
+  - name: publicauth-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicauth
+      <<: *aws_test_config
   - name: cardid-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -269,6 +299,12 @@ resources:
       repository: govukpay/cardid
       variant: release
       <<: *aws_prod_config
+  - name: cardid-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/cardid
+      <<: *aws_test_config
   - name: connector-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -276,6 +312,12 @@ resources:
       repository: govukpay/connector
       variant: release
       <<: *aws_prod_config
+  - name: connector-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/connector
+      <<: *aws_test_config
   - name: selfservice-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -283,6 +325,12 @@ resources:
       repository: govukpay/selfservice
       variant: release
       <<: *aws_prod_config
+  - name: selfservice-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/selfservice
+      <<: *aws_test_config
   - name: telegraf-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -311,6 +359,12 @@ resources:
       repository: govukpay/ledger
       variant: release
       <<: *aws_prod_config
+  - name: ledger-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/ledger
+      <<: *aws_test_config
   - name: publicapi-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -318,6 +372,12 @@ resources:
       repository: govukpay/publicapi
       variant: release
       <<: *aws_prod_config
+  - name: publicapi-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicapi
+      <<: *aws_test_config
   - name: notifications-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -354,12 +414,14 @@ groups:
     jobs:
       - deploy-cardid-to-prod
       - smoke-test-cardid-on-prod
+      - retag-cardid-image-for-test-perf
   - name: connector
     jobs:
       - deploy-connector-to-prod
       - smoke-test-connector-on-prod
       - connector-pact-tag
       - connector-db-migration-prod
+      - retag-connector-image-for-test-perf
   - name: egress
     jobs:
       - deploy-egress-to-prod
@@ -369,41 +431,49 @@ groups:
       - deploy-frontend-to-prod
       - smoke-test-frontend-on-prod
       - frontend-pact-tag
+      - retag-frontend-image-for-test-perf
   - name: ledger
     jobs:
       - deploy-ledger-to-prod
       - smoke-test-ledger-on-prod
       - ledger-pact-tag
       - ledger-db-migration-prod
+      - retag-ledger-image-for-test-perf
   - name: products
     jobs:
       - deploy-products-to-prod
       - smoke-test-products-on-prod
       - products-pact-tag
       - products-db-migration-prod
+      - retag-products-image-for-test-perf
   - name: products-ui
     jobs:
       - deploy-products-ui-to-prod
       - smoke-test-products-ui-on-prod
       - products-ui-pact-tag
+      - retag-products-ui-image-for-test-perf
   - name: publicapi
     jobs:
       - deploy-publicapi-to-prod
       - smoke-test-publicapi-on-prod
       - publicapi-pact-tag
+      - retag-publicapi-image-for-test-perf
   - name: publicauth
     jobs:
       - deploy-publicauth-to-prod
       - smoke-test-publicauth-on-prod
       - publicauth-db-migration-prod
+      - retag-publicauth-image-for-test-perf
   - name: selfservice
     jobs:
       - deploy-selfservice-to-prod
       - smoke-test-selfservice-on-prod
       - selfservice-pact-tag
+      - retag-selfservice-image-for-test-perf
   - name: toolbox
     jobs:
       - deploy-toolbox-to-prod
+      - retag-toolbox-image-for-test-perf
   - name: carbon-relay
     jobs:
       - deploy-carbon-relay-to-prod
@@ -618,6 +688,23 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: retag-selfservice-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: selfservice-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-selfservice-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: selfservice-ecr-registry-prod
+      - put: selfservice-ecr-registry-test
+        params:
+          image: selfservice-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+
   - name: selfservice-pact-tag
     plan:
       - get: selfservice-ecr-registry-prod
@@ -750,6 +837,23 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-connector-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: connector-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-connector-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: connector-ecr-registry-prod
+      - put: connector-ecr-registry-test
+        params:
+          image: connector-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
 
   - name: connector-pact-tag
     plan:
@@ -942,6 +1046,23 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: retag-toolbox-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: toolbox-ecr-registry-prod
+        params:
+          format: oci
+        passed: [deploy-toolbox-to-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: toolbox-ecr-registry-prod
+      - put: toolbox-ecr-registry-test
+        params:
+          image: toolbox-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+
   - name: deploy-frontend-to-prod
     serial: true
     serial_groups: [deploy-application]
@@ -1049,6 +1170,23 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-frontend-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: frontend-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-frontend-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: frontend-ecr-registry-prod
+      - put: frontend-ecr-registry-test
+        params:
+          image: frontend-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
 
   - name: frontend-pact-tag
     plan:
@@ -1343,6 +1481,7 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
   - name: smoke-test-products-on-prod
     serial_groups: [smoke-test]
     plan:
@@ -1374,6 +1513,23 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-products-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: products-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-products-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: products-ecr-registry-prod
+      - put: products-ecr-registry-test
+        params:
+          image: products-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
 
   - name: products-pact-tag
     plan:
@@ -1550,6 +1706,23 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: retag-products-ui-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: products-ui-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-products-ui-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: products-ui-ecr-registry-prod
+      - put: products-ui-ecr-registry-test
+        params:
+          image: products-ui-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+
   - name: products-ui-pact-tag
     plan:
       - get: products-ui-ecr-registry-prod
@@ -1712,6 +1885,23 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: retag-publicauth-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: publicauth-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-publicauth-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: publicauth-ecr-registry-prod
+      - put: publicauth-ecr-registry-test
+        params:
+          image: publicauth-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+
   - name: deploy-cardid-to-prod
     serial: true
     serial_groups: [deploy-application]
@@ -1797,6 +1987,23 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-cardid-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: cardid-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-cardid-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: cardid-ecr-registry-prod        
+      - put: cardid-ecr-registry-test
+        params:
+          image: cardid-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag      
 
   - name: deploy-publicapi-to-prod
     serial: true
@@ -1896,6 +2103,23 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-publicapi-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: publicapi-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-publicapi-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: publicapi-ecr-registry-prod        
+      - put: publicapi-ecr-registry-test
+        params:
+          image: publicapi-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag   
 
   - name: publicapi-pact-tag
     plan:
@@ -2030,6 +2254,23 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: retag-ledger-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: ledger-ecr-registry-prod
+        params:
+          format: oci
+        passed: [smoke-test-ledger-on-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: ledger-ecr-registry-prod
+      - put: ledger-ecr-registry-test
+        params:
+          image: ledger-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
 
   - name: ledger-pact-tag
     plan:
