@@ -1,0 +1,24 @@
+# This task parses the candidate tag from a sidecar ecr resource and turns it into a 123-<sidecar>-perf release tag.
+# Note not all our sidecars use this 123-<sidecar>-perf tagging.
+#
+# File written:
+#   parse-perf-release-tag/tag : The sidecar perf release tag (e.g. 123-egress-perf)
+#
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+inputs:
+  - name: ecr-repo
+outputs:
+  - name: parse-perf-release-tag
+run:
+  path: sh
+  args:
+    - -ec
+    - |
+      cat ecr-repo/tag
+      echo "\n"
+      RELEASE_NUMBER=$(cut -f 1 -d "-" < ecr-repo/tag)
+      echo "${RELEASE_NUMBER}-perf" | tee parse-perf-release-tag/tag

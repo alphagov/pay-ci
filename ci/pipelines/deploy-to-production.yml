@@ -184,7 +184,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: PP-8295-tag-sidecar-images-with-xxx-perf
   - name: pay-infra
     type: git
     icon: github
@@ -646,9 +646,9 @@ jobs:
         passed: [smoke-test-egress-on-prod]
         trigger: true
       - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        file: pay-ci/ci/tasks/parse-sidecar-perf-release-tag.yml
         input_mapping:
-          ecr-repo: egress-ecr-registry-prod        
+          ecr-repo: egress-ecr-registry-prod
       - put: egress-ecr-registry-test
         params:
           image: egress-ecr-registry-prod/image.tar
@@ -1064,7 +1064,7 @@ jobs:
         passed: [deploy-carbon-relay-to-prod]
         trigger: true
       - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        file: pay-ci/ci/tasks/parse-sidecar-perf-release-tag.yml
         input_mapping:
           ecr-repo: carbon-relay-ecr-registry-prod
       - put: carbon-relay-ecr-registry-test
@@ -1081,7 +1081,7 @@ jobs:
         passed: [deploy-carbon-relay-to-prod]
         trigger: true
       - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        file: pay-ci/ci/tasks/parse-sidecar-perf-release-tag.yml
         input_mapping:
           ecr-repo: stunnel-ecr-registry-prod
       - put: stunnel-ecr-registry-test
