@@ -7,15 +7,12 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: alpine
+    repository: govukpay/node-runner
 inputs:
+  - name: pay-ci
   - name: ecr-repo
 outputs:
   - name: parse-perf-release-tag
 run:
-  path: sh
-  args:
-    - -ec
-    - |
-      RELEASE_NUMBER=$(cut -f 1 -d "-" < ecr-repo/tag)
-      echo "${RELEASE_NUMBER}-perf" | tee parse-perf-release-tag/tag
+  path: node
+  args: ['pay-ci/ci/scripts/parse-perf-release-tag.js']
