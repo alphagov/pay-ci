@@ -19,14 +19,6 @@ definitions:
     ACCOUNT: test
     ENVIRONMENT: test-perf-1
 
-  check_release_versions_params: &check_release_versions_params
-    <<: *aws_assumed_role_creds
-    AWS_REGION: "eu-west-1"
-    CLUSTER_NAME: "test-perf-1-fargate"
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-
   aws_test_config: &aws_test_config
     aws_access_key_id: ((readonly_access_key_id))
     aws_secret_access_key: ((readonly_secret_access_key))
@@ -34,54 +26,6 @@ definitions:
     aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
     aws_ecr_registry_id: "((pay_aws_test_account_id))"
     aws_region: eu-west-1
-
-  put_start_slack_notification: &put_start_slack_notification
-    put: slack-notification
-    params:
-      channel: '#govuk-pay-announce'
-      icon_emoji: ":fargate:"
-      username: pay-concourse
-      text: "((.:start_snippet)) |
-            <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-  put_success_slack_notification: &put_success_slack_notification
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: "((.:success_snippet)) \n\n
-              <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    
-  put_failure_slack_notification: &put_failure_slack_notification
-    on_failure:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: "((.:failure_snippet)) \n
-              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-  put_db_migration_slack_notification: &put_db_migration_slack_notification
-    put: slack-notification
-    params:
-      channel: '#govuk-pay-announce'
-      icon_emoji: ":postgres:"
-      username: pay-concourse
-      text: ":postgres: starting $BUILD_JOB_NAME on staging-2\n
-            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-  snippet_params_all_versions: &snippet_params_all_versions
-    ENV: test-perf-1
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-  
-  snippet_params_app_version: &snippet_params_app_version
-    ENV: test-perf-1
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
 
 resources:
   - name: deploy-to-perf-pipeline-definition
@@ -120,13 +64,6 @@ resources:
       repository: govukpay/telegraf
       variant: perf
       <<: *aws_test_config
-  # - name: notifications-ecr-registry-perf
-  #   type: registry-image
-  #   icon: docker
-  #   source:
-  #     repository: govukpay/notifications
-  #     variant: perf
-  #     <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-perf
     type: registry-image
     icon: docker
@@ -134,13 +71,6 @@ resources:
       repository: govukpay/docker-nginx-proxy
       variant: perf
       <<: *aws_test_config
-  # - name: nginx-forward-proxy-ecr-registry-perf
-  #   type: registry-image
-  #   icon: docker
-  #   source:
-  #     repository: govukpay/nginx-forward-proxy
-  #     variant: perf
-  #     <<: *aws_test_config
   - name: slack-notification
     type: slack-notification
     source:
@@ -191,19 +121,12 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-perf/tag
-      - task: create-notification-snippets
-        file: pay-ci/ci/tasks/create-notification-snippets.yml
+      - put: slack-notification
         params:
-          APP_NAME: adminusers
-          ACTION_NAME: Deployment
-          <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: start_snippet
-        file: snippet/start
-      - <<: *put_start_slack_notification
+          channel: '#govuk-pay-announce'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting adminusers deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -212,11 +135,6 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
-      - task: check-release-versions
-        file: pay-ci/ci/tasks/check-release-versions.yml
-        params:
-          <<: *check_release_versions_params
-          APP_NAME: adminusers
       - task: deploy-to-perf
         file: pay-ci/ci/tasks/deploy-app.yml
         params:
@@ -227,5 +145,17 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    on_success:      
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of adminusers to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of adminusers to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
