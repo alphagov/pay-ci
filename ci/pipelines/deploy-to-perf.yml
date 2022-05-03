@@ -57,6 +57,76 @@ resources:
       repository: govukpay/adminusers
       variant: perf
       <<: *aws_test_config
+  - name: frontend-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/frontend
+      variant: perf
+      <<: *aws_test_config
+  - name: products-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products
+      variant: perf
+      <<: *aws_test_config
+  - name: products-ui-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products-ui
+      variant: perf
+      <<: *aws_test_config
+  - name: publicauth-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicauth
+      variant: perf
+      <<: *aws_test_config
+  - name: cardid-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/cardid
+      variant: perf
+      <<: *aws_test_config
+  - name: connector-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/connector
+      variant: perf
+      <<: *aws_test_config
+  - name: selfservice-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/selfservice
+      variant: perf
+      <<: *aws_test_config
+  - name: publicapi-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicapi
+      variant: perf
+      <<: *aws_test_config
+  - name: ledger-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/ledger
+      variant: perf
+      <<: *aws_test_config      
+  - name: toolbox-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/toolbox
+      variant: perf
+      <<: *aws_test_config
   - name: telegraf-ecr-registry-perf
     type: registry-image
     icon: docker
@@ -69,6 +139,13 @@ resources:
     icon: docker
     source:
       repository: govukpay/docker-nginx-proxy
+      variant: perf
+      <<: *aws_test_config
+  - name: nginx-forward-proxy-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/nginx-forward-proxy
       variant: perf
       <<: *aws_test_config
   - name: slack-notification
@@ -92,6 +169,36 @@ groups:
   - name: adminusers
     jobs:
       - deploy-adminusers-to-perf
+  - name: cardid
+    jobs:
+      - deploy-cardid-to-perf
+  - name: connector
+    jobs:
+      - deploy-connector-to-perf
+  - name: frontend
+    jobs:
+      - deploy-frontend-to-perf
+  - name: ledger
+    jobs:
+      - deploy-ledger-to-perf
+  - name: products
+    jobs:
+      - deploy-products-to-perf
+  - name: products-ui
+    jobs:
+      - deploy-products-ui-to-perf
+  - name: publicapi
+    jobs:
+      - deploy-publicapi-to-perf
+  - name: publicauth
+    jobs:
+      - deploy-publicauth-to-perf
+  - name: selfservice
+    jobs:
+      - deploy-selfservice-to-perf
+  - name: toolbox
+    jobs:
+      - deploy-toolbox-to-perf            
   - name: update-deploy-to-perf-pipeline
     jobs:
       - update-deploy-to-perf-pipeline
@@ -145,7 +252,7 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
-    on_success:      
+    on_success:
       put: slack-notification
       params:
         channel: '#govuk-pay-activity'
@@ -159,3 +266,569 @@ jobs:
         icon_emoji: ":fargate:"
         username: pay-concourse
         text: ":red_circle: Deployment of adminusers to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-selfservice-to-perf
+    serial: true
+    plan:
+      - get: selfservice-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: selfservice-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting selfservice deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: selfservice
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: selfservice
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of selfservice to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of selfservice to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-connector-to-perf
+    serial: true
+    plan:
+      - get: connector-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: connector-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting connector deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: connector
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: connector
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of connector to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of connector to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-toolbox-to-perf
+    serial: true
+    plan:
+      - get: toolbox-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: toolbox-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting toolbox deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: toolbox
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: toolbox
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of toolbox to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of toolbox to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-frontend-to-perf
+    serial: true
+    plan:
+      - get: frontend-ecr-registry-perf
+        trigger: true
+      - get: nginx-forward-proxy-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: frontend-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - load_var: nginx_forward_proxy_image_tag
+        file: nginx-forward-proxy-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting frontend deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-frontend.yml
+        params:
+          APP_NAME: frontend
+          NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: frontend
+          NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of frontend to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of frontend to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-products-to-perf
+    serial: true
+    plan:
+      - get: products-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting products deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: products
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: products
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of products to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of products to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-products-ui-to-perf
+    serial: true
+    plan:
+      - get: products-ui-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ui-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting products-ui deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: products-ui
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: products-ui
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of products-ui to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of products-ui to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-publicauth-to-perf
+    serial: true
+    plan:
+      - get: publicauth-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: publicauth-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting publicauth deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: publicauth
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: publicauth
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of publicauth to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of publicauth to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-cardid-to-perf
+    serial: true
+    plan:
+      - get: cardid-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: cardid-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting cardid deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: cardid
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: cardid
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of cardid to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of cardid to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-ledger-to-perf
+    serial: true
+    plan:
+      - get: ledger-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: ledger-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting ledger deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: ledger
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: ledger
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of ledger to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of ledger to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: deploy-publicapi-to-perf
+    serial: true
+    plan:
+      - get: publicapi-ecr-registry-perf
+        trigger: true
+      - get: nginx-proxy-ecr-registry-perf
+        trigger: true
+      - get: telegraf-ecr-registry-perf
+        trigger: true
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: publicapi-ecr-registry-perf/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-perf/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-perf/tag
+      - put: slack-notification
+        params:
+          channel: '#govuk-pay-activity'
+          icon_emoji: ":fargate:"
+          username: pay-concourse
+          text: ':rocket: Starting publicapi deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: publicapi
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: publicapi
+          <<: *wait_for_deploy_params
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":green-circle: Deployment of publicapi to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: ":red_circle: Deployment of publicapi to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
