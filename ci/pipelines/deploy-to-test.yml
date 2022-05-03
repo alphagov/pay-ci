@@ -108,7 +108,7 @@ resources:
       uri: https://github.com/alphagov/pay-telegraf
       branch: main
       tag_regex: "(.*)-release"
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
   - name: nginx-forward-proxy-git-release
     type: git
@@ -117,7 +117,7 @@ resources:
       uri: https://github.com/alphagov/pay-nginx-forward-proxy
       branch: main
       tag_regex: "(.*)-release"
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
   # Github Releases
@@ -232,7 +232,7 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-infra
       branch: master
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
   # ECR registry resources

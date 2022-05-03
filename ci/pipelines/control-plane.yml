@@ -25,7 +25,7 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-control-plane
       branch: master
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
   - name: pay-control-plane-latest

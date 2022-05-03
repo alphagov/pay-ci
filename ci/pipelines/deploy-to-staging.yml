@@ -192,7 +192,7 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-infra
       branch: master
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
   - name: carbon-relay-ecr-registry-staging
     type: registry-image
