@@ -239,6 +239,15 @@ groups:
   - name: notifications
     jobs:
       - deploy-notifications-to-perf
+  - name: telegraf
+    jobs:
+      - deploy-toolbox-to-perf
+  - name: nginx-proxy
+    jobs:
+      - deploy-toolbox-to-perf
+  - name: nginx-forward-proxy
+    jobs:
+      - deploy-frontend-to-perf
 
 jobs:
   - name: update-deploy-to-perf-pipeline
