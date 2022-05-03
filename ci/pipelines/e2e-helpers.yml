@@ -16,7 +16,7 @@ resources:
       uri: https://github.com/alphagov/pay-endtoend
       branch: master
       tag_regex: "alpha_release-(.*)"
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
   - name: reverse-proxy-git-release
@@ -26,7 +26,7 @@ resources:
       uri: https://github.com/alphagov/pay-scripts
       branch: master
       tag_regex: "reverse_proxy_alpha_release-(.*)"
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
   - name: stubs-git-release
@@ -36,7 +36,7 @@ resources:
       uri: https://github.com/alphagov/pay-stubs
       branch: master
       tag_regex: "alpha_release-(.*)"
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
   - name: pay-infra-src
@@ -45,7 +45,7 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-infra
       branch: master
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
   - name: pay-ci
@@ -54,7 +54,7 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
   - name: endtoend-ecr-registry-test
