@@ -48,7 +48,7 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-infra
       branch: master
-      username: alphagov-pay-ci
+      username: alphagov-pay-ci-concourse
       password: ((github-access-token))
   - name: adminusers-ecr-registry-perf
     type: registry-image
@@ -123,7 +123,7 @@ jobs:
         file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
-          channel: '#govuk-pay-announce'
+          channel: '#govuk-pay-activity'
           icon_emoji: ":fargate:"
           username: pay-concourse
           text: ':rocket: Starting adminusers deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
