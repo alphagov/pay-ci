@@ -51,12 +51,26 @@ async function runTask (params) {
   }
 }
 
-async function waitFor (params) {
+async function waitFor (taskArn) {
   console.log(`Waiting for database migration to complete...`)
   try {
-    return await ecs.waitFor('tasksStopped', params).promise()
+    return await ecs.waitFor('tasksStopped', {
+      cluster: CLUSTER_NAME,
+      tasks: [taskArn]
+    }).promise()
   } catch (err) {
     throw new Error(`Error attempting to wait for ecs task: ${err.message}`)
+  }
+}
+
+async function describeTasks(taskArn) {
+  try {
+    return await ecs.describeTasks({
+      cluster: CLUSTER_NAME,
+      tasks: [taskArn]
+    }).promise()
+  } catch (err) {
+    throw new Error(`Error attempting to describe ecs task: ${err.message}`)
   }
 }
 
@@ -99,13 +113,18 @@ const run = async function run () {
     }
 
     console.log(`Succesfully scheduled db migration task: ${runResult.tasks[0].taskArn}`)
+    console.log('View progress of the migration at: https://gds.splunkcloud.com/en-GB/app/gds-004-pay/migration_status')
 
-    await waitFor({
-      cluster: CLUSTER_NAME,
-      tasks: [`${runResult.tasks[0].taskArn}`]
-    })
+    await waitFor(`${runResult.tasks[0].taskArn}`)
 
-    console.log('Database migration complete. See the status at https://gds.splunkcloud.com/en-GB/app/gds-004-pay/migration_status')
+    const describeTasksResult = await describeTasks(`${runResult.tasks[0].taskArn}`)
+    if (describeTasksResult.tasks[0].containers.some(container => container.exitCode !== 0)) {
+      console.log(`One or more containers in the task ${runResult.tasks[0].taskArn} did not exit with 0`)
+      process.exit(1)
+    }
+
+    console.log('Database migration completed')
+
   } catch (err) {
     console.log(err.message)
     process.exit(1)
