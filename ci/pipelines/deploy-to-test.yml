@@ -745,6 +745,7 @@ groups:
       - run-cardid-e2e
       - deploy-cardid
       - smoke-test-cardid
+      - cardid-pact-tag
       - push-cardid-to-staging-ecr
   - name: connector
     jobs:
@@ -4478,6 +4479,19 @@ jobs:
         file: snippet/success
       - load_var: failure_snippet
         file: snippet/failure
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: cardid
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: cardid
+          PACT_TAG: test-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -4536,13 +4550,47 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: cardid-pact-tag
+    plan:
+      - get: cardid-ecr-registry-test
+        passed: [smoke-test-cardid]
+        trigger: true
+      - load_var: application_image_tag
+        file: cardid-ecr-registry-test/tag
+      - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: cardid
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: cardid
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: cardid
+          PACT_TAG: test-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: push-cardid-to-staging-ecr
     plan:
       - get: cardid-ecr-registry-test
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-cardid]
+        passed: [cardid-pact-tag]
       - put: cardid-ecr-registry-staging
         params:
           image: cardid-ecr-registry-test/image.tar
