@@ -51,6 +51,15 @@ async function runTask (params) {
   }
 }
 
+async function waitFor (params) {
+  console.log(`Waiting for database migration to complete...`)
+  try {
+    return await ecs.waitFor('tasksStopped', params).promise()
+  } catch (err) {
+    throw new Error(`Error attempting to wait for ecs task: ${err.message}`)
+  }
+}
+
 const run = async function run () {
   console.log(`Running migration for ${APP_NAME} within ${CLUSTER_NAME} cluster`)
 
@@ -90,7 +99,13 @@ const run = async function run () {
     }
 
     console.log(`Succesfully scheduled db migration task: ${runResult.tasks[0].taskArn}`)
-    console.log('View progress of the migration at: https://gds.splunkcloud.com/en-GB/app/gds-004-pay/migration_status')
+
+    await waitFor({
+      cluster: CLUSTER_NAME,
+      tasks: [`${runResult.tasks[0].taskArn}`]
+    })
+
+    console.log('Database migration complete. See the status at https://gds.splunkcloud.com/en-GB/app/gds-004-pay/migration_status')
   } catch (err) {
     console.log(err.message)
     process.exit(1)
