@@ -244,6 +244,7 @@ groups:
     jobs:
       - cardid-unit-test
       - cardid-integration-test
+      - cardid-as-provider-pact-test
       - cardid-e2e
       - record-cardid-build-time
 
@@ -378,6 +379,12 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-products
+      branch: master
+  - name: cardid-master
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-cardid
       branch: master
   - name: pr-ci-pipeline
     type: git
@@ -556,16 +563,26 @@ jobs:
           status: pending
           context: app-as-consumer pact verification
       - get: ledger-master
+      - get: cardid-master
+        params: { submodules: none }
       - <<: *pact-provider-test-preflight-check
         params:
           consumer: connector
-      - <<: *pact-provider-verification
-        task: ledger-provider-pact-verification
-        input_mapping:
-          test_target: ledger-master
-        params:
-          consumer: connector
-          provider: ledger
+      - in_parallel:
+        - <<: *pact-provider-verification
+          task: ledger-provider-pact-verification
+          input_mapping:
+            test_target: ledger-master
+          params:
+            consumer: connector
+            provider: ledger
+        - <<: *pact-provider-verification
+          task: cardid-provider-pact-verification
+          input_mapping:
+            test_target: cardid-master
+          params:
+            consumer: connector
+            provider: cardid
         on_failure:
           put: card-connector-pull-request
           params:
@@ -1086,6 +1103,27 @@ jobs:
       put: cardid-pull-request
 
   - <<: *job-definition
+    name: cardid-as-provider-pact-test
+    serial_groups: [pact-test]
+    plan:
+    - <<: *get-pull-request
+      resource: cardid-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: cardid-pull-request
+    - <<: *get-ci
+    - <<: *pact-provider-test-preflight-check
+    - <<: *pact-provider-verification
+      input_mapping:
+        test_target: src
+      params:
+        provider: cardid
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: cardid-pull-request
+    - <<: *put-pact-provider-success-status
+      put: cardid-pull-request
+
+  - <<: *job-definition
     name: cardid-e2e
     plan:
       - <<: *get-pull-request
@@ -1199,7 +1237,7 @@ jobs:
     plan:
     - <<: *get-pull-request
       resource: cardid-pull-request
-      passed: [cardid-unit-test, cardid-integration-test]
+      passed: [cardid-unit-test, cardid-integration-test, cardid-as-provider-pact-test]
     - <<: *send-pr-build-time
 
   - <<: *job-definition
