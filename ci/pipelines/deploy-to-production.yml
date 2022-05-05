@@ -456,6 +456,7 @@ groups:
     jobs:
       - deploy-cardid-to-prod
       - smoke-test-cardid-on-prod
+      - cardid-pact-tag
       - retag-cardid-image-for-test-perf
   - name: connector
     jobs:
@@ -2081,6 +2082,19 @@ jobs:
       - load_var: start_snippet
         file: snippet/start
       - <<: *put_start_slack_notification
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: cardid
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: check-pact-compatibility
+        file: pay-ci/ci/tasks/check-pact-compatibility.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: cardid
+          PACT_TAG: production-fargate
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -2139,13 +2153,47 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: cardid-pact-tag
+    plan:
+      - get: cardid-ecr-registry-prod
+        passed: [smoke-test-cardid-on-prod]
+        trigger: true
+      - load_var: application_image_tag
+        file: cardid-ecr-registry-prod/tag
+      - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: cardid
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: cardid
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: cardid
+          PACT_TAG: production-fargate
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
   - name: retag-cardid-image-for-test-perf
     plan:
       - get: pay-ci
       - get: cardid-ecr-registry-prod
         params:
           format: oci
-        passed: [smoke-test-cardid-on-prod]
+        passed: [cardid-pact-tag]
         trigger: true
       - task: parse-perf-release-tag
         file: pay-ci/ci/tasks/parse-perf-release-tag.yml
@@ -2154,7 +2202,7 @@ jobs:
       - put: cardid-ecr-registry-test
         params:
           image: cardid-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag      
+          additional_tags: parse-perf-release-tag/tag
 
   - name: deploy-publicapi-to-prod
     serial: true
