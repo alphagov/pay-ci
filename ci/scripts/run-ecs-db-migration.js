@@ -118,8 +118,14 @@ const run = async function run () {
     await waitFor(`${runResult.tasks[0].taskArn}`)
 
     const describeTasksResult = await describeTasks(`${runResult.tasks[0].taskArn}`)
-    if (describeTasksResult.tasks[0].containers.some(container => container.exitCode !== 0)) {
+    const containers = describeTasksResult.tasks[0].containers
+    if (containers.some(container => container.exitCode !== 0)) {
       console.log(`One or more containers in the task ${runResult.tasks[0].taskArn} did not exit with 0`)
+      containers.forEach(container => { 
+        if (container.exitCode !== 0) {
+          console.log(`${container.taskArn} exited with ${container.reason}`)
+        }
+      })
       process.exit(1)
     }
 
