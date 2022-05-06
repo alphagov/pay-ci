@@ -30,7 +30,7 @@ definitions:
   put_db_migration_slack_notification: &put_db_migration_slack_notification
     put: slack-notification
     params:
-      channel: '#govuk-pay-announce'
+      channel: '#govuk-pay-activity'
       icon_emoji: ":postgres:"
       username: pay-concourse
       text: ":postgres: starting $BUILD_JOB_NAME on test-perf-1\n
@@ -361,7 +361,7 @@ jobs:
         file: pay-ci/ci/tasks/assume-role.yml
         params:
           AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+          AWS_ROLE_SESSION_NAME: db-migration-perf-test-assume-role
       - load_var: role
         file: assume-role/assume-role.json
         format: json
