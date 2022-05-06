@@ -50,6 +50,26 @@ put_db_migration_slack_notification: &put_db_migration_slack_notification
     text: ":postgres: starting $BUILD_JOB_NAME on test-12\n
           - <https://pay-cd.deploy.payments.service.gov.ukcd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
+put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
+  on_success:
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-activity'
+      icon_emoji: ":postgres:"
+      username: pay-concourse
+      text: ":green-circle: $BUILD_JOB_NAME completed successfully on test-12\n
+            - <https://pay-cd.deploy.payments.service.gov.ukcd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
+  on_failure:
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-announce'
+      icon_emoji: ":postgres:"
+      username: pay-concourse
+      text: ":red-circle: $BUILD_JOB_NAME failed on test-12\n
+            - <https://pay-cd.deploy.payments.service.gov.ukcd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
 wait_for_deploy_params: &wait_for_deploy_params
   <<: *aws_assumed_role_creds
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
@@ -1135,7 +1155,7 @@ jobs:
           CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: test-12
-    <<: *put_success_slack_notification      
+    <<: *put_success_slack_notification     
     <<: *put_failure_slack_notification
 
   - name: push-carbon-relay-to-staging-ecr
@@ -1907,6 +1927,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification   
 
   - name: smoke-test-adminusers
     serial_groups: [smoke-test]
@@ -2256,6 +2278,9 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification    
+    <<: *put_db_migration_failure_slack_notification               
+
   - name: smoke-test-connector
     serial_groups: [smoke-test]
     plan:
@@ -2682,6 +2707,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification    
+    <<: *put_db_migration_failure_slack_notification               
 
   - name: build-and-push-products-candidate
     plan:
@@ -2953,6 +2980,9 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification    
+    <<: *put_db_migration_failure_slack_notification 
+
   - name: smoke-test-products
     serial_groups: [smoke-test]
     plan:
@@ -3903,6 +3933,9 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification    
+    <<: *put_db_migration_failure_slack_notification 
+
   - name: smoke-test-publicauth
     serial_groups: [smoke-test]
     plan:

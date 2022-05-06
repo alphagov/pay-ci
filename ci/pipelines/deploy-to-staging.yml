@@ -92,6 +92,26 @@ definitions:
       text: ":postgres: starting $BUILD_JOB_NAME on staging-2\n
             - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
+  put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":postgres:"
+        username: pay-concourse
+        text: ":green-circle: $BUILD_JOB_NAME completed successfully on staging-2\n
+              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":postgres:"
+        username: pay-concourse
+        text: ":red-circle: $BUILD_JOB_NAME failed on staging-2\n
+              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
   snippet_params_all_versions: &snippet_params_all_versions
     ENV: staging-2
     APPLICATION_IMAGE_TAG: ((.:application_image_tag))
@@ -989,6 +1009,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: push-connector-to-production-ecr
     plan:
@@ -1432,6 +1454,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: smoke-test-adminusers-on-staging
     serial_groups: [smoke-test]
@@ -1697,6 +1721,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: deploy-products-ui-to-staging
     serial: true
@@ -1970,6 +1996,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: push-publicauth-to-production-ecr
     plan:
@@ -2448,6 +2476,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: push-ledger-to-production-ecr
     plan:
