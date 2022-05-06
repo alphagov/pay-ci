@@ -2589,7 +2589,7 @@ jobs:
       - task: parse-perf-release-tag
         file: pay-ci/ci/tasks/parse-perf-release-tag.yml
         params:
-          AWS_ROLE_ARN: abc
+          BUILD_JOB_NAME: $BUILD_JOB_NAME
         input_mapping:
           ecr-repo: ledger-ecr-registry-prod
       - put: ledger-ecr-registry-test

@@ -6,8 +6,6 @@ const AWS = require('aws-sdk')
 const sts = new AWS.STS()
 
 const run = async function run () {
-  console.log(`process.env.AWS_ROLE_ARN is ${process.env.AWS_ROLE_ARN}`)
-
   const assumeRoleResponse = await sts.assumeRole({
     RoleArn: process.env.AWS_ROLE_ARN,
     RoleSessionName: process.env.AWS_ROLE_SESSION_NAME
