@@ -1,0 +1,18 @@
+# This task parses the candidate tag from an ecr resource and turns it into a *-perf-db release tag
+#
+# File written:
+#   parse-perf-db-release-tag/tag : The perf release tag (e.g. 123-perf-db)
+#
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/node-runner
+inputs:
+  - name: pay-ci
+  - name: ecr-repo
+outputs:
+  - name: parse-perf-db-release-tag
+run:
+  path: node
+  args: ['pay-ci/ci/scripts/parse-perf-db-release-tag.js']

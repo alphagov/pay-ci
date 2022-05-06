@@ -2587,15 +2587,13 @@ jobs:
         passed: [ledger-db-migration-prod]
         trigger: true
       - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        params:
-          BUILD_JOB_NAME: $BUILD_JOB_NAME
+        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
         input_mapping:
           ecr-repo: ledger-ecr-registry-prod
       - put: ledger-ecr-registry-test
         params:
           image: ledger-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          additional_tags: parse-perf-db-release-tag/tag
 
   - name: deploy-notifications-to-prod
     serial: true
