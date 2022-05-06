@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs')
-const { AWS_ROLE_ARN } = process.env
+// const { AWS_ROLE_ARN } = process.env
 
 async function run () {
   try {
