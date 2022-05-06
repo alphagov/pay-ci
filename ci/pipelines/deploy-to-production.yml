@@ -469,9 +469,10 @@ groups:
     jobs:
       - deploy-adminusers-to-prod
       - smoke-test-adminusers-on-prod
+      - retag-adminusers-image-for-test-perf
       - adminusers-pact-tag
       - adminusers-db-migration-prod
-      - retag-adminusers-image-for-test-perf
+      - retag-adminusers-image-for-test-perf-db
   - name: cardid
     jobs:
       - deploy-cardid-to-prod
@@ -482,9 +483,10 @@ groups:
     jobs:
       - deploy-connector-to-prod
       - smoke-test-connector-on-prod
+      - retag-connector-image-for-test-perf
       - connector-pact-tag
       - connector-db-migration-prod
-      - retag-connector-image-for-test-perf
+      - retag-connector-image-for-test-perf-db
   - name: egress
     jobs:
       - deploy-egress-to-prod
@@ -500,16 +502,18 @@ groups:
     jobs:
       - deploy-ledger-to-prod
       - smoke-test-ledger-on-prod
+      - retag-ledger-image-for-test-perf
       - ledger-pact-tag
       - ledger-db-migration-prod
-      - retag-ledger-image-for-test-perf
+      - retag-ledger-image-for-test-perf-db
   - name: products
     jobs:
       - deploy-products-to-prod
       - smoke-test-products-on-prod
+      - retag-products-image-for-test-perf
       - products-pact-tag
       - products-db-migration-prod
-      - retag-products-image-for-test-perf
+      - retag-products-image-for-test-perf-db
   - name: products-ui
     jobs:
       - deploy-products-ui-to-prod
@@ -526,8 +530,9 @@ groups:
     jobs:
       - deploy-publicauth-to-prod
       - smoke-test-publicauth-on-prod
-      - publicauth-db-migration-prod
       - retag-publicauth-image-for-test-perf
+      - publicauth-db-migration-prod
+      - retag-publicauth-image-for-test-perf-db
   - name: selfservice
     jobs:
       - deploy-selfservice-to-prod
@@ -1020,6 +1025,23 @@ jobs:
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
 
+  - name: retag-connector-image-for-test-perf-db
+    plan:
+      - get: pay-ci
+      - get: connector-ecr-registry-prod
+        params:
+          format: oci
+        passed: [connector-db-migration-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+        input_mapping:
+          ecr-repo: connector-ecr-registry-prod
+      - put: connector-ecr-registry-test
+        params:
+          image: connector-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-db-release-tag/tag
+
   - name: deploy-carbon-relay-to-prod
     serial: true
     serial_groups: [deploy-application]
@@ -1508,6 +1530,23 @@ jobs:
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
 
+  - name: retag-adminusers-image-for-test-perf-db
+    plan:
+      - get: pay-ci
+      - get: adminusers-ecr-registry-prod
+        params:
+          format: oci
+        passed: [adminusers-db-migration-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+        input_mapping:
+          ecr-repo: adminusers-ecr-registry-prod
+      - put: adminusers-ecr-registry-test
+        params:
+          image: adminusers-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-db-release-tag/tag
+
   - name: smoke-test-adminusers-on-prod
     serial_groups: [smoke-test]
     plan:
@@ -1785,6 +1824,23 @@ jobs:
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
 
+  - name: retag-products-image-for-test-perf-db
+    plan:
+      - get: pay-ci
+      - get: products-ecr-registry-prod
+        params:
+          format: oci
+        passed: [products-db-migration-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+        input_mapping:
+          ecr-repo: products-ecr-registry-prod
+      - put: products-ecr-registry-test
+        params:
+          image: products-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-db-release-tag/tag
+
   - name: deploy-products-ui-to-prod
     serial: true
     serial_groups: [deploy-application]
@@ -2032,6 +2088,23 @@ jobs:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
+
+  - name: retag-publicauth-image-for-test-perf-db
+    plan:
+      - get: pay-ci
+      - get: publicauth-ecr-registry-prod
+        params:
+          format: oci
+        passed: [publicauth-db-migration-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+        input_mapping:
+          ecr-repo: publicauth-ecr-registry-prod
+      - put: publicauth-ecr-registry-test
+        params:
+          image: publicauth-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-db-release-tag/tag
 
   - name: smoke-test-publicauth-on-prod
     serial_groups: [smoke-test]
@@ -2576,6 +2649,23 @@ jobs:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
+
+  - name: retag-ledger-image-for-test-perf-db
+    plan:
+      - get: pay-ci
+      - get: ledger-ecr-registry-prod
+        params:
+          format: oci
+        passed: [ledger-db-migration-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+        input_mapping:
+          ecr-repo: ledger-ecr-registry-prod
+      - put: ledger-ecr-registry-test
+        params:
+          image: ledger-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-db-release-tag/tag
 
   - name: deploy-notifications-to-prod
     serial: true
