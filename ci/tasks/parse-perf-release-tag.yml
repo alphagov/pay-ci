@@ -10,7 +10,7 @@ image_resource:
     repository: govukpay/node-runner
 params:
   #e.g. "adminusers-db-migration-prod"
-  BUILD_JOB_NAME:
+  AWS_ROLE_ARN:
 inputs:
   - name: pay-ci
   - name: ecr-repo
