@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs')
+const { BUILD_JOB_NAME } = process.env
 
 async function run () {
   try {
@@ -10,7 +11,14 @@ async function run () {
     }
 
     const tag = fs.readFileSync('ecr-repo/tag', 'utf8')
-    fs.writeFileSync('parse-perf-release-tag/tag', tag.replace('release', 'perf'))
+    const perfTag = tag.replace('release', 'perf')
+
+    console.log(`BUILD_JOB_NAME: ` + process.env.BUILD_JOB_NAME)
+    if (BUILD_JOB_NAME.includes('db-migration-prod')) {
+      fs.writeFileSync('parse-perf-release-tag/tag', perfTag + '-db')
+    } else {
+      fs.writeFileSync('parse-perf-release-tag/tag',  perfTag)
+    }
 
     console.log('Resulting tag: ' + fs.readFileSync('parse-perf-release-tag/tag', 'utf8'))
   } catch (err) {

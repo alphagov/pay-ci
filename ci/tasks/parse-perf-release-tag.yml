@@ -8,6 +8,9 @@ image_resource:
   type: registry-image
   source:
     repository: govukpay/node-runner
+params:
+  #e.g. "adminusers-db-migration-prod"
+  BUILD_JOB_NAME:
 inputs:
   - name: pay-ci
   - name: ecr-repo
