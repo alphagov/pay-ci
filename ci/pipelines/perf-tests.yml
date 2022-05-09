@@ -1,0 +1,147 @@
+---
+resources:
+  - name: perf-tests-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/perf-tests.yml
+
+  - name: perf-tests-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-perftests
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+  - name: perf-tests-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/perftests
+      tag: latest
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+
+  - name: perf-tests-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/perftests
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
+
+  - name: slack-notification
+    type: slack-notification
+    source:
+      url: https://hooks.slack.com/services/((slack-notification-secret))
+
+resource_types:
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
+
+groups:
+  - name: perf-tests-build
+    jobs:
+      - build-and-push-perf-tests
+  - name: update-perf-tests-pipeline
+    jobs:
+      - update-perf-tests-pipeline
+
+jobs:
+  - name: build-and-push-perf-tests
+    plan:
+      - in_parallel:
+        - get: perf-tests-git-release
+          trigger: true
+        - get: pay-ci
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: perf-tests-git-release
+      - in_parallel:
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-name
+          file: perf-tests-git-release/.git/ref
+        - load_var: release-sha
+          file: tags/release-sha
+      - task: build-perf-tests-image
+        privileged: true
+        params:
+          LABEL_release_number: ((.:release-number))
+          LABEL_release_name: ((.:release-name))
+          LABEL_release_sha: ((.:release-sha))            
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: perf-tests-git-release
+              path: .
+          outputs:
+            - name: image
+          run:
+            path: build
+      - in_parallel:
+        - put: perf-tests-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+          get_params:
+            skip_download: true
+        - put: perf-tests-dockerhub
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+          get_params:
+            skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: Failed to build and push pay-perftests image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Built and pushed pay-perftests image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: update-perf-tests-pipeline
+    plan:
+      - get: perf-tests-pipeline
+        trigger: true
+      - set_pipeline: perf-tests
+        file: perf-tests-pipeline/ci/pipelines/perf-tests.yml
