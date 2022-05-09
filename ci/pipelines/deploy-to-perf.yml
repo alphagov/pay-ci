@@ -53,7 +53,7 @@ definitions:
         channel: '#govuk-pay-announce'
         icon_emoji: ":postgres:"
         username: pay-concourse
-        text: ":red-circle: $BUILD_JOB_NAME failed on production-2\n
+        text: ":red-circle: $BUILD_JOB_NAME failed on test-perf-1\n
               - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
 resources:
@@ -107,6 +107,13 @@ resources:
       repository: govukpay/products
       variant: perf
       <<: *aws_test_config
+  - name: products-db-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products
+      variant: perf-db
+      <<: *aws_test_config      
   - name: products-ui-ecr-registry-perf
     type: registry-image
     icon: docker
@@ -121,6 +128,13 @@ resources:
       repository: govukpay/publicauth
       variant: perf
       <<: *aws_test_config
+  - name: publicauth-db-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicauth
+      variant: perf-db
+      <<: *aws_test_config
   - name: cardid-ecr-registry-perf
     type: registry-image
     icon: docker
@@ -134,6 +148,13 @@ resources:
     source:
       repository: govukpay/connector
       variant: perf
+      <<: *aws_test_config
+  - name: connector-db-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/connector
+      variant: perf-db
       <<: *aws_test_config
   - name: selfservice-ecr-registry-perf
     type: registry-image
@@ -155,6 +176,13 @@ resources:
     source:
       repository: govukpay/ledger
       variant: perf
+      <<: *aws_test_config
+  - name: ledger-db-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/ledger
+      variant: perf-db
       <<: *aws_test_config      
   - name: toolbox-ecr-registry-perf
     type: registry-image
@@ -240,15 +268,18 @@ groups:
   - name: connector
     jobs:
       - deploy-connector-to-perf
+      - connector-db-migration-perf
   - name: frontend
     jobs:
       - deploy-frontend-to-perf
   - name: ledger
     jobs:
       - deploy-ledger-to-perf
+      - ledger-db-migration-perf
   - name: products
     jobs:
       - deploy-products-to-perf
+      - products-db-migration-perf
   - name: products-ui
     jobs:
       - deploy-products-ui-to-perf
@@ -258,6 +289,7 @@ groups:
   - name: publicauth
     jobs:
       - deploy-publicauth-to-perf
+      - publicauth-db-migration-perf
   - name: selfservice
     jobs:
       - deploy-selfservice-to-perf
@@ -391,7 +423,7 @@ jobs:
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
-    <<: *put_db_migration_failure_slack_notification   
+    <<: *put_db_migration_failure_slack_notification
 
   - name: deploy-selfservice-to-perf
     serial: true
@@ -504,6 +536,49 @@ jobs:
         icon_emoji: ":fargate:"
         username: pay-concourse
         text: ":red_circle: Deployment of connector to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: connector-db-migration-perf
+    plan:
+      - get: pay-ci
+      - get: connector-db-ecr-registry-perf
+        params:
+          format: oci
+        trigger: true
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: db-migration-perf-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: application_image_tag
+        file: connector-db-ecr-registry-perf/tag
+      - <<: *put_db_migration_slack_notification
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-perf-1-fargate"
+            APP_NAME: "connector"
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: deploy-toolbox-to-perf
     serial: true
@@ -679,6 +754,49 @@ jobs:
         username: pay-concourse
         text: ":red_circle: Deployment of products to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
+  - name: products-db-migration-perf
+    plan:
+      - get: pay-ci
+      - get: products-db-ecr-registry-perf
+        params:
+          format: oci
+        trigger: true
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: db-migration-perf-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: application_image_tag
+        file: products-db-ecr-registry-perf/tag
+      - <<: *put_db_migration_slack_notification
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-perf-1-fargate"
+            APP_NAME: "products"
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
+
   - name: deploy-products-ui-to-perf
     serial: true
     plan:
@@ -791,6 +909,49 @@ jobs:
         username: pay-concourse
         text: ":red_circle: Deployment of publicauth to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
+  - name: publicauth-db-migration-perf
+    plan:
+      - get: pay-ci
+      - get: publicauth-db-ecr-registry-perf
+        params:
+          format: oci
+        trigger: true
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: db-migration-perf-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: application_image_tag
+        file: publicauth-db-ecr-registry-perf/tag
+      - <<: *put_db_migration_slack_notification
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-perf-1-fargate"
+            APP_NAME: "publicauth"
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
+
   - name: deploy-cardid-to-perf
     serial: true
     plan:
@@ -902,6 +1063,49 @@ jobs:
         icon_emoji: ":fargate:"
         username: pay-concourse
         text: ":red_circle: Deployment of ledger to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: ledger-db-migration-perf
+    plan:
+      - get: pay-ci
+      - get: ledger-db-ecr-registry-perf
+        params:
+          format: oci
+        trigger: true
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: db-migration-perf-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: application_image_tag
+        file: ledger-db-ecr-registry-perf/tag
+      - <<: *put_db_migration_slack_notification
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-perf-1-fargate"
+            APP_NAME: "ledger"
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: deploy-publicapi-to-perf
     serial: true
