@@ -10,9 +10,9 @@ async function run () {
     }
 
     const tag = fs.readFileSync('ecr-repo/tag', 'utf8')
-    fs.writeFileSync('parse-perf-release-tag/tag', tag.replace('release', 'perf'))
+    fs.writeFileSync(`${dir}/tag`, tag.replace('release', 'perf'))
 
-    console.log('Resulting tag: ' + fs.readFileSync('parse-perf-release-tag/tag', 'utf8'))
+    console.log('Resulting tag: ' + fs.readFileSync(`${dir}/tag`, 'utf8'))
   } catch (err) {
     console.log(`An error occurred: ${err}`)
     process.exitCode = 1
