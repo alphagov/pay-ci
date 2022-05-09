@@ -27,6 +27,35 @@ definitions:
     aws_ecr_registry_id: "((pay_aws_test_account_id))"
     aws_region: eu-west-1
 
+  put_db_migration_slack_notification: &put_db_migration_slack_notification
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-activity'
+      icon_emoji: ":postgres:"
+      username: pay-concourse
+      text: ":postgres: starting $BUILD_JOB_NAME on test-perf-1\n
+            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":postgres:"
+        username: pay-concourse
+        text: ":green-circle: $BUILD_JOB_NAME completed successfully on test-perf-1\n
+              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":postgres:"
+        username: pay-concourse
+        text: ":red-circle: $BUILD_JOB_NAME failed on production-2\n
+              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
 resources:
   - name: deploy-to-perf-pipeline-definition
     type: git
@@ -56,6 +85,13 @@ resources:
     source:
       repository: govukpay/adminusers
       variant: perf
+      <<: *aws_test_config
+  - name: adminusers-db-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adminusers
+      variant: perf-db
       <<: *aws_test_config
   - name: frontend-ecr-registry-perf
     type: registry-image
@@ -197,6 +233,7 @@ groups:
   - name: adminusers
     jobs:
       - deploy-adminusers-to-perf
+      - adminusers-db-migration-perf
   - name: cardid
     jobs:
       - deploy-cardid-to-perf
@@ -312,6 +349,49 @@ jobs:
         icon_emoji: ":fargate:"
         username: pay-concourse
         text: ":red_circle: Deployment of adminusers to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  - name: adminusers-db-migration-perf
+    plan:
+      - get: pay-ci
+      - get: adminusers-db-ecr-registry-perf
+        params:
+          format: oci
+        trigger: true
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: db-migration-perf-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: application_image_tag
+        file: adminusers-db-ecr-registry-perf/tag
+      - <<: *put_db_migration_slack_notification
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "test-perf-1-fargate"
+            APP_NAME: "adminusers"
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification   
 
   - name: deploy-selfservice-to-perf
     serial: true
