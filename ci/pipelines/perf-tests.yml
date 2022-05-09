@@ -70,7 +70,6 @@ groups:
     jobs:
       - update-perf-tests-pipeline
 
-# Builds the Docker images used by end-to-end tests and pushes to ECR (and Dockerhub)
 jobs:
   - name: build-and-push-perf-tests
     plan:
