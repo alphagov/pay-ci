@@ -1,0 +1,74 @@
+---
+resource_types:
+  - name: cf-cli
+    type: registry-image
+    source:
+      repository: nulldriver/cf-cli-resource
+
+resources:
+  - name: pay-stubs-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/pay-stubs.yml
+
+  - name: pay-stubs-manifest
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pay_stubs
+
+  - name: paas
+    type: cf-cli
+    icon: cloud-upload-outline
+    source:
+      api: https://api.cloud.service.gov.uk
+      org: govuk-pay
+      space: build
+      username: ((cf-username))
+      password: ((cf-password))
+      cf_cli_version: 7
+
+  - name: stubs-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stubs
+      tag: latest-master
+      password: ((docker-password))
+      username: ((docker-username))
+
+jobs:
+  - name: set-pipeline
+    plan:
+      - get: pay-stubs-pipeline
+        trigger: true
+      - set_pipeline: pay-stubs
+        file: pay-stubs-pipeline/ci/pipelines/pay-stubs.yml
+  
+  - name: deploy-pay-stubs
+    serial: true
+    plan:
+      - get: stubs-dockerhub
+        trigger: true
+      - get: pay-stubs-manifest
+        trigger: true
+      - put: paas
+        params:
+          command: zero-downtime-push
+          current_app_name: pay-stubs
+          manifest: pay-stubs-manifest/ci/pay_stubs/pay-stubs_manifest.yml
+          docker_username: ((docker-username))
+          docker_password: ((docker-password))
+          docker_image: govukpay/stubs:latest-master
+          vars:
+            smartpay-expected-password: ((smartpay-expected-password))
+            smartpay-expected-user: ((smartpay-expected-user))
+            worldpay-expected-password: ((worldpay-expected-password))
+            worldpay-expected-user: ((worldpay-expected-user))
