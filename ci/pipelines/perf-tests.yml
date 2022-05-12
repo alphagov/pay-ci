@@ -41,6 +41,19 @@ resources:
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
 
+  - name: perf-tests-ecr-release
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/perftests
+      variant: release
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+
   - name: perf-tests-dockerhub
     type: registry-image
     icon: docker
@@ -63,6 +76,9 @@ resource_types:
       tag: latest
 
 groups:
+  - name: perf-tests
+    jobs:
+      - run-perf-test
   - name: perf-tests-build
     jobs:
       - build-and-push-perf-tests
@@ -71,6 +87,57 @@ groups:
       - update-perf-tests-pipeline
 
 jobs:
+  - name: run-perf-test
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+      - task: prepare-codebuild
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+              tag: latest
+          outputs:
+            - name: run-codebuild-configuration
+          run:
+            path: ash
+            args:
+              - -euo
+              - pipefail
+              - -c
+              - |
+                cat <<EOF | tee ./run-codebuild-configuration/perf-tests.json
+                {
+                  "projectName": "perf-tests-test-perf-1",
+                  "sourceVersion": "",
+                  "secondarySourcesVersions": {},
+                  "environmentVariables": {
+                    "PERF_TESTS_VERSION": "((.:release-tag))"
+                  }
+                }
+                EOF
+      - task: run-codebuild-perf-tests
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
   - name: build-and-push-perf-tests
     plan:
       - in_parallel:
