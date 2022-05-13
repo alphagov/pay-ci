@@ -1,0 +1,23 @@
+applications:
+- name: pay-stubs
+  command:
+  disk_quota: 512M
+  PORT: 8080
+  env:
+    DISABLE_INTERNAL_HTTPS: true
+    SMARTPAY_EXPECTED_PASSWORD: ((smartpay-expected-password))
+    SMARTPAY_EXPECTED_USER:     ((smartpay-expected-user))
+    WORLDPAY_EXPECTED_PASSWORD: ((worldpay-expected-password))
+    WORLDPAY_EXPECTED_USER:     ((worldpay-expected-user))
+    CONNECTOR_WORLDPAY_NOTIFICATION_URL: 'https://notifications-test-perf-1.test.pymnt.uk/v1/api/notifications/worldpay'
+    CONNECTOR_SMARTPAY_NOTIFICATION_URL: 'https://notifications-test-perf-1.test.pymnt.uk/v1/api/notifications/smartpay'
+    CONNECTOR_EPDQ_NOTIFICATION_URL: 'https://notifications-test-perf-1.test.pymnt.uk/v1/api/notifications/epdq'
+    EPDQ_SHA_OUT_PASSPHRASE: '' 
+    EXTERNAL_STUBS_URL: 'https://pay-stubs.cloudapps.digital'
+  health-check-type: http
+  health-check-http-endpoint: /
+  instances: 1
+  memory: 512M
+  routes:
+    - route: pay-stubs.cloudapps.digital
+  stack: cflinuxfs3
