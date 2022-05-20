@@ -736,11 +736,6 @@ resources:
     type: slack-notification
     source:
       url: https://hooks.slack.com/services/((slack-notification-secret))
-  # PP-9624 For scheduling Worldpay smoke tests
-  - name: every-five-minutes
-    icon: alarm
-    source: { interval: 5m }
-    type: time
 
 resource_types:
   - name: registry-image
@@ -888,10 +883,6 @@ groups:
   - name: update-deploy-to-test-pipeline
     jobs:
       - update-deploy-to-test-pipeline
-  # PP-9624: Worldpay scheduled smoke tests
-  - name: pp-9624-worldpay
-    jobs:
-      - schedule-test-12-worldpay-tests
 
 definitions:
   - &pull-image-from-dockerhub
@@ -970,34 +961,6 @@ definitions:
           <<: *aws_assumed_role_creds
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "notifcatns_sndbx_test"
-  # Worldpay smoke tests only - see PP-9624. No retries or Slack notifications
-  - &smoke-test-run-worldpay-scenarios-on-test
-    limit: 8
-    steps:
-      - task: run_create_card_payment_worldpay_with_3ds-test
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_3ds_test"
-      - task: run_create_card_payment_worldpay_with_3ds2-test
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_3ds2_test"
-      - task: run_create_card_payment_worldpay_with_3ds2_exemption-test
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_3ds2ex_test"
-      - task: run_create_card_payment_worldpay_without_3ds-test
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_test"
 
 docker_credentials: &docker_credentials
   DOCKER_USERNAME: ((docker-username))
@@ -5187,20 +5150,3 @@ jobs:
         params:
           image: notifications-ecr-registry-test/image.tar
           additional_tags: notifications-ecr-registry-test/tag
-
-  - name: schedule-test-12-worldpay-tests
-    serial_groups: [ smoke-test ]
-    plan:
-      - get: pay-ci
-      - get: every-five-minutes
-        trigger: true
-      - task: assume-role
-        file: pay-ci/ci/tasks/assume-role.yml
-        params:
-          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
-          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
-      - in_parallel:
-          <<: *smoke-test-run-worldpay-scenarios-on-test
