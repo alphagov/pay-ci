@@ -263,7 +263,7 @@ definitions:
         params:
           SERVICE_NAME: connector
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 3
+          DESIRED_HEALTHY_INSTANCES: 15
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -272,7 +272,7 @@ definitions:
         params:
           SERVICE_NAME: frontend
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 3
+          DESIRED_HEALTHY_INSTANCES: 11
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -299,7 +299,7 @@ definitions:
         params:
           SERVICE_NAME: publicapi
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 3
+          DESIRED_HEALTHY_INSTANCES: 4
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
