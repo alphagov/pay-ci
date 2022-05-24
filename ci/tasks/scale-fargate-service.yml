@@ -1,0 +1,60 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: govukpay/concourse-runner  
+params:
+  SERVICE_NAME:
+  SCALE_DIRECTION:
+  DESIRED_HEALTHY_INSTANCES:
+  AWS_DEFAULT_REGION: eu-west-1
+  MAX_ATTEMPTS: 40
+  ECS_CLUSTER: test-perf-1
+run:
+  path: /bin/bash
+  args:
+    - -euo
+    - pipefail
+    - -c
+    - |
+      if [ "${SCALE_DIRECTION}" != "out" ] && [ "${SCALE_DIRECTION}" != "in" ]; then
+        echo "Unkown SCALE_DIRECTION env var, must be either 'in' or 'out', is set to '${SCALE_DIRECTION}'"
+        exit 1
+      fi
+
+      TARGET_GROUP_ARN=$(
+        aws elbv2 describe-target-groups  \
+          --query TargetGroups[?TargetGroupName==\`${ECS_CLUSTER}-${SERVICE_NAME}-lb-tg\`].TargetGroupArn \
+          --output text
+      )
+
+      aws ecs update-service --cluster "$ECS_CLUSTER" --service "$SERVICE_NAME" --desired-count "$DESIRED_HEALTHY_INSTANCES"
+
+      function healthy_instance_count() {
+        aws elbv2 describe-target-health --target-group-arn "${TARGET_GROUP_ARN}" --query 'TargetHealthDescriptions[?TargetHealth.State==`healthy`]' | jq 'length'
+      }
+
+      TOTAL_WAIT_TIME_IN_MINUTES=$((MAX_ATTEMPTS * 15 / 60))
+
+      echo "Starting to wait up to ${TOTAL_WAIT_TIME_IN_MINUTES} minutes for target group ${RESOURCE_TO_QUERY} " \
+          "to scale-${SCALE_DIRECTION} to ${DESIRED_HEALTHY_INSTANCES} healthy instances"
+
+      for ATTEMPT in $(seq 1 "${MAX_ATTEMPTS}"); do
+        HEALTHY_INSTANCES=$(healthy_instance_count)
+
+        if [ "${SCALE_DIRECTION}" == "out" ] && [ "${HEALTHY_INSTANCES}" -ge "${DESIRED_HEALTHY_INSTANCES}" ]; then
+          echo "There are ${HEALTHY_INSTANCES} healthy now, this is greater than or equal to ${DESIRED_HEALTHY_INSTANCES}"
+          exit 0
+        elif [ "${SCALE_DIRECTION}" == "in" ] && [ "${HEALTHY_INSTANCES}" -le "${DESIRED_HEALTHY_INSTANCES}" ]; then
+          echo "There are ${HEALTHY_INSTANCES} healthy now, this is less than or equal to ${DESIRED_HEALTHY_INSTANCES}"
+          exit 0
+        fi
+
+        echo "There are currently ${HEALTHY_INSTANCES} healthy instances with ${DESIRED_HEALTHY_INSTANCES} desired." \
+            "Waiting 15 seconds before checking again. Attempt ${ATTEMPT}/${MAX_ATTEMPTS}"
+        sleep 15
+      done
+
+      echo "Max attempts reached, target group failed to get to ${DESIRED_HEALTHY_INSTANCES} healthy instances"
+      exit 1
