@@ -239,6 +239,15 @@ resources:
       uri: https://github.com/alphagov/pay-nginx-proxy
       branch: master
       tag_regex: "alpha_release-(.*)"
+  - name: webhooks-egress-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-dockerfiles
+      branch: main
+      tag_regex: "webhooks_egress_alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: notifications-git-release
     type: git
     icon: github
@@ -602,6 +611,13 @@ resources:
       variant: release
       repository: govukpay/docker-nginx-proxy
       <<: *aws_test_config
+  - name: webhooks-egress-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      variant: release
+      repository: govukpay/webhooks-egress
+      <<: *aws_test_config
   - name: nginx-forward-proxy-ecr-registry-test
     type: registry-image
     icon: docker
@@ -858,6 +874,9 @@ groups:
       - build-and-push-nginx-proxy-to-test-ecr
       - deploy-toolbox
       - push-nginx-proxy-to-staging-ecr
+  - name: webhooks-egress
+    jobs:
+      - build-and-push-webhooks-egress-to-test-ecr
   - name: nginx-forward-proxy
     jobs:
       - deploy-frontend
@@ -4818,6 +4837,55 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse
 
+  - name: build-and-push-webhooks-egress-to-test-ecr
+    plan:
+      - get: pay-ci
+      - get: webhooks-egress-git-release
+        trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: webhooks-egress-git-release
+      - load_var: release-tag
+        file: tags/tags
+      - task: build-webhooks-egress-image
+        privileged: true
+        params:
+          CONTEXT: webhooks-egress-git-release/production/webhooks-egress/
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: webhooks-egress-git-release
+          outputs:
+            - name: image
+          run:
+            path: build
+      - put: webhooks-egress-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/tags
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: webhooks-egress image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: webhooks-egress image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: push-nginx-proxy-to-staging-ecr
     plan:
