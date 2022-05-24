@@ -397,7 +397,7 @@ definitions:
             }
             EOF
 
-            for TEST_SUITE in PaymentSimulation SearchPaymentsSimulation PublicAuthSimulation SelfServiceSimulation; do
+            for TEST_SUITE in CardIDSimulation PaymentSimulation SearchPaymentsSimulation PublicAuthSimulation SelfServiceSimulation; do
               echo "$TEST_SUITE"
               echo "------------------------------------------------------------------"
               jq <base.json ".environmentVariables.GATLING_CLASS = \"uk.gov.pay.$TEST_SUITE\"" | tee "./run-codebuild-configuration/perf-tests-$TEST_SUITE.json"
