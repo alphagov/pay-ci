@@ -10,7 +10,7 @@ params:
   DESIRED_HEALTHY_INSTANCES:
   AWS_DEFAULT_REGION: eu-west-1
   MAX_ATTEMPTS: 40
-  ECS_CLUSTER: test-perf-1
+  ECS_CLUSTER: test-perf-1-fargate
 run:
   path: /bin/bash
   args:
@@ -23,13 +23,16 @@ run:
         exit 1
       fi
 
+      # The bash ${ECS_CLUSTER%-fargate} means the ECS_CLUSTER env var with -fargate removed from the end
+      TARGET_GROUP_NAME="${ECS_CLUSTER%-fargate}-${SERVICE_NAME}-lb-tg"
       TARGET_GROUP_ARN=$(
         aws elbv2 describe-target-groups  \
-          --query TargetGroups[?TargetGroupName==\`${ECS_CLUSTER}-${SERVICE_NAME}-lb-tg\`].TargetGroupArn \
+          --query TargetGroups[?TargetGroupName==\`${TARGET_GROUP_NAME}\`].TargetGroupArn \
           --output text
       )
 
-      aws ecs update-service --cluster "$ECS_CLUSTER" --service "$SERVICE_NAME" --desired-count "$DESIRED_HEALTHY_INSTANCES"
+      echo "Updating ${SERVICE_NAME} in ECS cluster ${ECS_CLUSTER} to have ${DESIRED_HEALTHY_INSTANCES} desired instances"
+      aws ecs update-service --cluster "$ECS_CLUSTER" --service "$SERVICE_NAME" --desired-count "$DESIRED_HEALTHY_INSTANCES" >> /dev/null
 
       function healthy_instance_count() {
         aws elbv2 describe-target-health --target-group-arn "${TARGET_GROUP_ARN}" --query 'TargetHealthDescriptions[?TargetHealth.State==`healthy`]' | jq 'length'
@@ -37,7 +40,7 @@ run:
 
       TOTAL_WAIT_TIME_IN_MINUTES=$((MAX_ATTEMPTS * 15 / 60))
 
-      echo "Starting to wait up to ${TOTAL_WAIT_TIME_IN_MINUTES} minutes for target group ${RESOURCE_TO_QUERY} " \
+      echo "Starting to wait up to ${TOTAL_WAIT_TIME_IN_MINUTES} minutes for target group ${TARGET_GROUP_NAME} " \
           "to scale-${SCALE_DIRECTION} to ${DESIRED_HEALTHY_INSTANCES} healthy instances"
 
       for ATTEMPT in $(seq 1 "${MAX_ATTEMPTS}"); do

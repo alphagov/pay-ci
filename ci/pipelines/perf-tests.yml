@@ -68,12 +68,28 @@ resources:
     source:
       url: https://hooks.slack.com/services/((slack-notification-secret))
 
+  - name: paas
+    type: cf-cli
+    icon: cloud-upload-outline
+    source:
+      api: https://api.cloud.service.gov.uk
+      org: govuk-pay
+      space: build
+      username: ((cf-username))
+      password: ((cf-password))
+      cf_cli_version: 7
+
 resource_types:
   - name: slack-notification
     type: docker-image
     source:
       repository: cfcommunity/slack-notification-resource
       tag: latest
+
+  - name: cf-cli
+    type: registry-image
+    source:
+      repository: nulldriver/cf-cli-resource
 
 groups:
   - name: perf-tests
@@ -88,6 +104,8 @@ groups:
 
 jobs:
   - name: run-perf-test
+    serial: true
+    serial_groups: [run-perf-test]
     plan:
       - in_parallel:
         - get: perf-tests-ecr-release
@@ -103,40 +121,137 @@ jobs:
           format: json
         - load_var: release-tag
           file: perf-tests-ecr-release/tag
-      - task: prepare-codebuild
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-              tag: latest
-          outputs:
-            - name: run-codebuild-configuration
-          run:
-            path: ash
-            args:
-              - -euo
-              - pipefail
-              - -c
-              - |
-                cat <<EOF | tee ./run-codebuild-configuration/perf-tests.json
-                {
-                  "projectName": "perf-tests-test-perf-1",
-                  "sourceVersion": "",
-                  "secondarySourcesVersions": {},
-                  "environmentVariables": {
-                    "PERF_TESTS_VERSION": "((.:release-tag))"
+      - in_parallel:
+        - task: scale-up-ledger
+          file: pay-ci/ci/tasks/scale-fargate-service.yml
+          params:
+            SERVICE_NAME: ledger
+            SCALE_DIRECTION: out
+            DESIRED_HEALTHY_INSTANCES: 5
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - put: scale-up-stubs
+          resource: paas
+          params:
+            command: scale
+            app_name: pay-stubs
+            instances: 5
+        - task: prepare-codebuild
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source:
+                repository: alpine
+                tag: latest
+            outputs:
+              - name: run-codebuild-configuration
+            run:
+              path: ash
+              args:
+                - -euo
+                - pipefail
+                - -c
+                - |
+                  echo "Installing jq"
+                  apk add --update --no-cache --quiet --no-progress jq
+
+                  cat <<EOF > base.json
+                  {
+                    "projectName": "perf-tests-test-perf-1",
+                    "sourceVersion": "",
+                    "secondarySourcesVersions": {},
+                    "environmentVariables": {
+                      "PERF_TESTS_VERSION": "((.:release-tag))"
+                    }
                   }
-                }
-                EOF
-      - task: run-codebuild-perf-tests
+                  EOF
+
+                  for TEST_SUITE in PaymentSimulation SearchPaymentsSimulation PublicAuthSimulation SelfServiceSimulation; do
+                    echo "$TEST_SUITE"
+                    echo "------------------------------------------------------------------"
+                    jq <base.json ".environmentVariables.GATLING_CLASS = \"uk.gov.pay.$TEST_SUITE\"" | tee "./run-codebuild-configuration/perf-tests-$TEST_SUITE.json"
+                    echo
+                  done
+#      - task: public-auth-simulation-perf-test
+#        file: pay-ci/ci/tasks/run-codebuild.yml
+#        params:
+#          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PublicAuthSimulation.json"
+#          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+#          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+#          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: search-payments-simulation-perf-test
         file: pay-ci/ci/tasks/run-codebuild.yml
         params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests.json"
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: self-service-simulation-perf-test
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: payment-simulation-perf-test
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - put: scale-down-stubs
+          resource: paas
+          params:
+            command: scale
+            app_name: pay-stubs
+            instances: 1
+        - task: scale-down-ledger
+          file: pay-ci/ci/tasks/scale-fargate-service.yml
+          params:
+            SERVICE_NAME: ledger
+            SCALE_DIRECTION: in
+            DESIRED_HEALTHY_INSTANCES: 1
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_failure:
+      in_parallel:
+        - put: scale-down-stubs
+          resource: paas
+          params:
+            command: scale
+            app_name: pay-stubs
+            instances: 1
+        - task: scale-down-ledger
+          file: pay-ci/ci/tasks/scale-fargate-service.yml
+          params:
+            SERVICE_NAME: ledger
+            SCALE_DIRECTION: in
+            DESIRED_HEALTHY_INSTANCES: 1
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_abort:
+      in_parallel:
+        - put: scale-down-stubs
+          resource: paas
+          params:
+            command: scale
+            app_name: pay-stubs
+            instances: 1
+        - task: scale-down-ledger
+          file: pay-ci/ci/tasks/scale-fargate-service.yml
+          params:
+            SERVICE_NAME: ledger
+            SCALE_DIRECTION: in
+            DESIRED_HEALTHY_INSTANCES: 1
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: build-and-push-perf-tests
     plan:
