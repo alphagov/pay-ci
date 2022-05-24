@@ -24,7 +24,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: pp-8337-run-perf-tests
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
@@ -94,7 +94,14 @@ resource_types:
 groups:
   - name: perf-tests
     jobs:
-      - run-perf-test
+      - scale-up-databases
+      - scale-up-services
+      - scale-and-run-all-simulations
+      - run-payment-simulation-perf-test
+      - run-search-payment-simulation-perf-test
+      - run-self-service-simulation-perf-test
+      - scale-down-databases
+      - scale-down-services
   - name: perf-tests-build
     jobs:
       - build-and-push-perf-tests
@@ -102,10 +109,305 @@ groups:
     jobs:
       - update-perf-tests-pipeline
 
+definitions:
+  - &scale-down-services
+    in_parallel:
+      - put: scale-down-stubs
+        resource: paas
+        params:
+          command: scale
+          app_name: pay-stubs
+          instances: 1
+      - task: scale-down-adminusers
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: adminusers
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: 0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-down-cardid
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: cardid
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: 0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-down-connector
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: connector
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: 0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-down-frontend
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: frontend
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: 0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-down-ledger
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: ledger
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: 0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-down-notifications
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: notifications
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: 0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-down-publicapi
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: publicapi
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: 0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-down-publicauth
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: publicauth
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: 0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-down-selfservice
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: selfservice
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: 0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+  - &scale-down-databases
+    in_parallel:
+      - task: stop-adminusers-db
+        file: pay-ci/ci/tasks/stop-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-adminusers-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      # - task: stop-connector-db
+      #   file: pay-ci/ci/tasks/stop-rds-instance.yml
+      #   params:
+      #     RDS_INSTANCE_NAME: test-perf-1-connector-rds-0
+      #     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+      #     AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+      #     AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: stop-ledger-db
+        file: pay-ci/ci/tasks/stop-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-ledger-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: stop-products-db
+        file: pay-ci/ci/tasks/stop-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-products-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: stop-publicauth-db
+        file: pay-ci/ci/tasks/stop-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-publicauth-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+  - &scale-up-services
+    in_parallel:
+      - task: scale-up-adminusers
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: adminusers
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: 3
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-up-cardid
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: cardid
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: 3
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-up-connector
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: connector
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: 3
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-up-frontend
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: frontend
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: 3
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-up-ledger
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: ledger
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: 3
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-up-notifications
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: notifications
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: 3
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-up-publicapi
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: publicapi
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: 3
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-up-publicauth
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: publicauth
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: 3
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-up-selfservice
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: selfservice
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: 3
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - put: scale-up-stubs
+        resource: paas
+        params:
+          command: scale
+          app_name: pay-stubs
+          instances: 5
+  - &scale-up-databases
+    in_parallel:
+      - task: start-adminusers-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-adminusers-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      # - task: start-connector-db
+      #   file: pay-ci/ci/tasks/start-rds-instance.yml
+      #   params:
+      #     RDS_INSTANCE_NAME: test-perf-1-connector-rds-0
+      #     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+      #     AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+      #     AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: start-ledger-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-ledger-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: start-products-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-products-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: start-publicauth-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-publicauth-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+  - &prepare-codebuild
+    task: prepare-codebuild
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: alpine
+          tag: latest
+      outputs:
+        - name: run-codebuild-configuration
+      run:
+        path: ash
+        args:
+          - -euo
+          - pipefail
+          - -c
+          - |
+            echo "Installing jq"
+            apk add --update --no-cache --quiet --no-progress jq
+
+            cat <<EOF > base.json
+            {
+              "projectName": "perf-tests-test-perf-1",
+              "sourceVersion": "",
+              "secondarySourcesVersions": {},
+              "environmentVariables": {
+                "PERF_TESTS_VERSION": "((.:release-tag))"
+              }
+            }
+            EOF
+
+            for TEST_SUITE in PaymentSimulation SearchPaymentsSimulation PublicAuthSimulation SelfServiceSimulation; do
+              echo "$TEST_SUITE"
+              echo "------------------------------------------------------------------"
+              jq <base.json ".environmentVariables.GATLING_CLASS = \"uk.gov.pay.$TEST_SUITE\"" | tee "./run-codebuild-configuration/perf-tests-$TEST_SUITE.json"
+              echo
+            done
+
 jobs:
-  - name: run-perf-test
+  - name: scale-and-run-all-simulations
     serial: true
-    serial_groups: [run-perf-test]
+    serial_groups: [perf-tests]
     plan:
       - in_parallel:
         - get: perf-tests-ecr-release
@@ -121,59 +423,9 @@ jobs:
           format: json
         - load_var: release-tag
           file: perf-tests-ecr-release/tag
-      - in_parallel:
-        - task: scale-up-ledger
-          file: pay-ci/ci/tasks/scale-fargate-service.yml
-          params:
-            SERVICE_NAME: ledger
-            SCALE_DIRECTION: out
-            DESIRED_HEALTHY_INSTANCES: 5
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-        - put: scale-up-stubs
-          resource: paas
-          params:
-            command: scale
-            app_name: pay-stubs
-            instances: 5
-        - task: prepare-codebuild
-          config:
-            platform: linux
-            image_resource:
-              type: registry-image
-              source:
-                repository: alpine
-                tag: latest
-            outputs:
-              - name: run-codebuild-configuration
-            run:
-              path: ash
-              args:
-                - -euo
-                - pipefail
-                - -c
-                - |
-                  echo "Installing jq"
-                  apk add --update --no-cache --quiet --no-progress jq
-
-                  cat <<EOF > base.json
-                  {
-                    "projectName": "perf-tests-test-perf-1",
-                    "sourceVersion": "",
-                    "secondarySourcesVersions": {},
-                    "environmentVariables": {
-                      "PERF_TESTS_VERSION": "((.:release-tag))"
-                    }
-                  }
-                  EOF
-
-                  for TEST_SUITE in PaymentSimulation SearchPaymentsSimulation PublicAuthSimulation SelfServiceSimulation; do
-                    echo "$TEST_SUITE"
-                    echo "------------------------------------------------------------------"
-                    jq <base.json ".environmentVariables.GATLING_CLASS = \"uk.gov.pay.$TEST_SUITE\"" | tee "./run-codebuild-configuration/perf-tests-$TEST_SUITE.json"
-                    echo
-                  done
+      - <<: *scale-up-databases
+      - <<: *scale-up-services
+      - <<: *prepare-codebuild
 #      - task: public-auth-simulation-perf-test
 #        file: pay-ci/ci/tasks/run-codebuild.yml
 #        params:
@@ -202,56 +454,163 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - in_parallel:
-        - put: scale-down-stubs
-          resource: paas
-          params:
-            command: scale
-            app_name: pay-stubs
-            instances: 1
-        - task: scale-down-ledger
-          file: pay-ci/ci/tasks/scale-fargate-service.yml
-          params:
-            SERVICE_NAME: ledger
-            SCALE_DIRECTION: in
-            DESIRED_HEALTHY_INSTANCES: 1
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - <<: *scale-down-services
+      - <<: *scale-down-databases
     on_failure:
-      in_parallel:
-        - put: scale-down-stubs
-          resource: paas
-          params:
-            command: scale
-            app_name: pay-stubs
-            instances: 1
-        - task: scale-down-ledger
-          file: pay-ci/ci/tasks/scale-fargate-service.yml
-          params:
-            SERVICE_NAME: ledger
-            SCALE_DIRECTION: in
-            DESIRED_HEALTHY_INSTANCES: 1
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      do:
+        - <<: *scale-down-services
+        - <<: *scale-down-databases
     on_abort:
-      in_parallel:
-        - put: scale-down-stubs
-          resource: paas
-          params:
-            command: scale
-            app_name: pay-stubs
-            instances: 1
-        - task: scale-down-ledger
-          file: pay-ci/ci/tasks/scale-fargate-service.yml
-          params:
-            SERVICE_NAME: ledger
-            SCALE_DIRECTION: in
-            DESIRED_HEALTHY_INSTANCES: 1
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      do:
+        - <<: *scale-down-services
+        - <<: *scale-down-databases
+
+  - name: run-search-payment-simulation-perf-test
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+      - <<: *prepare-codebuild
+      - task: search-payments-simulation-perf-test
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+  - name: run-payment-simulation-perf-test
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+      - <<: *prepare-codebuild
+      - task: payment-simulation-perf-test
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+  - name: run-self-service-simulation-perf-test
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+      - <<: *prepare-codebuild
+      - task: self-service-simulation-perf-test
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+
+
+  - name: scale-up-databases
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - <<: *scale-up-databases
+
+  - name: scale-down-databases
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - <<: *scale-down-databases
+
+  - name: scale-up-services
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - <<: *scale-up-services
+
+  - name: scale-down-services
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - <<: *scale-down-services
 
   - name: build-and-push-perf-tests
     plan:
