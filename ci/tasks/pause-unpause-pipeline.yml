@@ -26,6 +26,8 @@ run:
 
     echo "Installing jq"
     apk add --update --no-cache --quiet --no-progress jq
+    # The fly command is in /opt/resource
+    export PATH="$PATH:/opt/resource"
 
     echo "Logging into concourse"
     fly -t concourse login -c "https://pay-cd.deploy.payments.service.gov.uk" -u "$FLY_USERNAME" -p "$FLY_PASSWORD" -n "$FLY_USERNAME"
@@ -43,7 +45,7 @@ run:
 
     function running_containers_count {
       fly -t concourse containers --json | \
-        jq ".[] | select(.pipeline_name == \"${PIPELINE}\" and .type != \"check\" and .state != \"destroying\") | length"
+        jq "[.[] | select(.pipeline_name == \"deploy-to-perf\" and .type != \"check\" and .state != \"destroying\")] | length"
     }
 
     TOTAL_WAIT_TIME_IN_MINUTES=$((MAX_ATTEMPTS * 15 / 60))
