@@ -1,0 +1,29 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: concourse/concourse-pipeline-resource
+    tag: dev
+  version:
+    digest: sha256:cd899511e06c3027dc8429f4b38ba8ea32a4c0bea044f4711899d5987abf8fdf
+params:
+  ACTION:
+  PIPELINE:
+  FLY_USERNAME:
+  FLY_PASSWORD:
+run:
+  path: /bin/bash
+  args:
+  - -euo
+  - pipefail
+  - -c
+  - |
+    if [ "${ACTION}" != "pause" ] && [ "${ACTION}" != "unpause" ]; then
+      echo "The env var ACTION must be either pause or unpasue. It was set to ${ACTION}"
+      exit 1
+    fi
+
+    fly -t concourse login -c "https://pay-cd.deploy.payments.service.gov.uk" -u "$FLY_USERNAME" -p "$FLY_PASSWORD" -n "$FLY_USERNAME"
+    fly -t concourse sync
+
+    fly -t concourse "${ACTION}-pipeline" --pipeline "${PIPELINE}"
