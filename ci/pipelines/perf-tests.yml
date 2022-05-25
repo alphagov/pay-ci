@@ -92,16 +92,22 @@ resource_types:
       repository: nulldriver/cf-cli-resource
 
 groups:
-  - name: perf-tests
+  - name: complete-perf-tests
     jobs:
-      - scale-up-databases
-      - scale-up-services
       - scale-and-run-all-simulations
+  - name: individual-perf-tests
+    jobs:
       - run-payment-simulation-perf-test
       - run-search-payment-simulation-perf-test
       - run-self-service-simulation-perf-test
+  - name: environment-scaling
+    jobs:
+      - scale-up-databases
+      - scale-up-services
+      - scale-up-all
       - scale-down-databases
       - scale-down-services
+      - scale-down-all
   - name: perf-tests-build
     jobs:
       - build-and-push-perf-tests
@@ -343,7 +349,7 @@ definitions:
       #     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
       #     AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
       #     AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: start-ledger-db
+      # - task: start-ledger-db
         file: pay-ci/ci/tasks/start-rds-instance.yml
         params:
           RDS_INSTANCE_NAME: test-perf-1-ledger-rds-0
@@ -454,13 +460,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - <<: *scale-down-services
-      - <<: *scale-down-databases
-    on_failure:
-      do:
-        - <<: *scale-down-services
-        - <<: *scale-down-databases
-    on_abort:
+    ensure:
       do:
         - <<: *scale-down-services
         - <<: *scale-down-databases
@@ -546,8 +546,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
-
-
   - name: scale-up-databases
     serial: true
     serial_groups: [perf-tests]
@@ -563,22 +561,6 @@ jobs:
           file: assume-role/assume-role.json
           format: json
       - <<: *scale-up-databases
-
-  - name: scale-down-databases
-    serial: true
-    serial_groups: [perf-tests]
-    plan:
-      - get: pay-ci
-      - task: assume-role
-        file: pay-ci/ci/tasks/assume-role.yml
-        params:
-          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
-          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
-      - in_parallel:
-        - load_var: role
-          file: assume-role/assume-role.json
-          format: json
-      - <<: *scale-down-databases
 
   - name: scale-up-services
     serial: true
@@ -596,6 +578,39 @@ jobs:
           format: json
       - <<: *scale-up-services
 
+  - name: scale-up-all
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - <<: *scale-up-databases
+      - <<: *scale-up-services
+
+  - name: scale-down-databases
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - <<: *scale-down-databases
+
   - name: scale-down-services
     serial: true
     serial_groups: [perf-tests]
@@ -611,6 +626,23 @@ jobs:
           file: assume-role/assume-role.json
           format: json
       - <<: *scale-down-services
+
+  - name: scale-down-all
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+      - <<: *scale-down-services
+      - <<: *scale-down-databases
 
   - name: build-and-push-perf-tests
     plan:
