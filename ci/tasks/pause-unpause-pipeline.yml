@@ -50,7 +50,7 @@ run:
 
     TOTAL_WAIT_TIME_IN_MINUTES=$((MAX_ATTEMPTS * 15 / 60))
 
-    echo "Pipeline paused, waiting up to ${TOTAL_WAIT_TIME_IN_MINUTES} minutes for running jobs have finish"
+    echo "Pipeline paused, waiting up to ${TOTAL_WAIT_TIME_IN_MINUTES} minutes for running jobs finish"
 
     for ATTEMPT in $(seq 1 "${MAX_ATTEMPTS}"); do
       RUNNING_CONTAINERS=$(running_containers_count)
@@ -64,3 +64,6 @@ run:
           "Waiting 15 seconds before checking again. Attempt ${ATTEMPT}/${MAX_ATTEMPTS}"
       sleep 15
     done
+
+    echo "Pipeline ${PIPELINE} still had running jobs after ${TOTAL_WAIT_TIME_IN_MINUTES}, giving up waiting"
+    exit 1
