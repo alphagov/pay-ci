@@ -3,7 +3,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: govukpay/concourse-runner  
+    repository: govukpay/concourse-runner
 params:
   RDS_INSTANCE_NAME:
   AWS_DEFAULT_REGION: eu-west-1
