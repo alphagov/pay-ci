@@ -1,0 +1,69 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: concourse/concourse-pipeline-resource
+    tag: dev
+  version:
+    digest: sha256:cd899511e06c3027dc8429f4b38ba8ea32a4c0bea044f4711899d5987abf8fdf
+params:
+  ACTION:
+  PIPELINE:
+  FLY_USERNAME:
+  FLY_PASSWORD:
+  MAX_ATTEMPTS: 240 # 1 hour
+run:
+  path: /bin/bash
+  args:
+  - -euo
+  - pipefail
+  - -c
+  - |
+    if [ "${ACTION}" != "pause" ] && [ "${ACTION}" != "unpause" ]; then
+      echo "The env var ACTION must be either pause or unpasue. It was set to ${ACTION}"
+      exit 1
+    fi
+
+    echo "Installing jq"
+    apk add --update --no-cache --quiet --no-progress jq
+    # The fly command is in /opt/resource
+    export PATH="$PATH:/opt/resource"
+
+    echo "Logging into concourse"
+    fly -t concourse login -c "https://pay-cd.deploy.payments.service.gov.uk" -u "$FLY_USERNAME" -p "$FLY_PASSWORD" -n "$FLY_USERNAME"
+
+    echo "Syncing fly cli command with concourse server"
+    fly -t concourse sync
+
+    echo "Issuing ${ACTION} command to ${PIPELINE} pipeline"
+    fly -t concourse "${ACTION}-pipeline" --pipeline "${PIPELINE}"
+
+    if [ "${ACTION}" == "unpause" ]; then
+      echo "Pipeline unpaused"
+      exit 0
+    fi
+
+    function running_containers_count {
+      fly -t concourse containers --json | \
+        jq "[.[] | select(.pipeline_name == \"deploy-to-perf\" and .type != \"check\" and .state != \"destroying\")] | length"
+    }
+
+    TOTAL_WAIT_TIME_IN_MINUTES=$((MAX_ATTEMPTS * 15 / 60))
+
+    echo "Pipeline paused, waiting up to ${TOTAL_WAIT_TIME_IN_MINUTES} minutes for running jobs finish"
+
+    for ATTEMPT in $(seq 1 "${MAX_ATTEMPTS}"); do
+      RUNNING_CONTAINERS=$(running_containers_count)
+
+      if [ "${RUNNING_CONTAINERS}" -eq 0 ]; then
+        echo "There are now running containers for the ${PIPELINE} pipeline"
+        exit 0
+      fi
+
+      echo "The pipeline ${PIPELINE} still has ${RUNNING_CONTAINERS} running. " \
+          "Waiting 15 seconds before checking again. Attempt ${ATTEMPT}/${MAX_ATTEMPTS}"
+      sleep 15
+    done
+
+    echo "Pipeline ${PIPELINE} still had running jobs after ${TOTAL_WAIT_TIME_IN_MINUTES}, giving up waiting"
+    exit 1
