@@ -35,7 +35,7 @@ run:
     echo "Syncing fly cli command with concourse server"
     fly -t concourse sync
 
-    echo "${ACTION}ing pipeline ${PIPELINE}"
+    echo "Issuing ${ACTION} command to ${PIPELINE} pipeline"
     fly -t concourse "${ACTION}-pipeline" --pipeline "${PIPELINE}"
 
     if [ "${ACTION}" == "unpause" ]; then
@@ -56,7 +56,7 @@ run:
       RUNNING_CONTAINERS=$(running_containers_count)
 
       if [ "${RUNNING_CONTAINERS}" -eq 0 ]; then
-        echo "There are now now running containers for the ${PIPELINE} pipeline"
+        echo "There are now running containers for the ${PIPELINE} pipeline"
         exit 0
       fi
 
