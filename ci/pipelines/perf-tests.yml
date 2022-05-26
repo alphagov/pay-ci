@@ -421,26 +421,130 @@ definitions:
           - pipefail
           - -c
           - |
-            echo "Installing jq"
-            apk add --update --no-cache --quiet --no-progress jq
-
-            cat <<EOF > base.json
+            echo "CardIDSimulation"
+            echo "------------------------------------------------------------------"
+            cat <<EOF | tee ./run-codebuild-configuration/perf-tests-CardIDSimulation.json
             {
               "projectName": "perf-tests-test-perf-1",
               "sourceVersion": "",
               "secondarySourcesVersions": {},
               "environmentVariables": {
-                "PERF_TESTS_VERSION": "((.:release-tag))"
+                "PERF_TESTS_VERSION": "((.:release-tag))",
+                "GATLING_CLASS": "uk.gov.pay.CardIDSimulation",
+                "USE_CONCURRENT": "((.:gatling-simulation-settings.CardIDSimulation.USE_CONCURRENT))",
+                "RAMPUP_USERS_FROM": "((.:gatling-simulation-settings.CardIDSimulation.RAMPUP_USERS_FROM))",
+                "RAMPUP_USERS_TO": "((.:gatling-simulation-settings.CardIDSimulation.RAMPUP_USERS_TO))",
+                "RAMPUP_DURATION_IN_SECONDS": "((.:gatling-simulation-settings.CardIDSimulation.RAMPUP_DURATION_IN_SECONDS))",
+                "INITIAL_THROUGHPUT_RPS": "((.:gatling-simulation-settings.CardIDSimulation.INITIAL_THROUGHPUT_RPS))",
+                "INITIAL_THROUGHPUT_RAMPUP_SECONDS": "((.:gatling-simulation-settings.CardIDSimulation.INITIAL_THROUGHPUT_RAMPUP_SECONDS))",
+                "INITIAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.CardIDSimulation.INITIAL_THROUGHPUT_DURATION_MINUTES))",
+                "THROUGHPUT_TO_MAINTAIN": "((.:gatling-simulation-settings.CardIDSimulation.THROUGHPUT_TO_MAINTAIN))",
+                "FINAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.CardIDSimulation.FINAL_THROUGHPUT_DURATION_MINUTES))",
+                "CONSTANT_USERS_AFTER_RAMPUP": "((.:gatling-simulation-settings.CardIDSimulation.CONSTANT_USERS_AFTER_RAMPUP))",
+                "CONSTANT_DURATION_AFTER_RAMPUP": "((.:gatling-simulation-settings.CardIDSimulation.CONSTANT_DURATION_AFTER_RAMPUP))"
               }
             }
             EOF
 
-            for TEST_SUITE in CardIDSimulation PaymentSimulation SearchPaymentsSimulation PublicAuthSimulation SelfServiceSimulation; do
-              echo "$TEST_SUITE"
-              echo "------------------------------------------------------------------"
-              jq <base.json ".environmentVariables.GATLING_CLASS = \"uk.gov.pay.$TEST_SUITE\"" | tee "./run-codebuild-configuration/perf-tests-$TEST_SUITE.json"
-              echo
-            done
+            echo "PaymentSimulation"
+            echo "------------------------------------------------------------------"
+            cat <<EOF | tee ./run-codebuild-configuration/perf-tests-PaymentSimulation.json
+            {
+              "projectName": "perf-tests-test-perf-1",
+              "sourceVersion": "",
+              "secondarySourcesVersions": {},
+              "environmentVariables": {
+                "PERF_TESTS_VERSION": "((.:release-tag))",
+                "GATLING_CLASS": "uk.gov.pay.PaymentSimulation",
+                "USE_CONCURRENT": "((.:gatling-simulation-settings.PaymentSimulation.USE_CONCURRENT))",
+                "RAMPUP_USERS_FROM": "((.:gatling-simulation-settings.PaymentSimulation.RAMPUP_USERS_FROM))",
+                "RAMPUP_USERS_TO": "((.:gatling-simulation-settings.PaymentSimulation.RAMPUP_USERS_TO))",
+                "RAMPUP_DURATION_IN_SECONDS": "((.:gatling-simulation-settings.PaymentSimulation.RAMPUP_DURATION_IN_SECONDS))",
+                "INITIAL_THROUGHPUT_RPS": "((.:gatling-simulation-settings.PaymentSimulation.INITIAL_THROUGHPUT_RPS))",
+                "INITIAL_THROUGHPUT_RAMPUP_SECONDS": "((.:gatling-simulation-settings.PaymentSimulation.INITIAL_THROUGHPUT_RAMPUP_SECONDS))",
+                "INITIAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.PaymentSimulation.INITIAL_THROUGHPUT_DURATION_MINUTES))",
+                "THROUGHPUT_TO_MAINTAIN": "((.:gatling-simulation-settings.PaymentSimulation.THROUGHPUT_TO_MAINTAIN))",
+                "FINAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.PaymentSimulation.FINAL_THROUGHPUT_DURATION_MINUTES))",
+                "CONSTANT_USERS_AFTER_RAMPUP": "((.:gatling-simulation-settings.PaymentSimulation.CONSTANT_USERS_AFTER_RAMPUP))",
+                "CONSTANT_DURATION_AFTER_RAMPUP": "((.:gatling-simulation-settings.PaymentSimulation.CONSTANT_DURATION_AFTER_RAMPUP))"
+              }
+            }
+            EOF
+
+            echo "PublicAuthSimulation"
+            echo "------------------------------------------------------------------"
+            cat <<EOF | tee ./run-codebuild-configuration/perf-tests-PublicAuthSimulation.json
+            {
+              "projectName": "perf-tests-test-perf-1",
+              "sourceVersion": "",
+              "secondarySourcesVersions": {},
+              "environmentVariables": {
+                "PERF_TESTS_VERSION": "((.:release-tag))",
+                "GATLING_CLASS": "uk.gov.pay.PublicAuthSimulation",
+                "USE_CONCURRENT": "((.:gatling-simulation-settings.PublicAuthSimulation.USE_CONCURRENT))",
+                "RAMPUP_USERS_FROM": "((.:gatling-simulation-settings.PublicAuthSimulation.RAMPUP_USERS_FROM))",
+                "RAMPUP_USERS_TO": "((.:gatling-simulation-settings.PublicAuthSimulation.RAMPUP_USERS_TO))",
+                "RAMPUP_DURATION_IN_SECONDS": "((.:gatling-simulation-settings.PublicAuthSimulation.RAMPUP_DURATION_IN_SECONDS))",
+                "INITIAL_THROUGHPUT_RPS": "((.:gatling-simulation-settings.PublicAuthSimulation.INITIAL_THROUGHPUT_RPS))",
+                "INITIAL_THROUGHPUT_RAMPUP_SECONDS": "((.:gatling-simulation-settings.PublicAuthSimulation.INITIAL_THROUGHPUT_RAMPUP_SECONDS))",
+                "INITIAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.PublicAuthSimulation.INITIAL_THROUGHPUT_DURATION_MINUTES))",
+                "THROUGHPUT_TO_MAINTAIN": "((.:gatling-simulation-settings.PublicAuthSimulation.THROUGHPUT_TO_MAINTAIN))",
+                "FINAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.PublicAuthSimulation.FINAL_THROUGHPUT_DURATION_MINUTES))",
+                "CONSTANT_USERS_AFTER_RAMPUP": "((.:gatling-simulation-settings.PublicAuthSimulation.CONSTANT_USERS_AFTER_RAMPUP))",
+                "CONSTANT_DURATION_AFTER_RAMPUP": "((.:gatling-simulation-settings.PublicAuthSimulation.CONSTANT_DURATION_AFTER_RAMPUP))"
+              }
+            }
+            EOF
+
+            echo "SearchPaymentsSimulation"
+            echo "------------------------------------------------------------------"
+            cat <<EOF | tee ./run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json
+            {
+              "projectName": "perf-tests-test-perf-1",
+              "sourceVersion": "",
+              "secondarySourcesVersions": {},
+              "environmentVariables": {
+                "PERF_TESTS_VERSION": "((.:release-tag))",
+                "GATLING_CLASS": "uk.gov.pay.SearchPaymentsSimulation",
+                "USE_CONCURRENT": "((.:gatling-simulation-settings.SearchPaymentsSimulation.USE_CONCURRENT))",
+                "RAMPUP_USERS_FROM": "((.:gatling-simulation-settings.SearchPaymentsSimulation.RAMPUP_USERS_FROM))",
+                "RAMPUP_USERS_TO": "((.:gatling-simulation-settings.SearchPaymentsSimulation.RAMPUP_USERS_TO))",
+                "RAMPUP_DURATION_IN_SECONDS": "((.:gatling-simulation-settings.SearchPaymentsSimulation.RAMPUP_DURATION_IN_SECONDS))",
+                "INITIAL_THROUGHPUT_RPS": "((.:gatling-simulation-settings.SearchPaymentsSimulation.INITIAL_THROUGHPUT_RPS))",
+                "INITIAL_THROUGHPUT_RAMPUP_SECONDS": "((.:gatling-simulation-settings.SearchPaymentsSimulation.INITIAL_THROUGHPUT_RAMPUP_SECONDS))",
+                "INITIAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.SearchPaymentsSimulation.INITIAL_THROUGHPUT_DURATION_MINUTES))",
+                "THROUGHPUT_TO_MAINTAIN": "((.:gatling-simulation-settings.SearchPaymentsSimulation.THROUGHPUT_TO_MAINTAIN))",
+                "FINAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.SearchPaymentsSimulation.FINAL_THROUGHPUT_DURATION_MINUTES))",
+                "CONSTANT_USERS_AFTER_RAMPUP": "((.:gatling-simulation-settings.SearchPaymentsSimulation.CONSTANT_USERS_AFTER_RAMPUP))",
+                "CONSTANT_DURATION_AFTER_RAMPUP": "((.:gatling-simulation-settings.SearchPaymentsSimulation.CONSTANT_DURATION_AFTER_RAMPUP))"
+              }
+            }
+            EOF
+
+            echo "SelfServiceSimulation"
+            echo "------------------------------------------------------------------"
+            cat <<EOF | tee ./run-codebuild-configuration/perf-tests-SelfServiceSimulation.json
+            {
+              "projectName": "perf-tests-test-perf-1",
+              "sourceVersion": "",
+              "secondarySourcesVersions": {},
+              "environmentVariables": {
+                "PERF_TESTS_VERSION": "((.:release-tag))",
+                "GATLING_CLASS": "uk.gov.pay.SelfServiceSimulation",
+                "USE_CONCURRENT": "((.:gatling-simulation-settings.SelfServiceSimulation.USE_CONCURRENT))",
+                "RAMPUP_USERS_FROM": "((.:gatling-simulation-settings.SelfServiceSimulation.RAMPUP_USERS_FROM))",
+                "RAMPUP_USERS_TO": "((.:gatling-simulation-settings.SelfServiceSimulation.RAMPUP_USERS_TO))",
+                "RAMPUP_DURATION_IN_SECONDS": "((.:gatling-simulation-settings.SelfServiceSimulation.RAMPUP_DURATION_IN_SECONDS))",
+                "INITIAL_THROUGHPUT_RPS": "((.:gatling-simulation-settings.SelfServiceSimulation.INITIAL_THROUGHPUT_RPS))",
+                "INITIAL_THROUGHPUT_RAMPUP_SECONDS": "((.:gatling-simulation-settings.SelfServiceSimulation.INITIAL_THROUGHPUT_RAMPUP_SECONDS))",
+                "INITIAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.SelfServiceSimulation.INITIAL_THROUGHPUT_DURATION_MINUTES))",
+                "THROUGHPUT_TO_MAINTAIN": "((.:gatling-simulation-settings.SelfServiceSimulation.THROUGHPUT_TO_MAINTAIN))",
+                "FINAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.SelfServiceSimulation.FINAL_THROUGHPUT_DURATION_MINUTES))",
+                "CONSTANT_USERS_AFTER_RAMPUP": "((.:gatling-simulation-settings.SelfServiceSimulation.CONSTANT_USERS_AFTER_RAMPUP))",
+                "CONSTANT_DURATION_AFTER_RAMPUP": "((.:gatling-simulation-settings.SelfServiceSimulation.CONSTANT_DURATION_AFTER_RAMPUP))"
+              }
+            }
+            EOF
 
 jobs:
   - name: scale-and-run-all-simulations
@@ -461,6 +565,9 @@ jobs:
           format: json
         - load_var: release-tag
           file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-git-release/ci/gatling-simulation-settings.json
+          format: json
       - <<: *pause-deploy-to-perf
       - <<: *scale-up-databases
       - <<: *scale-up-services
@@ -521,6 +628,9 @@ jobs:
           format: json
         - load_var: release-tag
           file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-git-release/ci/gatling-simulation-settings.json
+          format: json
       - <<: *prepare-codebuild
       - task: search-payments-simulation-perf-test
         file: pay-ci/ci/tasks/run-codebuild.yml
@@ -548,6 +658,9 @@ jobs:
           format: json
         - load_var: release-tag
           file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-git-release/ci/gatling-simulation-settings.json
+          format: json
       - <<: *prepare-codebuild
       - task: payment-simulation-perf-test
         file: pay-ci/ci/tasks/run-codebuild.yml
@@ -564,6 +677,7 @@ jobs:
       - in_parallel:
         - get: perf-tests-ecr-release
         - get: pay-ci
+        - get: perf-tests-git-release
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -575,6 +689,9 @@ jobs:
           format: json
         - load_var: release-tag
           file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-git-release/ci/gatling-simulation-settings.json
+          format: json
       - <<: *prepare-codebuild
       - task: self-service-simulation-perf-test
         file: pay-ci/ci/tasks/run-codebuild.yml
