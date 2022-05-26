@@ -114,8 +114,40 @@ groups:
   - name: update-perf-tests-pipeline
     jobs:
       - update-perf-tests-pipeline
+  - name: all-jobs
+    jobs:
+      - scale-and-run-all-simulations
+      - run-payment-simulation-perf-test
+      - run-search-payment-simulation-perf-test
+      - run-self-service-simulation-perf-test
+      - scale-up-databases
+      - scale-up-services
+      - scale-up-all
+      - scale-down-databases
+      - scale-down-services
+      - scale-down-all
+      - build-and-push-perf-tests
+      - update-perf-tests-pipeline
 
 definitions:
+  - &pause-deploy-to-perf
+    task: pause-deploy-to-perf-pipeline
+    file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+    params:
+      ACTION: pause
+      PIPELINE: deploy-to-perf
+      FLY_USERNAME: pay-dev
+      FLY_PASSWORD: ((readonly_local_user_password))
+
+  - &unpause-deploy-to-perf
+    task: unpause-deploy-to-perf-pipeline
+    file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+    params:
+      ACTION: unpause
+      PIPELINE: deploy-to-perf
+      FLY_USERNAME: pay-dev
+      FLY_PASSWORD: ((readonly_local_user_password))
+
   - &scale-down-services
     in_parallel:
       - put: scale-down-stubs
@@ -215,13 +247,13 @@ definitions:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      # - task: stop-connector-db
-      #   file: pay-ci/ci/tasks/stop-rds-instance.yml
-      #   params:
-      #     RDS_INSTANCE_NAME: test-perf-1-connector-rds-0
-      #     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-      #     AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-      #     AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: stop-connector-db
+        file: pay-ci/ci/tasks/stop-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-connector-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - task: stop-ledger-db
         file: pay-ci/ci/tasks/stop-rds-instance.yml
         params:
@@ -342,14 +374,14 @@ definitions:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      # - task: start-connector-db
-      #   file: pay-ci/ci/tasks/start-rds-instance.yml
-      #   params:
-      #     RDS_INSTANCE_NAME: test-perf-1-connector-rds-0
-      #     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-      #     AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-      #     AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      # - task: start-ledger-db
+      - task: start-connector-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-connector-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: start-ledger-db
         file: pay-ci/ci/tasks/start-rds-instance.yml
         params:
           RDS_INSTANCE_NAME: test-perf-1-ledger-rds-0
@@ -429,41 +461,47 @@ jobs:
           format: json
         - load_var: release-tag
           file: perf-tests-ecr-release/tag
+      - <<: *pause-deploy-to-perf
       - <<: *scale-up-databases
       - <<: *scale-up-services
       - <<: *prepare-codebuild
-#      - task: public-auth-simulation-perf-test
-#        file: pay-ci/ci/tasks/run-codebuild.yml
-#        params:
-#          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PublicAuthSimulation.json"
-#          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-#          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-#          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: search-payments-simulation-perf-test
-        file: pay-ci/ci/tasks/run-codebuild.yml
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: self-service-simulation-perf-test
-        file: pay-ci/ci/tasks/run-codebuild.yml
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: payment-simulation-perf-test
-        file: pay-ci/ci/tasks/run-codebuild.yml
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - try:
+          task: public-auth-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PublicAuthSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - try:
+          task: search-payments-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - try:
+          task: self-service-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - try:
+          task: payment-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
     ensure:
       do:
         - <<: *scale-down-services
         - <<: *scale-down-databases
+        - <<: *unpause-deploy-to-perf
 
   - name: run-search-payment-simulation-perf-test
     serial: true
@@ -609,7 +647,10 @@ jobs:
         - load_var: role
           file: assume-role/assume-role.json
           format: json
+      - <<: *pause-deploy-to-perf
       - <<: *scale-down-databases
+    ensure:
+      <<: *unpause-deploy-to-perf
 
   - name: scale-down-services
     serial: true
@@ -641,8 +682,11 @@ jobs:
         - load_var: role
           file: assume-role/assume-role.json
           format: json
+      - <<: *pause-deploy-to-perf
       - <<: *scale-down-services
       - <<: *scale-down-databases
+    ensure:
+      <<: *unpause-deploy-to-perf
 
   - name: build-and-push-perf-tests
     plan:
