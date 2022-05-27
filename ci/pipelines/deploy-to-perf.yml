@@ -432,6 +432,13 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: adminusers-db-ecr-registry-perf/tag
+      - task: start-adminusers-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-adminusers-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
@@ -457,6 +464,14 @@ jobs:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
+    ensure:
+      task: stop-adminusers-db
+      file: pay-ci/ci/tasks/stop-rds-instance.yml
+      params:
+        RDS_INSTANCE_NAME: test-perf-1-adminusers-rds-0
+        AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+        AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+        AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: deploy-selfservice-to-perf
     serial: true
@@ -587,6 +602,13 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: connector-db-ecr-registry-perf/tag
+      - task: start-connector-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-connector-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
@@ -612,6 +634,14 @@ jobs:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
+    ensure:
+      task: stop-connector-db
+      file: pay-ci/ci/tasks/stop-rds-instance.yml
+      params:
+        RDS_INSTANCE_NAME: test-perf-1-connector-rds-0
+        AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+        AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+        AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: deploy-toolbox-to-perf
     serial: true
@@ -804,6 +834,13 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: products-db-ecr-registry-perf/tag
+      - task: start-products-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-products-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
@@ -829,6 +866,14 @@ jobs:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
+    ensure:
+      task: stop-products-db
+      file: pay-ci/ci/tasks/stop-rds-instance.yml
+      params:
+        RDS_INSTANCE_NAME: test-perf-1-products-rds-0
+        AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+        AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+        AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: deploy-products-ui-to-perf
     serial: true
@@ -959,6 +1004,13 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: publicauth-db-ecr-registry-perf/tag
+      - task: start-publicauth-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-publicauth-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
@@ -984,6 +1036,14 @@ jobs:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
+    ensure:
+      task: stop-publicauth-db
+      file: pay-ci/ci/tasks/stop-rds-instance.yml
+      params:
+        RDS_INSTANCE_NAME: test-perf-1-publicauth-rds-0
+        AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+        AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+        AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: deploy-cardid-to-perf
     serial: true
@@ -1114,6 +1174,13 @@ jobs:
         format: json
       - load_var: application_image_tag
         file: ledger-db-ecr-registry-perf/tag
+      - task: start-ledger-db
+        file: pay-ci/ci/tasks/start-rds-instance.yml
+        params:
+          RDS_INSTANCE_NAME: test-perf-1-ledger-rds-0
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
@@ -1139,6 +1206,14 @@ jobs:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
+    ensure:
+      task: stop-ledger-db
+      file: pay-ci/ci/tasks/stop-rds-instance.yml
+      params:
+        RDS_INSTANCE_NAME: test-perf-1-ledger-rds-0
+        AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+        AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+        AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: deploy-publicapi-to-perf
     serial: true
