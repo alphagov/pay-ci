@@ -130,24 +130,6 @@ groups:
       - update-perf-tests-pipeline
 
 definitions:
-  - &pause-deploy-to-perf
-    task: pause-deploy-to-perf-pipeline
-    file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
-    params:
-      ACTION: pause
-      PIPELINE: deploy-to-perf
-      FLY_USERNAME: pay-dev
-      FLY_PASSWORD: ((readonly_local_user_password))
-
-  - &unpause-deploy-to-perf
-    task: unpause-deploy-to-perf-pipeline
-    file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
-    params:
-      ACTION: unpause
-      PIPELINE: deploy-to-perf
-      FLY_USERNAME: pay-dev
-      FLY_PASSWORD: ((readonly_local_user_password))
-
   - &scale-down-services
     in_parallel:
       - put: scale-down-stubs
@@ -553,6 +535,7 @@ jobs:
     plan:
       - in_parallel:
         - get: perf-tests-ecr-release
+        - get: perf-tests-git-release
         - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
@@ -568,7 +551,13 @@ jobs:
         - load_var: gatling-simulation-settings
           file: perf-tests-git-release/ci/gatling-simulation-settings.json
           format: json
-      - <<: *pause-deploy-to-perf
+      - task: pause-deploy-to-perf-pipeline
+        file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+        params:
+          ACTION: pause
+          PIPELINE: deploy-to-perf
+          FLY_USERNAME: pay-dev
+          FLY_PASSWORD: ((readonly_local_user_password))
       - <<: *scale-up-databases
       - <<: *scale-up-services
       - <<: *prepare-codebuild
@@ -608,7 +597,13 @@ jobs:
       do:
         - <<: *scale-down-services
         - <<: *scale-down-databases
-        - <<: *unpause-deploy-to-perf
+        - task: unpause-deploy-to-perf-pipeline
+          file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+          params:
+            ACTION: unpause
+            PIPELINE: deploy-to-perf
+            FLY_USERNAME: pay-dev
+            FLY_PASSWORD: ((readonly_local_user_password))
 
   - name: run-search-payment-simulation-perf-test
     serial: true
@@ -764,10 +759,22 @@ jobs:
         - load_var: role
           file: assume-role/assume-role.json
           format: json
-      - <<: *pause-deploy-to-perf
+      - task: pause-deploy-to-perf-pipeline
+        file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+        params:
+          ACTION: pause
+          PIPELINE: deploy-to-perf
+          FLY_USERNAME: pay-dev
+          FLY_PASSWORD: ((readonly_local_user_password))
       - <<: *scale-down-databases
     ensure:
-      <<: *unpause-deploy-to-perf
+      task: unpause-deploy-to-perf-pipeline
+      file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+      params:
+        ACTION: unpause
+        PIPELINE: deploy-to-perf
+        FLY_USERNAME: pay-dev
+        FLY_PASSWORD: ((readonly_local_user_password))
 
   - name: scale-down-services
     serial: true
@@ -799,11 +806,23 @@ jobs:
         - load_var: role
           file: assume-role/assume-role.json
           format: json
-      - <<: *pause-deploy-to-perf
+      - task: pause-deploy-to-perf-pipeline
+        file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+        params:
+          ACTION: pause
+          PIPELINE: deploy-to-perf
+          FLY_USERNAME: pay-dev
+          FLY_PASSWORD: ((readonly_local_user_password))
       - <<: *scale-down-services
       - <<: *scale-down-databases
     ensure:
-      <<: *unpause-deploy-to-perf
+      task: unpause-deploy-to-perf-pipeline
+      file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+      params:
+        ACTION: unpause
+        PIPELINE: deploy-to-perf
+        FLY_USERNAME: pay-dev
+        FLY_PASSWORD: ((readonly_local_user_password))
 
   - name: build-and-push-perf-tests
     plan:
