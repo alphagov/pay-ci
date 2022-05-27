@@ -621,6 +621,7 @@ jobs:
     plan:
       - in_parallel:
         - get: perf-tests-ecr-release
+        - get: perf-tests-git-release
         - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
@@ -637,13 +638,14 @@ jobs:
           file: perf-tests-git-release/ci/gatling-simulation-settings.json
           format: json
       - <<: *prepare-codebuild
-      - task: search-payments-simulation-perf-test
-        file: pay-ci/ci/tasks/run-codebuild.yml
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - try:
+          task: search-payments-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: run-payment-simulation-perf-test
     serial: true
@@ -651,6 +653,7 @@ jobs:
     plan:
       - in_parallel:
         - get: perf-tests-ecr-release
+        - get: perf-tests-git-release
         - get: pay-ci
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
@@ -667,13 +670,14 @@ jobs:
           file: perf-tests-git-release/ci/gatling-simulation-settings.json
           format: json
       - <<: *prepare-codebuild
-      - task: payment-simulation-perf-test
-        file: pay-ci/ci/tasks/run-codebuild.yml
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - try:
+          task: payment-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: run-self-service-simulation-perf-test
     serial: true
@@ -698,13 +702,14 @@ jobs:
           file: perf-tests-git-release/ci/gatling-simulation-settings.json
           format: json
       - <<: *prepare-codebuild
-      - task: self-service-simulation-perf-test
-        file: pay-ci/ci/tasks/run-codebuild.yml
-        params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - try:
+          task: self-service-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: scale-up-databases
     serial: true
