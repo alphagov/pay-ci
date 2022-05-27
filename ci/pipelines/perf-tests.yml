@@ -79,6 +79,14 @@ resources:
       password: ((cf-password))
       cf_cli_version: 7
 
+  - name: every-night-at-11pm
+    icon: alarm
+    source:
+      start: "23:00"
+      stop: "23:30"
+      location: Europe/London
+    type: time
+
 resource_types:
   - name: slack-notification
     type: docker-image
@@ -537,6 +545,8 @@ jobs:
         - get: perf-tests-ecr-release
         - get: perf-tests-git-release
         - get: pay-ci
+        - get: every-night-at-11pm
+          trigger: true
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
