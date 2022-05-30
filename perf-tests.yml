@@ -572,14 +572,6 @@ jobs:
       - <<: *scale-up-services
       - <<: *prepare-codebuild
       - try:
-          task: public-auth-simulation-perf-test
-          file: pay-ci/ci/tasks/run-codebuild.yml
-          params:
-            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PublicAuthSimulation.json"
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - try:
           task: search-payments-simulation-perf-test
           file: pay-ci/ci/tasks/run-codebuild.yml
           params:
