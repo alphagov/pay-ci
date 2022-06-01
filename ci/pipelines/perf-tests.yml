@@ -145,13 +145,13 @@ definitions:
         params:
           command: scale
           app_name: pay-stubs
-          instances: 1
+          instances: ((.:service-volumes.scale_down_to.stubs))
       - task: scale-down-adminusers
         file: pay-ci/ci/tasks/scale-fargate-service.yml
         params:
           SERVICE_NAME: adminusers
           SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: 0
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.adminusers))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -160,7 +160,7 @@ definitions:
         params:
           SERVICE_NAME: cardid
           SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: 0
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.cardid))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -169,7 +169,16 @@ definitions:
         params:
           SERVICE_NAME: connector
           SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: 0
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.connector))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-down-egress
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: egress
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.egress))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -178,7 +187,7 @@ definitions:
         params:
           SERVICE_NAME: frontend
           SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: 0
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.frontend))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -187,7 +196,7 @@ definitions:
         params:
           SERVICE_NAME: ledger
           SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: 0
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.ledger))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -196,7 +205,7 @@ definitions:
         params:
           SERVICE_NAME: notifications
           SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: 0
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.notifications))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -205,7 +214,7 @@ definitions:
         params:
           SERVICE_NAME: publicapi
           SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: 0
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.publicapi))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -214,7 +223,7 @@ definitions:
         params:
           SERVICE_NAME: publicauth
           SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: 0
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.publicauth))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -223,7 +232,7 @@ definitions:
         params:
           SERVICE_NAME: selfservice
           SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: 0
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.selfservice))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -273,7 +282,7 @@ definitions:
         params:
           SERVICE_NAME: adminusers
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 3
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.adminusers))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -282,7 +291,7 @@ definitions:
         params:
           SERVICE_NAME: cardid
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 3
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.cardid))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -291,7 +300,16 @@ definitions:
         params:
           SERVICE_NAME: connector
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 15
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.connector))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: scale-up-egress
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
+        params:
+          SERVICE_NAME: egress
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.egress))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -300,7 +318,7 @@ definitions:
         params:
           SERVICE_NAME: frontend
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 11
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.frontend))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -309,7 +327,7 @@ definitions:
         params:
           SERVICE_NAME: ledger
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 3
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.ledger))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -318,7 +336,7 @@ definitions:
         params:
           SERVICE_NAME: notifications
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 3
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.notifications))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -327,7 +345,7 @@ definitions:
         params:
           SERVICE_NAME: publicapi
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 4
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.publicapi))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -336,7 +354,7 @@ definitions:
         params:
           SERVICE_NAME: publicauth
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 3
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.publicauth))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -345,7 +363,7 @@ definitions:
         params:
           SERVICE_NAME: selfservice
           SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: 3
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.selfservice))
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -354,7 +372,7 @@ definitions:
         params:
           command: scale
           app_name: pay-stubs
-          instances: 5
+          instances: ((.:service-volumes.scale_up_to.stubs))
   - &scale-up-databases
     in_parallel:
       - task: start-adminusers-db
@@ -561,6 +579,9 @@ jobs:
         - load_var: gatling-simulation-settings
           file: perf-tests-git-release/ci/gatling-simulation-settings.json
           format: json
+        - load_var: service-volumes
+          file: perf-tests-git-release/ci/scale-service-volumes.yml
+          format: yml
       - task: pause-deploy-to-perf-pipeline
         file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
         params:
@@ -726,7 +747,9 @@ jobs:
     serial: true
     serial_groups: [perf-tests]
     plan:
-      - get: pay-ci
+      - in_parallel:
+        - get: pay-ci
+        - get: perf-tests-git-release
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -736,13 +759,18 @@ jobs:
         - load_var: role
           file: assume-role/assume-role.json
           format: json
+        - load_var: service-volumes
+          file: perf-tests-git-release/ci/scale-service-volumes.yml
+          format: yml
       - <<: *scale-up-services
 
   - name: scale-up-all
     serial: true
     serial_groups: [perf-tests]
     plan:
-      - get: pay-ci
+      - in_parallel:
+        - get: pay-ci
+        - get: perf-tests-git-release
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -752,6 +780,9 @@ jobs:
         - load_var: role
           file: assume-role/assume-role.json
           format: json
+        - load_var: service-volumes
+          file: perf-tests-git-release/ci/scale-service-volumes.yml
+          format: yml
       - <<: *scale-up-databases
       - <<: *scale-up-services
 
@@ -790,7 +821,9 @@ jobs:
     serial: true
     serial_groups: [perf-tests]
     plan:
-      - get: pay-ci
+      - in_parallel:
+        - get: pay-ci
+        - get: perf-tests-git-release
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -800,13 +833,18 @@ jobs:
         - load_var: role
           file: assume-role/assume-role.json
           format: json
+        - load_var: service-volumes
+          file: perf-tests-git-release/ci/scale-service-volumes.yml
+          format: yml
       - <<: *scale-down-services
 
   - name: scale-down-all
     serial: true
     serial_groups: [perf-tests]
     plan:
-      - get: pay-ci
+      - in_parallel:
+        - get: pay-ci
+        - get: perf-tests-git-release
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -816,6 +854,9 @@ jobs:
         - load_var: role
           file: assume-role/assume-role.json
           format: json
+        - load_var: service-volumes
+          file: perf-tests-git-release/ci/scale-service-volumes.yml
+          format: yml
       - task: pause-deploy-to-perf-pipeline
         file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
         params:
