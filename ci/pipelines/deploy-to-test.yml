@@ -264,7 +264,31 @@ resources:
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
+  - name: pay-alpine-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      tag_regex: "alpine_alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
   # ECR registry resources
+  - name: alpine-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/alpine
+      variant: release
+      <<: *aws_test_config
+  - name: alpine-ecr-registry-staging
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/alpine
+      variant: release
+      <<: *aws_staging_config
   - name: stream-s3-sqs-ecr-registry-test
     type: registry-image
     icon: docker
@@ -865,6 +889,9 @@ groups:
       - build-webhooks
       - deploy-webhooks
       - webhooks-db-migration
+  - name: alpine
+    jobs:
+      - build-and-push-alpine-to-ecr
   - name: carbon-relay
     jobs:
       - deploy-carbon-relay
@@ -987,6 +1014,76 @@ docker_credentials: &docker_credentials
   DOCKER_AUTH_TOKEN: ((docker-password))
 
 jobs:
+  - name: build-and-push-alpine-to-ecr
+    plan:
+      - in_parallel:
+        - get: pay-ci
+        - get: pay-alpine-git-release
+          trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: pay-alpine-git-release
+      - in_parallel:
+        - load_var: release-name
+          file: pay-alpine-git-release/.git/ref
+        - load_var: release-tag
+          file: tags/tags
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-sha
+          file: tags/release-sha
+      - task: build-alpine-image
+        privileged: true
+        params:
+          CONTEXT: pay-alpine-git-release/images/docker/govukpay/alpine
+          LABEL_release_number: ((.:release-number))
+          LABEL_release_name: ((.:release-name))
+          LABEL_release_sha: ((.:release-sha))
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: pay-alpine-git-release
+          outputs:
+            - name: image
+          run:
+            path: build
+      - in_parallel:
+        - put: alpine-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+          get_params:
+            skip_download: true
+        - put: alpine-ecr-registry-staging
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+          get_params:
+            skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: pay-alpine image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: pay-alpine image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
   - name: build-and-push-stream-s3-sqs-to-test-ecr
     plan:
       - get: pay-ci

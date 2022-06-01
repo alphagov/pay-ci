@@ -214,6 +214,19 @@ resources:
       branch: master
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
+  - name: alpine-ecr-registry-staging
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/alpine
+      variant: release
+      <<: *aws_staging_config
+  - name: alpine-ecr-registry-prod
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/alpine
+      <<: *aws_production_config
   - name: carbon-relay-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -553,6 +566,9 @@ groups:
     jobs:
       - deploy-toolbox-to-staging
       - push-toolbox-to-production-ecr
+  - name: alpine
+    jobs:
+      - push-alpine-to-production-ecr
   - name: carbon-relay
     jobs:
       - deploy-carbon-relay-to-staging
@@ -675,6 +691,19 @@ jobs:
         params:
           image: carbon-relay-ecr-registry-staging/image.tar
           additional_tags: carbon-relay-ecr-registry-staging/tag
+
+  - name: push-alpine-to-production-ecr
+    plan:
+      - get: alpine-ecr-registry-staging
+        params:
+          format: oci
+        trigger: true
+      - put: alpine-ecr-registry-prod
+        params:
+          image: alpine-ecr-registry-staging/image.tar
+          additional_tags: alpine-ecr-registry-staging/tag
+        get_params:
+          skip_download: true
 
   - name: push-stunnel-to-production-ecr
     plan:
