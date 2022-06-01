@@ -572,6 +572,17 @@ jobs:
       - <<: *scale-up-services
       - <<: *prepare-codebuild
       - try:
+          # The payment simulation should be the first simulation run to give time for the events queues to be consumed
+          # completely while the other simulations run. This enables the automatic expiry and expunging processes to
+          # complete their work before we scale down and ensures we don't leave lots of messages on the SQS queues.
+          task: payment-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - try:
           task: search-payments-simulation-perf-test
           file: pay-ci/ci/tasks/run-codebuild.yml
           params:
@@ -584,14 +595,6 @@ jobs:
           file: pay-ci/ci/tasks/run-codebuild.yml
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - try:
-          task: payment-simulation-perf-test
-          file: pay-ci/ci/tasks/run-codebuild.yml
-          params:
-            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
