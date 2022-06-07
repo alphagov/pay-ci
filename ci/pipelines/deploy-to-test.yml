@@ -119,6 +119,12 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
+  - name: pay-ci-delete-me
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: pp-9716-deploy-new-alpine-scheduled-tasks
 
   # Github Releases
   - name: telegraf-git-release
@@ -892,6 +898,8 @@ groups:
   - name: alpine
     jobs:
       - build-and-push-alpine-to-ecr
+      - deploy-scheduled-tasks
+      - push-alpine-to-staging-ecr
   - name: carbon-relay
     jobs:
       - deploy-carbon-relay
@@ -920,6 +928,7 @@ groups:
   - name: stream-s3-sqs
     jobs:
       - build-and-push-stream-s3-sqs-to-test-ecr
+      - deploy-scheduled-tasks
       - push-stream-s3-sqs-to-staging-ecr
   - name: telegraf
     jobs:
@@ -1052,19 +1061,12 @@ jobs:
             - name: image
           run:
             path: build
-      - in_parallel:
-        - put: alpine-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/tags
-          get_params:
-            skip_download: true
-        - put: alpine-ecr-registry-staging
-          params:
-            image: image/image.tar
-            additional_tags: tags/tags
-          get_params:
-            skip_download: true
+      - put: alpine-ecr-registry-test
+        params:
+          image: image/image.tar
+          additional_tags: tags/tags
+        get_params:
+          skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -1083,6 +1085,73 @@ jobs:
         text: ':hammer: pay-alpine image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
+
+  - name: deploy-scheduled-tasks
+    plan:
+      - in_parallel:
+        - get: alpine-ecr-registry-test
+          trigger: true
+          passed: [build-and-push-alpine-to-ecr]
+        - get: stream-s3-sqs-ecr-registry-test
+          trigger: true
+          passed: [build-and-push-stream-s3-sqs-to-test-ecr]
+        - get: pay-ci-delete-me
+        - get: pay-ci
+        - get: pay-infra
+      - in_parallel:
+        - load_var: alpine_image_tag
+          file: alpine-ecr-registry-test/tag
+        - load_var: stream_s3_sqs_image_tag
+          file: stream-s3-sqs-ecr-registry-test/tag
+        - task: assume-role
+          file: pay-ci-delete-me/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+            AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-test
+        file: pay-ci-delete-me/ci/tasks/deploy-scheduled-tasks.yml
+        params:
+          APP_NAME: adminusers
+          ALPINE_IMAGE_TAG: ((.:alpine_image_tag))
+          STREAM_S3_SQS_IMAGE_TAG: ((.:stream_s3_sqs_image_tag))
+          ACCOUNT: test
+          ENVIRONMENT: test-12
+          <<: *aws_assumed_role_creds
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: push-alpine-to-staging-ecr
+    plan:
+      - get: alpine-ecr-registry-test
+        passed: [deploy-scheduled-tasks]
+        params:
+          format: oci
+        trigger: true
+      - put: alpine-ecr-registry-staging
+        params:
+          image: alpine-ecr-registry-test/image.tar
+          additional_tags: alpine-ecr-registry-test/tag
+        get_params:
+          skip_download: true
 
   - name: build-and-push-stream-s3-sqs-to-test-ecr
     plan:
@@ -1139,7 +1208,7 @@ jobs:
   - name: push-stream-s3-sqs-to-staging-ecr
     plan:        
       - get: stream-s3-sqs-ecr-registry-test
-        passed: [build-and-push-stream-s3-sqs-to-test-ecr]
+        passed: [deploy-scheduled-tasks]
         params:
           format: oci
         trigger: true
