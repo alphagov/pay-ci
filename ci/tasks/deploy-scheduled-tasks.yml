@@ -24,6 +24,6 @@ run:
       cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/management/scheduled_http_v2/
       terraform init
       terraform apply \
-        -var application_image_tag=${STREAM_S3_SQS_IMAGE_TAG} \
+        -var stream_s3_sqs_image_tag=${STREAM_S3_SQS_IMAGE_TAG} \
         -var alpine_image_tag=${ALPINE_IMAGE_TAG} \
         -auto-approve
