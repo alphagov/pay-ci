@@ -226,6 +226,32 @@ resources:
     source:
       repository: govukpay/egress
       <<: *aws_test_config      
+  - name: alpine-ecr-registry-prod
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/alpine
+      variant: release
+      <<: *aws_prod_config
+  - name: alpine-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/alpine
+      <<: *aws_test_config
+  - name: stream-s3-sqs-ecr-registry-prod
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stream-s3-sqs
+      variant: release
+      <<: *aws_prod_config
+  - name: stream-s3-sqs-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stream-s3-sqs
+      <<: *aws_test_config
   - name: carbon-relay-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -543,6 +569,10 @@ groups:
     jobs:
       - deploy-toolbox-to-prod
       - retag-toolbox-image-for-test-perf
+  - name: alpine
+    jobs:
+      - deploy-scheduled-tasks
+      - retag-alpine-image-for-test-perf
   - name: carbon-relay
     jobs:
       - deploy-carbon-relay-to-prod
@@ -565,6 +595,10 @@ groups:
       - deploy-notifications-to-prod
       - smoke-test-notifications-on-prod
       - retag-notifications-for-test-perf
+  - name: stream-s3-sqs
+    jobs:
+      - deploy-scheduled-tasks
+      - retag-stream-s3-sqs-image-for-test-perf
   - name: update-deploy-to-prod-pipeline
     jobs:
       - update-deploy-to-prod-pipeline
@@ -2796,3 +2830,91 @@ jobs:
         params:
           image: notifications-ecr-registry-prod/image.tar
           additional_tags: parse-perf-release-tag/tag
+
+  - name: deploy-scheduled-tasks
+    plan:
+      - in_parallel:
+        - get: alpine-ecr-registry-prod
+          trigger: true
+        - get: stream-s3-sqs-ecr-registry-prod
+          trigger: true
+        - get: pay-ci
+        - get: pay-infra
+      - in_parallel:
+        - load_var: alpine_image_tag
+          file: alpine-ecr-registry-prod/tag
+        - load_var: stream_s3_sqs_image_tag
+          file: stream-s3-sqs-ecr-registry-prod/tag
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+            AWS_ROLE_SESSION_NAME: terraform-prod-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-prod
+        file: pay-ci/ci/tasks/deploy-scheduled-tasks.yml
+        params:
+          APP_NAME: adminusers
+          ALPINE_IMAGE_TAG: ((.:alpine_image_tag))
+          STREAM_S3_SQS_IMAGE_TAG: ((.:stream_s3_sqs_image_tag))
+          ACCOUNT: production
+          ENVIRONMENT: production-2
+          <<: *aws_assumed_role_creds
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: retag-alpine-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: alpine-ecr-registry-prod
+        passed: [deploy-scheduled-tasks]
+        params:
+          format: oci
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: alpine-ecr-registry-prod
+      - put: alpine-ecr-registry-test
+        params:
+          image: alpine-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+        get_params:
+          skip_download: true
+
+  - name: retag-stream-s3-sqs-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: stream-s3-sqs-ecr-registry-prod
+        passed: [deploy-scheduled-tasks]
+        params:
+          format: oci
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: stream-s3-sqs-ecr-registry-prod
+      - put: stream-s3-sqs-ecr-registry-test
+        params:
+          image: stream-s3-sqs-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+        get_params:
+          skip_download: true
