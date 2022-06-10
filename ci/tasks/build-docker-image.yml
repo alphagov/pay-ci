@@ -20,11 +20,15 @@ run:
   args:
   - -ec
   - |
-    echo "DOCKER_CONFIG: $DOCKER_CONFIG"
-    DOCKER_CONFIG=$(realpath "$DOCKER_CONFIG")
-    export DOCKER_CONFIG
-    echo "DOCKER_CONFIG $DOCKER_CONFIG"
-    ls -la "$DOCKER_CONFIG"
+    if [ -d ./docker_creds ]; then
+      echo "DOCKER_CONFIG: $DOCKER_CONFIG"
+      DOCKER_CONFIG=$(realpath "$DOCKER_CONFIG")
+      export DOCKER_CONFIG
+      echo "DOCKER_CONFIG $DOCKER_CONFIG"
+      ls -la "$DOCKER_CONFIG"
+    else
+      echo "docker_creds not set, ignoring"
+    fi
 
     ls -lrt
     pwd
