@@ -14,20 +14,14 @@ outputs:
   - name: local_image
 params:
   app_name:
-  DOCKER_CONFIG:
 run:
   path: bash
   args:
   - -ec
   - |
     if [ -d ./docker_creds ]; then
-      echo "DOCKER_CONFIG: $DOCKER_CONFIG"
-      DOCKER_CONFIG=$(realpath "$DOCKER_CONFIG")
+      DOCKER_CONFIG=$(realpath ./docker_creds)
       export DOCKER_CONFIG
-      echo "DOCKER_CONFIG $DOCKER_CONFIG"
-      ls -la "$DOCKER_CONFIG"
-    else
-      echo "docker_creds not set, ignoring"
     fi
 
     ls -lrt
