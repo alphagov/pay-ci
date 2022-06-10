@@ -8,10 +8,13 @@ image_resource:
 inputs:
   - name: build
   - name: src
+  - name: docker_creds
+    optional: true
 outputs:
   - name: local_image
 params:
   app_name:
+  DOCKER_CONFIG:
 run:
   path: bash
   args:
