@@ -254,19 +254,27 @@ jobs:
         - get: endtoend-git-release
           trigger: true
         - get: pay-ci
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - in_parallel:
         - task: build-endtoend-image
           privileged: true
           params:
             CONTEXT: endtoend-git-release
+            DOCKER_CONFIG: docker_creds
           config:
             platform: linux
             image_resource:
               type: registry-image
               source:
-                repository: vito/oci-build-task
+                repository: concourse/oci-build-task
             inputs:
               - name: endtoend-git-release
+              - name: docker_creds
             outputs:
               - name: image
             run:
@@ -430,7 +438,7 @@ jobs:
               image_resource:
                 type: registry-image
                 source:
-                  repository: vito/oci-build-task
+                  repository: concourse/oci-build-task
               inputs:
               - name: reverse-proxy-git-release
               outputs:
@@ -570,7 +578,7 @@ jobs:
             image_resource:
               type: registry-image
               source:
-                repository: vito/oci-build-task
+                repository: concourse/oci-build-task
             inputs:
             - name: stubs-git-release
             outputs:
