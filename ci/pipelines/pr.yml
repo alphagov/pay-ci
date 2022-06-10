@@ -55,12 +55,6 @@ definitions:
     file: ci/ci/tasks/build-docker-image.yml
     params:
       app_name: updateThisValue
-  - &build-docker-image-2
-    task: build-image
-    privileged: true
-    file: pay-ci/ci/tasks/build-docker-image.yml
-    params:
-      app_name: updateThisValue
   - &put-s3-docker-image
     put: s3-docker-images
     params:
@@ -343,10 +337,6 @@ groups:
     jobs:
       - update-pr-ci-pipeline
 
-  - name: jfharden-test
-    jobs:
-      - test-authenticated-build
-
 resource_types:
   - name: pull-request
     type: registry-image
@@ -419,15 +409,6 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
-      username: alphagov-pay-ci-concourse
-      password: ((github-access-token))
-
-  - name: pay-ci
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-ci
-      branch: pp-9737-add-docker-auth-to-pr-docker-image-builds
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
@@ -632,6 +613,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: card-connector-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: connector
@@ -707,6 +689,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: endtoend-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: endtoend
@@ -838,6 +821,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: publicapi-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: publicapi
@@ -1067,6 +1051,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: adminusers-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: adminusers
@@ -1234,6 +1219,7 @@ jobs:
                   sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
                   sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: cardid
@@ -1467,6 +1453,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: ledger-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: ledger
@@ -1580,6 +1567,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: publicauth-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: publicauth
@@ -1723,6 +1711,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: products-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: products
@@ -1817,6 +1806,7 @@ jobs:
       - <<: *put-e2e-pending-status
         put: card-frontend-pull-request
     - <<: *node-build
+    - <<: *generate-docker-creds-config
     - <<: *build-docker-image
       params:
         app_name: frontend
@@ -1955,6 +1945,7 @@ jobs:
       - <<: *put-e2e-pending-status
         put: selfservice-pull-request
     - <<: *node-build
+    - <<: *generate-docker-creds-config
     - <<: *build-docker-image
       params:
         app_name: selfservice
@@ -2124,6 +2115,7 @@ jobs:
       - <<: *put-e2e-pending-status
         put: products-ui-pull-request
     - <<: *node-build
+    - <<: *generate-docker-creds-config
     - <<: *build-docker-image
       params:
         app_name: products-ui
@@ -2279,37 +2271,3 @@ jobs:
         trigger: true
       - set_pipeline: pr-ci
         file: pr-ci-pipeline/ci/pipelines/pr.yml
-
-  - name: test-authenticated-build
-    plan:
-      - get: pay-ci
-      - get: ci
-      - task: create-dockerfile-requiring-auth
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          outputs:
-            - name: build
-            - name: src
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                cat <<EOF | tee build/Dockerfile
-                FROM govukpay/cardid:latest-master
-                
-                CMD ['sh']
-                EOF
-                
-                mkdir -p src/.git/resource/
-                
-                echo "TEST-PR-NAME" | tee src/.git/resource/pr
-                echo "TEST-HEAD-SHA" | tee src/.git/resource/head_sha
-      - <<: *generate-docker-creds-config
-      - <<: *build-docker-image-2
-        params:
-          app_name: test-authenticated-build
