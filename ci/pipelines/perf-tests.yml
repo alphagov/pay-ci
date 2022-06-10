@@ -1024,9 +1024,16 @@ jobs:
           file: perf-tests-git-release/.git/ref
         - load_var: release-sha
           file: tags/release-sha
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-perf-tests-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))            

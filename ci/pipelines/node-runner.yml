@@ -45,12 +45,27 @@ resources:
       password: ((docker-password))
       tag: node16
 
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+
 # Builds and pushes the node-runner Docker image used by various Concourse CI pipelines
 jobs:
   - name: build-and-push
     plan:
-      - get: node-runner-src
-        trigger: true
+      - in_parallel:
+        - get: node-runner-src
+          trigger: true
+        - get: pay-ci
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - in_parallel:
         - task: build-node-12
           privileged: true
@@ -59,6 +74,7 @@ jobs:
           params:
             CONTEXT: node-runner-src/ci/docker/node-runner
             DOCKERFILE: node-runner-src/ci/docker/node-runner/Dockerfile.node12
+            DOCKER_CONFIG: docker_creds
           config:
             platform: linux
             image_resource:
@@ -78,6 +94,7 @@ jobs:
           params:
             CONTEXT: node-runner-src/ci/docker/node-runner
             DOCKERFILE: node-runner-src/ci/docker/node-runner/Dockerfile.node16
+            DOCKER_CONFIG: docker_creds
           config:
             platform: linux
             image_resource:

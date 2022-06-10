@@ -1036,10 +1036,17 @@ jobs:
           file: tags/release-number
         - load_var: release-sha
           file: tags/release-sha
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-alpine-image
         privileged: true
         params:
           CONTEXT: pay-alpine-git-release/images/docker/govukpay/alpine
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -1157,10 +1164,17 @@ jobs:
           git-release: stream-s3-sqs-git-release
       - load_var: release-tag
         file: tags/tags
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-stream-s3-sqs-proxy-image
         privileged: true
         params:
             CONTEXT: stream-s3-sqs-git-release
+            DOCKER_CONFIG: docker_creds
         config:
           platform: linux
           image_resource:
@@ -1238,9 +1252,16 @@ jobs:
           file: tags/release-sha
         - load_var: release-tag
           file: tags/tags
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -1543,9 +1564,16 @@ jobs:
           file: tags/release-sha
         - load_var: candidate-image-tag
           file: tags/candidate-tag
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -1876,9 +1904,16 @@ jobs:
             - |
               mvn clean package
               cp -r . ../build-jar
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -2227,9 +2262,16 @@ jobs:
             - |
               mvn clean package
               cp -r . ../build-jar
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -2578,9 +2620,16 @@ jobs:
             - |
               mvn clean package
               cp -r . ../build-jar
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -2929,9 +2978,16 @@ jobs:
             - |
               mvn clean package
               cp -r . ../build-jar
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -3259,9 +3315,16 @@ jobs:
           file: tags/release-sha
         - load_var: candidate-image-tag
           file: tags/candidate-tag
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -3565,9 +3628,16 @@ jobs:
             - |
               mvn clean package
               cp -r . ../build-jar
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -3887,9 +3957,16 @@ jobs:
             - |
               mvn clean package
               cp -r . ../build-jar
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -4178,9 +4255,16 @@ jobs:
           file: tags/release-sha
         - load_var: candidate-image-tag
           file: tags/candidate-tag
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -4533,9 +4617,16 @@ jobs:
             - |
               mvn clean package
               cp -r . ../build-jar
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -4848,9 +4939,16 @@ jobs:
             - |
               mvn clean package
               cp -r . ../build-jar
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
@@ -5002,9 +5100,16 @@ jobs:
           git-release: nginx-proxy-git-release
       - load_var: release-tag
         file: tags/tags
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-nginx-proxy-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           CONTEXT: nginx-proxy-git-release
         config:
           platform: linux
@@ -5052,9 +5157,16 @@ jobs:
           git-release: webhooks-egress-git-release
       - load_var: release-tag
         file: tags/tags
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-webhooks-egress-image
         privileged: true
         params:
+          DOCKER_CONFIG: docker_creds
           CONTEXT: webhooks-egress-git-release/production/webhooks-egress/
         config:
           platform: linux
@@ -5115,10 +5227,17 @@ jobs:
           git-release: nginx-forward-proxy-git-release
       - load_var: release-tag
         file: tags/tags
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-nginx-forward-proxy-image
         privileged: true
         params:
-            CONTEXT: nginx-forward-proxy-git-release
+          DOCKER_CONFIG: docker_creds
+          CONTEXT: nginx-forward-proxy-git-release
         config:
           platform: linux
           image_resource:
@@ -5198,10 +5317,17 @@ jobs:
           git-release: telegraf-git-release
       - load_var: release-tag
         file: tags/tags
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-telegraf-image
         privileged: true
         params:
-            CONTEXT: telegraf-git-release
+          DOCKER_CONFIG: docker_creds
+          CONTEXT: telegraf-git-release
         config:
           platform: linux
           image_resource:
@@ -5262,10 +5388,17 @@ jobs:
           git-release: notifications-git-release
       - load_var: release-tag
         file: tags/tags
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - task: build-notifications-image
         privileged: true
         params:
-            CONTEXT: notifications-git-release
+          DOCKER_CONFIG: docker_creds
+          CONTEXT: notifications-git-release
         config:
           platform: linux
           image_resource:

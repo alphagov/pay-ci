@@ -429,10 +429,17 @@ jobs:
                     # See https://github.com/alphagov/pay-scripts/blob/master/images/proxy/build-latest-master.sh
                     prod_naxsi_rules_source=../../../pay-infra-src/provisioning/terraform/modules/pay_microservices_v2
                     find "$prod_naxsi_rules_source" -name \*.naxsi -exec cp {} target \;
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-password))
+              EMAIL: ((docker-email))
           - task: build-reverse-proxy-image
             privileged: true
             params:
               CONTEXT: reverse-proxy-git-release/images/reverse_proxy/
+              DOCKER_CONFIG: docker_creds
             config:
               platform: linux
               image_resource:
@@ -568,11 +575,18 @@ jobs:
         - get: stubs-git-release
           trigger: true
         - get: pay-ci
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
       - in_parallel:
         - task: build-stubs-image
           privileged: true
           params:
             CONTEXT: stubs-git-release
+            DOCKER_CONFIG: docker_creds
           config:
             platform: linux
             image_resource:
