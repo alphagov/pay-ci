@@ -42,10 +42,23 @@ definitions:
       path: src
       status: success
       context: unit tests
+  - &generate-docker-creds-config
+    task: generate-docker-creds-config
+    file: ci/ci/tasks/generate-docker-config-file.yml
+    params:
+      USERNAME: ((docker-username))
+      PASSWORD: ((docker-password))
+      EMAIL: ((docker-email))
   - &build-docker-image
     task: build-image
     privileged: true
     file: ci/ci/tasks/build-docker-image.yml
+    params:
+      app_name: updateThisValue
+  - &build-docker-image-2
+    task: build-image
+    privileged: true
+    file: pay-ci/ci/tasks/build-docker-image.yml
     params:
       app_name: updateThisValue
   - &put-s3-docker-image
@@ -330,6 +343,10 @@ groups:
     jobs:
       - update-pr-ci-pipeline
 
+  - name: jfharden-test
+    jobs:
+      - test-authenticated-build
+
 resource_types:
   - name: pull-request
     type: registry-image
@@ -402,6 +419,15 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: pp-9737-add-docker-auth-to-pr-docker-image-builds
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
@@ -2253,3 +2279,37 @@ jobs:
         trigger: true
       - set_pipeline: pr-ci
         file: pr-ci-pipeline/ci/pipelines/pr.yml
+
+  - name: test-authenticated-build
+    plan:
+      - get: pay-ci
+      - get: ci
+      - task: create-dockerfile-requiring-auth
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          outputs:
+            - name: build
+            - name: src
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                cat <<EOF | tee build/Dockerfile
+                FROM govukpay/cardid:latest-master
+                
+                CMD ['sh']
+                EOF
+                
+                mkdir -p src/.git/resource/
+                
+                echo "TEST-PR-NAME" | tee src/.git/resource/pr
+                echo "TEST-HEAD-SHA" | tee src/.git/resource/head_sha
+      - <<: *generate-docker-creds-config
+      - <<: *build-docker-image-2
+        params:
+          app_name: test-authenticated-build
