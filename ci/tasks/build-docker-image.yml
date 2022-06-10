@@ -20,6 +20,12 @@ run:
   args:
   - -ec
   - |
+    echo "DOCKER_CONFIG: $DOCKER_CONFIG"
+    DOCKER_CONFIG=$(realpath "$DOCKER_CONFIG")
+    export DOCKER_CONFIG
+    echo "DOCKER_CONFIG $DOCKER_CONFIG"
+    ls -la "$DOCKER_CONFIG"
+
     ls -lrt
     pwd
 
