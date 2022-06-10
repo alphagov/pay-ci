@@ -63,6 +63,13 @@ resources:
     source:
       url: https://hooks.slack.com/services/((slack-notification-secret))
 
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+
 resource_types:
   - name: cf-cli
     type: docker-image
@@ -106,10 +113,20 @@ jobs:
   - name: deploy-control-plane
     serial: true
     plan:
-    - get: pay-control-plane-src
-      trigger: true
+    - in_parallel:
+      - get: pay-control-plane-src
+        trigger: true
+      - get: pay-ci
+    - task: generate-docker-creds-config
+      file: pay-ci/ci/tasks/generate-docker-config-file.yml
+      params:
+        USERNAME: ((docker-username))
+        PASSWORD: ((docker-password))
+        EMAIL: ((docker-email))
     - task: build-control-plane-image
       privileged: true
+      params:
+        DOCKER_CONFIG: docker_creds
       output_mapping:
         image: pay-control-plane-image
       config:
