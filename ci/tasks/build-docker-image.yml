@@ -8,6 +8,8 @@ image_resource:
 inputs:
   - name: build
   - name: src
+  - name: docker_creds
+    optional: true
 outputs:
   - name: local_image
 params:
@@ -17,6 +19,11 @@ run:
   args:
   - -ec
   - |
+    if [ -d ./docker_creds ]; then
+      DOCKER_CONFIG=$(realpath ./docker_creds)
+      export DOCKER_CONFIG
+    fi
+
     ls -lrt
     pwd
 

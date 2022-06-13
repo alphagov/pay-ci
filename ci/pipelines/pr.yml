@@ -42,6 +42,13 @@ definitions:
       path: src
       status: success
       context: unit tests
+  - &generate-docker-creds-config
+    task: generate-docker-creds-config
+    file: ci/ci/tasks/generate-docker-config-file.yml
+    params:
+      USERNAME: ((docker-username))
+      PASSWORD: ((docker-password))
+      EMAIL: ((docker-email))
   - &build-docker-image
     task: build-image
     privileged: true
@@ -606,6 +613,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: card-connector-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: connector
@@ -681,6 +689,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: endtoend-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: endtoend
@@ -812,6 +821,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: publicapi-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: publicapi
@@ -1041,6 +1051,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: adminusers-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: adminusers
@@ -1208,6 +1219,7 @@ jobs:
                   sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
                   sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: cardid
@@ -1441,6 +1453,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: ledger-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: ledger
@@ -1554,6 +1567,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: publicauth-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: publicauth
@@ -1697,6 +1711,7 @@ jobs:
         - <<: *put-e2e-pending-status
           put: products-pull-request
       - <<: *run-java-package
+      - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
           app_name: products
@@ -1791,6 +1806,7 @@ jobs:
       - <<: *put-e2e-pending-status
         put: card-frontend-pull-request
     - <<: *node-build
+    - <<: *generate-docker-creds-config
     - <<: *build-docker-image
       params:
         app_name: frontend
@@ -1929,6 +1945,7 @@ jobs:
       - <<: *put-e2e-pending-status
         put: selfservice-pull-request
     - <<: *node-build
+    - <<: *generate-docker-creds-config
     - <<: *build-docker-image
       params:
         app_name: selfservice
@@ -2098,6 +2115,7 @@ jobs:
       - <<: *put-e2e-pending-status
         put: products-ui-pull-request
     - <<: *node-build
+    - <<: *generate-docker-creds-config
     - <<: *build-docker-image
       params:
         app_name: products-ui
