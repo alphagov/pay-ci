@@ -612,23 +612,25 @@ jobs:
               text: ':red-circle: Performance test PaymentSimulation failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
               icon_emoji: ":concourse:"
               username: pay-concourse
-      - try:
-          task: search-payments-simulation-perf-test
-          file: pay-ci/ci/tasks/run-codebuild.yml
-          params:
-            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          on_failure:
-            put: slack-notification
-            attempts: 10
-            params:
-              channel: '#govuk-pay-announce'
-              silent: true
-              text: ':red-circle: Performance test SearchPaymentsSimulation failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-              icon_emoji: ":concourse:"
-              username: pay-concourse
+#   Temporarily disable search scenarios in daily scheduled perftests.
+#   Ledger is currently unable to fulfil these perftest requests reliably.
+#      - try:
+#          task: search-payments-simulation-perf-test
+#          file: pay-ci/ci/tasks/run-codebuild.yml
+#          params:
+#            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
+#            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+#            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+#            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+#          on_failure:
+#            put: slack-notification
+#            attempts: 10
+#            params:
+#              channel: '#govuk-pay-announce'
+#              silent: true
+#              text: ':red-circle: Performance test SearchPaymentsSimulation failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+#              icon_emoji: ":concourse:"
+#              username: pay-concourse
       - try:
           task: self-service-simulation-perf-test
           file: pay-ci/ci/tasks/run-codebuild.yml
