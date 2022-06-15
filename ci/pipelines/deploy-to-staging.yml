@@ -911,7 +911,7 @@ jobs:
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-selfservice-on-staging]
+        passed: [selfservice-pact-tag]
       - put: selfservice-ecr-registry-prod
         params:
           image: selfservice-ecr-registry-staging/image.tar
@@ -1101,7 +1101,7 @@ jobs:
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-connector-on-staging]
+        passed: [connector-pact-tag]
       - put: connector-ecr-registry-prod
         params:
           image: connector-ecr-registry-staging/image.tar
@@ -2379,7 +2379,7 @@ jobs:
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-publicapi-on-staging]
+        passed: [publicapi-pact-tag]
       - put: publicapi-ecr-registry-prod
         params:
           image: publicapi-ecr-registry-staging/image.tar
@@ -2568,7 +2568,7 @@ jobs:
         params:
           format: oci
         trigger: true
-        passed: [smoke-test-ledger-on-staging]
+        passed: [ledger-pact-tag]
       - put: ledger-ecr-registry-prod
         params:
           image: ledger-ecr-registry-staging/image.tar
