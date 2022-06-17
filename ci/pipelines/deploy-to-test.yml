@@ -902,7 +902,10 @@ groups:
   - name: nginx-proxy
     jobs:
       - build-and-push-nginx-proxy-to-test-ecr
-      - deploy-toolbox
+      - deploy-frontend
+      - deploy-products-ui
+      - smoke-test-frontend
+      - smoke-test-products-ui
       - push-nginx-proxy-to-staging-ecr
   - name: webhooks-egress
     jobs:
@@ -1718,6 +1721,7 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+        passed: [build-and-push-nginx-proxy-to-test-ecr]
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -1790,6 +1794,9 @@ jobs:
         trigger: true
         passed: [deploy-frontend]
       - get: nginx-forward-proxy-ecr-registry-test
+        trigger: true
+        passed: [deploy-frontend]
+      - get: nginx-proxy-ecr-registry-test
         trigger: true
         passed: [deploy-frontend]
       - get: pay-ci
@@ -3451,6 +3458,7 @@ jobs:
         passed: [run-products-ui-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+        passed: [build-and-push-nginx-proxy-to-test-ecr]
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -3514,6 +3522,9 @@ jobs:
     serial_groups: [smoke-test]
     plan:
       - get: products-ui-ecr-registry-test
+        trigger: true
+        passed: [deploy-products-ui]
+      - get: nginx-proxy-ecr-registry-test
         trigger: true
         passed: [deploy-products-ui]
       - get: pay-ci
@@ -5210,7 +5221,7 @@ jobs:
         params:
           format: oci
         trigger: true
-        passed: [deploy-toolbox]
+        passed: [smoke-test-frontend, smoke-test-products-ui]
       - put: nginx-proxy-ecr-registry-staging
         params:
           image: nginx-proxy-ecr-registry-test/image.tar
