@@ -705,6 +705,13 @@ resources:
     source:
       repository: govukpay/ledger
       <<: *aws_staging_config
+  - name: webhooks-ecr-registry-staging
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/webhooks
+      variant: release
+      <<: *aws_staging_config
   - name: products-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -895,6 +902,7 @@ groups:
       - build-webhooks
       - deploy-webhooks
       - webhooks-db-migration
+      - push-webhooks-to-staging-ecr
   - name: alpine
     jobs:
       - build-and-push-alpine-to-ecr
@@ -5108,6 +5116,18 @@ jobs:
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
 
+  - name: push-webhooks-to-staging-ecr
+    plan:
+      - get: webhooks-ecr-registry-test
+        passed: [deploy-webhooks]
+        params:
+          format: oci
+        trigger: true
+      - put: webhooks-ecr-registry-staging
+        params:
+          image: webhooks-ecr-registry-test/image.tar
+          additional_tags: webhooks-ecr-registry-test/tag
+
   - name: build-and-push-nginx-proxy-to-test-ecr
     plan:
       - get: pay-ci
@@ -5279,7 +5299,7 @@ jobs:
   - name: push-webhooks-egress-to-staging-ecr
     plan:
       - get: webhooks-egress-ecr-registry-test
-        passed: [smoke-test-webhooks-egress]
+        passed: [deploy-webhooks-egress]
         params:
           format: oci
         trigger: true
