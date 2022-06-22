@@ -5,6 +5,7 @@ image_resource:
   source:
     repository: alpine
 params:
+  APP_NAME:
   ACTION_NAME:
   APPLICATION_IMAGE_TAG:
   ENV:
@@ -16,13 +17,13 @@ run:
     - -c
     - |
       cat <<EOT >> snippet/start
-      :rocket: ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} is beginning
+      :rocket: ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|{$APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} is beginning
       EOT
 
       cat <<EOT >> snippet/success
-      :green-circle: ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} was successful :tada:
+      :green-circle: ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} was successful :tada:
       EOT
 
       cat <<EOT >> snippet/failure
-      :red_circle: ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|egress v${APPLICATION_IMAGE_TAG}> on ${ENV} failed. Version details:
+      :red_circle: ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} failed. Version details:
       EOT

@@ -623,6 +623,7 @@ jobs:
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
         params:
+          APP_NAME: egress
           ACTION_NAME: Deployment
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           ENV: production-2
@@ -678,6 +679,7 @@ jobs:
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
         params:
+          APP_NAME: egress
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
       - load_var: success_snippet
