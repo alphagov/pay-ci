@@ -273,6 +273,13 @@ resources:
       repository: govukpay/egress
       variant: egress-release
       <<: *aws_staging_config
+  - name: webhooks-egress-ecr-registry-staging
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/webhooks-egress
+      variant: release
+      <<: *aws_staging_config
   - name: egress-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -401,6 +408,13 @@ resources:
     icon: docker
     source:
       repository: govukpay/ledger
+      variant: release
+      <<: *aws_staging_config
+  - name: webhooks-ecr-registry-staging
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/webhooks
       variant: release
       <<: *aws_staging_config
   - name: ledger-ecr-registry-prod
@@ -566,6 +580,13 @@ groups:
     jobs:
       - deploy-toolbox-to-staging
       - push-toolbox-to-production-ecr
+  - name: webhooks
+    jobs:
+      - deploy-webhooks-to-staging
+      - webhooks-db-migration-staging
+  - name: webhooks-egress
+    jobs:
+      - deploy-webhooks-egress-to-staging
   - name: alpine
     jobs:
       - deploy-scheduled-tasks
@@ -1273,6 +1294,61 @@ jobs:
         params:
           image: egress-ecr-registry-staging/image.tar
           additional_tags: egress-ecr-registry-staging/tag
+
+  - name: deploy-webhooks-egress-to-staging
+    serial: true
+    serial_groups: [deploy-application]
+    plan:
+      - get: webhooks-egress-ecr-registry-staging
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-egress-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-egress-notification-snippets.yml
+        params:
+          ACTION_NAME: Deployment
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ENV: staging-2
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: start_snippet
+        file: snippet/start
+      - <<: *put_start_slack_notification
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          CLUSTER_NAME: "staging-2-fargate"
+          APP_NAME: webhooks-egress
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - task: deploy-to-staging
+        file: pay-ci/ci/tasks/deploy-webhooks-egress.yml
+        params:
+          <<: *aws_assumed_role_creds
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          ACCOUNT: staging
+          ENVIRONMENT: staging-2
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: webhooks-egress
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          <<: *aws_assumed_role_creds
+          ENVIRONMENT: staging-2
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
 
   - name: deploy-frontend-to-staging
     serial: true
@@ -2573,6 +2649,113 @@ jobs:
         params:
           image: ledger-ecr-registry-staging/image.tar
           additional_tags: ledger-ecr-registry-staging/tag
+
+  - name: deploy-webhooks-to-staging
+    serial: true
+    serial_groups: [deploy-application]
+    plan:
+      - get: webhooks-ecr-registry-staging
+        trigger: true
+      - get: nginx-proxy-ecr-registry-staging
+      - get: telegraf-ecr-registry-staging
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-ecr-registry-staging/tag
+      - load_var: nginx_image_tag
+        file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: telegraf_image_tag
+        file: telegraf-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: webhooks
+          ACTION_NAME: Deployment
+          <<: *snippet_params_all_versions
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - load_var: start_snippet
+        file: snippet/start
+      - <<: *put_start_slack_notification
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: webhooks
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: check-release-versions
+        file: pay-ci/ci/tasks/check-release-versions.yml
+        params:
+          <<: *check_release_versions_params
+          APP_NAME: webhooks
+      - task: deploy-to-staging
+        file: pay-ci/ci/tasks/deploy-app.yml
+        params:
+          APP_NAME: webhooks
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: webhooks
+          <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
+  - name: webhooks-db-migration-staging
+    plan:
+      - get: pay-ci
+      - get: webhooks-ecr-registry-staging
+        params:
+          format: oci
+        trigger: false
+        passed: [deploy-webhooks-to-staging]
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: application_image_tag
+        file: webhooks-ecr-registry-staging/tag
+      - <<: *put_db_migration_slack_notification
+      - task: run-db-migration
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/node-runner
+          inputs:
+            - name: pay-ci
+          params:
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            AWS_PAGER: ""
+            AWS_REGION: "eu-west-1"
+            CLUSTER_NAME: "staging-2-fargate"
+            APP_NAME: "webhooks"
+            APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/run-ecs-db-migration.js
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
+
   - name: push-telegraf-to-production-ecr
     plan:
       - get: telegraf-ecr-registry-staging
