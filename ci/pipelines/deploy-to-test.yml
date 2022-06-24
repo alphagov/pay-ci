@@ -1410,6 +1410,7 @@ jobs:
         passed: [build-and-push-toolbox-to-test-ecr]
       - get: telegraf-ecr-registry-test
         trigger: true
+        passed: [build-and-push-telegraf-to-test-ecr]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -1737,6 +1738,7 @@ jobs:
         passed: [run-frontend-e2e]
       - get: nginx-forward-proxy-ecr-registry-test
         trigger: true
+        passed: [build-and-push-nginx-forward-proxy-to-test-ecr]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
         passed: [build-and-push-nginx-proxy-to-test-ecr]
@@ -5548,6 +5550,7 @@ jobs:
     plan:
       - get: notifications-ecr-registry-test
         trigger: true
+        passed: [build-and-push-notifications-to-test-ecr]
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
