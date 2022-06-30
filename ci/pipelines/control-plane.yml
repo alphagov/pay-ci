@@ -157,8 +157,8 @@ jobs:
           skip_download: true
     - put: pay-control-plane-paas
       params:
-        command: push
-        app_name: pay-control-plane
+        command: zero-downtime-push
+        current_app_name: pay-control-plane
         docker_image: govukpay/control-plane:latest
         manifest: pay-control-plane-src/manifest.yml
     on_failure:

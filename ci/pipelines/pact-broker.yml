@@ -50,8 +50,8 @@ jobs:
         trigger: true
       - put: paas
         params:
-          command: push
-          app_name: pay-pact-broker
+          command: zero-downtime-push
+          current_app_name: pay-pact-broker
           manifest: pact-broker-manifest/ci/pact_broker/pay-pact-broker_manifest.yml
           vars:
             pact-broker-username: ((pact-broker-username))
