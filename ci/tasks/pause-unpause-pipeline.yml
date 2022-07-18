@@ -2,10 +2,10 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: concourse/concourse-pipeline-resource
-    tag: dev
+    repository: govukpay/concourse-runner
+    tag: latest
   version:
-    digest: sha256:cd899511e06c3027dc8429f4b38ba8ea32a4c0bea044f4711899d5987abf8fdf
+    digest: sha256:5a7c14795856965615ae9af4564731bf1d13df1c7c2dbda1b8f2a6554e154760
 params:
   ACTION:
   PIPELINE:
@@ -23,11 +23,6 @@ run:
       echo "The env var ACTION must be either pause or unpasue. It was set to ${ACTION}"
       exit 1
     fi
-
-    echo "Installing jq"
-    apk add --update --no-cache --quiet --no-progress jq
-    # The fly command is in /opt/resource
-    export PATH="$PATH:/opt/resource"
 
     echo "Logging into concourse"
     fly -t concourse login -c "https://pay-cd.deploy.payments.service.gov.uk" -u "$FLY_USERNAME" -p "$FLY_PASSWORD" -n "$FLY_USERNAME"
