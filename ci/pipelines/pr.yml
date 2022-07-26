@@ -344,11 +344,6 @@ resource_types:
       repository: teliaoss/github-pr-resource
       tag: v0.21.0
 
-  - name: paas-s3
-    type: registry-image
-    source:
-      repository: govukpay/concourse-s3-resource
-
 resources:
   - name: pull-request-builds-ecr
     type: registry-image
