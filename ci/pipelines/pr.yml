@@ -55,14 +55,6 @@ definitions:
     file: ci/ci/tasks/build-docker-image.yml
     params:
       app_name: updateThisValue
-  - &put-s3-docker-image
-    put: s3-docker-images
-    params:
-      file: local_image/*.tar
-  - &put-s3-build
-    put: s3-builds
-    params:
-      file: zipped_build/*.tar.gz
   - &put-integration-test-pending-status
     put: updateThisValue
     get_params:
@@ -116,12 +108,6 @@ definitions:
       path: src
       status: success
       context: integration tests
-  - &get-local-docker-image
-    get: s3-docker-images
-    trigger: true
-    passed: [updateThisValue]
-    params:
-      filename: image-updateThisValue-*.tar
   - &put-test-failed-status
     put: card-connector-pull-request
     get_params:
@@ -188,19 +174,6 @@ definitions:
     params:
       consumer_name: updateThisValue
     file: ci/ci/tasks/publish-pacts.yml
-  - &zip-build
-    task: zip-build
-    file: ci/ci/tasks/zip-build.yml
-    params:
-      app_name: updateThisValue
-  - &put-node-test-failure
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: failure
-      context: node test
   - &put-pact-provider-pending-status
     put: updateThisValue
     get_params:
@@ -343,11 +316,6 @@ resource_types:
     source:
       repository: teliaoss/github-pr-resource
       tag: v0.21.0
-
-  - name: paas-s3
-    type: registry-image
-    source:
-      repository: govukpay/concourse-s3-resource
 
 resources:
   - name: pull-request-builds-ecr
