@@ -302,6 +302,12 @@ groups:
       - toolbox-test
       - record-toolbox-build-time
 
+  - name: webhooks
+    jobs:
+      - webhooks-unit-test
+     #- webhooks-as-consumer-pact-test
+     #- record-webhooks-build-time
+
   - name: ci
     jobs:
       - ci-pr-test
@@ -402,6 +408,12 @@ resources:
       repository: alphagov/pay-adminusers
 
   - <<: *pull-request
+    name: webhooks-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-webhooks
+
+  - <<: *pull-request
     name: publicapi-pull-request
     source:
       <<: *pull-request-source
@@ -465,6 +477,25 @@ resources:
         - "ci/tasks/*"
 
 jobs:
+
+  - <<: *job-definition
+    name: webhooks-unit-test
+    serial_groups: [unit-test]
+    plan:
+    - <<: *get-pull-request
+      resource: webhooks-pull-request
+    - <<: *get-ci
+    - <<: *put-unit-tests-pending-status
+      put: webhooks-pull-request
+    - <<: *run-java-unit-test
+      params:
+        app_name: webhooks
+      on_failure:
+        <<: *put-unit-test-failed-status
+        put: webhooks-pull-request
+    - <<: *put-unit-test-success-status
+      put: webhooks-pull-request
+
   - <<: *job-definition
     name: card-connector-unit-test
     serial_groups: [unit-test]
