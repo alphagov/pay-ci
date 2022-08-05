@@ -1,0 +1,16 @@
+#!/sbin/tini /bin/bash
+
+{
+  . /docker-helpers.sh
+  function cleanup_docker() {
+    # prune docker data to work around garbage collection not being consistent
+    clean_docker || true
+    # explicitly kill docker in our own special way defined in docker-helpers,
+    # instead of using dumb-init to propagate different signals up
+    stop_docker || true
+  }
+  trap cleanup_docker EXIT
+}
+
+# This deliberately doesn't use 'exec', as this will prevent the above signal handling from working
+"$@"
