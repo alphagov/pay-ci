@@ -36,6 +36,18 @@ definitions:
         path: src
         status: failure
         context: unit tests
+  - &run-java-17-unit-test
+    task: run-unit-tests
+    file: ci/ci/tasks/java-17-tests.yml
+    params:
+      app_name: updateThisValue
+    on_failure:
+      &put-unit-test-failed-status
+      put: updateThisValue
+      params:
+        path: src
+        status: failure
+        context: unit tests
   - &put-unit-test-success-status
     put: updateThisValue
     params:
@@ -67,6 +79,19 @@ definitions:
     task: run-integration-tests
     privileged: true
     file: ci/ci/tasks/java-integration-tests.yml
+    on_failure:
+      &put-integration-test-failed-status
+      put: updateThisValue
+      get_params:
+        skip_download: true
+      params:
+        path: src
+        status: failure
+        context: integration tests
+  - &run-java-17-integration-tests
+    task: run-integration-tests
+    privileged: true
+    file: ci/ci/tasks/java-17-integration-tests.yml
     on_failure:
       &put-integration-test-failed-status
       put: updateThisValue
@@ -305,6 +330,7 @@ groups:
   - name: webhooks
     jobs:
       - webhooks-unit-test
+      - webhooks-integration-test
      #- webhooks-as-consumer-pact-test
      #- record-webhooks-build-time
 
@@ -477,7 +503,6 @@ resources:
         - "ci/tasks/*"
 
 jobs:
-
   - <<: *job-definition
     name: webhooks-unit-test
     serial_groups: [unit-test]
@@ -487,13 +512,32 @@ jobs:
     - <<: *get-ci
     - <<: *put-unit-tests-pending-status
       put: webhooks-pull-request
-    - <<: *run-java-unit-test
+    - <<: *run-java-17-unit-test
       params:
         app_name: webhooks
       on_failure:
         <<: *put-unit-test-failed-status
         put: webhooks-pull-request
     - <<: *put-unit-test-success-status
+      put: webhooks-pull-request
+
+  - <<: *job-definition
+    name: webhooks-integration-test
+    serial_groups: [integration-test]
+    plan:
+    - <<: *get-pull-request
+      resource: webhooks-pull-request
+    - <<: *put-integration-test-pending-status
+      put: webhooks-pull-request
+    - <<: *get-ci
+    - <<: *run-java-17-integration-tests
+      on_failure:
+        <<: *put-integration-test-failed-status
+        put: webhooks-pull-request
+    - <<: *publish-pacts
+      params:
+        consumer_name: connector
+    - <<: *put-integration-test-success-status
       put: webhooks-pull-request
 
   - <<: *job-definition
