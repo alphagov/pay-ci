@@ -5027,6 +5027,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: webhooks-ecr-registry-test
+        passed: [build-webhooks]
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
