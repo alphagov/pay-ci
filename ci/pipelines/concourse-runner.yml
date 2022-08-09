@@ -18,11 +18,29 @@ resources:
       paths:
         - ci/docker/concourse-runner/*
 
+  - name: concourse-runner-with-java-17-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/docker/concourse-runner-with-java-17/*
+
   - name: concourse-runner
     type: registry-image
     icon: docker
     source:
       repository: govukpay/concourse-runner
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: latest
+
+  - name: concourse-runner-with-java-17
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/concourse-runner-with-java-17
       username: ((docker-username))
       password: ((docker-password))
       tag: latest
@@ -36,7 +54,7 @@ resources:
 
 # Builds and pushes the concourse-runner Docker image used by various Concourse CI pipelines
 jobs:
-  - name: build-and-push
+  - name: build-and-push-concourse-runner
     plan:
       - in_parallel:
         - get: concourse-runner-src
@@ -66,6 +84,38 @@ jobs:
           run:
             path: build
       - put: concourse-runner
+        params: {image: image/image.tar}
+
+  - name: build-and-push-concourse-runner-with-java-17
+    plan:
+      - in_parallel:
+        - get: concourse-runner-with-java-17-src
+          trigger: true
+        - get: pay-ci
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-password))
+          EMAIL: ((docker-email))
+      - task: build
+        privileged: true
+        params: 
+          CONTEXT: concourse-runner-with-java-17-src/ci/docker/concourse-runner-with-java-17
+          DOCKER_CONFIG: docker_creds
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+          - name: concourse-runner-with-java-17-src
+          outputs:
+          - name: image
+          run:
+            path: build
+      - put: concourse-runner-with-java-17
         params: {image: image/image.tar}
 
   - name: update-concourse-runner-pipeline
