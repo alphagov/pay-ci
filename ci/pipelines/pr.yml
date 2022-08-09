@@ -536,7 +536,7 @@ jobs:
         put: webhooks-pull-request
     - <<: *publish-pacts
       params:
-        consumer_name: connector
+        consumer_name: webhooks
     - <<: *put-integration-test-success-status
       put: webhooks-pull-request
 
