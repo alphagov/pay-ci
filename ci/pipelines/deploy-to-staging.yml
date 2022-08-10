@@ -589,6 +589,7 @@ groups:
   - name: webhooks-egress
     jobs:
       - deploy-webhooks-egress-to-staging
+      - smoke-test-webhooks-egress-on-staging
   - name: alpine
     jobs:
       - deploy-scheduled-tasks
@@ -1353,6 +1354,38 @@ jobs:
           <<: *aws_assumed_role_creds
           ENVIRONMENT: staging-2
     <<: *put_success_slack_notification_p1
+    <<: *put_failure_slack_notification
+
+  - name: smoke-test-webhooks-egress-on-staging
+    serial_groups: [smoke-test]
+    plan:
+      - get: webhooks-egress-ecr-registry-staging
+        trigger: true
+        passed: [deploy-webhooks-egress-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-egress-ecr-registry-staging/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: webhooks-egress
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-staging
+    <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
   - name: deploy-frontend-to-staging

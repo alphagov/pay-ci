@@ -927,6 +927,7 @@ groups:
     jobs:
       - build-and-push-webhooks-egress-to-test-ecr
       - deploy-webhooks-egress
+      - smoke-test-webhooks-egress
       - push-webhooks-egress-to-staging-ecr
   - name: nginx-forward-proxy
     jobs:
@@ -5193,7 +5194,7 @@ jobs:
   - name: push-webhooks-to-staging-ecr
     plan:
       - get: webhooks-ecr-registry-test
-        passed: [deploy-webhooks]
+        passed: [webhooks-pact-tag]
         params:
           format: oci
         trigger: true
@@ -5370,11 +5371,43 @@ jobs:
           ENVIRONMENT: test-12
     <<: *put_success_slack_notification      
     <<: *put_failure_slack_notification
+
+  - name: smoke-test-webhooks-egress
+    serial_groups: [smoke-test]
+    plan:
+      - get: webhooks-egress-ecr-registry-test
+        trigger: true
+        passed: [deploy-webhooks-egress]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-egress-ecr-registry-test/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: webhooks-egress
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
   
   - name: push-webhooks-egress-to-staging-ecr
     plan:
       - get: webhooks-egress-ecr-registry-test
-        passed: [deploy-webhooks-egress]
+        passed: [smoke-test-webhooks-egress]
         params:
           format: oci
         trigger: true
