@@ -901,6 +901,8 @@ groups:
     jobs:
       - build-webhooks
       - deploy-webhooks
+      - smoke-test-webhooks
+      - webhooks-pact-tag
       - webhooks-db-migration
       - push-webhooks-to-staging-ecr
   - name: alpine
@@ -5074,6 +5076,73 @@ jobs:
         params:
           APP_NAME: webhooks
           <<: *wait_for_deploy_params
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
+  - name: smoke-test-webhooks
+    serial_groups: [smoke-test]
+    plan:
+      - get: webhooks-ecr-registry-test
+        trigger: true
+        passed: [deploy-webhooks]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-ecr-registry-test/tag
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: webhooks
+          ACTION_NAME: Smoke test
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_trigger_canary
+          AWS_ROLE_SESSION_NAME: trigger-canary-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - in_parallel:
+          <<: *smoke-test-run-all-on-test
+    <<: *put_success_slack_notification
+    <<: *put_failure_slack_notification
+
+
+  - name: webhooks-pact-tag
+    plan:
+      - get: webhooks-ecr-registry-test
+        passed: [smoke-test-webhooks]
+        trigger: true
+      - load_var: application_image_tag
+        file: webhooks-ecr-registry-test/tag
+      - get: pay-ci
+      - task: create-notification-snippets
+        file: pay-ci/ci/tasks/create-notification-snippets.yml
+        params:
+          APP_NAME: webhooks
+          ACTION_NAME: Pact tag
+          <<: *snippet_params_app_version
+      - load_var: success_snippet
+        file: snippet/success
+      - load_var: failure_snippet
+        file: snippet/failure
+      - task: get-git-sha-for-release-tag
+        file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
+        params:
+          APP_NAME: webhooks
+          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+      - load_var: git-sha
+        file: git-sha/git-sha
+      - task: tag-pact
+        file: pay-ci/ci/tasks/pact-tag.yml
+        params:
+          GIT_SHA: ((.:git-sha))
+          APP_NAME: webhooks
+          PACT_TAG: test-fargate
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
