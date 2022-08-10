@@ -101,6 +101,10 @@ definitions:
         path: src
         status: failure
         context: integration tests
+  - &run-java-consumer-pact-tests
+    task: run-consumer-pact-tests
+    privileged: true
+    file: ci/ci/tasks/java-consumer-pact-tests.yml
   - &send-pr-build-time
     task: send-pr-build-time-to-hosted-graphite
     params:
@@ -242,6 +246,7 @@ groups:
       - adminusers-unit-test
       - adminusers-integration-test
       - adminusers-e2e
+      - adminusers-consumer-pact-test
       - adminusers-as-provider-pact-test
       - adminusers-as-consumer-pact-test
       - record-adminusers-build-time
@@ -1079,13 +1084,24 @@ jobs:
       put: adminusers-pull-request
 
   - <<: *job-definition
+    name: adminusers-consumer-pact-test
+    plan:
+    - <<: *get-ci
+    - <<: *get-pull-request
+      resource: adminusers-pull-request
+    - <<: *run-java-consumer-pact-tests
+    - <<: *publish-pacts
+      params:
+        consumer_name: adminusers
+
+  - <<: *job-definition
     name: adminusers-as-consumer-pact-test
     serial_groups: [ pact-test ]
     plan:
       - <<: *get-ci
       - <<: *get-pull-request
         resource: adminusers-pull-request
-        passed: [ adminusers-unit-test, adminusers-integration-test ]
+        passed: [ adminusers-consumer-pact-test, adminusers-integration-test ]
       - put: adminusers-pull-request
         get_params:
           skip_download: true
@@ -1094,6 +1110,7 @@ jobs:
           status: pending
           context: app-as-consumer pact verification
       - get: ledger-master
+      - get: card-connector-master
       - get: adminusers-master
         params: { submodules: none }
       - <<: *pact-provider-test-preflight-check
@@ -1107,6 +1124,13 @@ jobs:
             params:
               consumer: adminusers
               provider: ledger
+          - <<: *pact-provider-verification
+            task: connector-provider-pact-verification
+            input_mapping:
+              test_target: card-connector-master
+            params:
+              consumer: adminusers
+              provider: connector
         on_failure:
           put: adminusers-pull-request
           params:
@@ -1436,49 +1460,7 @@ jobs:
     - <<: *get-ci
     - <<: *get-pull-request
       resource: ledger-pull-request
-    - task: run-consumer-pact-tests
-      privileged: true
-      config:
-        container_limits: {}
-        platform: linux
-        image_resource:
-          type: registry-image
-          source:
-            repository: govukpay/concourse-runner
-        inputs:
-          - name: src
-        outputs:
-          - name: pacts
-        run:
-          path: bash
-          dir: src
-          args:
-            - -ec
-            - |
-              source /docker-helpers.sh
-              start_docker
-
-              function cleanup {
-                echo "CLEANUP TRIGGERED"
-                clean_docker
-                stop_docker
-                echo "CLEANUP COMPLETE"
-              }
-
-              trap cleanup EXIT
-
-              commit="$(cat .git/resource/head_sha)"
-              pr="$(cat .git/resource/pr)"
-              mvn clean package \
-                        -DPACT_BROKER_URL=https://pact-broker-test.cloudapps.digital \
-                        -DPACT_BROKER_USERNAME="" \
-                        -DPACT_BROKER_PASSWORD="" \
-                        -DPACT_CONSUMER_VERSION="${commit}" \
-                        -DPACT_CONSUMER_TAG="${pr}" \
-                        -Dpact.provider.version="${commit}" \
-                        -DrunConsumerContractTests=true
-              cp -R target/pacts/* ../pacts/ || true
-
+    - <<: *run-java-consumer-pact-tests
     - <<: *publish-pacts
       params:
         consumer_name: ledger
