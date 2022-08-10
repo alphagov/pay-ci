@@ -331,8 +331,8 @@ groups:
     jobs:
       - webhooks-unit-test
       - webhooks-integration-test
-     #- webhooks-as-consumer-pact-test
-     #- record-webhooks-build-time
+      - webhooks-as-consumer-pact-test
+      - record-webhooks-build-time
 
   - name: ci
     jobs:
@@ -539,6 +539,42 @@ jobs:
         consumer_name: webhooks
     - <<: *put-integration-test-success-status
       put: webhooks-pull-request
+
+  - name: webhooks-as-consumer-pact-test
+    serial_groups: [pact-test]
+    plan:
+      - <<: *get-pull-request
+        resource: webhooks-pull-request
+        passed: [webhooks-unit-test, webhooks-integration-test]
+      - <<: *put-pact-provider-pending-status
+        put: webhooks-pull-request
+      - <<: *get-ci
+      - get: ledger-master
+      - <<: *pact-provider-test-preflight-check
+        params:
+          consumer: webhooks
+      - in_parallel:
+        - <<: *pact-provider-verification
+          task: ledger-provider-pact-verification
+          input_mapping:
+            test_target: ledger-master
+          params:
+            consumer: webhooks
+            provider: ledger
+        on_failure:
+          <<: *put-pact-provider-failed-status
+          put: webhooks-pull-request
+      - <<: *put-pact-provider-success-status
+        put: webhooks-pull-request
+
+  - <<: *job-definition
+    name: record-webhooks-build-time
+    plan:
+    - <<: *get-pull-request
+      resource: webhooks-pull-request
+      passed: [webhooks-unit-test, webhooks-integration-test,
+        webhooks-as-consumer-pact-test]
+    - <<: *send-pr-build-time
 
   - <<: *job-definition
     name: card-connector-unit-test
@@ -939,7 +975,6 @@ jobs:
     on_failure:
       <<: *put-e2e-failed-status
       put: publicapi-pull-request
-
 
   - name: publicapi-as-consumer-pact-test
     serial_groups: [pact-test]
