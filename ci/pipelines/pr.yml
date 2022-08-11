@@ -1472,7 +1472,7 @@ jobs:
       - <<: *get-ci
       - <<: *get-pull-request
         resource: ledger-pull-request
-        passed: [ledger-consumer-pact-test]
+        passed: [ledger-consumer-pact-test, ledger-integration-test]
       - put: ledger-pull-request
         get_params:
           skip_download: true
