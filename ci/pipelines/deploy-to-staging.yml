@@ -1321,6 +1321,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: webhooks-egress-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
