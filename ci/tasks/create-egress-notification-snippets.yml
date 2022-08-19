@@ -17,7 +17,7 @@ run:
     - -c
     - |
       cat <<EOT >> snippet/start
-      :rocket: ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|{$APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} is beginning
+      :rocket: ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} is beginning
       EOT
 
       cat <<EOT >> snippet/success
