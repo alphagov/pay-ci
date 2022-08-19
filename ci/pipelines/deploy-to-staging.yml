@@ -280,6 +280,13 @@ resources:
       repository: govukpay/webhooks-egress
       variant: release
       <<: *aws_staging_config
+  - name: webhooks-egress-ecr-registry-prod
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/webhooks-egress
+      variant: release
+      <<: *aws_production_config
   - name: egress-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -417,6 +424,13 @@ resources:
       repository: govukpay/webhooks
       variant: release
       <<: *aws_staging_config
+  - name: webhooks-ecr-registry-prod
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/webhooks
+      variant: release
+      <<: *aws_production_config
   - name: ledger-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -585,11 +599,13 @@ groups:
       - deploy-webhooks-to-staging
       - smoke-test-webhooks-on-staging
       - webhooks-pact-tag
+      - push-webhooks-to-production-ecr
       - webhooks-db-migration-staging
   - name: webhooks-egress
     jobs:
       - deploy-webhooks-egress-to-staging
       - smoke-test-webhooks-egress-on-staging
+      - push-webhooks-egress-to-production-ecr
   - name: alpine
     jobs:
       - deploy-scheduled-tasks
@@ -1387,6 +1403,18 @@ jobs:
           <<: *smoke-test-run-all-on-staging
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: push-webhooks-egress-to-production-ecr
+    plan:
+      - get: webhooks-egress-ecr-registry-staging
+        passed: [smoke-test-webhooks-egress-on-staging]
+        params:
+          format: oci
+        trigger: true
+      - put: webhooks-egress-ecr-registry-prod
+        params:
+          image: webhooks-egress-ecr-registry-staging/image.tar
+          additional_tags: webhooks-egress-ecr-registry-staging/tag
 
   - name: deploy-frontend-to-staging
     serial: true
@@ -2800,7 +2828,6 @@ jobs:
         file: snippet/success
       - load_var: failure_snippet
         file: snippet/failure
-
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -2816,6 +2843,18 @@ jobs:
           PACT_TAG: staging-fargate
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: push-webhooks-to-production-ecr
+    plan:
+      - get: webhooks-ecr-registry-staging
+        params:
+          format: oci
+        trigger: true
+        passed: [webhooks-pact-tag]
+      - put: webhooks-ecr-registry-prod
+        params:
+          image: webhooks-ecr-registry-staging/image.tar
+          additional_tags: webhooks-ecr-registry-staging/tag
 
   - name: webhooks-db-migration-staging
     plan:
