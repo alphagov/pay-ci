@@ -1,0 +1,243 @@
+---
+resources:
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+  - name: carbon-relay-ng-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/carbon-relay-ng.yml
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+  - name: carbon-relay-ng-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/carbon-relay-ng
+      branch: master
+      tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+  - name: carbon-relay-ng-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/carbon-relay-ng
+      variant: release
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+
+  - name: carbon-relay-ng-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/carbon-relay-ng
+      password: ((docker-password))
+      username: ((docker-username))
+
+jobs:
+  - name: build-then-test-and-push
+    plan:
+      - in_parallel:
+        - get: carbon-relay-ng-src
+          trigger: true
+        - get: pay-ci
+      - in_parallel:
+        - task: generate-docker-creds-config
+          file: pay-ci/ci/tasks/generate-docker-config-file.yml
+          params:
+            USERNAME: ((docker-username))
+            PASSWORD: ((docker-password))
+            EMAIL: ((docker-email))
+        - task: get-golang-build-version
+          # We are going through this pain so if upstream updates their go build version
+          # we will automatically pick it up
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source:
+                repository: alpine
+            inputs:
+              - name: carbon-relay-ng-src
+            outputs:
+              - name: golang_build_version
+            run:
+              path: ash
+              args:
+                - -eu
+                - -c
+                - |
+
+                  echo -n "Installing yq..."
+                  apk add --quiet --no-progress --no-cache yq
+                  echo "done"
+
+                  echo -n "Detecting circle golang build image used in upstream..."
+                  CIRCLECI_GOLANG_BUILD_IMAGE=$(yq < carbon-relay-ng-src/.circleci/config.yml '.jobs.build.docker[] | select(.image | test("^circleci/golang:")) | .image')
+                  echo "$CIRCLECI_GOLANG_BUILD_IMAGE"
+
+                  echo -n "Extracting golang version..."
+                  GOLANG_VERSION=$(echo "$CIRCLECI_GOLANG_BUILD_IMAGE" | cut -f 2 -d ":")
+                  echo "$GOLANG_VERSION"
+
+                  echo "$GOLANG_VERSION" | tee golang_build_version/version.txt
+        - task: parse-release-tag
+          file: pay-ci/ci/tasks/parse-release-tag.yml
+          input_mapping:
+            git-release: carbon-relay-ng-src
+      - in_parallel:
+        - load_var: golang_build_version
+          file: golang_build_version/version.txt
+        - load_var: release-name
+          file: carbon-relay-ng-src/.git/ref
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-sha
+          file: tags/release-sha
+      - task: build-carbon-relay-ng-binaries
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: golang
+              tag: ((.:golang_build_version))
+          inputs:
+            - name: carbon-relay-ng-src
+          outputs:
+            - name: carbon-relay-ng-src
+            - name: carbon-relay-ng-version
+          run:
+            dir: carbon-relay-ng-src
+            path: bash
+            args:
+              - -euc
+              - |
+                go get github.com/shuLhan/go-bindata/cmd/go-bindata
+                make build-linux
+                ./carbon-relay-ng version | cut -f 2 -d " " | tee ../carbon-relay-ng-version/version.txt
+      - in_parallel:
+        - task: build-carbon-relay-ng-container-image
+          privileged: true
+          params:
+            CONTEXT: carbon-relay-ng-src/
+            DOCKER_CONFIG: docker_creds
+            LABEL_release_number: ((.:release-number))
+            LABEL_release_name: ((.:release-name))
+            LABEL_release_sha: ((.:release-sha))
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source:
+                repository: concourse/oci-build-task
+            inputs:
+              - name: carbon-relay-ng-src
+            outputs:
+              - name: image
+            run:
+              path: build
+        - task: create-tags-for-container
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source:
+                repository: alpine
+            inputs:
+              - name: tags
+              - name: carbon-relay-ng-version
+            outputs:
+              - name: container-additional-tags
+            run:
+              path: ash
+              args:
+                - -eu
+                - -c
+                - |
+                  cat tags/tags | tee -a container-additional-tags/additional-tags-ecr container-additional-tags/additional-tags-dockerhub # Release tag
+                  cat carbon-relay-ng-version/version.txt | tee -a container-additional-tags/additional-tags-ecr container-additional-tags/additional-tags-dockerhub
+                  cat carbon-relay-ng-version/version.txt | cut -f 1 -d "-" | tee -a container-additional-tags/additional-tags-ecr container-additional-tags/additional-tags-dockerhub
+      - task: run-tests-against-container
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: govukpay/concourse-runner
+          inputs:
+            - name: image
+            - name: carbon-relay-ng-src
+          run:
+            path: /bin/bash
+            args:
+              - -c
+              - |
+                source /docker-helpers.sh
+                start_docker
+
+                set -euo pipefail
+
+                function cleanup {
+                  echo "CLEANUP TRIGGERED"
+                  clean_docker
+                  stop_docker
+                  echo "CLEANUP COMPLETE"
+                }
+
+                trap cleanup EXIT
+
+                echo "Loading docker image"
+                docker load -i image/image.tar
+                echo
+
+                echo "Tagging image with carbon-relay-ng:test"
+                docker tag $(cat image/digest) carbon-relay-ng:test
+                echo
+
+                cd carbon-relay-ng-src/govuk-tests
+                echo "Updating docker-compose.yml to use built image"
+                sed -i -E 's/build: ".*"/image: "carbon-relay-ng:test"/' docker-compose.yml
+                echo
+
+                echo "Running tests"
+                docker-compose up --exit-code-from test-receiver
+                echo "Tests passed"
+      - in_parallel:
+        - put: carbon-relay-ng-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: container-additional-tags/additional-tags-ecr
+          get_params:
+            skip_download: true
+        - put: carbon-relay-ng-dockerhub
+          params:
+            image: image/image.tar
+            additional_tags: container-additional-tags/additional-tags-dockerhub
+          get_params:
+            skip_download: true
+
+  - name: update-carbon-relay-ng-pipeline
+    plan:
+      - get: carbon-relay-ng-pipeline
+        trigger: true
+      - set_pipeline: carbon-relay-ng
+        file: carbon-relay-ng-pipeline/ci/pipelines/carbon-relay-ng.yml
