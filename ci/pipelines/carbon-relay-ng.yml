@@ -51,6 +51,18 @@ resources:
       password: ((docker-password))
       username: ((docker-username))
 
+  - name: slack-notification
+    type: slack-notification
+    source:
+      url: https://hooks.slack.com/services/((slack-notification-secret))
+
+resource_types:
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
+
 jobs:
   - name: build-then-test-and-push
     plan:
@@ -234,6 +246,24 @@ jobs:
             additional_tags: container-additional-tags/additional-tags-dockerhub
           get_params:
             skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: Failed to build, test, and push govukpay/carbon-relay-ng container image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':green-circle: Built, tested, and pushed govukpay/carbon-relay-ng container image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: update-carbon-relay-ng-pipeline
     plan:
