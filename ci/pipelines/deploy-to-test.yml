@@ -905,6 +905,12 @@ groups:
       - webhooks-pact-tag
       - webhooks-db-migration
       - push-webhooks-to-staging-ecr
+  - name: webhooks-egress
+    jobs:
+      - build-and-push-webhooks-egress-to-test-ecr
+      - deploy-webhooks-egress
+      - smoke-test-webhooks-egress
+      - push-webhooks-egress-to-staging-ecr
   - name: alpine
     jobs:
       - build-and-push-alpine-to-ecr
@@ -923,12 +929,6 @@ groups:
       - smoke-test-frontend
       - smoke-test-products-ui
       - push-nginx-proxy-to-staging-ecr
-  - name: webhooks-egress
-    jobs:
-      - build-and-push-webhooks-egress-to-test-ecr
-      - deploy-webhooks-egress
-      - smoke-test-webhooks-egress
-      - push-webhooks-egress-to-staging-ecr
   - name: nginx-forward-proxy
     jobs:
       - deploy-frontend
