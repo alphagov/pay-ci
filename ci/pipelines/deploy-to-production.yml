@@ -491,6 +491,12 @@ resources:
       repository: govukpay/webhooks-egress
       variant: release
       <<: *aws_prod_config
+  - name: webhooks-egress-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/webhooks-egress
+      <<: *aws_test_config
 
 resource_types:
   - name: registry-image
@@ -593,6 +599,7 @@ groups:
     jobs:
       - deploy-webhooks-egress-to-prod
       - smoke-test-webhooks-egress-on-prod
+      - retag-webhooks-egress-image-for-test-perf
   - name: alpine
     jobs:
       - deploy-scheduled-tasks
@@ -3206,3 +3213,20 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-webhooks-egress-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: webhooks-egress-ecr-registry-prod
+        trigger: true
+        passed: [smoke-test-webhooks-egress-on-prod]
+        params:
+          format: oci
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: webhooks-egress-ecr-registry-prod
+      - put: webhooks-egress-ecr-registry-test
+        params:
+          image: webhooks-egress-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
