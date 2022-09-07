@@ -484,6 +484,12 @@ resources:
       repository: govukpay/webhooks
       variant: release
       <<: *aws_prod_config
+  - name: webhooks-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/webhooks
+      <<: *aws_test_config
   - name: webhooks-egress-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -491,6 +497,12 @@ resources:
       repository: govukpay/webhooks-egress
       variant: release
       <<: *aws_prod_config
+  - name: webhooks-egress-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/webhooks-egress
+      <<: *aws_test_config
 
 resource_types:
   - name: registry-image
@@ -589,10 +601,13 @@ groups:
       - smoke-test-webhooks-on-prod
       - webhooks-pact-tag
       - webhooks-db-migration-prod
+      - retag-webhooks-image-for-test-perf
+      - retag-webhooks-image-for-test-perf-db
   - name: webhooks-egress
     jobs:
       - deploy-webhooks-egress-to-prod
       - smoke-test-webhooks-egress-on-prod
+      - retag-webhooks-egress-image-for-test-perf
   - name: alpine
     jobs:
       - deploy-scheduled-tasks
@@ -3074,6 +3089,23 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: retag-webhooks-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: webhooks-ecr-registry-prod
+        trigger: true
+        passed: [smoke-test-webhooks-on-prod]
+        params:
+          format: oci
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: webhooks-ecr-registry-prod
+      - put: webhooks-ecr-registry-test
+        params:
+          image: webhooks-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+
   - name: webhooks-db-migration-prod
     plan:
       - get: pay-ci
@@ -3117,6 +3149,23 @@ jobs:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
     <<: *put_db_migration_failure_slack_notification
+
+  - name: retag-webhooks-image-for-test-perf-db
+    plan:
+      - get: pay-ci
+      - get: webhooks-ecr-registry-prod
+        params:
+          format: oci
+        passed: [webhooks-db-migration-prod]
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+        input_mapping:
+          ecr-repo: webhooks-ecr-registry-prod
+      - put: webhooks-ecr-registry-test
+        params:
+          image: webhooks-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-db-release-tag/tag
 
   - name: deploy-webhooks-egress-to-prod
     serial: true
@@ -3206,3 +3255,20 @@ jobs:
           <<: *smoke-test-run-all-on-production
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: retag-webhooks-egress-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: webhooks-egress-ecr-registry-prod
+        trigger: true
+        passed: [smoke-test-webhooks-egress-on-prod]
+        params:
+          format: oci
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: webhooks-egress-ecr-registry-prod
+      - put: webhooks-egress-ecr-registry-test
+        params:
+          image: webhooks-egress-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
