@@ -251,6 +251,7 @@ definitions:
           params:
             SERVICE_NAME: webhooks-egress
             SCALE_DIRECTION: in
+            TARGET_GROUP_NAME_SUFFIX: 'tg'
             DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.webhooks-egress))
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
@@ -405,6 +406,7 @@ definitions:
           params:
             SERVICE_NAME: webhooks-egress
             SCALE_DIRECTION: out
+            TARGET_GROUP_NAME_SUFFIX: 'tg'
             DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.webhooks-egress))
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))

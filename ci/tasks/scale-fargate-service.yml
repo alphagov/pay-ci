@@ -11,6 +11,7 @@ params:
   AWS_DEFAULT_REGION: eu-west-1
   MAX_ATTEMPTS: 40
   ECS_CLUSTER: test-perf-1-fargate
+  TARGET_GROUP_NAME_SUFFIX: 'lb-tg'
 run:
   path: /bin/bash
   args:
@@ -24,7 +25,7 @@ run:
       fi
 
       # The bash ${ECS_CLUSTER%-fargate} means the ECS_CLUSTER env var with -fargate removed from the end
-      TARGET_GROUP_NAME="${ECS_CLUSTER%-fargate}-${SERVICE_NAME}-lb-tg"
+      TARGET_GROUP_NAME="${ECS_CLUSTER%-fargate}-${SERVICE_NAME}-${TARGET_GROUP_NAME_SUFFIX}"
       TARGET_GROUP_ARN=$(
         aws elbv2 describe-target-groups  \
           --query TargetGroups[?TargetGroupName==\`${TARGET_GROUP_NAME}\`].TargetGroupArn \
