@@ -118,7 +118,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: PP-9392-Update-Concourse-tasks-to-use-node16-everywhere
 
   # Github Releases
   - name: telegraf-git-release
@@ -2147,7 +2147,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-runner
+              repository: govukpay/node-runner:node16
           inputs:
             - name: pay-ci
           params:
