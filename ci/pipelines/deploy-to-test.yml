@@ -2147,7 +2147,8 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-runner:node16
+              repository: govukpay/node-runner
+              tag: node16
           inputs:
             - name: pay-ci
           params:
