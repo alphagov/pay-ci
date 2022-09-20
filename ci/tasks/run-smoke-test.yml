@@ -4,6 +4,7 @@ image_resource:
   type: registry-image
   source:
     repository: govukpay/node-runner
+    tag: node16
 inputs:
   - name: pay-ci
 outputs:
