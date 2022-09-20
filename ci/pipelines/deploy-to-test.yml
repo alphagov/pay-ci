@@ -2507,6 +2507,7 @@ jobs:
             type: registry-image
             source:
               repository: govukpay/node-runner
+              tag: node16
           inputs:
             - name: pay-ci
           params:
@@ -2943,6 +2944,7 @@ jobs:
             type: registry-image
             source:
               repository: govukpay/node-runner
+              tag: node16
           inputs:
             - name: pay-ci
           params:
@@ -3223,6 +3225,7 @@ jobs:
             type: registry-image
             source:
               repository: govukpay/node-runner
+              tag: node16
           inputs:
             - name: pay-ci
           params:
@@ -4201,6 +4204,7 @@ jobs:
             type: registry-image
             source:
               repository: govukpay/node-runner
+              tag: node16
           inputs:
             - name: pay-ci
           params:
@@ -5166,6 +5170,7 @@ jobs:
             type: registry-image
             source:
               repository: govukpay/node-runner
+              tag: node16
           inputs:
             - name: pay-ci
           params:
