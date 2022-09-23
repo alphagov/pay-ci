@@ -1,12 +1,12 @@
-# We should have a single task for builing node apps for pr and build
+# We should have a single task for building node apps for pr and build
 # pipelines. This task should output the built project and subsequent task be
-# resposibile for putting it where it needs to go.
+# responsible for putting it where it needs to go.
 platform: linux
 image_resource:
   type: docker-image
   source:
     repository: node
-    tag: node16
+    tag: 16-stretch-slim
 inputs:
   - name: src
 outputs:
