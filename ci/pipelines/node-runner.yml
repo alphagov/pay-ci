@@ -18,15 +18,6 @@ resources:
       paths:
         - ci/docker/node-runner/*
 
-  - name: node-runner-latest
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/node-runner
-      username: ((docker-username))
-      password: ((docker-password))
-      tag: latest
-
   - name: node-runner-node16
     type: registry-image
     icon: docker
