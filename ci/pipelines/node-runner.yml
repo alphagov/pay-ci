@@ -18,24 +18,6 @@ resources:
       paths:
         - ci/docker/node-runner/*
 
-  - name: node-runner-latest
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/node-runner
-      username: ((docker-username))
-      password: ((docker-password))
-      tag: latest
-
-  - name: node-runner-node12
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/node-runner
-      username: ((docker-username))
-      password: ((docker-password))
-      tag: node12
-
   - name: node-runner-node16
     type: registry-image
     icon: docker
@@ -67,26 +49,6 @@ jobs:
           PASSWORD: ((docker-password))
           EMAIL: ((docker-email))
       - in_parallel:
-        - task: build-node-12
-          privileged: true
-          output_mapping:
-            image: node12-image
-          params:
-            CONTEXT: node-runner-src/ci/docker/node-runner
-            DOCKERFILE: node-runner-src/ci/docker/node-runner/Dockerfile.node12
-            DOCKER_CONFIG: docker_creds
-          config:
-            platform: linux
-            image_resource:
-              type: registry-image
-              source:
-                repository: concourse/oci-build-task
-            inputs:
-            - name: node-runner-src
-            outputs:
-            - name: image
-            run:
-              path: build
         - task: build-node-16
           privileged: true
           output_mapping:
@@ -109,16 +71,6 @@ jobs:
               path: build
       - in_parallel:
         - do:
-          - put: node-runner-node12
-            params:
-              image: node12-image/image.tar
-            get_params:
-              skip_download: true
-          - put: node-runner-latest
-            params:
-              image: node12-image/image.tar
-            get_params:
-              skip_download: true
         - put: node-runner-node16
           params:
             image: node16-image/image.tar

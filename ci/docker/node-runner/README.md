@@ -3,8 +3,8 @@
 This Docker container is used to run [JS scripts](https://github.com/alphagov/pay-ci/tree/master/ci/scripts)
 within tasks on Concourse CI.
 
-Note there are 2 Dockerfiles in this repository for now, one is for node12 and one for node16. The symbolic link of
-Dockerfile to Dockerfile.node12 ensures node12 is still the default.
+Note there is only one Dockerfile in this repository for node16 for now, however the symbolic link 
+has been kept in this folder (defaulting to Dockerfile.node16), to prepare for future node updates.
 
 You can build the node16 version by providing the `--file` flag to docker build:
 
