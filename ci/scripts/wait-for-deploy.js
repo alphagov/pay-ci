@@ -2,7 +2,7 @@
 
 const AWS = require('aws-sdk')
 const ecs = new AWS.ECS()
-const MAX_RETRIES = 120
+const MAX_RETRIES = 180
 const EGRESS_MAX_RETRIES = 180
 const CHECK_INTERVAL = 5000
 const {
