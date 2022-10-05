@@ -808,6 +808,7 @@ groups:
       - build-and-push-adminusers-candidate
       - run-adminusers-e2e
       - deploy-adminusers
+      - record-adminusers-release-number
       - smoke-test-adminusers
       - adminusers-pact-tag
       - push-adminusers-to-staging-ecr
@@ -817,6 +818,7 @@ groups:
       - build-and-push-cardid-candidate
       - run-cardid-e2e
       - deploy-cardid
+      - record-cardid-release-number
       - smoke-test-cardid
       - cardid-pact-tag
       - push-cardid-to-staging-ecr
@@ -825,6 +827,7 @@ groups:
       - build-and-push-connector-candidate
       - run-connector-e2e
       - deploy-connector
+      - record-connector-release-number
       - smoke-test-connector
       - connector-pact-tag
       - push-connector-to-staging-ecr
@@ -832,6 +835,7 @@ groups:
   - name: egress
     jobs:
       - deploy-egress
+      - record-egress-release-number
       - smoke-test-egress
       - push-egress-to-staging-ecr
   - name: frontend
@@ -839,6 +843,7 @@ groups:
       - build-and-push-frontend-candidate
       - run-frontend-e2e
       - deploy-frontend
+      - record-frontend-release-number
       - smoke-test-frontend
       - frontend-pact-tag
       - push-frontend-to-staging-ecr
@@ -847,6 +852,7 @@ groups:
       - build-and-push-ledger-candidate
       - run-ledger-e2e
       - deploy-ledger
+      - record-ledger-release-number
       - smoke-test-ledger
       - ledger-pact-tag
       - push-ledger-to-staging-ecr
@@ -856,6 +862,7 @@ groups:
       - build-and-push-products-candidate
       - run-products-e2e
       - deploy-products
+      - record-products-release-number
       - smoke-test-products
       - products-pact-tag
       - push-products-to-staging-ecr
@@ -865,6 +872,7 @@ groups:
       - build-and-push-products-ui-candidate
       - run-products-ui-e2e
       - deploy-products-ui
+      - record-products-ui-release-number
       - smoke-test-products-ui
       - products-ui-pact-tag
       - push-products-ui-to-staging-ecr
@@ -873,6 +881,7 @@ groups:
       - build-and-push-publicapi-candidate
       - run-publicapi-e2e
       - deploy-publicapi
+      - record-publicapi-release-number
       - smoke-test-publicapi
       - publicapi-pact-tag
       - push-publicapi-to-staging-ecr
@@ -881,6 +890,7 @@ groups:
       - build-and-push-publicauth-candidate
       - run-publicauth-e2e
       - deploy-publicauth
+      - record-publicauth-release-number
       - smoke-test-publicauth
       - push-publicauth-to-staging-ecr
       - publicauth-db-migration
@@ -889,6 +899,7 @@ groups:
       - build-and-push-selfservice-candidate
       - run-selfservice-e2e
       - deploy-selfservice
+      - record-selfservice-release-number
       - smoke-test-selfservice
       - selfservice-pact-tag
       - push-selfservice-to-staging-ecr
@@ -896,11 +907,13 @@ groups:
     jobs:
       - build-and-push-toolbox-to-test-ecr
       - deploy-toolbox
+      - record-toolbox-release-number
       - push-toolbox-to-staging-ecr
   - name: webhooks
     jobs:
       - build-webhooks
       - deploy-webhooks
+      - record-webhooks-release-number
       - smoke-test-webhooks
       - webhooks-pact-tag
       - webhooks-db-migration
@@ -909,6 +922,7 @@ groups:
     jobs:
       - build-and-push-webhooks-egress-to-test-ecr
       - deploy-webhooks-egress
+      - record-webhooks-egress-release-number
       - smoke-test-webhooks-egress
       - push-webhooks-egress-to-staging-ecr
   - name: alpine
@@ -939,6 +953,7 @@ groups:
     jobs:
       - build-and-push-notifications-to-test-ecr
       - deploy-notifications
+      - record-notifications-release-number
       - smoke-test-notifications
       - push-notifications-to-staging-ecr
   - name: stream-s3-sqs
@@ -1452,6 +1467,36 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: record-toolbox-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: toolbox-ecr-registry-test
+        trigger: true
+        passed: [deploy-toolbox]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: toolbox-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "toolbox"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+
   - name: push-toolbox-to-staging-ecr
     plan:
       - get: toolbox-ecr-registry-test
@@ -1517,6 +1562,37 @@ jobs:
           ENVIRONMENT: test-12
     <<: *put_success_slack_notification      
     <<: *put_failure_slack_notification
+
+  - name: record-egress-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: egress-ecr-registry-test
+        trigger: true
+        passed: [deploy-egress]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: egress-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "egress"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+
 
   - name: smoke-test-egress
     serial_groups: [smoke-test]
@@ -1801,6 +1877,36 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: record-frontend-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: frontend-ecr-registry-test
+        trigger: true
+        passed: [deploy-frontend]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: frontend-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "frontend"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
 
   - name: smoke-test-frontend
     serial_groups: [smoke-test]
@@ -2121,6 +2227,37 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: record-adminusers-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: adminusers-ecr-registry-test
+        trigger: true
+        passed: [deploy-adminusers]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: adminusers-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "adminusers"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+
 
   - name: adminusers-db-migration
     plan:
@@ -2526,6 +2663,36 @@ jobs:
     <<: *put_db_migration_success_slack_notification    
     <<: *put_db_migration_failure_slack_notification               
 
+  - name: record-connector-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: connector-ecr-registry-test
+        trigger: true
+        passed: [deploy-connector]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: connector-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "connector"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+
   - name: smoke-test-connector
     serial_groups: [smoke-test]
     plan:
@@ -2839,6 +3006,37 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: record-ledger-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: ledger-ecr-registry-test
+        trigger: true
+        passed: [deploy-ledger]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: ledger-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "ledger"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+
 
   - name: smoke-test-ledger
     serial_groups: [smoke-test]
@@ -3199,6 +3397,37 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: record-products-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: products-ecr-registry-test
+        trigger: true
+        passed: [deploy-products]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "products"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+
+
   - name: products-db-migration
     plan:
       - get: pay-ci
@@ -3537,6 +3766,36 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: record-products-ui-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: products-ui-ecr-registry-test
+        trigger: true
+        passed: [deploy-products-ui]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ui-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "productsui"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+
   - name: smoke-test-products-ui
     serial_groups: [smoke-test]
     plan:
@@ -3869,6 +4128,36 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: record-publicapi-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: publicapi-ecr-registry-test
+        trigger: true
+        passed: [deploy-publicapi]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: publicapi-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "publicapi"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+
   - name: smoke-test-publicapi
     serial_groups: [smoke-test]
     plan:
@@ -4177,6 +4466,36 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: record-publicauth-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: publicauth-ecr-registry-test
+        trigger: true
+        passed: [deploy-publicauth]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: publicauth-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "publicauth"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
 
   - name: publicauth-db-migration
     plan:
@@ -4490,6 +4809,36 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: record-selfservice-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: selfservice-ecr-registry-test
+        trigger: true
+        passed: [deploy-selfservice]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: selfservice-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "selfservice"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
 
   - name: smoke-test-selfservice
     serial_groups: [smoke-test]
@@ -4852,6 +5201,37 @@ jobs:
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
+  - name: record-cardid-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: cardid-ecr-registry-test
+        trigger: true
+        passed: [deploy-cardid]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: cardid-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "cardid"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+
+
   - name: smoke-test-cardid
     serial_groups: [smoke-test]
     plan:
@@ -5076,6 +5456,36 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
+
+  - name: record-webhooks-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: webhooks-ecr-registry-test
+        trigger: true
+        passed: [deploy-webhooks]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "webhooks"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
 
   - name: smoke-test-webhooks
     serial_groups: [smoke-test]
@@ -5369,6 +5779,36 @@ jobs:
           ENVIRONMENT: test-12
     <<: *put_success_slack_notification      
     <<: *put_failure_slack_notification
+
+  - name: record-webhooks-egress-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: webhooks-egress-ecr-registry-test
+        trigger: true
+        passed: [deploy-webhooks-egress]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-egress-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "webhooks-egress"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
 
   - name: smoke-test-webhooks-egress
     serial_groups: [smoke-test]
@@ -5722,6 +6162,36 @@ jobs:
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
     <<: *put_success_slack_notification 
     <<: *put_failure_slack_notification
+
+  - name: record-notifications-release-number
+    serial_groups: [hosted-graphite]
+    plan:
+      - get: notifications-ecr-registry-test
+        trigger: true
+        passed: [deploy-notifications]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: notifications-ecr-registry-test/tag
+      - task: send-release-info-to-hosted-graphite
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          params:
+            ENVIRONMENT: "test-12"
+            APP_NAME: "notifications"
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
+                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
 
   - name: smoke-test-notifications
     serial_groups: [smoke-test]
