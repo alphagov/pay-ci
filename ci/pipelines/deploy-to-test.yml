@@ -1476,25 +1476,12 @@ jobs:
       - load_var: application_image_tag
         file: toolbox-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "toolbox"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "toolbox"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: push-toolbox-to-staging-ecr
     plan:
@@ -1571,26 +1558,12 @@ jobs:
       - load_var: application_image_tag
         file: egress-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "egress"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
-
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "egress"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-egress
     serial_groups: [smoke-test]
@@ -1885,25 +1858,12 @@ jobs:
       - load_var: application_image_tag
         file: frontend-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "frontend"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "frontend"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-frontend
     serial_groups: [smoke-test]
@@ -2234,26 +2194,12 @@ jobs:
       - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "adminusers"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
-
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "adminusers"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: adminusers-db-migration
     plan:
@@ -2668,25 +2614,12 @@ jobs:
       - load_var: application_image_tag
         file: connector-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "connector"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "connector"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-connector
     serial_groups: [smoke-test]
@@ -3011,26 +2944,12 @@ jobs:
       - load_var: application_image_tag
         file: ledger-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "ledger"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
-
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "ledger"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-ledger
     serial_groups: [smoke-test]
@@ -3400,26 +3319,12 @@ jobs:
       - load_var: application_image_tag
         file: products-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "products"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
-
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "products"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: products-db-migration
     plan:
@@ -3768,25 +3673,12 @@ jobs:
       - load_var: application_image_tag
         file: products-ui-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "productsui"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "products-ui"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-products-ui
     serial_groups: [smoke-test]
@@ -4129,25 +4021,12 @@ jobs:
       - load_var: application_image_tag
         file: publicapi-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "publicapi"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "publicapi"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-publicapi
     serial_groups: [smoke-test]
@@ -4467,25 +4346,12 @@ jobs:
       - load_var: application_image_tag
         file: publicauth-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "publicauth"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "publicauth"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: publicauth-db-migration
     plan:
@@ -4809,25 +4675,12 @@ jobs:
       - load_var: application_image_tag
         file: selfservice-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "selfservice"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "selfservice"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-selfservice
     serial_groups: [smoke-test]
@@ -5199,26 +5052,12 @@ jobs:
       - load_var: application_image_tag
         file: cardid-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "cardid"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
-
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "cardid"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-cardid
     serial_groups: [smoke-test]
@@ -5454,25 +5293,12 @@ jobs:
       - load_var: application_image_tag
         file: webhooks-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "webhooks"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "webhooks"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-webhooks
     serial_groups: [smoke-test]
@@ -5776,25 +5602,12 @@ jobs:
       - load_var: application_image_tag
         file: webhooks-egress-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "webhooks-egress"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "webhooks-egress"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-webhooks-egress
     serial_groups: [smoke-test]
@@ -6158,25 +5971,12 @@ jobs:
       - load_var: application_image_tag
         file: notifications-ecr-registry-test/tag
       - task: send-release-info-to-hosted-graphite
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-          params:
-            ENVIRONMENT: "test-12"
-            APP_NAME: "notifications"
-            RELEASE_NUMBER: ((.:application_image_tag))
-            HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
-          run:
-            path: /bin/sh
-            args:
-              - -ec
-              - |
-                RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
-                METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-                echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "notifications"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((pr-ci/HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-notifications
     serial_groups: [smoke-test]
