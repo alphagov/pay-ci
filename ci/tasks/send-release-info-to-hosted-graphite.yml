@@ -14,6 +14,6 @@ run:
   args:
     - -ec
     - |
-      RELEASE=$(echo $RELEASE_NUMBER| cut -d'-' -f 1)
+      RELEASE=$(echo "${RELEASE_NUMBER}" | cut -d'-' -f 1)
       METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.release.${ENVIRONMENT}.${APP_NAME}.releaseNumber $RELEASE"
-      echo $METRIC_DATA | nc carbon.hostedgraphite.com 2003
+      echo "$METRIC_DATA" | nc carbon.hostedgraphite.com 2003
