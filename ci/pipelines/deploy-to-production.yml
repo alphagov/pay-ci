@@ -520,6 +520,7 @@ groups:
   - name: adminusers
     jobs:
       - deploy-adminusers-to-prod
+      - record-adminusers-release-number
       - smoke-test-adminusers-on-prod
       - retag-adminusers-image-for-test-perf
       - adminusers-pact-tag
@@ -528,12 +529,14 @@ groups:
   - name: cardid
     jobs:
       - deploy-cardid-to-prod
+      - record-cardid-release-number
       - smoke-test-cardid-on-prod
       - cardid-pact-tag
       - retag-cardid-image-for-test-perf
   - name: connector
     jobs:
       - deploy-connector-to-prod
+      - record-connector-release-number
       - smoke-test-connector-on-prod
       - retag-connector-image-for-test-perf
       - connector-pact-tag
@@ -542,17 +545,20 @@ groups:
   - name: egress
     jobs:
       - deploy-egress-to-prod
+      - record-egress-release-number
       - smoke-test-egress-on-prod
       - retag-egress-image-for-test-perf
   - name: frontend
     jobs:
       - deploy-frontend-to-prod
+      - record-frontend-release-number
       - smoke-test-frontend-on-prod
       - frontend-pact-tag
       - retag-frontend-image-for-test-perf
   - name: ledger
     jobs:
       - deploy-ledger-to-prod
+      - record-ledger-release-number
       - smoke-test-ledger-on-prod
       - retag-ledger-image-for-test-perf
       - ledger-pact-tag
@@ -561,6 +567,7 @@ groups:
   - name: products
     jobs:
       - deploy-products-to-prod
+      - record-products-release-number
       - smoke-test-products-on-prod
       - retag-products-image-for-test-perf
       - products-pact-tag
@@ -569,18 +576,21 @@ groups:
   - name: products-ui
     jobs:
       - deploy-products-ui-to-prod
+      - record-products-ui-release-number
       - smoke-test-products-ui-on-prod
       - products-ui-pact-tag
       - retag-products-ui-image-for-test-perf
   - name: publicapi
     jobs:
       - deploy-publicapi-to-prod
+      - record-publicapi-release-number
       - smoke-test-publicapi-on-prod
       - publicapi-pact-tag
       - retag-publicapi-image-for-test-perf
   - name: publicauth
     jobs:
       - deploy-publicauth-to-prod
+      - record-publicauth-release-number
       - smoke-test-publicauth-on-prod
       - retag-publicauth-image-for-test-perf
       - publicauth-db-migration-prod
@@ -588,16 +598,19 @@ groups:
   - name: selfservice
     jobs:
       - deploy-selfservice-to-prod
+      - record-selfservice-release-number
       - smoke-test-selfservice-on-prod
       - selfservice-pact-tag
       - retag-selfservice-image-for-test-perf
   - name: toolbox
     jobs:
       - deploy-toolbox-to-prod
+      - record-toolbox-release-number
       - retag-toolbox-image-for-test-perf
   - name: webhooks
     jobs:
       - deploy-webhooks-to-prod
+      - record-webhooks-release-number
       - smoke-test-webhooks-on-prod
       - webhooks-pact-tag
       - webhooks-db-migration-prod
@@ -606,6 +619,7 @@ groups:
   - name: webhooks-egress
     jobs:
       - deploy-webhooks-egress-to-prod
+      - record-webhooks-egress-release-number
       - smoke-test-webhooks-egress-on-prod
       - retag-webhooks-egress-image-for-test-perf
   - name: alpine
@@ -632,6 +646,7 @@ groups:
   - name: notifications
     jobs:
       - deploy-notifications-to-prod
+      - record-notifications-release-number
       - smoke-test-notifications-on-prod
       - retag-notifications-for-test-perf
   - name: stream-s3-sqs
@@ -706,6 +721,22 @@ jobs:
           ENVIRONMENT: production-2
     <<: *put_success_slack_notification_p1      
     <<: *put_failure_slack_notification
+
+  - name: record-egress-release-number
+    plan:
+      - get: egress-ecr-registry-prod
+        trigger: true
+        passed: [deploy-egress-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: egress-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "egress"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-egress-on-prod
     serial_groups: [smoke-test]
@@ -823,6 +854,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-selfservice-release-number
+    plan:
+      - get: selfservice-ecr-registry-prod
+        trigger: true
+        passed: [deploy-selfservice-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: selfservice-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "selfservice"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-selfservice-on-prod
     serial_groups: [smoke-test]
@@ -973,6 +1020,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-connector-release-number
+    plan:
+      - get: connector-ecr-registry-prod
+        trigger: true
+        passed: [deploy-connector-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: connector-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "connector"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-connector-on-prod
     serial_groups: [smoke-test]
@@ -1268,6 +1331,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-toolbox-release-number
+    plan:
+      - get: toolbox-ecr-registry-prod
+        trigger: true
+        passed: [deploy-toolbox-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: toolbox-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "toolbox"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: retag-telegraf-image-for-test-perf
     plan:
       - get: pay-ci
@@ -1391,6 +1470,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-frontend-release-number
+    plan:
+      - get: frontend-ecr-registry-prod
+        trigger: true
+        passed: [deploy-frontend-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: frontend-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "frontend"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-frontend-on-prod
     serial_groups: [smoke-test]
@@ -1562,6 +1657,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-adminusers-release-number
+    plan:
+      - get: adminusers-ecr-registry-prod
+        trigger: true
+        passed: [deploy-adminusers-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: adminusers-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "adminusers"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: adminusers-db-migration-prod
     plan:
@@ -1775,6 +1886,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-products-release-number
+    plan:
+      - get: products-ecr-registry-prod
+        trigger: true
+        passed: [deploy-products-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "products"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: smoke-test-products-on-prod
     serial_groups: [smoke-test]
     plan:
@@ -1987,6 +2114,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-products-ui-release-number
+    plan:
+      - get: products-ui-ecr-registry-prod
+        trigger: true
+        passed: [deploy-products-ui-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ui-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "products-ui"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: smoke-test-products-ui-on-prod
     serial_groups: [smoke-test]
     plan:
@@ -2123,6 +2266,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-publicauth-release-number
+    plan:
+      - get: publicauth-ecr-registry-prod
+        trigger: true
+        passed: [deploy-publicauth-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: publicauth-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "publicauth"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: publicauth-db-migration-prod
     plan:
@@ -2302,6 +2461,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-cardid-release-number
+    plan:
+      - get: cardid-ecr-registry-prod
+        trigger: true
+        passed: [deploy-cardid-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: cardid-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "cardid"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: smoke-test-cardid-on-prod
     serial_groups: [smoke-test]
     plan:
@@ -2451,6 +2626,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-publicapi-release-number
+    plan:
+      - get: publicapi-ecr-registry-prod
+        trigger: true
+        passed: [deploy-publicapi-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: publicapi-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "publicapi"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-publicapi-on-prod
     serial_groups: [smoke-test]
@@ -2602,6 +2793,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-ledger-release-number
+    plan:
+      - get: ledger-ecr-registry-prod
+        trigger: true
+        passed: [deploy-ledger-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: ledger-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "ledger"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-ledger-on-prod
     serial_groups: [smoke-test]
@@ -2828,6 +3035,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-notifications-release-number
+    plan:
+      - get: notifications-ecr-registry-prod
+        trigger: true
+        passed: [deploy-notifications-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: notifications-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "notifications"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: smoke-test-notifications-on-prod
     serial_groups: [smoke-test]
     plan:
@@ -3027,6 +3250,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-webhooks-release-number
+    plan:
+      - get: webhooks-ecr-registry-prod
+        trigger: true
+        passed: [deploy-webhooks-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "webhooks"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-webhooks-on-prod
     serial_groups: [smoke-test]
@@ -3229,6 +3468,22 @@ jobs:
           ENVIRONMENT: production-2
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-webhooks-egress-release-number
+    plan:
+      - get: webhooks-egress-ecr-registry-prod
+        trigger: true
+        passed: [deploy-webhooks-egress-to-prod]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-egress-ecr-registry-prod/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "production-2"
+          APP_NAME: "webhooks-egress"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-webhooks-egress-on-prod
     serial_groups: [smoke-test]
