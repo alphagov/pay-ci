@@ -206,6 +206,11 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
+  - name: every-hour
+    icon: alarm
+    source:
+      interval: 1h
+    type: time
   - name: pay-infra
     type: git
     icon: github
@@ -896,6 +901,8 @@ jobs:
 
   - name: record-selfservice-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: selfservice-ecr-registry-staging
         trigger: true
         passed: [deploy-selfservice-to-staging]
@@ -1057,6 +1064,8 @@ jobs:
 
   - name: record-connector-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: connector-ecr-registry-staging
         trigger: true
         passed: [deploy-connector-to-staging]
@@ -1254,6 +1263,8 @@ jobs:
 
   - name: record-toolbox-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: toolbox-ecr-registry-staging
         trigger: true
         passed: [deploy-toolbox-to-staging]
@@ -1338,6 +1349,8 @@ jobs:
 
   - name: record-egress-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: egress-ecr-registry-staging
         trigger: true
         passed: [deploy-egress-to-staging]
@@ -1455,6 +1468,8 @@ jobs:
 
   - name: record-webhooks-egress-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: webhooks-egress-ecr-registry-staging
         trigger: true
         passed: [deploy-webhooks-egress-to-staging]
@@ -1588,6 +1603,8 @@ jobs:
 
   - name: record-frontend-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: frontend-ecr-registry-staging
         trigger: true
         passed: [deploy-frontend-to-staging]
@@ -1753,6 +1770,8 @@ jobs:
 
   - name: record-adminusers-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: adminusers-ecr-registry-staging
         trigger: true
         passed: [deploy-adminusers-to-staging]
@@ -1959,6 +1978,8 @@ jobs:
 
   - name: record-products-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: products-ecr-registry-staging
         trigger: true
         passed: [deploy-products-to-staging]
@@ -2165,6 +2186,8 @@ jobs:
 
   - name: record-products-ui-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: products-ui-ecr-registry-staging
         trigger: true
         passed: [deploy-products-ui-to-staging]
@@ -2313,6 +2336,8 @@ jobs:
 
   - name: record-publicauth-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: publicauth-ecr-registry-staging
         trigger: true
         passed: [deploy-publicauth-to-staging]
@@ -2485,6 +2510,8 @@ jobs:
 
   - name: record-cardid-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: cardid-ecr-registry-staging
         trigger: true
         passed: [deploy-cardid-to-staging]
@@ -2646,6 +2673,8 @@ jobs:
 
   - name: record-publicapi-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: publicapi-ecr-registry-staging
         trigger: true
         passed: [deploy-publicapi-to-staging]
@@ -2808,6 +2837,8 @@ jobs:
 
   - name: record-ledger-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: ledger-ecr-registry-staging
         trigger: true
         passed: [deploy-ledger-to-staging]
@@ -3009,6 +3040,8 @@ jobs:
 
   - name: record-webhooks-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: webhooks-ecr-registry-staging
         trigger: true
         passed: [deploy-webhooks-to-staging]
@@ -3263,6 +3296,8 @@ jobs:
 
   - name: record-notifications-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: notifications-ecr-registry-staging
         trigger: true
         passed: [deploy-notifications-to-staging]
