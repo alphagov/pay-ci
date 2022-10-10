@@ -119,6 +119,11 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
+  - name: every-hour
+    icon: alarm
+    source:
+      interval: 1h
+    type: time
 
   # Github Releases
   - name: telegraf-git-release
@@ -1469,6 +1474,8 @@ jobs:
 
   - name: record-toolbox-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: toolbox-ecr-registry-test
         trigger: true
         passed: [deploy-toolbox]
@@ -1551,6 +1558,8 @@ jobs:
 
   - name: record-egress-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: egress-ecr-registry-test
         trigger: true
         passed: [deploy-egress]
@@ -1851,6 +1860,8 @@ jobs:
 
   - name: record-frontend-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: frontend-ecr-registry-test
         trigger: true
         passed: [deploy-frontend]
@@ -2187,6 +2198,8 @@ jobs:
 
   - name: record-adminusers-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: adminusers-ecr-registry-test
         trigger: true
         passed: [deploy-adminusers]
@@ -2607,6 +2620,8 @@ jobs:
 
   - name: record-connector-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: connector-ecr-registry-test
         trigger: true
         passed: [deploy-connector]
@@ -2937,6 +2952,8 @@ jobs:
 
   - name: record-ledger-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: ledger-ecr-registry-test
         trigger: true
         passed: [deploy-ledger]
@@ -3312,6 +3329,8 @@ jobs:
 
   - name: record-products-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: products-ecr-registry-test
         trigger: true
         passed: [deploy-products]
@@ -3666,6 +3685,8 @@ jobs:
 
   - name: record-products-ui-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: products-ui-ecr-registry-test
         trigger: true
         passed: [deploy-products-ui]
@@ -4014,6 +4035,8 @@ jobs:
 
   - name: record-publicapi-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: publicapi-ecr-registry-test
         trigger: true
         passed: [deploy-publicapi]
@@ -4339,6 +4362,8 @@ jobs:
 
   - name: record-publicauth-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: publicauth-ecr-registry-test
         trigger: true
         passed: [deploy-publicauth]
@@ -4668,6 +4693,8 @@ jobs:
 
   - name: record-selfservice-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: selfservice-ecr-registry-test
         trigger: true
         passed: [deploy-selfservice]
@@ -5045,6 +5072,8 @@ jobs:
 
   - name: record-cardid-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: cardid-ecr-registry-test
         trigger: true
         passed: [deploy-cardid]
@@ -5286,6 +5315,8 @@ jobs:
 
   - name: record-webhooks-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: webhooks-ecr-registry-test
         trigger: true
         passed: [deploy-webhooks]
@@ -5595,6 +5626,8 @@ jobs:
 
   - name: record-webhooks-egress-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: webhooks-egress-ecr-registry-test
         trigger: true
         passed: [deploy-webhooks-egress]
@@ -5964,6 +5997,8 @@ jobs:
 
   - name: record-notifications-release-number
     plan:
+      - get: every-hour
+        trigger: true
       - get: notifications-ecr-registry-test
         trigger: true
         passed: [deploy-notifications]
