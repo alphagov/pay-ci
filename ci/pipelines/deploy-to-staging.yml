@@ -524,6 +524,7 @@ groups:
   - name: adminusers
     jobs:
       - deploy-adminusers-to-staging
+      - record-adminusers-release-number
       - smoke-test-adminusers-on-staging
       - adminusers-pact-tag
       - push-adminusers-to-production-ecr
@@ -531,12 +532,14 @@ groups:
   - name: cardid
     jobs:
       - deploy-cardid-to-staging
+      - record-cardid-release-number
       - smoke-test-cardid-on-staging
       - cardid-pact-tag
       - push-cardid-to-production-ecr
   - name: connector
     jobs:
       - deploy-connector-to-staging
+      - record-connector-release-number
       - smoke-test-connector-on-staging
       - connector-pact-tag
       - push-connector-to-production-ecr
@@ -544,17 +547,20 @@ groups:
   - name: egress
     jobs:
       - deploy-egress-to-staging
+      - record-egress-release-number
       - smoke-test-egress-on-staging
       - push-egress-to-production-ecr
   - name: frontend
     jobs:
       - deploy-frontend-to-staging
+      - record-frontend-release-number
       - smoke-test-frontend-on-staging
       - frontend-pact-tag
       - push-frontend-to-production-ecr
   - name: ledger
     jobs:
       - deploy-ledger-to-staging
+      - record-ledger-release-number
       - smoke-test-ledger-on-staging
       - ledger-pact-tag
       - push-ledger-to-production-ecr
@@ -562,6 +568,7 @@ groups:
   - name: products
     jobs:
       - deploy-products-to-staging
+      - record-products-release-number
       - smoke-test-products-on-staging
       - products-pact-tag
       - push-products-to-production-ecr
@@ -569,34 +576,40 @@ groups:
   - name: products-ui
     jobs:
       - deploy-products-ui-to-staging
+      - record-products-ui-release-number
       - smoke-test-products-ui-on-staging
       - products-ui-pact-tag
       - push-products-ui-to-production-ecr
   - name: publicapi
     jobs:
       - deploy-publicapi-to-staging
+      - record-publicapi-release-number
       - smoke-test-publicapi-on-staging
       - publicapi-pact-tag
       - push-publicapi-to-production-ecr
   - name: publicauth
     jobs:
       - deploy-publicauth-to-staging
+      - record-publicauth-release-number
       - smoke-test-publicauth-on-staging
       - push-publicauth-to-production-ecr
       - publicauth-db-migration-staging
   - name: selfservice
     jobs:
       - deploy-selfservice-to-staging
+      - record-selfservice-release-number
       - smoke-test-selfservice-on-staging
       - selfservice-pact-tag
       - push-selfservice-to-production-ecr
   - name: toolbox
     jobs:
       - deploy-toolbox-to-staging
+      - record-toolbox-release-number
       - push-toolbox-to-production-ecr
   - name: webhooks
     jobs:
       - deploy-webhooks-to-staging
+      - record-webhooks-release-number
       - smoke-test-webhooks-on-staging
       - webhooks-pact-tag
       - push-webhooks-to-production-ecr
@@ -604,6 +617,7 @@ groups:
   - name: webhooks-egress
     jobs:
       - deploy-webhooks-egress-to-staging
+      - record-webhooks-egress-release-number
       - smoke-test-webhooks-egress-on-staging
       - push-webhooks-egress-to-production-ecr
   - name: alpine
@@ -631,6 +645,7 @@ groups:
   - name: notifications
     jobs:
       - deploy-notifications-to-staging
+      - record-notifications-release-number
       - smoke-test-notifications-on-staging
       - push-notifications-to-production-ecr
   - name: stream-s3-sqs
@@ -879,6 +894,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-selfservice-release-number
+    plan:
+      - get: selfservice-ecr-registry-staging
+        trigger: true
+        passed: [deploy-selfservice-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: selfservice-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "selfservice"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: smoke-test-selfservice-on-staging
     serial_groups: [smoke-test]
     plan:
@@ -1023,6 +1054,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-connector-release-number
+    plan:
+      - get: connector-ecr-registry-staging
+        trigger: true
+        passed: [deploy-connector-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: connector-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "connector"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-connector-on-staging
     serial_groups: [smoke-test]
@@ -1205,6 +1252,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-toolbox-release-number
+    plan:
+      - get: toolbox-ecr-registry-staging
+        trigger: true
+        passed: [deploy-toolbox-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: toolbox-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "toolbox"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: push-toolbox-to-production-ecr
     plan:
       - get: toolbox-ecr-registry-staging
@@ -1272,6 +1335,22 @@ jobs:
           ENVIRONMENT: staging-2
     <<: *put_success_slack_notification_p1      
     <<: *put_failure_slack_notification
+
+  - name: record-egress-release-number
+    plan:
+      - get: egress-ecr-registry-staging
+        trigger: true
+        passed: [deploy-egress-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: egress-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "egress"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-egress-on-staging
     serial_groups: [smoke-test]
@@ -1373,6 +1452,22 @@ jobs:
           ENVIRONMENT: staging-2
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-webhooks-egress-release-number
+    plan:
+      - get: webhooks-egress-ecr-registry-staging
+        trigger: true
+        passed: [deploy-webhooks-egress-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-egress-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "webhooks-egress"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-webhooks-egress-on-staging
     serial_groups: [smoke-test]
@@ -1490,6 +1585,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-frontend-release-number
+    plan:
+      - get: frontend-ecr-registry-staging
+        trigger: true
+        passed: [deploy-frontend-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: frontend-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "frontend"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-frontend-on-staging
     serial_groups: [smoke-test]
@@ -1639,6 +1750,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-adminusers-release-number
+    plan:
+      - get: adminusers-ecr-registry-staging
+        trigger: true
+        passed: [deploy-adminusers-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: adminusers-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "adminusers"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: adminusers-db-migration-staging
     plan:
@@ -1830,6 +1957,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-products-release-number
+    plan:
+      - get: products-ecr-registry-staging
+        trigger: true
+        passed: [deploy-products-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "products"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: smoke-test-products-on-staging
     serial_groups: [smoke-test]
     plan:
@@ -2020,6 +2163,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-products-ui-release-number
+    plan:
+      - get: products-ui-ecr-registry-staging
+        trigger: true
+        passed: [deploy-products-ui-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: products-ui-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "products-ui"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: smoke-test-products-ui-on-staging
     serial_groups: [smoke-test]
     plan:
@@ -2151,6 +2310,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-publicauth-release-number
+    plan:
+      - get: publicauth-ecr-registry-staging
+        trigger: true
+        passed: [deploy-publicauth-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: publicauth-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "publicauth"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-publicauth-on-staging
     serial_groups: [smoke-test]
@@ -2308,6 +2483,22 @@ jobs:
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
 
+  - name: record-cardid-release-number
+    plan:
+      - get: cardid-ecr-registry-staging
+        trigger: true
+        passed: [deploy-cardid-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: cardid-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "cardid"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: smoke-test-cardid-on-staging
     serial_groups: [smoke-test]
     plan:
@@ -2452,6 +2643,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-publicapi-release-number
+    plan:
+      - get: publicapi-ecr-registry-staging
+        trigger: true
+        passed: [deploy-publicapi-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: publicapi-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "publicapi"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-publicapi-on-staging
     serial_groups: [smoke-test]
@@ -2598,6 +2805,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-ledger-release-number
+    plan:
+      - get: ledger-ecr-registry-staging
+        trigger: true
+        passed: [deploy-ledger-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: ledger-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "ledger"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-ledger-on-staging
     serial_groups: [smoke-test]
@@ -2783,6 +3006,22 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: record-webhooks-release-number
+    plan:
+      - get: webhooks-ecr-registry-staging
+        trigger: true
+        passed: [deploy-webhooks-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: webhooks-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "webhooks"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-webhooks-on-staging
     serial_groups: [smoke-test]
@@ -3021,6 +3260,22 @@ jobs:
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
     <<: *put_success_slack_notification 
     <<: *put_failure_slack_notification
+
+  - name: record-notifications-release-number
+    plan:
+      - get: notifications-ecr-registry-staging
+        trigger: true
+        passed: [deploy-notifications-to-staging]
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: notifications-ecr-registry-staging/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "staging-2"
+          APP_NAME: "notifications"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: smoke-test-notifications-on-staging
     serial_groups: [smoke-test]
