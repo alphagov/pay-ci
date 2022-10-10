@@ -811,6 +811,7 @@ groups:
   - name: adminusers
     jobs:
       - build-and-push-adminusers-candidate
+      - record-adminusers-candidate-number
       - run-adminusers-e2e
       - deploy-adminusers
       - record-adminusers-release-number
@@ -821,6 +822,7 @@ groups:
   - name: cardid
     jobs:
       - build-and-push-cardid-candidate
+      - record-cardid-candidate-number
       - run-cardid-e2e
       - deploy-cardid
       - record-cardid-release-number
@@ -830,6 +832,7 @@ groups:
   - name: connector
     jobs:
       - build-and-push-connector-candidate
+      - record-connector-candidate-number
       - run-connector-e2e
       - deploy-connector
       - record-connector-release-number
@@ -846,6 +849,7 @@ groups:
   - name: frontend
     jobs:
       - build-and-push-frontend-candidate
+      - record-frontend-candidate-number
       - run-frontend-e2e
       - deploy-frontend
       - record-frontend-release-number
@@ -855,6 +859,7 @@ groups:
   - name: ledger
     jobs:
       - build-and-push-ledger-candidate
+      - record-ledger-candidate-number
       - run-ledger-e2e
       - deploy-ledger
       - record-ledger-release-number
@@ -865,6 +870,7 @@ groups:
   - name: products
     jobs:
       - build-and-push-products-candidate
+      - record-products-candidate-number
       - run-products-e2e
       - deploy-products
       - record-products-release-number
@@ -875,6 +881,7 @@ groups:
   - name: products-ui
     jobs:
       - build-and-push-products-ui-candidate
+      - record-products-ui-candidate-number
       - run-products-ui-e2e
       - deploy-products-ui
       - record-products-ui-release-number
@@ -884,6 +891,7 @@ groups:
   - name: publicapi
     jobs:
       - build-and-push-publicapi-candidate
+      - record-publicapi-candidate-number
       - run-publicapi-e2e
       - deploy-publicapi
       - record-publicapi-release-number
@@ -893,6 +901,7 @@ groups:
   - name: publicauth
     jobs:
       - build-and-push-publicauth-candidate
+      - record-publicauth-candidate-number
       - run-publicauth-e2e
       - deploy-publicauth
       - record-publicauth-release-number
@@ -902,6 +911,7 @@ groups:
   - name: selfservice
     jobs:
       - build-and-push-selfservice-candidate
+      - record-selfservice-candidate-number
       - run-selfservice-e2e
       - deploy-selfservice
       - record-selfservice-release-number
@@ -1334,7 +1344,7 @@ jobs:
         text: ':hammer: toolbox image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
-  
+
   - name: deploy-carbon-relay
     serial: true
     serial_groups: [deploy-application]
@@ -1687,6 +1697,27 @@ jobs:
         text: ':hammer: frontend candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
+
+  - name: record-frontend-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+          - get: frontend-candidate
+            params:
+              format: oci
+            trigger: true
+            passed: [build-and-push-frontend-candidate]
+          - get: pay-ci
+      - load_var: candidate_image_tag
+        file: frontend-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "frontend"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: run-frontend-e2e
     plan:
@@ -2050,6 +2081,27 @@ jobs:
         text: ':hammer: adminusers candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
+
+  - name: record-adminusers-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+        - get: adminusers-candidate
+          params:
+            format: oci
+          trigger: true
+          passed: [build-and-push-adminusers-candidate]
+        - get: pay-ci
+      - load_var: candidate_image_tag
+        file: adminusers-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "adminusers"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: run-adminusers-e2e
     plan:
@@ -2428,6 +2480,27 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse            
 
+  - name: record-connector-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+          - get: connector-candidate
+            params:
+              format: oci
+            trigger: true
+            passed: [build-and-push-connector-candidate]
+          - get: pay-ci
+      - load_var: candidate_image_tag
+        file: connector-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "connector"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: run-connector-e2e
     plan:
       - in_parallel:
@@ -2804,6 +2877,27 @@ jobs:
         text: ':hammer: ledger candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
+
+  - name: record-ledger-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+          - get: ledger-candidate
+            params:
+              format: oci
+            trigger: true
+            passed: [build-and-push-ledger-candidate]
+          - get: pay-ci
+      - load_var: candidate_image_tag
+        file: ledger-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "ledger"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: run-ledger-e2e
     plan:
@@ -3182,6 +3276,27 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse
 
+  - name: record-products-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+          - get: products-candidate
+            params:
+              format: oci
+            trigger: true
+            passed: [build-and-push-products-candidate]
+          - get: pay-ci
+      - load_var: candidate_image_tag
+        file: products-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "products"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: run-products-e2e
     plan:
       - in_parallel:
@@ -3538,6 +3653,27 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse
 
+  - name: record-products-ui-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+          - get: products-ui-candidate
+            params:
+              format: oci
+            trigger: true
+            passed: [build-and-push-products-ui-candidate]
+          - get: pay-ci
+      - load_var: candidate_image_tag
+        file: products-ui-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "products-ui"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: run-products-ui-e2e
     plan:
       - in_parallel:
@@ -3872,6 +4008,27 @@ jobs:
         text: ':hammer: publicapi candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
+
+  - name: record-publicapi-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+          - get: publicapi-candidate
+            params:
+              format: oci
+            trigger: true
+            passed: [build-and-push-publicapi-candidate]
+          - get: pay-ci
+      - load_var: candidate_image_tag
+        file: publicapi-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "publicapi"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: run-publicapi-e2e
     plan:
@@ -4220,6 +4377,27 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse
 
+  - name: record-publicauth-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+          - get: publicauth-candidate
+            params:
+              format: oci
+            trigger: true
+            passed: [build-and-push-publicauth-candidate]
+          - get: pay-ci
+      - load_var: candidate_image_tag
+        file: publicauth-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "publicauth"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: run-publicauth-e2e
     plan:
       - in_parallel:
@@ -4537,6 +4715,26 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse
 
+  - name: record-selfservice-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+          - get: selfservice-candidate
+            params:
+              format: oci
+            trigger: true
+            passed: [build-and-push-selfservice-candidate]
+          - get: pay-ci
+      - load_var: candidate_image_tag
+        file: selfservice-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "selfservice"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
 
   - name: run-selfservice-e2e
     plan:
@@ -4917,6 +5115,27 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse
 
+  - name: record-cardid-candidate-number
+    plan:
+      - get: every-hour
+        trigger: true
+      - in_parallel:
+          - get: cardid-candidate
+            params:
+              format: oci
+            trigger: true
+            passed: [build-and-push-cardid-candidate]
+          - get: pay-ci
+      - load_var: candidate_image_tag
+        file: cardid-candidate/tag
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12-candidate"
+          APP_NAME: "cardid"
+          RELEASE_NUMBER: ((.:candidate_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+
   - name: run-cardid-e2e
     plan:
       - in_parallel:
@@ -5256,7 +5475,6 @@ jobs:
         text: ':hammer: webhooks image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
-
 
   - name: deploy-webhooks
     serial: true
