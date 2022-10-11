@@ -728,6 +728,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-egress-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -863,6 +864,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-selfservice-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -1031,6 +1033,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-connector-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -1343,6 +1346,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-toolbox-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -1485,6 +1489,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-frontend-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -1674,6 +1679,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-adminusers-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -1904,6 +1910,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-products-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -2134,6 +2141,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-products-ui-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -2289,6 +2297,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-publicauth-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -2485,6 +2494,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-cardid-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -2653,6 +2663,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-publicapi-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -2822,6 +2833,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-ledger-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -3065,6 +3077,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-notifications-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -3283,6 +3296,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-webhooks-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
@@ -3503,6 +3517,7 @@ jobs:
     <<: *put_failure_slack_notification
 
   - name: record-webhooks-egress-release-number
+    serial_groups: [record-metrics]
     plan:
       - get: every-hour
         trigger: true
