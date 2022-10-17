@@ -401,6 +401,7 @@ jobs:
         - get: reverse-proxy-git-release
           trigger: true
         - get: pay-infra-src
+          trigger: true
         - get: pay-ci
       - in_parallel:
         - do:
