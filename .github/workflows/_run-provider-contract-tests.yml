@@ -35,6 +35,7 @@ jobs:
       - name: Pull docker image dependencies
         run: |
           docker pull govukpay/postgres:11.1
+          docker pull postgres:11.16
       - name: Set Pact Provider Version
         id: set-pact-provider-version
         run: |
