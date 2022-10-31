@@ -303,7 +303,7 @@ resources:
     source:
       repository: govukpay/stubs
       tag: latest-master
-      password: ((docker-password))
+      password: ((docker-access-token))
       username: ((docker-username))
 
 resource_types:
@@ -1706,7 +1706,7 @@ jobs:
           current_app_name: pay-stubs
           manifest: pay-stubs-manifest/ci/pay_stubs/pay-stubs_manifest.yml
           docker_username: ((docker-username))
-          docker_password: ((docker-password))
+          docker_password: ((docker-access-token))
           docker_image: govukpay/stubs:latest-master
           vars:
             smartpay-expected-password: ((smartpay-expected-password))

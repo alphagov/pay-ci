@@ -60,7 +60,7 @@ resources:
     source:
       repository: govukpay/perftests
       tag: latest-master
-      password: ((docker-password))
+      password: ((docker-access-token))
       username: ((docker-username))
 
   - name: slack-notification
@@ -1035,7 +1035,7 @@ jobs:
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
-          PASSWORD: ((docker-password))
+          PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
       - task: build-perf-tests-image
         privileged: true

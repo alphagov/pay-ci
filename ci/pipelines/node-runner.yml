@@ -24,7 +24,7 @@ resources:
     source:
       repository: govukpay/node-runner
       username: ((docker-username))
-      password: ((docker-password))
+      password: ((docker-access-token))
       tag: node16
 
   - name: pay-ci
@@ -46,7 +46,7 @@ jobs:
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
-          PASSWORD: ((docker-password))
+          PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
       - in_parallel:
         - task: build-node-16
