@@ -76,7 +76,7 @@ resources:
     source:
       repository: govukpay/endtoend
       tag: latest-master
-      password: ((docker-password))
+      password: ((docker-access-token))
       username: ((docker-username))
 
   - name: endtoend-candidate-ecr-registry-test
@@ -111,7 +111,7 @@ resources:
     source:
       repository: govukpay/reverse-proxy
       tag: latest-master
-      password: ((docker-password))
+      password: ((docker-access-token))
       username: ((docker-username))
 
   - name: reverse-proxy-candidate-ecr-registry-test
@@ -159,7 +159,7 @@ resources:
     source:
       repository: govukpay/stubs
       tag: latest-master
-      password: ((docker-password))
+      password: ((docker-access-token))
       username: ((docker-username))
 
   - name: postgres-11-alpine
@@ -170,7 +170,7 @@ resources:
       repository: postgres
       tag: 11-alpine
       username: ((docker-username))
-      password: ((docker-password))
+      password: ((docker-access-token))
 
   - name: ecr-postgres-11-alpine
     type: registry-image
@@ -194,7 +194,7 @@ resources:
       repository: softwaremill/elasticmq
       tag: latest
       username: ((docker-username))
-      password: ((docker-password))
+      password: ((docker-access-token))
 
   - name: ecr-softwaremill-elasticmq-latest
     type: registry-image
@@ -218,7 +218,7 @@ resources:
       repository: selenium/standalone-chrome
       tag: 3.141.59
       username: ((docker-username))
-      password: ((docker-password))
+      password: ((docker-access-token))
 
   - name: ecr-selenium-standalone-chrome-3-141-59
     type: registry-image
@@ -258,7 +258,7 @@ jobs:
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
-          PASSWORD: ((docker-password))
+          PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
       - in_parallel:
         - task: build-endtoend-image
@@ -434,7 +434,7 @@ jobs:
             file: pay-ci/ci/tasks/generate-docker-config-file.yml
             params:
               USERNAME: ((docker-username))
-              PASSWORD: ((docker-password))
+              PASSWORD: ((docker-access-token))
               EMAIL: ((docker-email))
           - task: build-reverse-proxy-image
             privileged: true
@@ -580,7 +580,7 @@ jobs:
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
-          PASSWORD: ((docker-password))
+          PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
       - in_parallel:
         - task: build-stubs-image

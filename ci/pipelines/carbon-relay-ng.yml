@@ -48,7 +48,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/carbon-relay-ng
-      password: ((docker-password))
+      password: ((docker-access-token))
       username: ((docker-username))
 
   - name: slack-notification
@@ -75,7 +75,7 @@ jobs:
           file: pay-ci/ci/tasks/generate-docker-config-file.yml
           params:
             USERNAME: ((docker-username))
-            PASSWORD: ((docker-password))
+            PASSWORD: ((docker-access-token))
             EMAIL: ((docker-email))
         - task: get-golang-build-version
           # We are going through this pain so if upstream updates their go build version

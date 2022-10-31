@@ -33,7 +33,7 @@ resources:
     source:
       repository: govukpay/concourse-runner
       username: ((docker-username))
-      password: ((docker-password))
+      password: ((docker-access-token))
       tag: latest
 
   - name: concourse-runner-with-java-17
@@ -42,7 +42,7 @@ resources:
     source:
       repository: govukpay/concourse-runner-with-java-17
       username: ((docker-username))
-      password: ((docker-password))
+      password: ((docker-access-token))
       tag: latest
 
   - name: pay-ci
@@ -64,7 +64,7 @@ jobs:
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
-          PASSWORD: ((docker-password))
+          PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
       - task: build
         privileged: true
@@ -96,7 +96,7 @@ jobs:
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
-          PASSWORD: ((docker-password))
+          PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
       - task: build
         privileged: true

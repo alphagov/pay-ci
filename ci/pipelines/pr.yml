@@ -59,7 +59,7 @@ definitions:
     file: ci/ci/tasks/generate-docker-config-file.yml
     params:
       USERNAME: ((docker-username))
-      PASSWORD: ((docker-password))
+      PASSWORD: ((docker-access-token))
       EMAIL: ((docker-email))
   - &build-docker-image
     task: build-image
