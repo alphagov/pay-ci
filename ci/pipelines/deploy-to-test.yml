@@ -322,14 +322,14 @@ resources:
       repository: govukpay/egress
       variant: egress-release
       <<: *aws_test_config
-#  - name: frontend-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/frontend
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: frontend-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/frontend
+      tag: latest-master
+      username: ((docker-username))
+      password: ((docker-access-token))
   - name: frontend-ecr-registry-test
     type: registry-image
     icon: docker
@@ -351,14 +351,14 @@ resources:
       repository: govukpay/frontend
       tag: latest
       <<: *aws_test_config
-#  - name: adminusers-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/adminusers
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: adminusers-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adminusers
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: adminusers-ecr-registry-test
     type: registry-image
     icon: docker
@@ -380,14 +380,14 @@ resources:
       repository: govukpay/adminusers
       tag: latest
       <<: *aws_test_config
-#  - name: cardid-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/cardid
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: cardid-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/cardid
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: cardid-ecr-registry-test
     type: registry-image
     icon: docker
@@ -409,14 +409,14 @@ resources:
       repository: govukpay/cardid
       tag: latest
       <<: *aws_test_config      
-#  - name: connector-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/connector
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: connector-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/connector
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: connector-ecr-registry-test
     type: registry-image
     icon: docker
@@ -438,14 +438,14 @@ resources:
       repository: govukpay/connector
       tag: latest
       <<: *aws_test_config      
-#  - name: ledger-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/ledger
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: ledger-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/ledger
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: ledger-ecr-registry-test
     type: registry-image
     icon: docker
@@ -474,14 +474,14 @@ resources:
       repository: govukpay/webhooks
       variant: release
       <<: *aws_test_config
-#  - name: products-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/products
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: products-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: products-ecr-registry-test
     type: registry-image
     icon: docker
@@ -503,14 +503,14 @@ resources:
       repository: govukpay/products
       tag: latest
       <<: *aws_test_config      
-#  - name: products-ui-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/products-ui
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: products-ui-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/products-ui
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: products-ui-ecr-registry-test
     type: registry-image
     icon: docker
@@ -532,14 +532,14 @@ resources:
       repository: govukpay/products-ui
       tag: latest
       <<: *aws_test_config  
-#  - name: publicapi-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/publicapi
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: publicapi-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicapi
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: publicapi-ecr-registry-test
     type: registry-image
     icon: docker
@@ -561,14 +561,14 @@ resources:
       repository: govukpay/publicapi
       tag: latest
       <<: *aws_test_config      
-#  - name: publicauth-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/publicauth
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: publicauth-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/publicauth
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: publicauth-ecr-registry-test
     type: registry-image
     icon: docker
@@ -590,14 +590,14 @@ resources:
       repository: govukpay/publicauth
       tag: latest
       <<: *aws_test_config      
-#  - name: selfservice-dockerhub
-#    type: registry-image
-#    icon: docker
-#    source:
-#      repository: govukpay/selfservice
-#      tag: latest-master
-#      password: ((docker-password))
-#      username: ((docker-username))
+  - name: selfservice-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/selfservice
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: selfservice-ecr-registry-test
     type: registry-image
     icon: docker
@@ -1790,11 +1790,11 @@ jobs:
               image: frontend-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: frontend-dockerhub
-#          params:
-#            image: frontend-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: frontend-dockerhub
+          params:
+            image: frontend-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -2161,11 +2161,11 @@ jobs:
               image: adminusers-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: adminusers-dockerhub
-#          params:
-#              image: adminusers-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: adminusers-dockerhub
+          params:
+              image: adminusers-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -2561,11 +2561,11 @@ jobs:
               image: connector-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: connector-dockerhub
-#          params:
-#            image: connector-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: connector-dockerhub
+          params:
+            image: connector-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -2961,11 +2961,11 @@ jobs:
               image: ledger-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: ledger-dockerhub
-#          params:
-#            image: ledger-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: ledger-dockerhub
+          params:
+            image: ledger-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -3360,11 +3360,11 @@ jobs:
               image: products-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: products-dockerhub
-#          params:
-#            image: products-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: products-dockerhub
+          params:
+            image: products-candidate/image.tar
+          get_params:
+            skip_download: true
 
     on_failure:
       put: slack-notification
@@ -3739,11 +3739,11 @@ jobs:
               image: products-ui-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: products-ui-dockerhub
-#          params:
-#            image: products-ui-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: products-ui-dockerhub
+          params:
+            image: products-ui-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -4113,11 +4113,11 @@ jobs:
               image: publicapi-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: publicapi-dockerhub
-#          params:
-#            image: publicapi-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: publicapi-dockerhub
+          params:
+            image: publicapi-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -4476,11 +4476,11 @@ jobs:
               image: publicauth-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: publicauth-dockerhub
-#          params:
-#            image: publicauth-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: publicauth-dockerhub
+          params:
+            image: publicauth-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -4816,11 +4816,11 @@ jobs:
               image: selfservice-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: selfservice-dockerhub
-#          params:
-#            image: selfservice-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: selfservice-dockerhub
+          params:
+            image: selfservice-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -5218,11 +5218,11 @@ jobs:
               image: cardid-candidate/image.tar
             get_params:
               skip_download: true
-#        - put: cardid-dockerhub
-#          params:
-#            image: cardid-candidate/image.tar
-#          get_params:
-#            skip_download: true
+        - put: cardid-dockerhub
+          params:
+            image: cardid-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
