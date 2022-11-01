@@ -4,6 +4,7 @@ image_resource:
   type: docker-image
   source:
     repository: alpine
+    tag: 3.16
 params:
   CARBON_RELAY_IMAGE_TAG:
   ENV:
