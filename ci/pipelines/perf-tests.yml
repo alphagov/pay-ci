@@ -474,7 +474,7 @@ definitions:
         type: registry-image
         source:
           repository: alpine
-          tag: latest
+          tag: 3.16
       outputs:
         - name: run-codebuild-configuration
       run:
