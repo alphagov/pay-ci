@@ -5022,6 +5022,7 @@ jobs:
             type: registry-image
             source:
               repository: alpine
+              tag: 3.16
           inputs:
             - name: cardid-git-release
           params:
