@@ -74,7 +74,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/endtoend
+      repository: governmentdigitalservice/pay-endtoend
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -109,7 +109,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/reverse-proxy
+      repository: governmentdigitalservice/pay-reverse-proxy
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -157,7 +157,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/stubs
+      repository: governmentdigitalservice/pay-stubs
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
