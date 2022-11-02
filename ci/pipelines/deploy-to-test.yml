@@ -326,7 +326,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/frontend
+      repository: governmentdigitalservice/pay-frontend
       tag: latest-master
       username: ((docker-username))
       password: ((docker-access-token))
@@ -355,7 +355,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/adminusers
+      repository: governmentdigitalservice/pay-adminusers
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -384,7 +384,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/cardid
+      repository: governmentdigitalservice/pay-cardid
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -413,7 +413,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/connector
+      repository: governmentdigitalservice/pay-connector
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -442,7 +442,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/ledger
+      repository: governmentdigitalservice/pay-ledger
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -478,7 +478,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/products
+      repository: governmentdigitalservice/pay-products
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -507,7 +507,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/products-ui
+      repository: governmentdigitalservice/pay-products-ui
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -536,7 +536,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/publicapi
+      repository: governmentdigitalservice/pay-publicapi
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -565,7 +565,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/publicauth
+      repository: governmentdigitalservice/pay-publicauth
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -594,7 +594,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/selfservice
+      repository: governmentdigitalservice/pay-selfservice
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
