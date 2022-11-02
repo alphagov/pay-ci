@@ -2,7 +2,7 @@ container_limits: {}
 image_resource:
   type: registry-image
   source:
-    repository: govukpay/concourse-runner
+    repository: governmentdigitalservice/pay-concourse-runner
     tag: latest
 caches:
   - path: src/.m2

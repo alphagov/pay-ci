@@ -412,7 +412,7 @@ jobs:
               image_resource:
                 type: registry-image
                 source:
-                  repository: govukpay/concourse-runner
+                  repository: governmentdigitalservice/pay-concourse-runner
               inputs:
                 - name: pay-infra-src
                 - name: reverse-proxy-git-release

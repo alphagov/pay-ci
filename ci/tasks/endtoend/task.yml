@@ -4,7 +4,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: govukpay/concourse-runner
+    repository: governmentdigitalservice/pay-concourse-runner
     tag: 0-release_2022-01-21
 inputs:
   - name: src

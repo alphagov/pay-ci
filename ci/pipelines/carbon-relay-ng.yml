@@ -196,7 +196,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/concourse-runner
+              repository: governmentdigitalservice/pay-concourse-runner
           inputs:
             - name: image
             - name: carbon-relay-ng-src

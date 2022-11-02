@@ -3,7 +3,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: govukpay/node-runner
+    repository: governmentdigitalservice/pay-node-runner
     tag: node16
 params:
   APP_NAME:
