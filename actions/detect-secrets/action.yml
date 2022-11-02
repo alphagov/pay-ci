@@ -1,0 +1,6 @@
+name: 'detect-secrets'
+description: 'Analyse staged files for leaked credentials'
+author: 'GOV.UK Pay'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
