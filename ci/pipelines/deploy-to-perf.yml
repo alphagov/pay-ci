@@ -1707,7 +1707,7 @@ jobs:
           manifest: pay-stubs-manifest/ci/pay_stubs/pay-stubs_manifest.yml
           docker_username: ((docker-username))
           docker_password: ((docker-access-token))
-          docker_image: govukpay/stubs:latest-master
+          docker_image: governmentdigitalservice/pay-stubs:latest-master
           vars:
             smartpay-expected-password: ((smartpay-expected-password))
             smartpay-expected-user: ((smartpay-expected-user))
