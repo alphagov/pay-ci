@@ -3,7 +3,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: govukpay/concourse-runner
+    repository: governmentdigitalservice/pay-concourse-runner
 params:
   provider:
   consumer:

@@ -47,7 +47,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/carbon-relay-ng
+      repository: governmentdigitalservice/pay-carbon-relay-ng
       password: ((docker-access-token))
       username: ((docker-username))
 
@@ -196,7 +196,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/concourse-runner
+              repository: governmentdigitalservice/pay-concourse-runner
           inputs:
             - name: image
             - name: carbon-relay-ng-src

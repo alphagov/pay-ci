@@ -2,7 +2,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: govukpay/concourse-runner
+    repository: governmentdigitalservice/pay-concourse-runner
     tag: latest
   version:
     digest: sha256:5a7c14795856965615ae9af4564731bf1d13df1c7c2dbda1b8f2a6554e154760

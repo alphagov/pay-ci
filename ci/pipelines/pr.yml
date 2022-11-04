@@ -112,7 +112,7 @@ definitions:
       image_resource:
         type: registry-image
         source:
-          repository: govukpay/pay-pr-flow-stats
+          repository: governmentdigitalservice/pay-pr-flow-stats
       inputs:
         - name: src
       run:
@@ -1277,7 +1277,7 @@ jobs:
             image_resource:
               type: registry-image
               source:
-                repository: govukpay/concourse-runner
+                repository: governmentdigitalservice/pay-concourse-runner
             inputs:
               - name: src
             params:

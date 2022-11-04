@@ -301,7 +301,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/stubs
+      repository: governmentdigitalservice/pay-stubs
       tag: latest-master
       password: ((docker-access-token))
       username: ((docker-username))
@@ -497,7 +497,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-runner
+              repository: governmentdigitalservice/pay-node-runner
               tag: node16
           inputs:
             - name: pay-ci
@@ -615,7 +615,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-runner
+              repository: governmentdigitalservice/pay-node-runner
               tag: node16
           inputs:
             - name: pay-ci
@@ -789,7 +789,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-runner
+              repository: governmentdigitalservice/pay-node-runner
               tag: node16
           inputs:
             - name: pay-ci
@@ -1025,7 +1025,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-runner
+              repository: governmentdigitalservice/pay-node-runner
               tag: node16
           inputs:
             - name: pay-ci
@@ -1199,7 +1199,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-runner
+              repository: governmentdigitalservice/pay-node-runner
               tag: node16
           inputs:
             - name: pay-ci
@@ -1373,7 +1373,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: govukpay/node-runner
+              repository: governmentdigitalservice/pay-node-runner
               tag: node16
           inputs:
             - name: pay-ci
@@ -1707,7 +1707,7 @@ jobs:
           manifest: pay-stubs-manifest/ci/pay_stubs/pay-stubs_manifest.yml
           docker_username: ((docker-username))
           docker_password: ((docker-access-token))
-          docker_image: govukpay/stubs:latest-master
+          docker_image: governmentdigitalservice/pay-stubs:latest-master
           vars:
             smartpay-expected-password: ((smartpay-expected-password))
             smartpay-expected-user: ((smartpay-expected-user))

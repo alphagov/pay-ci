@@ -9,5 +9,5 @@ has been kept in this folder (defaulting to Dockerfile.node16), to prepare for f
 You can build the node16 version by providing the `--file` flag to docker build:
 
 ```
-docker build -f Dockerfile.node16 -t govukpay/node-runner:node16-local .
+docker build -f Dockerfile.node16 -t governmentdigitalservice/pay-node-runner:node16-local .
 ```

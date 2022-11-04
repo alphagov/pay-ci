@@ -31,7 +31,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/concourse-runner
+      repository: governmentdigitalservice/pay-concourse-runner
       username: ((docker-username))
       password: ((docker-access-token))
       tag: latest
@@ -40,7 +40,7 @@ resources:
     type: registry-image
     icon: docker
     source:
-      repository: govukpay/concourse-runner-with-java-17
+      repository: governmentdigitalservice/pay-concourse-runner-with-java-17
       username: ((docker-username))
       password: ((docker-access-token))
       tag: latest
