@@ -2,7 +2,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: govukpay/pact_with_jq
+    repository: governmentdigitalservice/pay-pact_with_jq
 params:
   consumer:
   broker_username: ((pact-broker-username))
