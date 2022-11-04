@@ -1,8 +1,4 @@
-FROM python:alpine3.16
-
-RUN apk update && apk upgrade
-RUN apk add bash git
-RUN pip install detect-secrets
+FROM governmentdigitalservice/pay-detect-secrets:latest
 
 COPY entrypoint.sh /entrypoint.sh
 
