@@ -1,5 +1,7 @@
 FROM docker:20.10.22-dind
 
+# NO-OP change to trigger tests
+
 ARG FLY_CLI_SHA256SUM=0bc203b57319578e2d01585b005f4ea35cd7bb74d79ce74992763e760e19c4b0
 
 RUN apk add --no-cache \

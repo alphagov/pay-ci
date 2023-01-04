@@ -1,4 +1,5 @@
-FROM docker:20.10.22-dind
+# Changing this to a known bad docker image to demonstrate failing tests
+FROM docker:20.10.22
 
 ARG FLY_CLI_SHA256SUM=0bc203b57319578e2d01585b005f4ea35cd7bb74d79ce74992763e760e19c4b0
 
