@@ -19,10 +19,6 @@ updates:
   labels:
     - dependencies
     - govuk-pay
-  ignore:
-    - dependency-name: docker
-      versions:
-        - "> 20.10.16"
 - package-ecosystem: docker
   directory: "/ci/docker/concourse-runner-with-java-17"
   schedule:
@@ -32,7 +28,3 @@ updates:
   labels:
     - dependencies
     - govuk-pay
-  ignore:
-    - dependency-name: docker
-      versions:
-        - "> 20.10.16"
