@@ -1,4 +1,11 @@
 ---
+resource_types:
+  - name: pull-request
+    type: registry-image
+    source:
+      repository: teliaoss/github-pr-resource
+      tag: v0.21.0
+
 resources:
   - name: concourse-runner-pipeline
     type: git
@@ -8,6 +15,18 @@ resources:
       branch: master
       paths:
         - ci/pipelines/concourse-runner.yml
+
+  - name: concourse-runner-pr
+    type: pull-request
+    icon: github
+    source:
+      disable_forks: true
+      repository: alphagov/pay-ci
+      access_token: ((github-access-token))
+      paths:
+        - "ci/docker/concourse-runner/**"
+        - "ci/docker/concourse-runner-with-java-17/**"
+        - "ci/pipelines/concourse-runner.yml"
 
   - name: concourse-runner-src
     type: git
@@ -124,3 +143,115 @@ jobs:
         trigger: true
       - set_pipeline: concourse-runner
         file: concourse-runner-pipeline/ci/pipelines/concourse-runner.yml
+
+  - name: concourse-runner-pr
+    plan:
+      - in_parallel:
+        - get: concourse-runner-pr
+          trigger: true
+        - get: pay-ci
+          trigger: false
+      - put: concourse-runner-pr
+        params:
+          path: concourse-runner-pr
+          status: pending
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-access-token))
+          EMAIL: ((docker-email))
+      - in_parallel:
+        - task: build-concourse-runner
+          privileged: true
+          output_mapping:
+            image: concourse-runner-image
+          params:
+            CONTEXT: concourse-runner-pr/ci/docker/concourse-runner
+            UNPACK_ROOTFS: true
+            DOCKER_CONFIG: docker_creds
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source:
+                repository: concourse/oci-build-task
+            inputs:
+            - name: concourse-runner-pr
+            outputs:
+            - name: image
+            run:
+              path: build
+        - task: build-concourse-runner-with-java-17
+          privileged: true
+          output_mapping:
+            image: concourse-runner-with-java-17-image
+          params:
+            CONTEXT: concourse-runner-pr/ci/docker/concourse-runner-with-java-17
+            UNPACK_ROOTFS: true
+            DOCKER_CONFIG: docker_creds
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source:
+                repository: concourse/oci-build-task
+            inputs:
+            - name: concourse-runner-pr
+            outputs:
+            - name: image
+            run:
+              path: build
+      - in_parallel:
+        - task: test-concourse-runner
+          privileged: true
+          image: concourse-runner-image
+          config:
+            platform: linux
+            run:
+              path: /bin/bash
+              args:
+                - -eo
+                - pipefail
+                - -c
+                - |
+                  source /docker-helpers.sh
+
+                  start_docker
+
+                  docker ps -a
+
+                  stop_docker
+        - task: test-concourse-runner-with-java-17
+          privileged: true
+          image: concourse-runner-with-java-17-image
+          config:
+            platform: linux
+            run:
+              path: /bin/bash
+              args:
+                - -eo
+                - pipefail
+                - -c
+                - |
+                  source /docker-helpers.sh
+
+                  start_docker
+
+                  docker ps -a
+
+                  stop_docker
+      - put: concourse-runner-pr
+        params:
+          path: concourse-runner-pr
+          status: success
+    on_failure:
+      put: concourse-runner-pr
+      params:
+        path: concourse-runner-pr
+        status: failure
+    on_error:
+      put: concourse-runner-pr
+      params:
+        path: concourse-runner-pr
+        status: failure
