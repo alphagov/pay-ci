@@ -155,6 +155,7 @@ jobs:
         params:
           path: concourse-runner-pr
           status: pending
+          context: concourse-runner-tests
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -245,13 +246,16 @@ jobs:
         params:
           path: concourse-runner-pr
           status: success
+          context: concourse-runner-tests
     on_failure:
       put: concourse-runner-pr
       params:
         path: concourse-runner-pr
         status: failure
+        context: concourse-runner-tests
     on_error:
       put: concourse-runner-pr
       params:
         path: concourse-runner-pr
         status: failure
+        context: concourse-runner-tests
