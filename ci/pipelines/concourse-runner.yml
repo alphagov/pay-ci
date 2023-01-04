@@ -1,4 +1,26 @@
 ---
+definitions:
+  - &test-concourse-runner
+    task: test-concourse-runner
+    privileged: true
+    image: updateThisValue
+    config:
+      platform: linux
+      run:
+        path: /bin/bash
+        args:
+          - -eo
+          - pipefail
+          - -c
+          - |
+            source /docker-helpers.sh
+
+            start_docker
+
+            docker ps -a
+
+            stop_docker
+
 resource_types:
   - name: pull-request
     type: registry-image
@@ -90,6 +112,7 @@ jobs:
         params: 
           CONTEXT: concourse-runner-src/ci/docker/concourse-runner
           DOCKER_CONFIG: docker_creds
+          UNPACK_ROOTFS: true
         config:
           platform: linux
           image_resource:
@@ -102,6 +125,8 @@ jobs:
           - name: image
           run:
             path: build
+      - <<: *test-concourse-runner
+        image: image
       - put: concourse-runner
         params: {image: image/image.tar}
 
@@ -122,6 +147,7 @@ jobs:
         params: 
           CONTEXT: concourse-runner-with-java-17-src/ci/docker/concourse-runner-with-java-17
           DOCKER_CONFIG: docker_creds
+          UNPACK_ROOTFS: true
         config:
           platform: linux
           image_resource:
@@ -134,6 +160,8 @@ jobs:
           - name: image
           run:
             path: build
+      - <<: *test-concourse-runner
+        image: image
       - put: concourse-runner-with-java-17
         params: {image: image/image.tar}
 
@@ -204,44 +232,12 @@ jobs:
             run:
               path: build
       - in_parallel:
-        - task: test-concourse-runner
-          privileged: true
+        - <<: *test-concourse-runner
+          task: test-concourse-runner
           image: concourse-runner-image
-          config:
-            platform: linux
-            run:
-              path: /bin/bash
-              args:
-                - -eo
-                - pipefail
-                - -c
-                - |
-                  source /docker-helpers.sh
-
-                  start_docker
-
-                  docker ps -a
-
-                  stop_docker
-        - task: test-concourse-runner-with-java-17
-          privileged: true
+        - <<: *test-concourse-runner
+          task: test-concourse-runner-with-java-17
           image: concourse-runner-with-java-17-image
-          config:
-            platform: linux
-            run:
-              path: /bin/bash
-              args:
-                - -eo
-                - pipefail
-                - -c
-                - |
-                  source /docker-helpers.sh
-
-                  start_docker
-
-                  docker ps -a
-
-                  stop_docker
       - put: concourse-runner-pr
         params:
           path: concourse-runner-pr
