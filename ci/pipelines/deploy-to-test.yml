@@ -6215,7 +6215,7 @@ jobs:
             type: registry-image
             source:
               repository: hashicorp/terraform
-              tag: 1.0.8
+              tag: 1.3.7
           run:
             path: /bin/sh
             args:
