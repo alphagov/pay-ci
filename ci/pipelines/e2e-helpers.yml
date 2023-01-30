@@ -283,6 +283,7 @@ jobs:
           file: pay-ci/ci/tasks/parse-release-tag.yml
           input_mapping:
             git-release: endtoend-git-release
+        
       - put: endtoend-candidate-ecr-registry-test
         params:
           image: image/image.tar
