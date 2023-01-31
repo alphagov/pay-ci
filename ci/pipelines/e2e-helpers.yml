@@ -288,7 +288,7 @@ jobs:
           params:
             BUILD_PIPELINE_NAME:
             BUILD_JOB_NAME:
-            RELEASE_NUMBER: ((.:application_image_tag))
+            RELEASE_NUMBER: 
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - put: endtoend-candidate-ecr-registry-test
         params:
@@ -334,7 +334,7 @@ jobs:
           params:
             BUILD_PIPELINE_NAME:
             BUILD_JOB_NAME:
-            RELEASE_NUMBER: ((.:application_image_tag))
+            RELEASE_NUMBER: 
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
@@ -476,7 +476,7 @@ jobs:
           params:
             BUILD_PIPELINE_NAME:
             BUILD_JOB_NAME:
-            RELEASE_NUMBER: ((.:application_image_tag))
+            RELEASE_NUMBER: 
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - in_parallel:
         - put: reverse-proxy-candidate-ecr-registry-test
@@ -523,7 +523,7 @@ jobs:
           params:
             BUILD_PIPELINE_NAME:
             BUILD_JOB_NAME:
-            RELEASE_NUMBER: ((.:application_image_tag))
+            RELEASE_NUMBER: 
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))   
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
@@ -637,7 +637,7 @@ jobs:
           params:
             BUILD_PIPELINE_NAME:
             BUILD_JOB_NAME:
-            RELEASE_NUMBER: ((.:application_image_tag))
+            RELEASE_NUMBER: 
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - put: stubs-candidate-ecr-registry-test
         params:
@@ -683,7 +683,7 @@ jobs:
           params:
             BUILD_PIPELINE_NAME:
             BUILD_JOB_NAME:
-            RELEASE_NUMBER: ((.:application_image_tag))
+            RELEASE_NUMBER: 
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))    
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
