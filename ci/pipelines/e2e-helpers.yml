@@ -283,7 +283,13 @@ jobs:
           file: pay-ci/ci/tasks/parse-release-tag.yml
           input_mapping:
             git-release: endtoend-git-release
-        
+        - task: send-job-release-info-to-hosted-graphite
+          file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite
+          params:
+            BUILD_PIPELINE_NAME:
+            BUILD_JOB_NAME:
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - put: endtoend-candidate-ecr-registry-test
         params:
           image: image/image.tar
@@ -323,6 +329,13 @@ jobs:
           file: pay-ci/ci/tasks/parse-candidate-tag.yml
           input_mapping:
             ecr-repo: endtoend-candidate-ecr-registry-test
+        - task: send-job-release-info-to-hosted-graphite
+          file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite
+          params:
+            BUILD_PIPELINE_NAME:
+            BUILD_JOB_NAME:
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
@@ -458,6 +471,13 @@ jobs:
           file: pay-ci/ci/tasks/parse-release-tag.yml
           input_mapping:
             git-release: reverse-proxy-git-release
+        - task: send-job-release-info-to-hosted-graphite
+          file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite
+          params:
+            BUILD_PIPELINE_NAME:
+            BUILD_JOB_NAME:
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - in_parallel:
         - put: reverse-proxy-candidate-ecr-registry-test
           params:
@@ -498,6 +518,13 @@ jobs:
           file: pay-ci/ci/tasks/parse-candidate-tag.yml
           input_mapping:
             ecr-repo: reverse-proxy-candidate-ecr-registry-test
+        - task: send-job-release-info-to-hosted-graphite
+          file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite
+          params:
+            BUILD_PIPELINE_NAME:
+            BUILD_JOB_NAME:
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))   
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
@@ -605,6 +632,13 @@ jobs:
           file: pay-ci/ci/tasks/parse-release-tag.yml
           input_mapping:
             git-release: stubs-git-release
+        - task: send-job-release-info-to-hosted-graphite
+          file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite
+          params:
+            BUILD_PIPELINE_NAME:
+            BUILD_JOB_NAME:
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - put: stubs-candidate-ecr-registry-test
         params:
           image: image/image.tar
@@ -644,6 +678,13 @@ jobs:
           file: pay-ci/ci/tasks/parse-candidate-tag.yml
           input_mapping:
             ecr-repo: stubs-candidate-ecr-registry-test
+        - task: send-job-release-info-to-hosted-graphite
+          file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite
+          params:
+            BUILD_PIPELINE_NAME:
+            BUILD_JOB_NAME:
+            RELEASE_NUMBER: ((.:application_image_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))    
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
