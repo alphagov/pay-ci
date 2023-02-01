@@ -16,5 +16,5 @@ run:
     - -ec
     - |
       RELEASE=$(echo "${RELEASE_NUMBER}" | cut -d'-' -f 1)
-      METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.$BUILD_PIPELINE_NAME.$BUILD_JOB_NAME.releaseNumber $RELEASE"
+      METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.${BUILD_PIPELINE_NAME}.${BUILD_JOB_NAME}.jobStarted $RELEASE"
       echo "$METRIC_DATA" | nc carbon.hostedgraphite.com 2003
