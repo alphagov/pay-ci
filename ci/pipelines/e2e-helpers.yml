@@ -5,7 +5,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-10335-send-e2e-helpers-job-metric-to-hosted-graphite
+      branch: master
       paths:
         - ci/pipelines/e2e-helpers.yml
 
