@@ -286,8 +286,6 @@ jobs:
         - task: send-job-release-info-to-hosted-graphite
           file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
           params:
-            BUILD_PIPELINE_NAME:
-            BUILD_JOB_NAME:
             RELEASE_NUMBER: 
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - put: endtoend-candidate-ecr-registry-test
@@ -332,8 +330,6 @@ jobs:
         - task: send-job-release-info-to-hosted-graphite
           file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
           params:
-            BUILD_PIPELINE_NAME:
-            BUILD_JOB_NAME:
             RELEASE_NUMBER: 
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
         - task: assume-role
