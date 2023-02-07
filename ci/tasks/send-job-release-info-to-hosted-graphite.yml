@@ -6,8 +6,10 @@ image_resource:
     repository: alpine
     tag: 3.16
 params:
+  BUILD_PIPELINE_NAME:
+  BUILD_JOB_NAME:
   RELEASE_NUMBER:
-  HOSTED_GRAPHITE_API_TOKEN:
+  HOSTED_GRAPHITE_API_TOKEN:  
 run:
   path: sh
   args:
@@ -15,4 +17,6 @@ run:
     - |
       RELEASE=$(echo "${RELEASE_NUMBER}" | cut -d'-' -f 1)
       METRIC_DATA="${HOSTED_GRAPHITE_API_TOKEN}.ci.concourse.${BUILD_PIPELINE_NAME}.${BUILD_JOB_NAME}.jobStarted $RELEASE"
+      echo "ci.concourse.${BUILD_PIPELINE_NAME}.${BUILD_JOB_NAME}.jobStarted $RELEASE"  
       echo "$METRIC_DATA" | nc carbon.hostedgraphite.com 2003
+      echo "This is the release number ${RELEASE_NUMBER}"
