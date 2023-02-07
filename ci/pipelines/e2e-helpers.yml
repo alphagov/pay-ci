@@ -610,6 +610,12 @@ jobs:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: stubs-git-release
+      - load_var: release_number_tag
+        file: tags/release-number    
       - in_parallel:
         - task: build-stubs-image
           privileged: true
@@ -628,16 +634,12 @@ jobs:
             - name: image
             run:
               path: build
-        - task: parse-release-tag
-          file: pay-ci/ci/tasks/parse-release-tag.yml
-          input_mapping:
-            git-release: stubs-git-release
         - task: send-job-release-info-to-hosted-graphite
           file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
           params:
-            BUILD_PIPELINE_NAME: $BUILD_PIPELINE_NAME
-            BUILD_JOB_NAME: $BUILD_JOB_NAME
-            RELEASE_NUMBER: tags/release-number
+            BUILD_PIPELINE_NAME: e2e-helpers
+            BUILD_JOB_NAME: build-and-push-stubs-candidate
+            RELEASE_NUMBER: ((.:release_number_tag))
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - put: stubs-candidate-ecr-registry-test
         params:
