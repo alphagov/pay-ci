@@ -384,17 +384,17 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
-          - put: endtoend-ecr-registry-test
-            params:
-              image: endtoend-candidate-ecr-registry-test/image.tar
-              additional_tags: parse-candidate-tag/release-tag
-            get_params:
-              skip_download: true
-          - put: endtoend-dockerhub
-            params:
-              image: endtoend-candidate-ecr-registry-test/image.tar
-            get_params:
-              skip_download: true
+        - put: endtoend-ecr-registry-test
+          params:
+            image: endtoend-candidate-ecr-registry-test/image.tar
+            additional_tags: parse-candidate-tag/release-tag
+          get_params:
+            skip_download: true
+        - put: endtoend-dockerhub
+          params:
+            image: endtoend-candidate-ecr-registry-test/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
@@ -486,12 +486,12 @@ jobs:
                   RELEASE_NUMBER: ((.:release_number_tag))
                   HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - in_parallel:
-          - put: reverse-proxy-candidate-ecr-registry-test
-            params:
-              image: image/image.tar
-              additional_tags: tags/candidate-tag
-            get_params:
-              skip_download: true
+        - put: reverse-proxy-candidate-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/candidate-tag
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
