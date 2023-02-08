@@ -321,37 +321,37 @@ jobs:
   - name: endtoend-e2e
     plan:
       - in_parallel:
-          - get: endtoend-candidate-ecr-registry-test
-            passed: [build-and-push-endtoend-candidate]
-            trigger: true
-            params:
-              format: oci
-          - get: pay-ci
-          - task: parse-candidate-tag
-            file: pay-ci/ci/tasks/parse-candidate-tag.yml
-            input_mapping:
-              ecr-repo: endtoend-candidate-ecr-registry-test
-          - load_var: release_number_tag
-            file: tags/release-number
+        - get: endtoend-candidate-ecr-registry-test
+          passed: [build-and-push-endtoend-candidate]
+          trigger: true
+          params:
+            format: oci
+        - get: pay-ci
+        - task: parse-candidate-tag
+          file: pay-ci/ci/tasks/parse-candidate-tag.yml
+          input_mapping:
+            ecr-repo: endtoend-candidate-ecr-registry-test
+        - load_var: release_number_tag
+          file: tags/release-number
       - in_parallel:
-          - task: send-job-release-info-to-hosted-graphite
-            file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
-            params:
-              BUILD_PIPELINE_NAME: e2e-helpers
-              BUILD_JOB_NAME: endtoend-e2e
-              RELEASE_NUMBER: ((.:release_number_tag))
-              HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
-          - task: assume-role
-            file: pay-ci/ci/tasks/assume-role.yml
-            params:
-              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
-              AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+        - task: send-job-release-info-to-hosted-graphite
+          file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+          params:
+            BUILD_PIPELINE_NAME: e2e-helpers
+            BUILD_JOB_NAME: endtoend-e2e
+            RELEASE_NUMBER: ((.:release_number_tag))
+            HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
       - in_parallel:
-          - load_var: candidate_image_tag
-            file: endtoend-candidate-ecr-registry-test/tag
-          - load_var: role
-            file: assume-role/assume-role.json
-            format: json
+        - load_var: candidate_image_tag
+          file: endtoend-candidate-ecr-registry-test/tag
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
@@ -361,28 +361,28 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
-          - task: run-codebuild-card
-            attempts: 3
-            file: pay-ci/ci/tasks/run-codebuild.yml
-            params:
-              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
-              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          - task: run-codebuild-products
-            file: pay-ci/ci/tasks/run-codebuild.yml
-            params:
-              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
-              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          - task: run-codebuild-zap
-            file: pay-ci/ci/tasks/run-codebuild.yml
-            params:
-              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
-              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-card
+          attempts: 3
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-products
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-zap
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
           - put: endtoend-ecr-registry-test
             params:
