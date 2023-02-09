@@ -520,12 +520,12 @@ jobs:
             params:
               format: oci
           - get: pay-ci
-      - task: parse-candidate-tag
-        file: pay-ci/ci/tasks/parse-candidate-tag.yml
-        input_mapping:
-          ecr-repo: reverse-proxy-candidate-ecr-registry-test
-      - load_var: release_number_tag
-        file: tags/release-number
+          - task: parse-candidate-tag
+            file: pay-ci/ci/tasks/parse-candidate-tag.yml
+            input_mapping:
+              ecr-repo: reverse-proxy-candidate-ecr-registry-test
+          - load_var: release_number_tag
+            file: tags/release-number
       - in_parallel:
           - task: send-job-release-info-to-hosted-graphite
             file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
