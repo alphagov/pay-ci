@@ -331,15 +331,15 @@ jobs:
         file: pay-ci/ci/tasks/parse-candidate-tag.yml
         input_mapping:
           ecr-repo: endtoend-candidate-ecr-registry-test
-      - load_var: release_number_tag
-        file: tags/release-number
+      - load_var: candidate_number_tag
+        file: parse-candidate-tag/release-number
       - in_parallel:
         - task: send-job-release-info-to-hosted-graphite
           file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
           params:
             BUILD_PIPELINE_NAME: e2e-helpers
             BUILD_JOB_NAME: endtoend-e2e
-            RELEASE_NUMBER: ((.:release_number_tag))
+            RELEASE_NUMBER: ((.:candidate_number_tag))
             HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
@@ -524,15 +524,15 @@ jobs:
         file: pay-ci/ci/tasks/parse-candidate-tag.yml
         input_mapping:
           ecr-repo: reverse-proxy-candidate-ecr-registry-test
-      - load_var: release_number_tag
-        file: tags/release-number
+      - load_var: candidate_number_tag
+        file: parse-candidate-tag/release-number
       - in_parallel:
           - task: send-job-release-info-to-hosted-graphite
             file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
             params:
               BUILD_PIPELINE_NAME: e2e-helpers
               BUILD_JOB_NAME: reverse-proxy-e2e
-              RELEASE_NUMBER: ((.:release_number_tag))
+              RELEASE_NUMBER: ((.:candidate_number_tag))
               HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
           - task: assume-role
             file: pay-ci/ci/tasks/assume-role.yml
@@ -688,15 +688,15 @@ jobs:
         file: pay-ci/ci/tasks/parse-candidate-tag.yml
         input_mapping:
           ecr-repo: stubs-candidate-ecr-registry-test
-      - load_var: release_number_tag
-        file: tags/release-number
+      - load_var: candidate_number_tag
+        file: parse-candidate-tag/release-number
       - in_parallel:
           - task: send-job-release-info-to-hosted-graphite
             file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
             params:
               BUILD_PIPELINE_NAME: e2e-helpers
               BUILD_JOB_NAME: stubs-e2e
-              RELEASE_NUMBER: ((.:release_number_tag))
+              RELEASE_NUMBER: ((.:candidate_number_tag))
               HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
           - task: assume-role
             file: pay-ci/ci/tasks/assume-role.yml
