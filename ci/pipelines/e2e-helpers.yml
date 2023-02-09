@@ -327,12 +327,12 @@ jobs:
           params:
             format: oci
         - get: pay-ci
-        - task: parse-candidate-tag
-          file: pay-ci/ci/tasks/parse-candidate-tag.yml
-          input_mapping:
-            ecr-repo: endtoend-candidate-ecr-registry-test
-        - load_var: release_number_tag
-          file: tags/release-number
+      - task: parse-candidate-tag
+        file: pay-ci/ci/tasks/parse-candidate-tag.yml
+        input_mapping:
+          ecr-repo: endtoend-candidate-ecr-registry-test
+      - load_var: release_number_tag
+        file: tags/release-number
       - in_parallel:
         - task: send-job-release-info-to-hosted-graphite
           file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
@@ -422,12 +422,12 @@ jobs:
           - get: pay-infra-src
             trigger: true
           - get: pay-ci
-          - task: parse-release-tag
-            file: pay-ci/ci/tasks/parse-release-tag.yml
-            input_mapping:
-              git-release: reverse-proxy-git-release
-          - load_var: release_number_tag
-            file: tags/release-number
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: reverse-proxy-git-release
+      - load_var: release_number_tag
+        file: tags/release-number
       - in_parallel:
           - do:
               - task: find-and-compile-naxsi-rules
@@ -684,12 +684,12 @@ jobs:
             params:
               format: oci
           - get: pay-ci
-          - task: parse-candidate-tag
-            file: pay-ci/ci/tasks/parse-candidate-tag.yml
-            input_mapping:
-              ecr-repo: stubs-candidate-ecr-registry-test
-          - load_var: release_number_tag
-            file: tags/release-number
+      - task: parse-candidate-tag
+        file: pay-ci/ci/tasks/parse-candidate-tag.yml
+        input_mapping:
+          ecr-repo: stubs-candidate-ecr-registry-test
+      - load_var: release_number_tag
+        file: tags/release-number
       - in_parallel:
           - task: send-job-release-info-to-hosted-graphite
             file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
