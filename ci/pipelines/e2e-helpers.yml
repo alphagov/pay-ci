@@ -53,7 +53,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-10335-send-e2e-helpers-job-metric-to-hosted-graphite
+      branch: master
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
