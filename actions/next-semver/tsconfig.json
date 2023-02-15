@@ -1,0 +1,5 @@
+{
+  "extends": "@tsconfig/node16-strictest/tsconfig.json",
+  "include": ["index.ts"],
+  "exclude": ["node_modules"]
+}

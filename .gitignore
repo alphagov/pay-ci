@@ -3,3 +3,4 @@
 ci/scripts/**/node_modules/*
 /venv
 /.venv
+actions/next-semver/node_modules

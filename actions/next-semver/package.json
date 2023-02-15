@@ -1,0 +1,21 @@
+{
+  "name": "next-semver",
+  "version": "1.0.0",
+  "description": "Establish the correct semantic version from a Package file and previous release value",
+  "main": "index.js",
+  "scripts": {
+    "compile": "ncc build index.ts --license licenses.txt"
+  },
+  "keywords": [],
+  "author": "GOV.UK Pay",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.10.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node16-strictest": "^1.0.4",
+    "@types/node": "^18.13.0",
+    "@vercel/ncc": "^0.36.1",
+    "typescript": "^4.9.5"
+  }
+}
