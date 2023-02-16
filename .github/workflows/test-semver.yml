@@ -1,0 +1,34 @@
+name: Run Semver Action Tests
+
+on:
+  pull_request:
+    paths:
+      - 'actions/next-semver/**'
+      - '.github/workflows/test-semver.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'actions/next-semver/**'
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
+      - name: Setup Node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c
+        with:
+          node-version-file: 'actions/next-semver/.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: 'actions/next-semver/package-lock.json'
+      - name: Install dependencies
+        working-directory: 'actions/next-semver'
+        run: npm ci
+      - name: Run unit tests
+        working-directory: 'actions/next-semver'
+        run: npm run test

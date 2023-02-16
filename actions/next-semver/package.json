@@ -4,7 +4,8 @@
   "description": "Establish the correct semantic version from a Package file and previous release value",
   "main": "index.js",
   "scripts": {
-    "compile": "ncc build index.ts --license licenses.txt"
+    "compile": "ncc build index.ts --license licenses.txt",
+    "test": "npx jest"
   },
   "keywords": [],
   "author": "GOV.UK Pay",
@@ -13,9 +14,12 @@
     "@actions/core": "^1.10.0"
   },
   "devDependencies": {
+    "@jest/globals": "^29.4.3",
     "@tsconfig/node16-strictest": "^1.0.4",
+    "@types/jest": "^29.4.0",
     "@types/node": "^18.13.0",
     "@vercel/ncc": "^0.36.1",
+    "ts-jest": "^29.0.5",
     "typescript": "^4.9.5"
   }
 }
