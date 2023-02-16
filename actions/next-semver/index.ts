@@ -3,9 +3,14 @@
 const core = require('@actions/core')
 
 // this script expects two values, they must be semantic versions conforming to the MAJOR.MINOR.PATCH convention
-try {
+semVer: try {
   const packageVersion: string = core.getInput('package_version')
   const currentReleaseVersion: string = core.getInput('release_version')
+
+  if (packageVersion === '' || currentReleaseVersion === '') {
+    core.setFailed('input values cannot be empty')
+    break semVer
+  }
 
   const packageVersionParts: string[] = packageVersion.split(".")
   const currentReleaseVersionParts: string[] = currentReleaseVersion.split(".")
@@ -45,7 +50,7 @@ function compareSemver(a: string, b: string): number {
 }
 
 function incrementPatchValue(parts: string[]): string[] {
-  let patchValue = parseInt(parts[parts.length - 1]!, 10)
+  let patchValue = Number(parts[parts.length - 1]!)
   patchValue++
   parts[parts.length - 1] = patchValue.toString()
   return parts

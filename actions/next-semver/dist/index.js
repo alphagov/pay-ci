@@ -2822,9 +2822,13 @@ var __webpack_exports__ = {};
 // noinspection DuplicatedCode
 const core = __nccwpck_require__(186);
 // this script expects two values, they must be semantic versions conforming to the MAJOR.MINOR.PATCH convention
-try {
+semVer: try {
     const packageVersion = core.getInput('package_version');
     const currentReleaseVersion = core.getInput('release_version');
+    if (packageVersion === '' || currentReleaseVersion === '') {
+        core.setFailed('input values cannot be empty');
+        break semVer;
+    }
     const packageVersionParts = packageVersion.split(".");
     const currentReleaseVersionParts = currentReleaseVersion.split(".");
     if (arrayValuesAreNumbers([packageVersionParts, currentReleaseVersionParts])) {
@@ -2861,7 +2865,7 @@ function compareSemver(a, b) {
     return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
 function incrementPatchValue(parts) {
-    let patchValue = parseInt(parts[parts.length - 1], 10);
+    let patchValue = Number(parts[parts.length - 1]);
     patchValue++;
     parts[parts.length - 1] = patchValue.toString();
     return parts;
