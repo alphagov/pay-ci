@@ -4,7 +4,7 @@
   "description": "Establish the correct semantic version from a Package file and previous release value",
   "main": "index.js",
   "scripts": {
-    "compile": "ncc build index.ts --license licenses.txt",
+    "compile": "ncc build src/index.ts -m --license licenses.txt",
     "test": "npx jest"
   },
   "keywords": [],

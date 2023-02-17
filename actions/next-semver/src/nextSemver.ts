@@ -1,15 +1,11 @@
-// noinspection DuplicatedCode
-// this script expects two values, they must be semantic versions conforming to the MAJOR.MINOR.PATCH convention
 const core = require('@actions/core')
-const packageVersion: string = core.getInput('package_version')
-const currentReleaseVersion: string = core.getInput('release_version')
+
 const errorMessages = {
   empty: 'input values cannot be empty',
   malformed: 'input values must be semantic (MAJOR.MINOR.PATCH)'
 }
-determineVersion(packageVersion, currentReleaseVersion)
 
-function determineVersion (packageVersion: string, currentReleaseVersion: string) :void {
+function nextSemver (packageVersion: string, currentReleaseVersion: string) :void {
   semVer: try {
     if (packageVersion === '' || currentReleaseVersion === '') {
       core.setFailed(errorMessages.empty)
@@ -63,11 +59,9 @@ function incrementPatchValue(parts: string[]): string[] {
 }
 
 export {
-  determineVersion,
+  nextSemver,
   arrayValuesAreNumbers,
   compareSemver,
   incrementPatchValue,
   errorMessages
 }
-
-
