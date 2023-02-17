@@ -1,0 +1,16 @@
+name: 'next-semver'
+description: 'Establish the correct semantic version from source and previous release value'
+author: 'GOV.UK Pay'
+inputs:
+  package_version:
+    description: 'version in the project source (pom.xml, package.json etc)'
+    required: true
+  release_version:
+    description: 'version of latest github release'
+    required: true
+outputs:
+  version:
+    description: 'semantic version value of the next release'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
