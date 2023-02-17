@@ -51,7 +51,7 @@ jobs:
             exit 1
           fi
           echo "Setting Provider version to ${PROVIDER_VERSION}"
-          echo "::set-output name=pact-provider-version::${PROVIDER_VERSION}"
+          echo "pact-provider-version=${PROVIDER_VERSION}" >> $GITHUB_OUTPUT
       - name: Run provider contract tests
         run: |
           mvn test -DrunContractTests -DPACT_CONSUMER_TAG=master \
