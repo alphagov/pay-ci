@@ -1712,6 +1712,13 @@ jobs:
     plan:
       - get: adminusers-ecr-registry-staging
         trigger: true
+      - task: send-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-release-info-to-hosted-graphite.yml
+        params:
+          ENVIRONMENT: "test-12"
+          APP_NAME: "adminusers"
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - get: nginx-proxy-ecr-registry-staging
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
