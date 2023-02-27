@@ -205,7 +205,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: PP-10733-Add-concourse-metrics-on-the-deploy-to-staging-pipeline 
   - name: every-hour
     icon: alarm
     source:
