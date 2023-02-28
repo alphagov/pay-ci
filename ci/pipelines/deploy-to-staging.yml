@@ -1891,7 +1891,7 @@ jobs:
         passed: [smoke-test-adminusers-on-staging]
         trigger: true
       - load_var: application_image_tag
-        file: adminusers-ecr-registry-staging/tag 
+        file: adminusers-ecr-registry-staging/tag
       - get: pay-ci
       - task: send-job-release-info-to-hosted-graphite
         file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
@@ -1933,6 +1933,16 @@ jobs:
           format: oci
         trigger: true
         passed: [adminusers-pact-tag]
+      - load_var: application_image_tag
+        file: adminusers-ecr-registry-staging/tag 
+      - get: pay-ci
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: push-adminusers-to-production-ecr
+          RELEASE_NUMBER: ((.:application_image_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY
       - put: adminusers-ecr-registry-prod
         params:
           image: adminusers-ecr-registry-staging/image.tar
