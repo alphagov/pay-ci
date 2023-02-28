@@ -1855,7 +1855,7 @@ jobs:
       - task: parse-staging-release-tag
         file: pay-ci/ci/tasks/parse-staging-release-tag.yml
         input_mapping:
-          git-release: endtoend-git-release
+          ecr-repo: adminusers-ecr-registry-staging
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
       - task: send-job-release-info-to-hosted-graphite
@@ -1863,7 +1863,7 @@ jobs:
         params:
           BUILD_PIPELINE_NAME: deploy-to-staging
           BUILD_JOB_NAME: smoke-test-adminusers-on-staging
-          RELEASE_NUMBER: ((.:application_image_tag))
+          RELEASE_NUMBER: ((.:parse-staging-release-tag))
           HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY)) 
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml

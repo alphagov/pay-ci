@@ -10,7 +10,7 @@ async function run () {
     }
 
     const tag = fs.readFileSync('ecr-repo/tag', 'utf8')
-    fs.writeFileSync(`${dir}/tag`, tag.replace(-release,''))
+    fs.writeFileSync(`${dir}/tag`, tag.replace('-release',''))
     
     console.log('Resulting tag: ' + fs.readFileSync(`${dir}/tag`, 'utf8'))
   } catch (err) {

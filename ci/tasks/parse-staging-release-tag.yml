@@ -1,4 +1,4 @@
-# This task parses the staging release tag from an ecr resource and turns it into a *-staging release tag
+# This task parses the staging release candidate tag from an ecr resource and turns it into a *-staging release tag
 #
 # File written:
 #   parse-staging-release-tag/tag : The staging release tag (e.g. 123-release)
@@ -17,3 +17,4 @@ outputs:
 run:
   path: node
   args: ['pay-ci/ci/scripts/parse-staging-release-tag.js']
+
