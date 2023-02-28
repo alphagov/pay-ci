@@ -205,7 +205,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: PP-10733-Add-concourse-metrics-on-the-deploy-to-staging-pipeline
   - name: every-hour
     icon: alarm
     source:
@@ -1852,6 +1852,10 @@ jobs:
         trigger: true
         passed: [deploy-adminusers-to-staging]
       - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          git-release: endtoend-git-release
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
       - task: send-job-release-info-to-hosted-graphite

@@ -1,25 +1,19 @@
-# This task parses the candidate tag from an ecr resource and turns it into the final release tag
+# This task parses the staging release tag from an ecr resource and turns it into a *-staging release tag
 #
-# Files written:
-#   parse-staging-release-tag/release-tag : The actual release tag (e.g. 123-release)
-#   parse-staging-release-tag/release-number : The number of the candidate release (e.g. in the case of 123-candidate, this is 123)
+# File written:
+#   parse-staging-release-tag/tag : The staging release tag (e.g. 123-release)
 #
 platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: alpine
-    tag: 3.16
+    repository: governmentdigitalservice/pay-node-runner
+    tag: node16
 inputs:
+  - name: pay-ci
   - name: ecr-repo
 outputs:
   - name: parse-staging-release-tag
 run:
-  path: sh
-  args:
-    - -ec
-    - |
-      RELEASE_NUMBER=$(cut -f 1 -d "-" < ecr-repo/tag)
-      echo "${RELEASE_NUMBER}-release" | tee parse-staging-release-tag/release-tag
-      echo "$RELEASE_NUMBER" > parse-staging-release/release-number
-      
+  path: node
+  args: ['pay-ci/ci/scripts/parse-staging-release-tag.js']
