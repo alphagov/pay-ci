@@ -1220,7 +1220,6 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: toolbox-ecr-registry-staging/tag
-      
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - load_var: nginx_image_tag
