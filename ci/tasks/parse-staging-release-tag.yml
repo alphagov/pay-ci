@@ -1,0 +1,19 @@
+# This task parses the staging release candidate tag from an ecr resource and turns it into a *-staging release tag
+#
+# File written:
+#   parse-staging-release-tag/tag : The staging release tag (e.g. 123)
+#
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-node-runner
+    tag: node16
+inputs:
+  - name: pay-ci
+  - name: ecr-repo
+outputs:
+  - name: parse-staging-release-tag
+run:
+  path: node
+  args: ['pay-ci/ci/scripts/parse-staging-release-tag.js']

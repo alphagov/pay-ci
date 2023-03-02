@@ -1716,8 +1716,21 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          ecr-repo: adminusers-ecr-registry-staging
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
+      - load_var: parse_staging_release_tag
+        file: parse-staging-release-tag/tag
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: deploy-adminusers-to-staging
+          RELEASE_NUMBER: ((.:parse_staging_release_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))  
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
@@ -1845,8 +1858,21 @@ jobs:
         trigger: true
         passed: [deploy-adminusers-to-staging]
       - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          ecr-repo: adminusers-ecr-registry-staging
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
+      - load_var: parse_staging_release_tag
+        file: parse-staging-release-tag/tag
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: smoke-test-adminusers-on-staging
+          RELEASE_NUMBER: ((.:parse_staging_release_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY)) 
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1878,6 +1904,19 @@ jobs:
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
       - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          ecr-repo: adminusers-ecr-registry-staging
+      - load_var: parse_staging_release_tag
+        file: parse-staging-release-tag/tag
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: adminusers-pact-tag
+          RELEASE_NUMBER: ((.:parse_staging_release_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1911,6 +1950,22 @@ jobs:
           format: oci
         trigger: true
         passed: [adminusers-pact-tag]
+      - load_var: application_image_tag
+        file: adminusers-ecr-registry-staging/tag 
+      - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          ecr-repo: adminusers-ecr-registry-staging
+      - load_var: parse_staging_release_tag
+        file: parse-staging-release-tag/tag
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: push-adminusers-to-production-ecr
+          RELEASE_NUMBER: ((.:parse_staging_release_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY
       - put: adminusers-ecr-registry-prod
         params:
           image: adminusers-ecr-registry-staging/image.tar
