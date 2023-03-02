@@ -2873,8 +2873,21 @@ jobs:
       - get: telegraf-ecr-registry-staging
       - get: pay-infra
       - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          ecr-repo: ledger-ecr-registry-staging 
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
+      - load_var: parse_staging_release_tag
+        file: parse-staging-release-tag/tag
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: deploy-ledger-to-staging
+          RELEASE_NUMBER: ((.:parse_staging_release_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
@@ -2957,8 +2970,21 @@ jobs:
         trigger: true
         passed: [deploy-ledger-to-staging]
       - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          ecr-repo: ledger-ecr-registry-staging 
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
+      - load_var: parse_staging_release_tag
+        file: parse-staging-release-tag/tag
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: smoke-test-ledger-on-staging
+          RELEASE_NUMBER: ((.:parse_staging_release_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -2986,10 +3012,23 @@ jobs:
     plan:
       - get: ledger-ecr-registry-staging
         passed: [smoke-test-ledger-on-staging]
-        trigger: true
+        trigger: true 
+      - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          ecr-repo: ledger-ecr-registry-staging
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
-      - get: pay-ci
+      - load_var: parse_staging_release_tag
+        file: parse-staging-release-tag/tag
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: ledger-pact-tag
+          RELEASE_NUMBER: ((.:parse_staging_release_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY)) 
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -3068,6 +3107,22 @@ jobs:
           format: oci
         trigger: true
         passed: [ledger-pact-tag]
+      - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          ecr-repo: ledger-ecr-registry-staging
+      - load_var: application_image_tag
+        file: ledger-ecr-registry-staging/tag
+      - load_var: parse_staging_release_tag
+        file: parse-staging-release-tag/tag
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: push-ledger-to-production-ecr
+          RELEASE_NUMBER: ((.:parse_staging_release_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY)) 
       - put: ledger-ecr-registry-prod
         params:
           image: ledger-ecr-registry-staging/image.tar
