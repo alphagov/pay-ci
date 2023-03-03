@@ -1033,7 +1033,6 @@ jobs:
           BUILD_JOB_NAME: push-selfservice-to-production-ecr
           RELEASE_NUMBER: ((.:parse_staging_release_tag))
           HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
-
       - put: selfservice-ecr-registry-prod
         params:
           image: selfservice-ecr-registry-staging/image.tar
