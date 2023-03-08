@@ -31,3 +31,13 @@ updates:
     - dependencies
     - govuk-pay
     - docker
+- package-ecosystem: docker
+  directory: "/ci/docker/pact-broker"
+  schedule:
+    interval: daily
+    time: "03:00"
+  open-pull-requests-limit: 10
+  labels:
+    - dependencies
+    - govuk-pay
+    - docker
