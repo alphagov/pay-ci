@@ -62,7 +62,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/pact-broker
-      tag: "2.54.0.0"
+      tag: "2.54.0.0" # hardcoding this tag as we don't want to upgrade to a new version of pact broker in the process of moving it. we will get the value for this tag field in a separate story.
       aws_access_key_id: ((readonly_access_key_id))
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
