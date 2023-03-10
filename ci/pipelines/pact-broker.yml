@@ -46,7 +46,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-10768-adding-pact-broker-to-docker
+      branch: master
       paths:
         - ci/docker/pact-broker/*
 
