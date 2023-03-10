@@ -46,7 +46,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
       - name: Setup
-        uses: actions/setup-node@9ced9a43a244f3ac94f13bfd896db8c8f30da67a
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c
         with:
           node-version: ${{ inputs.node_version }}
       - name: Cache NPM packages
