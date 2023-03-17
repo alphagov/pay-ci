@@ -6,7 +6,7 @@ image_resource:
     repository: pactfoundation/pact-cli
 params:
   PACT_BROKER_USERNAME: ((pact-broker-username))
-  PACT_BROKER_PASSWORD: ((jenkins-pact-broker-password))
+  PACT_BROKER_PASSWORD: ((pact-broker-password))
   GIT_SHA:
   APP_NAME:
   PACT_TAG:
