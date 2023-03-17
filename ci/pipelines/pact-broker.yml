@@ -57,7 +57,7 @@ resources:
       uri: https://github.com/alphagov/pay-ci
       branch: master
 
-  - name: pact-broker-ecr-registry-test
+  - name: pact-broker-ecr-registry-deploy
     type: registry-image
     icon: docker
     source:
@@ -128,7 +128,7 @@ jobs:
             - name: image
           run:
             path: build
-      - put: pact-broker-ecr-registry-test
+      - put: pact-broker-ecr-registry-deploy
         params:
           image: image/image.tar
         get_params:
