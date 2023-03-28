@@ -143,7 +143,7 @@ jobs:
             args:
               - -euc
               - |
-                go get github.com/shuLhan/go-bindata/cmd/go-bindata
+                go install github.com/go-bindata/go-bindata/...@latest
                 make build-linux
                 ./carbon-relay-ng version | cut -f 2 -d " " | tee ../carbon-relay-ng-version/version.txt
       - in_parallel:
