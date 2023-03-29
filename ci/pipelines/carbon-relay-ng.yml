@@ -103,7 +103,7 @@ jobs:
                   echo "done"
 
                   echo -n "Detecting circle golang build image used in upstream..."
-                  CIRCLECI_GOLANG_BUILD_IMAGE=$(yq < carbon-relay-ng-src/.circleci/config.yml '.jobs.build.docker[] | select(.image | test("^circleci/golang:")) | .image')
+                  CIRCLECI_GOLANG_BUILD_IMAGE=$(yq < carbon-relay-ng-src/.circleci/config.yml '.jobs.build.docker[] | select(.image | test("^cimg/go:")) | .image')
                   echo "$CIRCLECI_GOLANG_BUILD_IMAGE"
 
                   echo -n "Extracting golang version..."
@@ -145,7 +145,7 @@ jobs:
               - |
                 go install github.com/go-bindata/go-bindata/...@latest
                 make build-linux
-                ./carbon-relay-ng version | cut -f 2 -d " " | tee ../carbon-relay-ng-version/version.txt
+                ./carbon-relay-ng-linux-amd64 version | cut -f 2 -d " " | tee ../carbon-relay-ng-version/version.txt
       - in_parallel:
         - task: build-carbon-relay-ng-container-image
           privileged: true
