@@ -145,7 +145,7 @@ jobs:
               - |
                 go install github.com/go-bindata/go-bindata/...@latest
                 make build-linux
-                ./carbon-relay-ng version | cut -f 2 -d " " | tee ../carbon-relay-ng-version/version.txt
+                ./carbon-relay-ng-linux-amd64 version | cut -f 2 -d " " | tee ../carbon-relay-ng-version/version.txt
       - in_parallel:
         - task: build-carbon-relay-ng-container-image
           privileged: true
