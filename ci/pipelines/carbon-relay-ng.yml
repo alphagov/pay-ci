@@ -103,7 +103,7 @@ jobs:
                   echo "done"
 
                   echo -n "Detecting circle golang build image used in upstream..."
-                  CIRCLECI_GOLANG_BUILD_IMAGE=$(yq < carbon-relay-ng-src/.circleci/config.yml '.jobs.build.docker[] | select(.image | test("^circleci/golang:")) | .image')
+                  CIRCLECI_GOLANG_BUILD_IMAGE=$(yq < carbon-relay-ng-src/.circleci/config.yml '.jobs.build.docker[] | select(.image | test("^cimg/go:")) | .image')
                   echo "$CIRCLECI_GOLANG_BUILD_IMAGE"
 
                   echo -n "Extracting golang version..."
