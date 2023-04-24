@@ -6,7 +6,7 @@ image_resource:
   type: docker-image
   source:
     repository: node
-    tag: 16-stretch-slim
+    tag: 16-bullseye-slim
 inputs:
   - name: src
 outputs:
