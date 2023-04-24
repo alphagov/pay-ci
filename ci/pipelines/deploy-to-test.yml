@@ -466,7 +466,15 @@ resources:
     source:
       repository: govukpay/ledger
       tag: latest
-      <<: *aws_test_config       
+      <<: *aws_test_config
+  - name: webhooks-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: governmentdigitalservice/pay-webhooks
+      tag: latest-master
+      password: ((docker-access-token))
+      username: ((docker-username))
   - name: webhooks-ecr-registry-test
     type: registry-image
     icon: docker
@@ -5482,12 +5490,18 @@ jobs:
             - name: image
           run:
             path: build
-      - put: webhooks-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: tags/tags
-        get_params:
-          skip_download: true
+      - in_parallel:
+        - put: webhooks-ecr-registry-test
+          params:
+            image: image/image.tar
+            additional_tags: tags/tags
+          get_params:
+            skip_download: true
+        - put: webhooks-dockerhub
+          params:
+            image: image/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
