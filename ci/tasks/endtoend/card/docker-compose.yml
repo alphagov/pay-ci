@@ -82,6 +82,7 @@ services:
     environment:
       - EAGER_SERVICE_LOADING=1
       - SERVICES=sqs,sns
+      - SQS_DISABLE_CLOUDWATCH_METRICS=1
     ports:
       - "4566"
     networks:
