@@ -159,3 +159,12 @@ jobs:
         trigger: true
       - set_pipeline: infra-drift-detector
         file: infra-drift-detector-pipeline/ci/pipelines/infra-drift-detector-lower-envs.yml
+
+  - name: test-check-for-zendesk-unsubscribers
+    plan:
+    - in_parallel:
+      - get: every-morning-at-five
+        trigger: true
+      - get: pay-ci
+    - task: check-if-unsubscribed
+      file: pay-ci/ci/tasks/check-sns-topic-unsubscribers.yml

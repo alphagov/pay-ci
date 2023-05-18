@@ -1,0 +1,28 @@
+platform: linux
+image_resource:
+   type: registry-image
+   source:
+    repository: governmentdigitalservice/pay-concourse-runner
+run:
+  path: /bin/bash
+  args:
+    - -c
+    - |
+      set -euo pipefail
+      any_failed=0
+      while read -r TOPIC_ARN; do
+        echo "Checking topic: $TOPIC_ARN"
+        if [ "$TOPIC_ARN" == "None" ]; then
+          echo "No SNS topics found"
+          exit 1
+        fi
+        subscription_arn=$(aws sns list-subscriptions-by-topic --topic-arn "$TOPIC_ARN" --query 'Subscriptions[].SubscriptionArn' --output text)
+            if [ "$subscription_arn" == "Deleted" ] ||  [ "$subscription_arn" == "PendingConfirmation" ]; then
+              echo "Topic subscription: $subscription_arn is unsubscribed
+              If you can find the Zendesk email to resubscribe, do that
+              If you can’t find it or it doesn’t work, talk to Starling"
+            fi
+      done < <(aws sns list-topics --query "Topics[].[TopicArn]" --output text)
+      if [ "$any_failed" -eq 1 ]; then
+        exit 1
+      fi
