@@ -266,6 +266,7 @@ groups:
   - name: end_to_end
     jobs:
       - endtoend-e2e
+      - pay-ci-endtoend-config
       - record-endtoend-build-time
 
   - name: frontend
@@ -425,6 +426,14 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-endtoend
+
+  - <<: *pull-request
+    name: pay-ci-endtoend-config-pull-request
+    source:
+      <<: *pull-request-source
+      repository: alphagov/pay-ci
+      paths:
+        - "ci/tasks/endtoend/"
 
   - <<: *pull-request
     name: adminusers-pull-request
@@ -843,6 +852,70 @@ jobs:
     on_failure:
       <<: *put-e2e-failed-status
       put: endtoend-pull-request
+
+  - <<: *job-definition
+    name: pay-ci-endtoend-config
+    plan:
+      - in_parallel:
+        - <<: *get-ci
+        - <<: *get-pull-request
+          resource: pay-ci-endtoend-config-pull-request
+      - <<: *put-e2e-pending-status
+        put: pay-ci-endtoend-config-pull-request
+      - task: assume-role
+        file: ci/ci/tasks/assume-role.yml
+        input_mapping:
+          pay-ci: ci
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+          AWS_ROLE_SESSION_NAME: pay-ci-endtoend-config-pr-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+      - task: prepare-codebuild
+        file: ci/ci/tasks/prepare-e2e-codebuild.yml
+        input_mapping:
+          pay-ci: src
+        params:
+          PROJECT_UNDER_TEST: pay-ci
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+        - task: run-card-e2e-tests
+          attempts: 3
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-products-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-zap-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - <<: *put-e2e-success-status
+        put: pay-ci-endtoend-config-pull-request
+
+    on_failure:
+      <<: *put-e2e-failed-status
+      put: pay-ci-endtoend-config-pull-request
+
 
   - <<: *job-definition
     name: record-endtoend-build-time
