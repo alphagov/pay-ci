@@ -186,30 +186,6 @@ resources:
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
 
-  - name: softwaremill-elasticmq-latest
-    type: registry-image
-    icon: docker
-    check_every: 1h
-    source:
-      repository: softwaremill/elasticmq
-      tag: latest
-      username: ((docker-username))
-      password: ((docker-access-token))
-
-  - name: ecr-softwaremill-elasticmq-latest
-    type: registry-image
-    icon: docker
-    check_every: never
-    source:
-      repository: softwaremill/elasticmq
-      tag: latest
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
-
   - name: localstack-localstack-2
     type: registry-image
     icon: docker
@@ -815,36 +791,6 @@ jobs:
         channel: "#govuk-pay-activity"
         silent: true
         text: ":green-circle: Copied postgres:11-alpine image from Docker Hub to ECR - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-        icon_emoji: ":concourse:"
-        username: pay-concourse
-
-  - name: copy-softwaremill-elasticmq-latest
-    plan:
-      - get: softwaremill-elasticmq-latest
-        trigger: true
-        params:
-          format: oci
-      - put: ecr-softwaremill-elasticmq-latest
-        params:
-          image: softwaremill-elasticmq-latest/image.tar
-        get_params:
-          skip_download: true
-    on_failure:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: "#govuk-pay-starling"
-        silent: true
-        text: ":red-circle: Failed copying softwaremill/elasticmq:latest image from Docker Hub to ECR - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-        icon_emoji: ":concourse:"
-        username: pay-concourse
-    on_success:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: "#govuk-pay-activity"
-        silent: true
-        text: ":green-circle: Copied softwaremill/elasticmq:latest image from Docker Hub to ECR - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
         icon_emoji: ":concourse:"
         username: pay-concourse
 
