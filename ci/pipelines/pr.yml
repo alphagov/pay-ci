@@ -891,24 +891,24 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-              ###        - task: run-products-e2e-tests
-              ###          file: ci/ci/tasks/run-codebuild.yml
-              ###          input_mapping:
-              ###            pay-ci: ci
-              ###          params:
-              ###            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
-              ###            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-              ###            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-              ###            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-              ###        - task: run-zap-e2e-tests
-              ###          file: ci/ci/tasks/run-codebuild.yml
-              ###          input_mapping:
-              ###            pay-ci: ci
-              ###          params:
-              ###            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
-              ###            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-              ###            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-              ###            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-products-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-zap-e2e-tests
+          file: ci/ci/tasks/run-codebuild.yml
+          input_mapping:
+            pay-ci: ci
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put-e2e-success-status
         put: pay-ci-endtoend-config-pull-request
 
