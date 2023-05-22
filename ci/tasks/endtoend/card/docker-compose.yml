@@ -75,15 +75,20 @@ services:
     logging:
       driver: "json-file"
 
-  sqs:
-    # softwaremill/elasticmq
-    image: ${DOCKER_REGISTRY_URI:-}softwaremill/elasticmq:latest
+  localstack:
+    image: ${DOCKER_REGISTRY_URI:-}localstack/localstack:2.0
     volumes:
-      - "./../docker-config/elasticmq.conf:/opt/elasticmq.conf"
+      - "./../docker-config/localstack-init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
+    environment:
+      - EAGER_SERVICE_LOADING=1
+      - SERVICES=sqs,sns
+      - SQS_DISABLE_CLOUDWATCH_METRICS=1
+    ports:
+      - "4566"
     networks:
       pymnt_network:
         aliases:
-          - sqs.internal.pymnt.localdomain
+          - localstack.internal.pymnt.localdomain
     mem_limit: 500M
 
   adminusers:
@@ -165,7 +170,7 @@ services:
     mem_limit: 2G
     depends_on:
       - postgres
-      - sqs
+      - localstack
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9300/healthcheck"]
       interval: 1m30s
@@ -189,7 +194,7 @@ services:
     mem_limit: 2G
     depends_on:
       - postgres
-      - sqs
+      - localstack
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:10700/healthcheck"]
       interval: 1m30s
