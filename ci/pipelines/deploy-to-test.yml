@@ -1065,6 +1065,12 @@ definitions:
           <<: *aws_assumed_role_creds
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "card_stripe_3ds_test"
+      - task: run_recurring_card_payment_stripe-test
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "rec_card_stripe_test"
       - task: run_notifications_sandbox-test
         file: pay-ci/ci/tasks/run-smoke-test.yml
         params:
