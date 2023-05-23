@@ -19,6 +19,9 @@ run:
       echo "${RELEASE_NUMBER}-release" | tee tags/tags
       echo "${RELEASE_NUMBER}-candidate" | tee tags/candidate-tag
       echo "${RELEASE_NUMBER}" > tags/release-number
-
+      date +%Y-%m-%d_%H-%M-%S | tee tags/date
+      echo -n "${RELEASE_NUMBER}-candidate " >> tags/allcandidatetags
+      cat tags/date >> tags/allcandidatetag
+      
       cd git-release
       git rev-parse HEAD | tee ../tags/release-sha
