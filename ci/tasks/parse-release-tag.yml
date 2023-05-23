@@ -9,7 +9,7 @@ inputs:
 outputs:
   - name: tags
 run:
-  path: sh
+  path: ash
   args:
     - -ec
     - |
