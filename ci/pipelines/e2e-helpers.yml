@@ -47,6 +47,8 @@ resources:
       branch: master
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
+      paths:
+        - provisioning/terraform/modules/pay_microservices_v2  # NAXSI config
 
   - name: pay-ci
     type: git
