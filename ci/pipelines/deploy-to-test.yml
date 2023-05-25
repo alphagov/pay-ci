@@ -2042,6 +2042,8 @@ jobs:
           file: tags/release-sha
         - load_var: candidate-image-tag
           file: tags/candidate-tag
+        - load_var: date
+          file: tags/date
       - task: build-jar
         config:
           container_limits: {}
