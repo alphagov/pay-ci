@@ -2078,6 +2078,7 @@ jobs:
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
+          LABEL_build_date: ((.:date))
         config:
           platform: linux
           image_resource:
