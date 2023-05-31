@@ -4370,6 +4370,8 @@ jobs:
           file: tags/release-sha
         - load_var: candidate-image-tag
           file: tags/candidate-tag
+        - load_var: date
+          file: tags/date
       - task: build-jar
         config:
           container_limits: {}
@@ -4404,6 +4406,7 @@ jobs:
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
+          LABEL_build_date: ((.:date))
         config:
           platform: linux
           image_resource:
@@ -4420,7 +4423,7 @@ jobs:
       - put: publicauth-candidate
         params:
           image: image/image.tar
-          additional_tags: tags/candidate-tag
+          additional_tags: tags/all-candidate-tags
         get_params:
           skip_download: true
     on_failure:
