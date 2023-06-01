@@ -1239,6 +1239,8 @@ jobs:
           git-release: stream-s3-sqs-git-release
       - load_var: release-tag
         file: tags/tags
+      - load_var: date
+        file: tags/date
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -1250,6 +1252,7 @@ jobs:
         params:
             CONTEXT: stream-s3-sqs-git-release
             DOCKER_CONFIG: docker_creds
+            LABEL_build_date: ((.:date))
         config:
           platform: linux
           image_resource:
@@ -1265,7 +1268,7 @@ jobs:
       - put: stream-s3-sqs-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: tags/tags
+          additional_tags: tags/all-release-tags
         get_params:
           skip_download: true
     on_failure:
