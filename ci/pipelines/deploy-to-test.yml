@@ -5781,6 +5781,8 @@ jobs:
           git-release: nginx-proxy-git-release
       - load_var: release-tag
         file: tags/tags
+      - load_var: date
+        file: tags/date
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -5792,6 +5794,7 @@ jobs:
         params:
           DOCKER_CONFIG: docker_creds
           CONTEXT: nginx-proxy-git-release
+          LABEL_build_date: ((.:date))
         config:
           platform: linux
           image_resource:
@@ -5808,7 +5811,7 @@ jobs:
         - put: nginx-proxy-ecr-registry-test
           params:
             image: image/image.tar
-            additional_tags: tags/tags
+            additional_tags: tags/all-release-tags
         - put: docker-nginx-proxy-dockerhub
           params:
             image: image/image.tar
