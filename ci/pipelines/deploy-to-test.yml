@@ -5844,6 +5844,8 @@ jobs:
           git-release: webhooks-egress-git-release
       - load_var: release-tag
         file: tags/tags
+      - load_var: date
+        file: tags/date
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -5855,6 +5857,7 @@ jobs:
         params:
           DOCKER_CONFIG: docker_creds
           CONTEXT: webhooks-egress-git-release/production/webhooks-egress/
+          LABEL_build_date: ((.:date))
         config:
           platform: linux
           image_resource:
@@ -5870,7 +5873,7 @@ jobs:
       - put: webhooks-egress-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: tags/tags
+          additional_tags: tags/all-release-tags
     on_failure:
       put: slack-notification
       attempts: 10
