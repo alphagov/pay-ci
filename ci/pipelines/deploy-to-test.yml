@@ -1330,6 +1330,8 @@ jobs:
           file: tags/release-sha
         - load_var: release-tag
           file: tags/tags
+        - load_var: date
+          file: tags/date
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -1343,6 +1345,7 @@ jobs:
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
+          LABEL_build_date: ((.:date))
         config:
           platform: linux
           image_resource:
@@ -1359,7 +1362,7 @@ jobs:
       - put: toolbox-ecr-registry-test
         params:
           image: image/image.tar
-          additional_tags: tags/tags
+          additional_tags: tags/all-release-tags
     on_failure:
       put: slack-notification
       attempts: 10
