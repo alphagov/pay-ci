@@ -37,6 +37,13 @@ resources:
       stop: "07:00"
       location: Europe/London
     type: time
+  - name: every-morning-at-seven
+    icon: alarm
+    source:
+      start: "07:00"
+      stop: "07:30"
+      location: Europe/London
+    type: time
   - name: pay-ci
     type: git
     icon: github
@@ -153,11 +160,11 @@ jobs:
         icon_emoji: ":terraform:"
         username: pay-concourse-drift-detector
 
-  - name: deploy-2-bastion
+  - name: deploy-tooling-bastion
     serial: true
     plan:
     - in_parallel:
-      - get: every-morning-at-six
+      - get: every-morning-at-seven
         trigger: true
       - get: pay-ci
       - get: pay-infra
