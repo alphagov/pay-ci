@@ -2334,7 +2334,7 @@ jobs:
           type: registry-image
           source:
             repository: golang
-            tag: 1.14-alpine
+            tag: 1.20-alpine
         inputs:
           - name: src
         run:
