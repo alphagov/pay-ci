@@ -688,6 +688,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: egress-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -814,7 +815,9 @@ jobs:
       - get: selfservice-ecr-registry-prod
         trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -982,8 +985,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: connector-ecr-registry-prod
+        trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1434,9 +1440,13 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: frontend-ecr-registry-prod
+        trigger: true
       - get: nginx-forward-proxy-ecr-registry-prod
+        trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1631,7 +1641,9 @@ jobs:
       - get: adminusers-ecr-registry-prod
         trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1861,8 +1873,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: products-ecr-registry-prod
+        trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2092,8 +2107,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: products-ui-ecr-registry-prod
+        trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2261,8 +2279,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: publicauth-ecr-registry-prod
+        trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2445,8 +2466,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: cardid-ecr-registry-prod
+        trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2614,8 +2638,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: publicapi-ecr-registry-prod
+        trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2785,7 +2812,9 @@ jobs:
       - get: ledger-ecr-registry-prod
         trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -3015,7 +3044,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: notifications-ecr-registry-prod
-        trigger: false
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -3254,7 +3283,9 @@ jobs:
       - get: webhooks-ecr-registry-prod
         trigger: true
       - get: nginx-proxy-ecr-registry-prod
+        trigger: true
       - get: telegraf-ecr-registry-prod
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
