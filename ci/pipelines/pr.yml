@@ -2334,7 +2334,7 @@ jobs:
           type: registry-image
           source:
             repository: golang
-            tag: 1.14-alpine
+            tag: 1.20-alpine
         inputs:
           - name: src
         run:
@@ -2344,7 +2344,7 @@ jobs:
             - -ec
             - |
               apk add git shellcheck
-              go get github.com/alphagov/paas-cf/tools/pipecleaner
+              go install github.com/alphagov/paas-cf/tools/pipecleaner@latest
 
               cd /tmp/
 
