@@ -850,7 +850,9 @@ jobs:
       - get: selfservice-ecr-registry-staging
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1055,8 +1057,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: connector-ecr-registry-staging
+        trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1382,6 +1387,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: egress-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1621,9 +1627,13 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: frontend-ecr-registry-staging
+        trigger: true
       - get: nginx-forward-proxy-ecr-registry-staging
+        trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1796,7 +1806,9 @@ jobs:
       - get: adminusers-ecr-registry-staging
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - task: parse-staging-release-tag
@@ -2059,8 +2071,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: products-ecr-registry-staging
+        trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2268,8 +2283,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: products-ui-ecr-registry-staging
+        trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2432,8 +2450,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: publicauth-ecr-registry-staging
+        trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2594,8 +2615,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: cardid-ecr-registry-staging
+        trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2758,8 +2782,11 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: publicapi-ecr-registry-staging
+        trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2924,7 +2951,9 @@ jobs:
       - get: ledger-ecr-registry-staging
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - task: parse-staging-release-tag
@@ -3189,7 +3218,9 @@ jobs:
       - get: webhooks-ecr-registry-staging
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -3426,7 +3457,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: notifications-ecr-registry-staging
-        trigger: false
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
