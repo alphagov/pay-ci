@@ -55,8 +55,8 @@ run:
     DOCKER_SCOUT_BINARY="docker-scout_${DOCKER_SCOUT_VERSION}_linux_amd64.tar.gz"
     wget https://github.com/docker/scout-cli/releases/download/v${DOCKER_SCOUT_VERSION}/${DOCKER_SCOUT_BINARY}
     tar zxvf "$DOCKER_SCOUT_BINARY"
-    mkdir -p ~/.docker/cli-plugins/
-    mv docker-scout ~/.docker/cli-plugins/
+    mkdir -p "${DOCKER_CONFIG}/cli-plugins/"
+    mv docker-scout "${DOCKER_CONFIG}/cli-plugins/"
 
     echo
     echo "##############################################################################################"
