@@ -1,0 +1,79 @@
+---
+# Run docker scout on the image to look for critical vulnerabilities.
+# If any critical vulnerabilities are found this task will exit unsuccessfully
+# A json of the critical vulnerabilities will be written to a critical_vulns
+# vulns in a critical_vulns.json file
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+    tag: latest
+
+inputs:
+- name: docker_creds
+
+outputs:
+- name: critical_vulns
+
+run:
+  path: ash
+  args:
+  - -c
+  - |
+    : "${IMAGE_TO_SCAN:?IMAGE_TO_SCAN param must be set and not empty}"
+
+    source /docker-helpers.sh
+    start_docker
+
+    set -euo pipefail
+
+    echo "##############################################################################################"
+    echo "# Pulling requested docker image                                                              "
+    echo "##############################################################################################"
+
+    docker pull --quiet "$IMAGE_TO_SCAN"
+
+    echo
+    echo "##############################################################################################"
+    echo "# Installing docker scout                                                                     "
+    echo "##############################################################################################"
+    DOCKER_SCOUT_BINARY="docker-scout_${DOCKER_SCOUT_VERSION}_linux_amd64.tar.gz"
+    wget https://github.com/docker/scout-cli/releases/download/v${DOCKER_SCOUT_VERSION}/${DOCKER_SCOUT_BINARY}
+    tar zxvf "$DOCKER_SCOUT_BINARY"
+    mkdir -p ~/.docker/cli-plugins/
+    mv docker-scout ~/.docker/cli-plugins/
+
+    echo
+    echo "##############################################################################################"
+    echo "# Scouting image                                                                              "
+    echo "##############################################################################################"
+    docker scout cves --format sarif --output scout_report.json "$IMAGE_TO_SCAN"
+    jq -r < scout_report.json '
+      [
+        .runs[]
+        | select(.tool.driver.fullName == "Docker Scout")
+       | .results[]
+       | select(.level == "error")
+      ] 
+    ' > critical_vulns/critical_vulns.json
+
+    NUMBER_OF_CRITICAL_VULNS=$(jq -r <critical_vulns/critical_vulns.json '. | length')
+
+    echo "##############################################################################################"
+    echo "# Critical Vulnerability Report                                                               "
+    echo "##############################################################################################"
+
+    if [ "$NUMBER_OF_CRITICAL_VULNS" -gt 0 ]; then
+      echo "$NUMBER_OF_CRITICAL_VULNS critical vulnerabilities found:" 
+      echo "---------------------------------------------------------"
+      jq -r < critical_vulns.json '.[] | .message.text'
+
+      exit 1
+    else
+      echo "No critical vulnerabilities found"
+    fi
+
+params:
+  DOCKER_CONFIG: /docker_creds
+  DOCKER_SCOUT_VERSION: "0.18.1"
+  IMAGE_TO_SCAN:
