@@ -3,6 +3,8 @@
 # If any critical vulnerabilities are found this task will exit unsuccessfully
 # A json of the critical vulnerabilities will be written to a critical_vulns
 # vulns in a critical_vulns.json file
+platform: linux
+
 image_resource:
   type: registry-image
   source:
