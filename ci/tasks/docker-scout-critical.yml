@@ -15,7 +15,7 @@ params:
   AWS_ACCESS_KEY_ID:
   AWS_SECRET_ACCESS_KEY:
   AWS_SESSION_TOKEN:
-  DOCKER_CONFIG: /docker_creds
+  DOCKER_CONFIG: docker_creds
   DOCKER_SCOUT_VERSION: "0.18.1"
   IMAGE_TO_SCAN:
 
@@ -38,9 +38,14 @@ run:
     set -euo pipefail
 
     echo "##############################################################################################"
+    echo "# Logging into ECR                                                                            "
+    echo "##############################################################################################"
+    ECR_REGISTRY=$(cut -f 1 -d "/" <<<"$IMAGE_TO_SCAN")
+    aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+    echo "##############################################################################################"
     echo "# Pulling requested docker image                                                              "
     echo "##############################################################################################"
-
     docker pull --quiet "$IMAGE_TO_SCAN"
 
     echo
