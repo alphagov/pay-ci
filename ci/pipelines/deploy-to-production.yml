@@ -216,7 +216,8 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      # branch: master
+      branch: pp-11168-add-docker-scout-task
   - name: every-hour
     icon: alarm
     source:
@@ -537,6 +538,7 @@ groups:
   - name: adminusers
     jobs:
       - deploy-adminusers-to-prod
+      - vulnerability-check-adminusers
       - record-adminusers-release-number
       - smoke-test-adminusers-on-prod
       - retag-adminusers-image-for-test-perf
@@ -1703,6 +1705,39 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_notification_p1
     <<: *put_failure_slack_notification
+
+  - name: vulnerability-check-adminusers
+    plan:
+      - in_parallel:
+        - get: adminusers-ecr-registry-prod
+          # trigger: true
+        - get: pay-ci
+      - in_parallel:
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+            AWS_ROLE_SESSION_NAME: prod-vuln-check
+        - task: generate-docker-creds-config
+          file: pay-ci/ci/tasks/generate-docker-config-file.yml
+          params:
+            USERNAME: ((docker-username))
+            PASSWORD: ((docker-access-token))
+            EMAIL: ((docker-email))
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: application_image_repository
+          file: adminusers-ecr-registry-prod/repository
+        - load_var: application_image_tag
+          file: adminusers-ecr-registry-prod/tag
+      - task: docker-scout
+        privileged: true
+        file: pay-ci/ci/tasks/docker-scout-critical.yml
+        params:
+          <<: *aws_assumed_role_creds
+          IMAGE_TO_SCAN: ((.:application_image_repository)):((.:application_image_tag))
 
   - name: record-adminusers-release-number
     serial_groups: [record-metrics]
