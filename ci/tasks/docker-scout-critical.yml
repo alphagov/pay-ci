@@ -9,6 +9,14 @@ image_resource:
     repository: governmentdigitalservice/pay-concourse-runner
     tag: latest
 
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  DOCKER_CONFIG: /docker_creds
+  DOCKER_SCOUT_VERSION: "0.18.1"
+  IMAGE_TO_SCAN:
+
 inputs:
 - name: docker_creds
 
@@ -73,7 +81,4 @@ run:
       echo "No critical vulnerabilities found"
     fi
 
-params:
-  DOCKER_CONFIG: /docker_creds
-  DOCKER_SCOUT_VERSION: "0.18.1"
-  IMAGE_TO_SCAN:
+
