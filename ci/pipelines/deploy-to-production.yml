@@ -165,6 +165,12 @@ definitions:
           <<: *aws_assumed_role_creds
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "card_wpay_prod"
+      - task: run_recurring_card_payment_worldpay-production
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "reccard_worldpay_prod"
       - task: run_cancel_card_payment_sandbox-production
         file: pay-ci/ci/tasks/run-smoke-test.yml
         params:
