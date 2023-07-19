@@ -167,6 +167,7 @@ definitions:
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "card_wpay_stag"
       - task: run_recurring_card_payment_worldpay-staging
+        attempts: 10
         file: pay-ci/ci/tasks/run-smoke-test.yml
         params:
           <<: *aws_assumed_role_creds
