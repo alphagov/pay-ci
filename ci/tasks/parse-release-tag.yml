@@ -20,6 +20,8 @@ run:
       echo "${RELEASE_NUMBER}-candidate" | tee tags/candidate-tag
       echo "${RELEASE_NUMBER}" > tags/release-number
       date +%Y-%m-%d_%H-%M-%S | tee tags/date
+      echo -n "${RELEASE_NUMBER}-release " >> tags/all-release-tags
+      cat tags/date >> tags/all-release-tags
       echo -n "${RELEASE_NUMBER}-candidate " >> tags/all-candidate-tags
       cat tags/date >> tags/all-candidate-tags
       
