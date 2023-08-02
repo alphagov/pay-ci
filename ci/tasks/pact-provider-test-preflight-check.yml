@@ -7,7 +7,7 @@ params:
   consumer:
   broker_username: ((pact-broker-username))
   broker_password: ((pact-broker-password))
-  broker_url: "https://pay-pact-broker.cloudapps.digital"
+  broker_url: "https://pact-broker.deploy.payments.service.gov.uk"
 inputs:
   - name: src
 outputs:

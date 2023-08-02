@@ -68,6 +68,6 @@ run:
         -DPACT_CONSUMER_TAG="$consumer_tag" \
         -Dpact.provider.version="$provider_version" \
         -Dpact.verifier.publishResults=true \
-        -DPACT_BROKER_HOST=pay-pact-broker.cloudapps.digital \
+        -DPACT_BROKER_HOST=pact-broker.deploy.payments.service.gov.uk \
         -DPACT_BROKER_USERNAME="$broker_username" \
         -DPACT_BROKER_PASSWORD="$broker_password"
