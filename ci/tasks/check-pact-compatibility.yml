@@ -16,7 +16,7 @@ run:
     - -ec
     - |
       pact-broker can-i-deploy \
-        --broker-base-url https://pact-broker-test.cloudapps.digital \
+        --broker-base-url https://pact-broker.deploy.payments.service.gov.uk/ \
         --pacticipant ${APP_NAME} \
         --version ${GIT_SHA} \
         --to ${PACT_TAG} \
