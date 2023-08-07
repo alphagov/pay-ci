@@ -559,9 +559,6 @@ resource_types:
       tag: latest
 
 groups:
-  - name: adot
-    jobs:
-      - push-adot-to-production-ecr
   - name: adminusers
     jobs:
       - deploy-adminusers-to-staging
@@ -661,6 +658,9 @@ groups:
       - record-webhooks-egress-release-number
       - smoke-test-webhooks-egress-on-staging
       - push-webhooks-egress-to-production-ecr
+  - name: adot
+    jobs:
+      - push-adot-to-production-ecr
   - name: alpine
     jobs:
       - deploy-scheduled-tasks
