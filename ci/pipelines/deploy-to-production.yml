@@ -250,6 +250,19 @@ resources:
     source:
       repository: govukpay/egress
       <<: *aws_test_config      
+  - name: adot-ecr-registry-prod
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adot
+      variant: release
+      <<: *aws_prod_config
+  - name: adot-ecr-registry-test
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adot
+      <<: *aws_test_config
   - name: alpine-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -646,6 +659,9 @@ groups:
       - record-webhooks-egress-release-number
       - smoke-test-webhooks-egress-on-prod
       - retag-webhooks-egress-image-for-test-perf
+  - name: adot
+    jobs:
+      - retag-adot-image-for-test-perf
   - name: alpine
     jobs:
       - deploy-scheduled-tasks
@@ -3635,3 +3651,21 @@ jobs:
         params:
           image: webhooks-egress-ecr-registry-prod/image.tar
           additional_tags: parse-perf-release-tag/tag
+
+  - name: retag-adot-image-for-test-perf
+    plan:
+      - get: pay-ci
+      - get: adot-ecr-registry-prod
+        params:
+          format: oci
+        trigger: true
+      - task: parse-perf-release-tag
+        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+        input_mapping:
+          ecr-repo: adot-ecr-registry-prod
+      - put: adot-ecr-registry-test
+        params:
+          image: adot-ecr-registry-prod/image.tar
+          additional_tags: parse-perf-release-tag/tag
+        get_params:
+          skip_download: true
