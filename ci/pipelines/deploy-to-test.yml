@@ -122,7 +122,8 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      # branch: master
+      branch: pp-11226/deploy-adot-for-adminusers 
   - name: every-hour
     icon: alarm
     source:
@@ -2296,7 +2297,8 @@ jobs:
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: adot-ecr-registry-test
-        trigger: true
+        # TODO: Change to true once this works
+        trigger: false
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -2306,7 +2308,7 @@ jobs:
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
-        file: telegraf-ecr-registry-test/tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
