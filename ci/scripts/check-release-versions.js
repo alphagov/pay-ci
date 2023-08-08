@@ -69,6 +69,10 @@ async function run () {
       checkReleaseVersion('telegraf', TELEGRAF_IMAGE_TAG, containerDefinitions)
     }
 
+    if (ADOT_IMAGE_TAG) {
+      checkReleaseVersion('adot', ADOT_IMAGE_TAG, containerDefinitions)
+    }
+
     if (NGINX_IMAGE_TAG) {
       checkReleaseVersion('nginx', NGINX_IMAGE_TAG, containerDefinitions)
     }
