@@ -5004,6 +5004,8 @@ jobs:
         passed: [run-selfservice-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -5012,6 +5014,8 @@ jobs:
         file: selfservice-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -5051,7 +5055,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: selfservice
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: selfservice
           <<: *deploy_params
