@@ -25,6 +25,12 @@ async function getTaskDefinitionDetails (taskDefinitionName) {
 
 function checkReleaseVersion (containerName, tagToBeDeployed, currentContainerDefinitions) {
   const currentImage = currentContainerDefinitions.find(container => container.name === containerName).image
+
+  if (image === undefined) {
+    console.log(`The container ${containerName} does not exist in the currently deployed task definition. Allowing the deployment`)
+    return
+  }
+
   const currentRelease = Number(currentImage.split(':')[1].split('-')[0])
   const releaseToBeDeployed = Number(tagToBeDeployed.split('-')[0])
   if (releaseToBeDeployed < currentRelease) {
