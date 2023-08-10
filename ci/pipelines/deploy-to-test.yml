@@ -122,8 +122,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      # branch: master
-      branch: pp-11226/deploy-adot-for-adminusers 
+      branch: master
   - name: every-hour
     icon: alarm
     source:
