@@ -1926,6 +1926,8 @@ jobs:
       - get: nginx-proxy-ecr-registry-test
         trigger: true
         passed: [build-and-push-nginx-proxy-to-test-ecr]
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -1936,6 +1938,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: nginx_forward_proxy_image_tag
         file: nginx-forward-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -1977,7 +1981,7 @@ jobs:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-frontend.yml
+        file: pay-ci/ci/tasks/deploy-frontend-with-adot.yml
         params:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
