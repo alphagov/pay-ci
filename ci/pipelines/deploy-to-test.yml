@@ -2306,6 +2306,8 @@ jobs:
         file: adminusers-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
