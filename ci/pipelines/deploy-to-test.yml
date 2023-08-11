@@ -74,6 +74,7 @@ wait_for_deploy_params: &wait_for_deploy_params
   <<: *aws_assumed_role_creds
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
   TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   ENVIRONMENT: test-12
 
@@ -81,6 +82,7 @@ deploy_params: &deploy_params
   <<: *aws_assumed_role_creds
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
   TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   ACCOUNT: test
   ENVIRONMENT: test-12
@@ -90,12 +92,14 @@ check_release_versions_params: &check_release_versions_params
   AWS_REGION: "eu-west-1"
   CLUSTER_NAME: "test-12-fargate"
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
   TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
 
 snippet_params_all_versions: &snippet_params_all_versions
   ENV: test-12
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
   TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
 
@@ -1529,12 +1533,16 @@ jobs:
         passed: [build-and-push-telegraf-to-test-ecr]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
         file: toolbox-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -1561,7 +1569,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: toolbox
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: toolbox
           <<: *deploy_params
@@ -1921,6 +1929,8 @@ jobs:
       - get: nginx-proxy-ecr-registry-test
         trigger: true
         passed: [build-and-push-nginx-proxy-to-test-ecr]
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -1931,6 +1941,8 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: nginx_forward_proxy_image_tag
         file: nginx-forward-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -1972,7 +1984,7 @@ jobs:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-frontend.yml
+        file: pay-ci/ci/tasks/deploy-frontend-with-adot.yml
         params:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
@@ -2291,6 +2303,8 @@ jobs:
         passed: [run-adminusers-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -2299,6 +2313,8 @@ jobs:
         file: adminusers-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -2338,7 +2354,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: adminusers
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: adminusers
           <<: *deploy_params
@@ -2694,6 +2710,8 @@ jobs:
         passed: [run-connector-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -2702,6 +2720,8 @@ jobs:
         file: connector-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -2741,7 +2761,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: connector
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: connector
           <<: *deploy_params
@@ -3097,6 +3117,8 @@ jobs:
         passed: [run-ledger-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -3105,6 +3127,8 @@ jobs:
         file: ledger-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -3144,7 +3168,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: ledger
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: ledger
           <<: *deploy_params
@@ -3500,6 +3524,8 @@ jobs:
         passed: [run-products-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -3508,6 +3534,8 @@ jobs:
         file: products-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -3547,7 +3575,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: products
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: products
           <<: *deploy_params
@@ -3882,6 +3910,8 @@ jobs:
       - get: nginx-proxy-ecr-registry-test
         trigger: true
         passed: [build-and-push-nginx-proxy-to-test-ecr]
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -3890,6 +3920,8 @@ jobs:
         file: products-ui-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -3929,7 +3961,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: products-ui
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: products-ui
           <<: *deploy_params
@@ -4258,6 +4290,8 @@ jobs:
         passed: [run-publicapi-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -4266,6 +4300,8 @@ jobs:
         file: publicapi-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -4305,7 +4341,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: publicapi
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: publicapi
           <<: *deploy_params
@@ -4624,6 +4660,8 @@ jobs:
         passed: [run-publicauth-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -4632,6 +4670,8 @@ jobs:
         file: publicauth-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -4658,7 +4698,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: publicauth
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: publicauth
           <<: *deploy_params
@@ -4967,6 +5007,8 @@ jobs:
         passed: [run-selfservice-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -4975,6 +5017,8 @@ jobs:
         file: selfservice-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -5014,7 +5058,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: selfservice
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: selfservice
           <<: *deploy_params
@@ -5371,6 +5415,8 @@ jobs:
       - get: cardid-ecr-registry-test
         trigger: true
         passed: [run-cardid-e2e]
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: telegraf-ecr-registry-test
@@ -5381,6 +5427,8 @@ jobs:
         file: cardid-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -5420,7 +5468,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: cardid
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: cardid
           <<: *deploy_params
@@ -5635,6 +5683,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
+      - get: adot-ecr-registry-test
+        trigger: true
       - get: telegraf-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -5643,6 +5693,8 @@ jobs:
         file: webhooks-ecr-registry-test/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-test/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -5669,7 +5721,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: webhooks
       - task: deploy-to-test
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: webhooks
           <<: *deploy_params

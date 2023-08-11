@@ -24,7 +24,13 @@ async function getTaskDefinitionDetails (taskDefinitionName) {
 }
 
 function checkReleaseVersion (containerName, tagToBeDeployed, currentContainerDefinitions) {
-  const currentImage = currentContainerDefinitions.find(container => container.name === containerName).image
+  const container = currentContainerDefinitions.find(container => container.name === containerName)
+  if (container === undefined) {
+    console.log(`The container ${containerName} does not exist in the currently deployed task definition. Allowing the deployment`)
+    return
+  }
+
+  const currentImage = container.image
   const currentRelease = Number(currentImage.split(':')[1].split('-')[0])
   const releaseToBeDeployed = Number(tagToBeDeployed.split('-')[0])
   if (releaseToBeDeployed < currentRelease) {
@@ -40,6 +46,7 @@ async function run () {
     CLUSTER_NAME,
     APP_NAME,
     APPLICATION_IMAGE_TAG,
+    ADOT_IMAGE_TAG,
     TELEGRAF_IMAGE_TAG,
     NGINX_IMAGE_TAG,
     NGINX_FORWARD_PROXY_IMAGE_TAG,
@@ -67,6 +74,10 @@ async function run () {
 
     if (TELEGRAF_IMAGE_TAG) {
       checkReleaseVersion('telegraf', TELEGRAF_IMAGE_TAG, containerDefinitions)
+    }
+
+    if (ADOT_IMAGE_TAG) {
+      checkReleaseVersion('adot', ADOT_IMAGE_TAG, containerDefinitions)
     }
 
     if (NGINX_IMAGE_TAG) {

@@ -11,6 +11,7 @@ const {
   CARBON_RELAY_IMAGE_TAG: carbonRelayVersion,
   NGINX_IMAGE_TAG: nginxProxyVersion,
   NGINX_FORWARD_PROXY_IMAGE_TAG: nginxForwardProxyVersion,
+  ADOT_IMAGE_TAG: adotVersion,
   TELEGRAF_IMAGE_TAG: telegrafVersion,
   ENVIRONMENT: env
 } = process.env
@@ -56,6 +57,9 @@ async function run () {
       }
       if (nginxProxyVersion) {
         deploymentDetails.nginxProxyVersion = nginxProxyVersion
+      }
+      if (adotVersion) {
+        deploymentDetails.adotVersion = adotVersion
       }
       if (telegrafVersion) {
         deploymentDetails.telegrafVersion = telegrafVersion
