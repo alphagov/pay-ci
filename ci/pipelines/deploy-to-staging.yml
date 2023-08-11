@@ -8,6 +8,7 @@ definitions:
     <<: *aws_assumed_role_creds
     APPLICATION_IMAGE_TAG: ((.:application_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+    ADOT_IMAGE_TAG: ((.:adot_image_tag))
     TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
     ENVIRONMENT: staging-2
 
@@ -15,6 +16,7 @@ definitions:
     <<: *aws_assumed_role_creds
     APPLICATION_IMAGE_TAG: ((.:application_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+    ADOT_IMAGE_TAG: ((.:adot_image_tag))
     TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
     ACCOUNT: staging
     ENVIRONMENT: staging-2
@@ -25,6 +27,7 @@ definitions:
     CLUSTER_NAME: "staging-2-fargate"
     APPLICATION_IMAGE_TAG: ((.:application_image_tag))
     TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
+    ADOT_IMAGE_TAG: ((.:adot_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
 
     
@@ -115,6 +118,7 @@ definitions:
   snippet_params_all_versions: &snippet_params_all_versions
     ENV: staging-2
     APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+    ADOT_IMAGE_TAG: ((.:adot_image_tag))
     TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
   
@@ -902,6 +906,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -910,6 +916,8 @@ jobs:
         file: selfservice-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -952,7 +960,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: selfservice
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: selfservice
           <<: *deploy_params
@@ -1111,6 +1119,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -1119,6 +1129,8 @@ jobs:
         file: connector-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -1161,7 +1173,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: connector
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: connector
           <<: *deploy_params
@@ -1322,6 +1334,8 @@ jobs:
     plan:
       - get: toolbox-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
@@ -1343,6 +1357,8 @@ jobs:
           BUILD_JOB_NAME: deploy-toolbox-to-staging
           RELEASE_NUMBER: ((.:parse_staging_release_tag))
           HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY)) 
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - load_var: nginx_image_tag
@@ -1374,7 +1390,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: toolbox
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: toolbox
           <<: *deploy_params
@@ -1683,6 +1699,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -1693,6 +1711,8 @@ jobs:
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: nginx_forward_proxy_image_tag
         file: nginx-forward-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -1736,7 +1756,7 @@ jobs:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-frontend.yml
+        file: pay-ci/ci/tasks/deploy-frontend-with-adot.yml
         params:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
@@ -1858,6 +1878,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -1879,6 +1901,8 @@ jobs:
           HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))  
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -1921,7 +1945,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: adminusers
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: adminusers
           <<: *deploy_params
@@ -2125,6 +2149,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -2133,6 +2159,8 @@ jobs:
         file: products-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -2175,7 +2203,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: products
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: products
           <<: *deploy_params
@@ -2337,6 +2365,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -2345,6 +2375,8 @@ jobs:
         file: products-ui-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -2387,7 +2419,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: products-ui
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: products-ui
           <<: *deploy_params
@@ -2504,6 +2536,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -2512,6 +2546,8 @@ jobs:
         file: publicauth-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -2541,7 +2577,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: publicauth
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: publicauth
           <<: *deploy_params
@@ -2669,6 +2705,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -2677,6 +2715,8 @@ jobs:
         file: cardid-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -2719,7 +2759,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: cardid
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: cardid
           <<: *deploy_params
@@ -2836,6 +2876,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -2844,6 +2886,8 @@ jobs:
         file: publicapi-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -2886,7 +2930,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: publicapi
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: publicapi
           <<: *deploy_params
@@ -2995,6 +3039,7 @@ jobs:
         params:
           image: publicapi-ecr-registry-staging/image.tar
           additional_tags: publicapi-ecr-registry-staging/tag
+
   - name: deploy-ledger-to-staging
     serial: true
     serial_groups: [deploy-application]
@@ -3002,6 +3047,8 @@ jobs:
       - get: ledger-ecr-registry-staging
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
+        trigger: true
+      - get: adot-ecr-registry-staging
         trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
@@ -3024,6 +3071,8 @@ jobs:
           HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -3066,7 +3115,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: ledger
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: ledger
           <<: *deploy_params
@@ -3270,6 +3319,8 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-staging
         trigger: true
+      - get: adot-ecr-registry-staging
+        trigger: true
       - get: telegraf-ecr-registry-staging
         trigger: true
       - get: pay-infra
@@ -3278,6 +3329,8 @@ jobs:
         file: webhooks-ecr-registry-staging/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-staging/tag
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -3314,7 +3367,7 @@ jobs:
           <<: *check_release_versions_params
           APP_NAME: webhooks
       - task: deploy-to-staging
-        file: pay-ci/ci/tasks/deploy-app.yml
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
         params:
           APP_NAME: webhooks
           <<: *deploy_params
