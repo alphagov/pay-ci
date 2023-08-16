@@ -1,4 +1,21 @@
 ---
+definitions:
+  aws_staging_config: &aws_staging_config
+    aws_access_key_id: ((readonly_access_key_id))
+    aws_secret_access_key: ((readonly_secret_access_key))
+    aws_session_token: ((readonly_session_token))
+    aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+    aws_ecr_registry_id: "((pay_aws_staging_account_id))"
+    aws_region: eu-west-1
+
+  aws_deploy_config: &aws_deploy_config
+    aws_access_key_id: ((readonly_access_key_id))
+    aws_secret_access_key: ((readonly_secret_access_key))
+    aws_session_token: ((readonly_session_token))
+    aws_role_arn: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse
+    aws_ecr_registry_id: "((pay_aws_deploy_account_id))"
+    aws_region: eu-west-1
+
 resources:
   - name: prometheus-pushgateway
     type: registry-image
@@ -17,12 +34,30 @@ resources:
     source:
       repository: pushgateway
       tag: v1.6.0
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      aws_role_arn: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse
-      aws_ecr_registry_id: "((pay_aws_deploy_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_deploy_config
+
+  - name: adot-ecr-registry-staging
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adot
+      variant: release
+      <<: *aws_staging_config
+
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+
+  - name: adot-ecr-registry-deploy
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adot
+      variant: release
+      <<: *aws_deploy_config
 
   - name: slack-notification
     type: slack-notification
@@ -37,6 +72,33 @@ resource_types:
       tag: latest
 
 jobs:
+  - name: push-adot-to-deploy-ecr
+    plan:
+      - get: adot-ecr-registry-staging
+        params:
+          format: oci
+        trigger: true
+      - load_var: application_image_tag
+        file: adot-ecr-registry-staging/tag
+      - get: pay-ci
+      - task: parse-staging-release-tag
+        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+        input_mapping:
+          ecr-repo: adot-ecr-registry-staging
+      - load_var: parse_staging_release_tag
+        file: parse-staging-release-tag/tag
+      - task: send-job-release-info-to-hosted-graphite
+        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
+        params:
+          BUILD_PIPELINE_NAME: deploy-to-staging
+          BUILD_JOB_NAME: push-adot-to-production-ecr
+          RELEASE_NUMBER: ((.:parse_staging_release_tag))
+          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
+      - put: adot-ecr-registry-deploy
+        params:
+          image: adot-ecr-registry-staging/image.tar
+          additional_tags: adot-ecr-registry-staging/tag
+
   - name: copy-prometheus-pushgateway
     plan:
       - get: prometheus-pushgateway
