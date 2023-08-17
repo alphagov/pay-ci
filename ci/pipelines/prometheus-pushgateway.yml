@@ -44,13 +44,6 @@ resources:
       variant: release
       <<: *aws_staging_config
 
-  - name: pay-ci
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-ci
-      branch: master
-
   - name: adot-ecr-registry-deploy
     type: registry-image
     icon: docker
@@ -80,24 +73,12 @@ jobs:
         trigger: true
       - load_var: application_image_tag
         file: adot-ecr-registry-staging/tag
-      - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
-        input_mapping:
-          ecr-repo: adot-ecr-registry-staging
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
-      - task: send-job-release-info-to-hosted-graphite
-        file: pay-ci/ci/tasks/send-job-release-info-to-hosted-graphite.yml
-        params:
-          BUILD_PIPELINE_NAME: deploy-to-staging
-          BUILD_JOB_NAME: push-adot-to-production-ecr
-          RELEASE_NUMBER: ((.:parse_staging_release_tag))
-          HOSTED_GRAPHITE_API_TOKEN: ((HOSTED_GRAPHITE_API_KEY))
       - put: adot-ecr-registry-deploy
         params:
           image: adot-ecr-registry-staging/image.tar
           additional_tags: adot-ecr-registry-staging/tag
+        get_params:
+          skip_download: true
 
   - name: copy-prometheus-pushgateway
     plan:
