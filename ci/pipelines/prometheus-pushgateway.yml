@@ -1,4 +1,21 @@
 ---
+definitions:
+  aws_staging_config: &aws_staging_config
+    aws_access_key_id: ((readonly_access_key_id))
+    aws_secret_access_key: ((readonly_secret_access_key))
+    aws_session_token: ((readonly_session_token))
+    aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+    aws_ecr_registry_id: "((pay_aws_staging_account_id))"
+    aws_region: eu-west-1
+
+  aws_deploy_config: &aws_deploy_config
+    aws_access_key_id: ((readonly_access_key_id))
+    aws_secret_access_key: ((readonly_secret_access_key))
+    aws_session_token: ((readonly_session_token))
+    aws_role_arn: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse
+    aws_ecr_registry_id: "((pay_aws_deploy_account_id))"
+    aws_region: eu-west-1
+
 resources:
   - name: prometheus-pushgateway
     type: registry-image
@@ -17,12 +34,23 @@ resources:
     source:
       repository: pushgateway
       tag: v1.6.0
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      aws_role_arn: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse
-      aws_ecr_registry_id: "((pay_aws_deploy_account_id))"
-      aws_region: eu-west-1
+      <<: *aws_deploy_config
+
+  - name: adot-ecr-registry-staging
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adot
+      variant: release
+      <<: *aws_staging_config
+
+  - name: adot-ecr-registry-deploy
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adot
+      variant: release
+      <<: *aws_deploy_config
 
   - name: slack-notification
     type: slack-notification
@@ -37,6 +65,21 @@ resource_types:
       tag: latest
 
 jobs:
+  - name: push-adot-to-deploy-ecr
+    plan:
+      - get: adot-ecr-registry-staging
+        params:
+          format: oci
+        trigger: true
+      - load_var: application_image_tag
+        file: adot-ecr-registry-staging/tag
+      - put: adot-ecr-registry-deploy
+        params:
+          image: adot-ecr-registry-staging/image.tar
+          additional_tags: adot-ecr-registry-staging/tag
+        get_params:
+          skip_download: true
+
   - name: copy-prometheus-pushgateway
     plan:
       - get: prometheus-pushgateway
