@@ -13,7 +13,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: pp-11314/metrics_release_process
+      branch: master
   - name: js-commons-git-release
     type: git
     icon: github
@@ -47,7 +47,7 @@ jobs:
     plan:
       - in_parallel:
         - get: js-metrics-git-release
-          trigger: false
+          trigger: true
         - get: pay-ci
       - task: npm-version-and-create-pr
         file: pay-ci/ci/tasks/npm-version-and-create-pr.yml
@@ -76,4 +76,4 @@ jobs:
       - get: pay-js-pipeline-definition
         trigger: true
       - set_pipeline: pay-js
-        file: pay-js-pipeline-definition
+        file: pay-js-pipeline-definition/ci/pipelines/pay-js.yml
