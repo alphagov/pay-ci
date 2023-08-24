@@ -1,0 +1,32 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: node
+    tag: current-alpine
+params:
+  BASE:
+  REPO:
+  GITHUB_TOKEN:
+inputs:
+  - name: src
+run:
+  path: sh
+  dir: src
+  args:
+    - -c
+    - |
+      apk add --no-cache git github-cli
+      
+      git remote remove origin
+      git remote add origin "https://$GITHUB_TOKEN@github.com/$REPO"
+      git config --local user.email "github-pay-ci+concourse@digital.cabinet-office.gov.uk"
+      git config --local user.name "alphagov-pay-ci-concourse"
+      
+      npm ci
+      RELEASE_VERSION="$(npm version patch -m "[automated release] %s")"
+      
+      git checkout -b "release-$RELEASE_VERSION"
+      git push --follow-tags --set-upstream origin "release-$RELEASE_VERSION"
+      
+      gh pr create --base "$BASE" --title "[automated release] $RELEASE_VERSION" --body "🤖 automated PR, merge to trigger release"
