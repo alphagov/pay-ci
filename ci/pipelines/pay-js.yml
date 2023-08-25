@@ -61,7 +61,7 @@ jobs:
     plan:
       - in_parallel:
         - get: js-commons-git-release
-          trigger: false
+          trigger: true
         - get: pay-ci
       - task: npm-version-and-create-pr
         file: pay-ci/ci/tasks/npm-version-and-create-pr.yml
