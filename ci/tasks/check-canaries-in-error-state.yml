@@ -20,7 +20,7 @@ run:
       card_wpay_3ds2 card_wpay card_stripe_3ds card_stripe card_sandbox rec_card_sandbox rec_card_stripe reccard_worldpay"
 
       SCHEDULED_CANARIES_STAGING="s_card_stripe s_card_stripe_3d s_card_wpay s_card_wpay_3ds2 \
-      s_wpay_3ds2ex s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_notifications s_reccard_sandbx s_reccard_stripe s_reccrd_worldpy_stag"
+      s_wpay_3ds2ex s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_notifications s_reccard_sandbx s_reccard_stripe s_reccrd_worldpy"
 
       SCHEDULED_CANARIES_PROD="s_card_sandbox s_cancel_sandbox s_paylnk_sandbox s_reccard_sandbx s_notifications"
 
