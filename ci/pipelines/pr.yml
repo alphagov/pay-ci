@@ -512,7 +512,6 @@ jobs:
       put: webhooks-pull-request
 
   - name: webhooks-as-consumer-pact-test
-    serial_groups: [pact-test]
     plan:
       - <<: *get-pull-request
         resource: webhooks-pull-request
@@ -577,7 +576,6 @@ jobs:
 
   - <<: *job-definition
     name: card-connector-as-provider-pact-test
-    serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
       resource: card-connector-pull-request
@@ -598,7 +596,6 @@ jobs:
 
   - <<: *job-definition
     name: card-connector-as-consumer-pact-test
-    serial_groups: [pact-test]
     plan:
       - <<: *get-ci
       - <<: *get-pull-request
@@ -985,7 +982,6 @@ jobs:
       put: publicapi-pull-request
 
   - name: publicapi-as-consumer-pact-test
-    serial_groups: [pact-test]
     plan:
       - <<: *get-pull-request
         resource: publicapi-pull-request
@@ -1058,7 +1054,6 @@ jobs:
 
   - <<: *job-definition
     name: adminusers-as-provider-pact-test
-    serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
       resource: adminusers-pull-request
@@ -1079,7 +1074,6 @@ jobs:
 
   - <<: *job-definition
     name: adminusers-as-consumer-pact-test
-    serial_groups: [ pact-test ]
     plan:
       - <<: *get-ci
       - <<: *get-pull-request
@@ -1232,7 +1226,6 @@ jobs:
 
   - <<: *job-definition
     name: cardid-as-provider-pact-test
-    serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
       resource: cardid-pull-request
@@ -1400,7 +1393,6 @@ jobs:
 
   - <<: *job-definition
     name: ledger-as-provider-pact-test
-    serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
       resource: ledger-pull-request
@@ -1421,7 +1413,6 @@ jobs:
 
   - <<: *job-definition
     name: ledger-as-consumer-pact-test
-    serial_groups: [pact-test]
     plan:
       - <<: *get-ci
       - <<: *get-pull-request
@@ -1678,7 +1669,6 @@ jobs:
 
   - <<: *job-definition
     name: products-as-provider-pact-test
-    serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
       resource: products-pull-request
@@ -1869,7 +1859,6 @@ jobs:
       put: card-frontend-pull-request
 
   - name: card-frontend-as-consumer-pact-test
-    serial_groups: [pact-test]
     plan:
     - <<: *get-ci
     - <<: *get-pull-request
@@ -1983,7 +1972,6 @@ jobs:
 
   - <<: *job-definition
     name: selfservice-as-consumer-pact-test
-    serial_groups: [pact-test]
     plan:
     - <<: *get-pull-request
       resource: selfservice-pull-request
@@ -2136,7 +2124,6 @@ jobs:
 
   - <<: *job-definition
     name: products-ui-as-consumer-pact-test
-    serial_groups: [pact-test]
     plan:
     - <<: *get-ci
     - <<: *get-pull-request
