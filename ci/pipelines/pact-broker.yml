@@ -76,6 +76,7 @@ jobs:
     plan:
       - get: pay-ci
       - get: pay-infra
+      - get: pact-broker-ecr-registry-deploy
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -84,6 +85,8 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - load_var: pactbroker_image_tag
+        file: pact-broker-ecr-registry-deploy/tag
       - task: deploy-pact-broker
         file: pay-ci/ci/tasks/deploy-pact-broker.yml
         params:
@@ -92,6 +95,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          PACTBROKER_IMAGE_TAG: ((.:pactbroker_image_tag))
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:

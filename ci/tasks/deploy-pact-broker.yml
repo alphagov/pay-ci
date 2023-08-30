@@ -14,6 +14,7 @@ params:
   AWS_REGION: eu-west-1
   ACCOUNT:
   ENVIRONMENT:
+  PACTBROKER_IMAGE_TAG:
 run:
   path: /bin/sh
   args:
@@ -22,5 +23,6 @@ run:
       cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/environment/pactbroker
       terraform init
       terraform apply \
+        -var pactbroker_image_tag=${PACTBROKER_IMAGE_TAG} \
         -auto-approve
        
