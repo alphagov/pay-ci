@@ -1,21 +1,22 @@
 #!/usr/bin/env node
 
 // Query Prometheus for a specific metric, exiting 0 if we find it, and 1
-// if we don't. Retries a few times, to account for scrape intervals.
+// if we don't. Retries a few times, to account for scrape intervals. 
+// Assumes the metric is sent by the ADOT sidecar, from, the test env.
 
 const assert = require('assert');
 const http = require('http');
-const tag = process.env.TOOLBOX_IMAGE_TAG;
+const imageTag = process.env.TEST_METRIC_IMAGE_TAG;
+const ecsService = process.env.TEST_METRIC_ECS_SERVICE;
 const metric = `nodejs_version_info{
   awsAccountName="test", 
-  containerImageTag="${tag}", 
-  ecsServiceName="toolbox", 
+  containerImageTag="${imageTag}", 
+  ecsServiceName="${ecsService}",
   job="adot-sidecar-scrape-application"}`;
 
 const endpoint = {
-  host: '192.168.1.9', // FIXME what id endpoint, how do we auth?
-  port: 9090,
-  protocol: 'http:',
+  host: 'aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102',
+  protocol: 'https:',
   path: encodeURI(`/api/v1/query?query=${metric}`),
 }
 
