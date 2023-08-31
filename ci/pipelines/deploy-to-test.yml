@@ -1527,7 +1527,7 @@ jobs:
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: adot-candidate
-        passed: [deploy-toolbox]
+        passed: [build-and-push-adot-candidate]
         trigger: true
       - get: pay-infra
       - get: pay-ci
