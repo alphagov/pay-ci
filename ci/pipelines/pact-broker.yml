@@ -76,6 +76,9 @@ jobs:
     plan:
       - get: pay-ci
       - get: pay-infra
+      - get: pact-broker-ecr-registry-deploy
+        passed: [build-and-push-pact-broker]
+        trigger: true
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -84,6 +87,8 @@ jobs:
       - load_var: role
         file: assume-role/assume-role.json
         format: json
+      - load_var: pactbroker_image_tag
+        file: pact-broker-ecr-registry-deploy/tag
       - task: deploy-pact-broker
         file: pay-ci/ci/tasks/deploy-pact-broker.yml
         params:
@@ -92,6 +97,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          PACTBROKER_IMAGE_TAG: ((.:pactbroker_image_tag))
       - task: wait-for-deploy
         file: pay-ci/ci/tasks/wait-for-deploy.yml
         params:
@@ -101,6 +107,24 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: "#govuk-pay-starling"
+        silent: true
+        text: ":red-circle: Failed to deploy pay-pact-broker image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: "#govuk-pay-activity"
+        silent: true
+        text: ":green-circle: Deployed pay-pact-broker image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: build-and-push-pact-broker
     plan:
