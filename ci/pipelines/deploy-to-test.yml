@@ -1572,31 +1572,6 @@ jobs:
         params:
           APP_NAME: toolbox
           <<: *wait_for_deploy_params
-      - task: run-toolbox-metric-tests
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: governmentdigitalservice/pay-node-runner
-              tag: node16
-          inputs:
-            - name: pay-ci
-          params:
-            TEST_METRIC_IMAGE_TAG: candidate
-            TEST_METRIC_ECS_SERVICE: toolbox
-            # TODO: find out how to get endpoint and creds
-            # AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            # AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            # AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-            # AWS_REGION: "eu-west-1"
-            # CLUSTER_NAME: "test-12-fargate"
-            # APP_NAME: "adminusers"
-            # APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-          run:
-            path: node
-            args:
-              - pay-ci/ci/scripts/test-metrics.js
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
@@ -6620,6 +6595,24 @@ jobs:
               image: adot-candidate/image.tar
           get_params:
             skip_download: true
+      - task: run-toolbox-metric-tests
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: governmentdigitalservice/pay-node-runner
+              tag: node16
+          inputs:
+            - name: pay-ci
+          params:
+            TEST_METRIC_IMAGE_TAG: candidate
+            TEST_METRIC_ECS_SERVICE: toolbox
+            <<: *aws_test_config
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/test-metrics.js
     on_failure:
       put: slack-notification
       attempts: 10
