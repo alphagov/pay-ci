@@ -51,7 +51,6 @@ resources:
     icon: docker
     source:
       repository: govukpay/pact-broker
-      tag: "2.54.0.0" # hardcoding this tag as we don't want to upgrade to a new version of pact broker in the process of moving it. we will get the value for this tag field in a separate story.
       aws_access_key_id: ((readonly_access_key_id))
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
@@ -138,6 +137,24 @@ jobs:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
+      - task: get-pact-broker-image-tag
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+              tag: latest
+          inputs:
+          - name: pact-broker-src
+          outputs:
+           - name: tags
+          run:
+            path: ash
+            args:
+              - -ec
+              - |
+                cat pact-broker-src/ci/docker/pact-broker/Dockerfile | grep -i FROM | head -n 1 | awk '{print $2;}' | cut -f 2 -d ":" | tee tags/tag
       - task: build-pact-broker-image
         privileged: true
         params:
@@ -160,6 +177,7 @@ jobs:
       - put: pact-broker-ecr-registry-deploy
         params:
           image: image/image.tar
+          additional_tags: tags/tag
         get_params:
           skip_download: true
     on_failure:
