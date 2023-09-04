@@ -9,22 +9,39 @@
 const assert = require('assert');
 const http = require('http');
 const crt = require('aws-crt');
+const {HttpRequest} = require("aws-crt/dist/native/http");
 const imageTag = process.env.TEST_METRIC_IMAGE_TAG;
 const ecsService = process.env.TEST_METRIC_ECS_SERVICE;
+const ampEndpoint = 'https://aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102';
 const metric = `nodejs_version_info{
   awsAccountName="test", 
   containerImageTag="${imageTag}", 
   ecsServiceName="${ecsService}",
   job="adot-sidecar-scrape-application"}`;
 
+// From https://github.com/aws-samples/sigv4a-signing-examples/blob/main/node-js/sigv4a_sign.js
+function sigV4ASignBasic(method, endpoint, service) {
+    const host = new URL(`http://${endpoint}`).host;
+    const request = new HttpRequest(method, endpoint);
+    request.headers.add('host', host);
+
+    const config = {
+        service: service,
+        region: "*",
+        algorithm: crt.auth.AwsSigningAlgorithm.SigV4Asymmetric,
+        signature_type: crt.auth.AwsSignatureType.HttpRequestViaHeaders,
+        signed_body_header: crt.auth.AwsSignedBodyHeaderType.XAmzContentSha256,
+        provider: crt.auth.AwsCredentialsProvider.newDefault()
+    };
+
+    crt.auth.aws_sign_request(request, config);
+    return request.headers;
+}
+
 const endpoint = {
-  host: 'aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102',
-  protocol: 'https:',
+  host: ampEndpoint,
   path: encodeURI(`/api/v1/query?query=${metric}`),
-  headers: {
-    host: 'aps-workspaces.eu-west-1.amazonaws.com',
-    
-  }
+  headers: sigV4ASignBasic('GET', ampEndpoint, 'amp'),
 }
 
 var retries = 5;
@@ -39,21 +56,6 @@ const testData = function(resp) {
   assert(resp.data.result.length > 0);
   return true;
 }
-
-const signedRequestHeaders = function(request) {
-  request.
-   const config = {
-        service: service,
-        region: "*",
-        algorithm: crt.auth.AwsSigningAlgorithm.SigV4Asymmetric,
-        signature_type: crt.auth.AwsSignatureType.HttpRequestViaHeaders,
-        signed_body_header: crt.auth.AwsSignedBodyHeaderType.XAmzContentSha256,
-        provider: crt.auth.AwsCredentialsProvider.newDefault()
-    };
-
-    crt.auth.aws_sign_request(request, config);
-    return request.headers;
-  }
 
 // Watch out for the immediate exit 
 const fetchMetrics = function() {
@@ -87,7 +89,7 @@ const fetchMetrics = function() {
       }
     });
   }).on('error', (e) => {
-    console.log(`Error making request: ${e.errors}`);
+    console.log(`Error making request: ${e}`);
   });
 }
 
