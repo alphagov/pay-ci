@@ -3,9 +3,12 @@
 // Query Prometheus for a specific metric, exiting 0 if we find it, and 1
 // if we don't. Retries a few times, to account for scrape intervals. 
 // Assumes the metric is sent by the ADOT sidecar, from, the test env.
+// We have to manually sign the HTTP request: there's no AWS SDK helper 
+// for hitting the AMP query endpoint.
 
 const assert = require('assert');
 const http = require('http');
+const crt = require('aws-crt');
 const imageTag = process.env.TEST_METRIC_IMAGE_TAG;
 const ecsService = process.env.TEST_METRIC_ECS_SERVICE;
 const metric = `nodejs_version_info{
@@ -18,6 +21,10 @@ const endpoint = {
   host: 'aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102',
   protocol: 'https:',
   path: encodeURI(`/api/v1/query?query=${metric}`),
+  headers: {
+    host: 'aps-workspaces.eu-west-1.amazonaws.com',
+    
+  }
 }
 
 var retries = 5;
@@ -32,6 +39,21 @@ const testData = function(resp) {
   assert(resp.data.result.length > 0);
   return true;
 }
+
+const signedRequestHeaders = function(request) {
+  request.
+   const config = {
+        service: service,
+        region: "*",
+        algorithm: crt.auth.AwsSigningAlgorithm.SigV4Asymmetric,
+        signature_type: crt.auth.AwsSignatureType.HttpRequestViaHeaders,
+        signed_body_header: crt.auth.AwsSignedBodyHeaderType.XAmzContentSha256,
+        provider: crt.auth.AwsCredentialsProvider.newDefault()
+    };
+
+    crt.auth.aws_sign_request(request, config);
+    return request.headers;
+  }
 
 // Watch out for the immediate exit 
 const fetchMetrics = function() {
