@@ -6576,25 +6576,6 @@ jobs:
             ecr-repo: adot-candidate
         - load_var: candidate_image_tag
           file: adot-candidate/tag
-      # We'll add an actual integration test later!
-      - in_parallel:
-        - do:
-          - put: adot-ecr-registry-test
-            params:
-              image: adot-candidate/image.tar
-              additional_tags: parse-candidate-tag/release-tag
-            get_params:
-              skip_download: true
-          - put: adot-latest
-            params:
-              image: adot-candidate/image.tar
-            get_params:
-              skip_download: true
-        - put: adot-dockerhub
-          params:
-              image: adot-candidate/image.tar
-          get_params:
-            skip_download: true
       - task: run-toolbox-metric-tests
         config:
           platform: linux
@@ -6613,6 +6594,24 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/test-metrics.js
+      - in_parallel:
+        - do:
+          - put: adot-ecr-registry-test
+            params:
+              image: adot-candidate/image.tar
+              additional_tags: parse-candidate-tag/release-tag
+            get_params:
+              skip_download: true
+          - put: adot-latest
+            params:
+              image: adot-candidate/image.tar
+            get_params:
+              skip_download: true
+        - put: adot-dockerhub
+          params:
+              image: adot-candidate/image.tar
+          get_params:
+            skip_download: true
     on_failure:
       put: slack-notification
       attempts: 10
