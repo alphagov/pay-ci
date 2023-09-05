@@ -1007,6 +1007,7 @@ groups:
       - build-and-push-adot-candidate
       - run-adot-integration-test
       - push-adot-to-staging-ecr
+      - deploy-toolbox
   - name: alpine
     jobs:
       - build-and-push-alpine-to-ecr
@@ -6567,7 +6568,7 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [build-and-push-adot-candidate]
+          passed: [deploy-toolbox]
         - get: pay-ci
       - in_parallel:
         - task: parse-candidate-tag
