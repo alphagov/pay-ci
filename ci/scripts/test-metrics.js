@@ -11,13 +11,15 @@ const https = require('https');
 const crt = require('aws-crt');
 const {HttpRequest} = require("aws-crt/dist/native/http");
 
+const util = require('util');
+
 const imageTag = process.env.TEST_METRIC_IMAGE_TAG;
 const ecsService = process.env.TEST_METRIC_ECS_SERVICE;
 var retries = 5;
 const retryIntervalMs = 5000;
 
 const ampEndpointHost = 'aps-workspaces.eu-west-1.amazonaws.com';
-const ampEndpointPath = 'workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102';
+const ampEndpointPath = '/workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102';
 const metric = `nodejs_version_info{
   awsAccountName="test", 
   containerImageTag="${imageTag}", 
@@ -26,9 +28,8 @@ const metric = `nodejs_version_info{
 
 // From https://github.com/aws-samples/sigv4a-signing-examples/blob/main/node-js/sigv4a_sign.js
 function sigV4ASignBasic(method, endpoint, service) {
-    const host = new URL(`http://${endpoint}`).host;
     const request = new HttpRequest(method, endpoint);
-    request.headers.add('host', host);
+    request.headers.add('host', endpoint);
 
     const config = {
         service: service,
@@ -45,8 +46,9 @@ function sigV4ASignBasic(method, endpoint, service) {
 
 const endpoint = {
   host: ampEndpointHost,
-  path: encodeURI(`${ampEndpointPath}/api/v1/query?query=${metric}`),
-  headers: sigV4ASignBasic('GET', ampEndpointHost, 'amp'),
+  // path: encodeURI(`${ampEndpointPath}/api/v1/query?query=${metric}`),
+  path: encodeURI(`${ampEndpointPath}/api/v1/labels`),
+  headers: sigV4ASignBasic('GET', ampEndpointHost, 'amp')._flatten(),
 }
 
 // Because we issue a very specific query, we don't need to check much other
@@ -61,8 +63,12 @@ function testData(resp) {
 
 // Watch out for the immediate exit 
 const fetchMetrics = function() {
+  console.log(JSON.stringify(endpoint, null, 2));
   https.get(endpoint, (res) => {
     const { statusCode } = res;
+    console.log("res follows")
+    console.log(res.headers);
+    console.log("res ends")
     const contentType = res.headers['content-type'];
 
     if (statusCode !== 200) {
@@ -81,6 +87,7 @@ const fetchMetrics = function() {
         parsedData = JSON.parse(rawData);
       } catch (e) {
         console.log(`Error parsing response: ${e}`)
+      console.log(`rawData was ${rawData}`);
       }
       try {
         testData(parsedData)
@@ -96,6 +103,8 @@ const fetchMetrics = function() {
 }
 
 fetchMetrics();
+
+// process.exit(0);
 
 setInterval(function() {
   fetchMetrics();
