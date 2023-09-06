@@ -7,12 +7,17 @@
 // for hitting the AMP query endpoint.
 
 const assert = require('assert');
-const http = require('http');
+const https = require('https');
 const crt = require('aws-crt');
 const {HttpRequest} = require("aws-crt/dist/native/http");
+
 const imageTag = process.env.TEST_METRIC_IMAGE_TAG;
 const ecsService = process.env.TEST_METRIC_ECS_SERVICE;
-const ampEndpoint = 'https://aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102';
+var retries = 5;
+const retryIntervalMs = 5000;
+
+const ampEndpointHost = 'aps-workspaces.eu-west-1.amazonaws.com';
+const ampEndpointPath = 'workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102';
 const metric = `nodejs_version_info{
   awsAccountName="test", 
   containerImageTag="${imageTag}", 
@@ -39,18 +44,15 @@ function sigV4ASignBasic(method, endpoint, service) {
 }
 
 const endpoint = {
-  host: ampEndpoint,
-  path: encodeURI(`/api/v1/query?query=${metric}`),
-  headers: sigV4ASignBasic('GET', ampEndpoint, 'amp'),
+  host: ampEndpointHost,
+  path: encodeURI(`${ampEndpointPath}/api/v1/query?query=${metric}`),
+  headers: sigV4ASignBasic('GET', ampEndpointHost, 'amp'),
 }
-
-var retries = 5;
-const retryIntervalMs = 5000;
 
 // Because we issue a very specific query, we don't need to check much other
 // than that we got a successful response containing metrics. A failed assertion
 // raises an exception which is caught in fetchMetrics().
-const testData = function(resp) {
+function testData(resp) {
   assert.equal(resp.status, 'success');
   assert.equal(resp.data.resultType, 'vector');
   assert(resp.data.result.length > 0);
@@ -59,7 +61,7 @@ const testData = function(resp) {
 
 // Watch out for the immediate exit 
 const fetchMetrics = function() {
-  http.get(endpoint, (res) => {
+  https.get(endpoint, (res) => {
     const { statusCode } = res;
     const contentType = res.headers['content-type'];
 
