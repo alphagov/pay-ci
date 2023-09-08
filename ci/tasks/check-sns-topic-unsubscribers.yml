@@ -9,20 +9,30 @@ run:
     - -c
     - |
       set -euo pipefail
+
       any_failed=0
-      while read -r TOPIC_ARN; do
-        echo "Checking topic: $TOPIC_ARN"
-        if [ "$TOPIC_ARN" == "None" ]; then
-          echo "No SNS topics found"
-          exit 1
-        fi
-        subscription_arn=$(aws sns list-subscriptions-by-topic --topic-arn "$TOPIC_ARN" --query 'Subscriptions[].SubscriptionArn' --output text)
-            if [ "$subscription_arn" == "Deleted" ] ||  [ "$subscription_arn" == "PendingConfirmation" ]; then
-              echo "Topic subscription: $subscription_arn is unsubscribed
-              If you can find the Zendesk email to resubscribe, do that
-              If you can’t find it or it doesn’t work, talk to Starling"
-            fi
-      done < <(aws sns list-topics --query "Topics[].[TopicArn]" --output text)
-      if [ "$any_failed" -eq 1 ]; then
+
+      for REGION in eu-west-1 us-east-1 eu-central-1; do
+        while read -r TOPIC_ARN; do
+          echo "Checking topic: $TOPIC_ARN in $REGION"
+          if [ "$TOPIC_ARN" == "None" ]; then
+            echo "No SNS topics found in $REGION"
+            exit 1
+          fi
+
+          subscription_arn=$(aws sns --region "$REGION" list-subscriptions-by-topic --topic-arn "$TOPIC_ARN" --query 'Subscriptions[].SubscriptionArn' --output text)
+          if [ "$subscription_arn" == "Deleted" ] || [ "$subscription_arn" == "PendingConfirmation" ]; then
+            echo "Topic subscription: $subscription_arn in region $REGION is unsubscribed."
+            echo
+            echo "If you can find the Zendesk email to resubscribe, do that; or"
+            echo "If you can’t find it or it doesn’t work, talk to Starling"
+
+            any_failed=$((any_failed+=1))
+          fi
+        done < <(aws sns --region "$REGION" list-topics --query "Topics[].[TopicArn]" --output text)
+      done
+
+      if [ "$any_failed" -ne 0 ]; then
+        echo "Some topics are unsubscribed from their email destinations. See above output"
         exit 1
       fi
