@@ -15,6 +15,9 @@ run:
       any_failed=0
 
       for REGION in $REGIONS; do
+        echo "Checking topics in $REGION"
+        echo "-------------------------------"
+
         TOPIC_ARNS=$(aws sns --region "$REGION" list-topics --query "Topics[].TopicArn" | jq -r '.[]')
 
         if [[ -z "$TOPIC_ARNS" ]]; then
@@ -23,7 +26,7 @@ run:
         fi
 
         for TOPIC_ARN in $TOPIC_ARNS; do
-          echo "Checking topic: $TOPIC_ARN in $REGION"
+          echo "Checking topic: $TOPIC_ARN"
 
           subscription_arn=$(aws sns --region "$REGION" list-subscriptions-by-topic --topic-arn "$TOPIC_ARN" --query 'Subscriptions[].SubscriptionArn' --output text)
           if [ "$subscription_arn" == "Deleted" ] || [ "$subscription_arn" == "PendingConfirmation" ]; then
@@ -35,6 +38,8 @@ run:
             any_failed=$((any_failed+1))
           fi
         done
+
+        echo
       done
 
       if [ "$any_failed" -ne 0 ]; then
