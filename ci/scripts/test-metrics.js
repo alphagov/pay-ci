@@ -8,10 +8,7 @@
 
 const assert = require('assert');
 const https = require('https');
-const crt = require('aws-crt');
-const {HttpRequest} = require("aws-crt/dist/native/http");
-
-const util = require('util');
+const aws4 = require('aws4');
 
 const imageTag = process.env.TEST_METRIC_IMAGE_TAG;
 const ecsService = process.env.TEST_METRIC_ECS_SERVICE;
@@ -26,30 +23,14 @@ const metric = `nodejs_version_info{
   ecsServiceName="${ecsService}",
   job="adot-sidecar-scrape-application"}`;
 
-// From https://github.com/aws-samples/sigv4a-signing-examples/blob/main/node-js/sigv4a_sign.js
-function sigV4ASignBasic(method, endpoint, service) {
-    const request = new HttpRequest(method, endpoint);
-    request.headers.add('host', endpoint);
-
-    const config = {
-        service: service,
-        region: "*",
-        algorithm: crt.auth.AwsSigningAlgorithm.SigV4Asymmetric,
-        signature_type: crt.auth.AwsSignatureType.HttpRequestViaHeaders,
-        signed_body_header: crt.auth.AwsSignedBodyHeaderType.XAmzContentSha256,
-        provider: crt.auth.AwsCredentialsProvider.newDefault()
-    };
-
-    crt.auth.aws_sign_request(request, config);
-    return request.headers;
-}
-
-const endpoint = {
+const opts = {
   host: ampEndpointHost,
-  // path: encodeURI(`${ampEndpointPath}/api/v1/query?query=${metric}`),
-  path: encodeURI(`${ampEndpointPath}/api/v1/labels`),
-  headers: sigV4ASignBasic('GET', ampEndpointHost, 'amp')._flatten(),
+  path: encodeURI(`${ampEndpointPath}/api/v1/query?query=${metric}`),
+  service: 'aps',
+  region: 'eu-west-1',
 }
+
+const signedRequest = aws4.sign(opts);
 
 // Because we issue a very specific query, we don't need to check much other
 // than that we got a successful response containing metrics. A failed assertion
@@ -63,8 +44,8 @@ function testData(resp) {
 
 // Watch out for the immediate exit 
 const fetchMetrics = function() {
-  console.log(JSON.stringify(endpoint, null, 2));
-  https.get(endpoint, (res) => {
+  console.log(JSON.stringify(signedRequest));
+  https.get(signedRequest, (res) => {
     const { statusCode } = res;
     console.log("res follows")
     console.log(res.headers);
@@ -73,21 +54,24 @@ const fetchMetrics = function() {
 
     if (statusCode !== 200) {
       console.log(`Unexpected status code: ${statusCode}`);
+      return;
     }
 
     if (!/^application\/json/.test(contentType)) {
       console.log(`Unexpected content-type: ${contentType}`);
+      return;
     }
 
     let rawData = '';
     res.setEncoding('utf8');
-    res.on('data', (chunk) => { rawData += chunk; });
+    res.on('data', (chunk) => { rawData += chunk });
     res.on('end', () => {
       try {
         parsedData = JSON.parse(rawData);
       } catch (e) {
         console.log(`Error parsing response: ${e}`)
-      console.log(`rawData was ${rawData}`);
+        console.log(`rawData was ${rawData}`);
+        return;
       }
       try {
         testData(parsedData)
@@ -95,12 +79,18 @@ const fetchMetrics = function() {
         process.exit(0); // TERMINATE IMMEDIATELY ON SUCCESS!
       } catch (e) {
         console.log(`Failed test assertion: ${e.message}`);
+        return;
       }
     });
   }).on('error', (e) => {
     console.log(`Error making request: ${e}`);
   });
 }
+
+process.on('unhandledRejection', error => {
+  console.log(`unhandledRejection: ${error.message}`);
+  process.exit(1)
+});
 
 fetchMetrics();
 
