@@ -12,13 +12,18 @@ run:
 
       any_failed=0
 
-      for REGION in eu-west-1 us-east-1 eu-central-1; do
-        while read -r TOPIC_ARN; do
+      REGIONS="eu-west-1 us-east-1 eu-central-1"
+
+      for REGION in $REGIONS; do
+        TOPIC_ARNS=$(aws sns --region "$REGION" list-topics --query "Topics[].TopicArn" | jq -r '.[]')
+
+        if [[ -z "$TOPIC_ARNS" ]]; then
+          echo "No SNS topics found in $REGION"
+          exit 1
+        fi
+
+        for TOPIC_ARN in $TOPIC_ARNS; do
           echo "Checking topic: $TOPIC_ARN in $REGION"
-          if [ "$TOPIC_ARN" == "None" ]; then
-            echo "No SNS topics found in $REGION"
-            exit 1
-          fi
 
           subscription_arn=$(aws sns --region "$REGION" list-subscriptions-by-topic --topic-arn "$TOPIC_ARN" --query 'Subscriptions[].SubscriptionArn' --output text)
           if [ "$subscription_arn" == "Deleted" ] || [ "$subscription_arn" == "PendingConfirmation" ]; then
@@ -29,10 +34,11 @@ run:
 
             any_failed=$((any_failed+=1))
           fi
-        done < <(aws sns --region "$REGION" list-topics --query "Topics[].[TopicArn]" --output text)
+        done
       done
 
       if [ "$any_failed" -ne 0 ]; then
         echo "Some topics are unsubscribed from their email destinations. See above output"
         exit 1
       fi
+

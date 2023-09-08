@@ -22,21 +22,26 @@ resources:
       uri: https://github.com/alphagov/pay-infra
       branch: master
       username: alphagov-pay-ci-concourse
-      password: ((github-access-token))        
+      password: ((github-access-token))
+  - name: every-15-minutes
+    type: time
+    icon: alarm
+    source:
+      interval: 15m
   - name: every-morning-at-five
+    type: time
     icon: alarm
     source:
       start: "05:00"
       stop: "05:30"
       location: Europe/London
-    type: time
   - name: every-morning-at-five-thirty
+    type: time
     icon: alarm
     source:
       start: "05:30"
       stop: "06:00"
       location: Europe/London
-    type: time
   - name: pay-ci
     type: git
     icon: github
@@ -243,7 +248,7 @@ jobs:
   - name: ci-check-for-zendesk-unsubscribers
     plan:
     - in_parallel:
-      - get: every-morning-at-five
+      - get: every-15-minutes
         trigger: true
       - get: pay-ci
     - task: assume-role
