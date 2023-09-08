@@ -32,7 +32,7 @@ run:
             echo "If you can find the Zendesk email to resubscribe, do that; or"
             echo "If you can’t find it or it doesn’t work, talk to Starling"
 
-            any_failed=$((any_failed+=1))
+            any_failed=$((any_failed+1))
           fi
         done
       done
