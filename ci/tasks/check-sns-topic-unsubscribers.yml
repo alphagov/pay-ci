@@ -4,7 +4,7 @@ image_resource:
    source:
     repository: governmentdigitalservice/pay-concourse-runner
 params:
-  REGIONS: eu-west-1 eu-central-1 us-east-1
+  REGIONS: eu-west-1
 run:
   path: /bin/bash
   args:

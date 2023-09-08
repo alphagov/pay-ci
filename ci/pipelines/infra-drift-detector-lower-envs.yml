@@ -168,7 +168,7 @@ jobs:
   - name: test-check-for-zendesk-unsubscribers
     plan:
     - in_parallel:
-      - get: every-morning-at-five
+      - get: every-15-minutes
         trigger: true
       - get: pay-ci
     - task: assume-role
@@ -187,6 +187,7 @@ jobs:
         AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
         AWS_REGION: eu-west-1
         AWS_DEFAULT_REGION: eu-west-1
+        REGIONS: eu-west-1 us-east-1
     on_success:
       put: slack-notification
       attempts: 10
@@ -208,7 +209,7 @@ jobs:
   - name: dev-check-for-zendesk-unsubscribers
     plan:
     - in_parallel:
-      - get: every-morning-at-five
+      - get: every-15-minutes
         trigger: true
       - get: pay-ci
     - task: assume-role
@@ -245,6 +246,7 @@ jobs:
           text: ':red-circle: An SNS topic subscriber is unsubscribed - $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
           icon_emoji: ':aws-dark:'
           username: pay-concourse-drift-detector
+
   - name: ci-check-for-zendesk-unsubscribers
     plan:
     - in_parallel:
