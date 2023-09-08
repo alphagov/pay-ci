@@ -3,6 +3,8 @@ image_resource:
    type: registry-image
    source:
     repository: governmentdigitalservice/pay-concourse-runner
+params:
+  REGIONS: eu-west-1 eu-central-1 us-east-1
 run:
   path: /bin/bash
   args:
@@ -11,8 +13,6 @@ run:
       set -euo pipefail
 
       any_failed=0
-
-      REGIONS="eu-west-1 us-east-1 eu-central-1"
 
       for REGION in $REGIONS; do
         TOPIC_ARNS=$(aws sns --region "$REGION" list-topics --query "Topics[].TopicArn" | jq -r '.[]')
