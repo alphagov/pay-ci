@@ -10,7 +10,6 @@ const assert = require('assert');
 const https = require('https');
 const aws4 = require('aws4');
 
-const imageTag = process.env.TEST_METRIC_IMAGE_TAG;
 const ecsService = process.env.TEST_METRIC_ECS_SERVICE;
 var retries = 5;
 const retryIntervalMs = 5000;
@@ -19,7 +18,6 @@ const ampEndpointHost = 'aps-workspaces.eu-west-1.amazonaws.com';
 const ampEndpointPath = '/workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102';
 const metric = `nodejs_version_info{
   awsAccountName="test", 
-  containerImageTag="${imageTag}", 
   ecsServiceName="${ecsService}",
   job="adot-sidecar-scrape-application"}`;
 
