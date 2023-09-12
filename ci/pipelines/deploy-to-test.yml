@@ -6588,9 +6588,11 @@ jobs:
           inputs:
             - name: pay-ci
           params:
-            TEST_METRIC_IMAGE_TAG: candidate
-            TEST_METRIC_ECS_SERVICE: toolbox
             <<: *aws_test_config
+            AWS_ACCESS_KEY_ID: ((readonly_access_key_id))
+            AWS_SECRET_ACCESS_KEY: ((readonly_secret_access_key))
+            AWS_SESSION_TOKEN: ((readonly_session_token))
+            TEST_METRIC_ECS_SERVICE: toolbox
           run:
             path: node
             args:
