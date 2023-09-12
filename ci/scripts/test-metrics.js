@@ -3,8 +3,15 @@
 // Query Prometheus for a specific metric, exiting 0 if we find it, and 1
 // if we don't. Retries a few times, to account for scrape intervals. 
 // Assumes the metric is sent by the ADOT sidecar, from, the test env.
-// We have to manually sign the HTTP request: there's no AWS SDK helper 
-// for hitting the AMP query endpoint.
+//
+// Written to interact with the Amazon Managed Prometheus service, which 
+// means it requires the AmazonPrometheusQueryAccess managed policy,
+// and that all requests are signed. 
+//
+// We use an "instant query", which provides us with a view of the world
+// as it is right now. If the required metric is not *currently* being sent,
+// the script will not see it. This is, at the time of writing, the desired
+// behaviour.
 
 const assert = require('assert');
 const https = require('https');
