@@ -1007,6 +1007,7 @@ groups:
       - build-and-push-adot-candidate
       - run-adot-integration-test
       - push-adot-to-staging-ecr
+      - deploy-toolbox
   - name: alpine
     jobs:
       - build-and-push-alpine-to-ecr
@@ -1526,7 +1527,8 @@ jobs:
         passed: [build-and-push-telegraf-to-test-ecr]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
-      - get: adot-ecr-registry-test
+      - get: adot-candidate
+        passed: [build-and-push-adot-candidate]
         trigger: true
       - get: pay-infra
       - get: pay-ci
@@ -1535,7 +1537,7 @@ jobs:
       - load_var: telegraf_image_tag
         file: telegraf-ecr-registry-test/tag
       - load_var: adot_image_tag
-        file: adot-ecr-registry-test/tag
+        file: adot-candidate/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -6566,7 +6568,7 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [build-and-push-adot-candidate]
+          passed: [deploy-toolbox]
         - get: pay-ci
       - in_parallel:
         - task: parse-candidate-tag
@@ -6575,7 +6577,26 @@ jobs:
             ecr-repo: adot-candidate
         - load_var: candidate_image_tag
           file: adot-candidate/tag
-      # We'll add an actual integration test later!
+      - task: run-toolbox-metric-tests
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: governmentdigitalservice/pay-node-runner
+              tag: node16
+          inputs:
+            - name: pay-ci
+          params:
+            <<: *aws_test_config
+            AWS_ACCESS_KEY_ID: ((readonly_access_key_id))
+            AWS_SECRET_ACCESS_KEY: ((readonly_secret_access_key))
+            AWS_SESSION_TOKEN: ((readonly_session_token))
+            TEST_METRIC_ECS_SERVICE: toolbox
+          run:
+            path: node
+            args:
+              - pay-ci/ci/scripts/test-metrics.js
       - in_parallel:
         - do:
           - put: adot-ecr-registry-test
