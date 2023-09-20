@@ -47,7 +47,6 @@ async function run () {
     APP_NAME,
     APPLICATION_IMAGE_TAG,
     ADOT_IMAGE_TAG,
-    TELEGRAF_IMAGE_TAG,
     NGINX_IMAGE_TAG,
     NGINX_FORWARD_PROXY_IMAGE_TAG,
     CARBON_RELAY_IMAGE_TAG
@@ -70,10 +69,6 @@ async function run () {
 
     if (APPLICATION_IMAGE_TAG) {
       checkReleaseVersion(APP_NAME, APPLICATION_IMAGE_TAG, containerDefinitions)
-    }
-
-    if (TELEGRAF_IMAGE_TAG) {
-      checkReleaseVersion('telegraf', TELEGRAF_IMAGE_TAG, containerDefinitions)
     }
 
     if (ADOT_IMAGE_TAG) {
