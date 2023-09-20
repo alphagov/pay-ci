@@ -18,14 +18,14 @@ resources:
       paths:
         - ci/docker/node-runner/*
 
-  - name: node-runner-node16
+  - name: node-runner-node18
     type: registry-image
     icon: docker
     source:
       repository: governmentdigitalservice/pay-node-runner
       username: ((docker-username))
       password: ((docker-access-token))
-      tag: node16
+      tag: node18
 
   - name: pay-ci
     type: git
@@ -49,13 +49,13 @@ jobs:
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
       - in_parallel:
-        - task: build-node-16
+        - task: build-node-18
           privileged: true
           output_mapping:
-            image: node16-image
+            image: node18-image
           params:
             CONTEXT: node-runner-src/ci/docker/node-runner
-            DOCKERFILE: node-runner-src/ci/docker/node-runner/Dockerfile.node16
+            DOCKERFILE: node-runner-src/ci/docker/node-runner/Dockerfile.node18
             DOCKER_CONFIG: docker_creds
           config:
             platform: linux
@@ -71,9 +71,9 @@ jobs:
               path: build
       - in_parallel:
         - do:
-        - put: node-runner-node16
+        - put: node-runner-node18
           params:
-            image: node16-image/image.tar
+            image: node18-image/image.tar
           get_params:
             skip_download: true
 
