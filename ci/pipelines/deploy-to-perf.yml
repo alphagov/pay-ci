@@ -216,20 +216,6 @@ resources:
     type: slack-notification
     source:
       url: https://hooks.slack.com/services/((slack-notification-secret))
-  - name: carbon-relay-ecr-registry-perf
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/carbon-relay
-      variant: carbon-relay-perf
-      <<: *aws_test_config
-  - name: stunnel-ecr-registry-perf
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/stunnel
-      variant: stunnel-perf
-      <<: *aws_test_config
   - name: egress-ecr-registry-perf
     type: registry-image
     icon: docker
@@ -374,9 +360,6 @@ groups:
   - name: alpine
     jobs:
       - deploy-scheduled-tasks
-  - name: carbon-relay
-    jobs:
-      - deploy-carbon-relay-to-perf
   - name: notifications
     jobs:
       - deploy-notifications-to-perf
@@ -1453,63 +1436,6 @@ jobs:
         icon_emoji: ":fargate:"
         username: pay-concourse
         text: ":red_circle: Deployment of publicapi to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-  - name: deploy-carbon-relay-to-perf
-    serial: true
-    plan:
-      - get: carbon-relay-ecr-registry-perf
-        trigger: true
-      - get: stunnel-ecr-registry-perf
-        trigger: true  
-      - get: pay-infra
-      - get: pay-ci
-      - load_var: carbon_relay_image_tag
-        file: carbon-relay-ecr-registry-perf/tag
-      - load_var: stunnel_image_tag
-        file: stunnel-ecr-registry-perf/tag  
-      - put: slack-notification
-        params:
-          channel: '#govuk-pay-activity'
-          icon_emoji: ":fargate:"
-          username: pay-concourse
-          text: ':rocket: Starting carbon-relay deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-      - task: assume-role
-        file: pay-ci/ci/tasks/assume-role.yml
-        params:
-          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
-      - task: deploy-to-perf
-        file: pay-ci/ci/tasks/deploy-carbon-relay.yml
-        params:
-          <<: *aws_assumed_role_creds
-          CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
-          STUNNEL_IMAGE_TAG: ((.:stunnel_image_tag))
-          ACCOUNT: test
-          ENVIRONMENT: test-perf-1
-      - task: wait-for-deploy
-        file: pay-ci/ci/tasks/wait-for-deploy.yml
-        params:
-          APP_NAME: carbon-relay
-          CARBON_RELAY_IMAGE_TAG: ((.:carbon_relay_image_tag))
-          <<: *aws_assumed_role_creds
-          ENVIRONMENT: test-perf-1
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":green-circle: Deployment of carbon-relay to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    on_failure:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":red_circle: Deployment of carbon-relay to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
   - name: deploy-egress-to-perf
     serial: true

@@ -49,7 +49,6 @@ async function run () {
     ADOT_IMAGE_TAG,
     NGINX_IMAGE_TAG,
     NGINX_FORWARD_PROXY_IMAGE_TAG,
-    CARBON_RELAY_IMAGE_TAG
   } = process.env
 
   try {
@@ -61,10 +60,6 @@ async function run () {
     const { containerDefinitions } = await getTaskDefinitionDetails(service.taskDefinition)
     if (!containerDefinitions) {
       throw new Error('failed to get task definition details')
-    }
-
-    if (CARBON_RELAY_IMAGE_TAG) {
-      checkReleaseVersion('carbon-relay', CARBON_RELAY_IMAGE_TAG, containerDefinitions)
     }
 
     if (APPLICATION_IMAGE_TAG) {

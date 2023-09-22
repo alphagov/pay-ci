@@ -18,7 +18,6 @@ params:
   ADOT_IMAGE_TAG:
   NGINX_IMAGE_TAG:
   NGINX_FORWARD_PROXY_IMAGE_TAG:
-  CARBON_RELAY_IMAGE_TAG:
 run:
   path: node
   args:
