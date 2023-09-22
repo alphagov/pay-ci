@@ -15,7 +15,6 @@ params:
   APPLICATION_IMAGE_TAG:
   NGINX_IMAGE_TAG:
   NGINX_FORWARD_PROXY_IMAGE_TAG:
-  TELEGRAF_IMAGE_TAG:
   APP_NAME:
   ACCOUNT:
   ENVIRONMENT:
@@ -30,5 +29,4 @@ run:
         -var application_image_tag=${APPLICATION_IMAGE_TAG} \
         -var forward_proxy_image_tag=${NGINX_FORWARD_PROXY_IMAGE_TAG} \
         -var nginx_image_tag=${NGINX_IMAGE_TAG} \
-        -var telegraf_image_tag=${TELEGRAF_IMAGE_TAG} \
         -auto-approve

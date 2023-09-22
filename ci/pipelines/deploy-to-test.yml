@@ -75,7 +75,6 @@ wait_for_deploy_params: &wait_for_deploy_params
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
   ADOT_IMAGE_TAG: ((.:adot_image_tag))
-  TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   ENVIRONMENT: test-12
 
 deploy_params: &deploy_params
@@ -83,7 +82,6 @@ deploy_params: &deploy_params
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
   ADOT_IMAGE_TAG: ((.:adot_image_tag))
-  TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   ACCOUNT: test
   ENVIRONMENT: test-12
 
@@ -93,14 +91,12 @@ check_release_versions_params: &check_release_versions_params
   CLUSTER_NAME: "test-12-fargate"
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   ADOT_IMAGE_TAG: ((.:adot_image_tag))
-  TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
 
 snippet_params_all_versions: &snippet_params_all_versions
   ENV: test-12
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   ADOT_IMAGE_TAG: ((.:adot_image_tag))
-  TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
 
 snippet_params_app_version: &snippet_params_app_version
@@ -129,16 +125,6 @@ resources:
       interval: 1h
     type: time
 
-  # Github Releases
-  - name: telegraf-git-release
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-telegraf
-      branch: main
-      tag_regex: "(.*)-release"
-      username: alphagov-pay-ci-concourse
-      password: ((github-access-token))
   - name: adot-git-release
     type: git
     icon: github
@@ -681,13 +667,6 @@ resources:
       repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_test_config
-  - name: telegraf-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/telegraf
-      variant: release
-      <<: *aws_test_config
   - name: adot-dockerhub
     type: registry-image
     icon: docker
@@ -833,12 +812,6 @@ resources:
     source:
       repository: govukpay/nginx-forward-proxy
       variant: release
-      <<: *aws_staging_config
-  - name: telegraf-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/telegraf
       <<: *aws_staging_config
   - name: adot-ecr-registry-staging
     type: registry-image
@@ -1044,12 +1017,6 @@ groups:
       - build-and-push-stream-s3-sqs-to-test-ecr
       - deploy-scheduled-tasks
       - push-stream-s3-sqs-to-staging-ecr
-  - name: telegraf
-    jobs:
-      - unit-test-telegraf
-      - build-and-push-telegraf-to-test-ecr
-      - deploy-toolbox
-      - push-telegraf-to-staging-ecr
   - name: update-deploy-to-test-pipeline
     jobs:
       - update-deploy-to-test-pipeline
@@ -1522,9 +1489,6 @@ jobs:
       - get: toolbox-ecr-registry-test
         trigger: true
         passed: [build-and-push-toolbox-to-test-ecr]
-      - get: telegraf-ecr-registry-test
-        trigger: true
-        passed: [build-and-push-telegraf-to-test-ecr]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: adot-candidate
@@ -1534,8 +1498,6 @@ jobs:
       - get: pay-ci
       - load_var: application_image_tag
         file: toolbox-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-candidate/tag
       - load_var: nginx_image_tag
@@ -1926,8 +1888,6 @@ jobs:
         passed: [build-and-push-nginx-proxy-to-test-ecr]
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1938,8 +1898,6 @@ jobs:
         file: nginx-forward-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -2300,8 +2258,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2310,8 +2266,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -2707,8 +2661,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -2717,8 +2669,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -3114,8 +3064,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -3124,8 +3072,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -3521,8 +3467,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -3531,8 +3475,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -3907,8 +3849,6 @@ jobs:
         passed: [build-and-push-nginx-proxy-to-test-ecr]
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -3917,8 +3857,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -4287,8 +4225,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -4297,8 +4233,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -4657,8 +4591,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -4667,8 +4599,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -5004,8 +4934,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -5014,8 +4942,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -5414,8 +5340,6 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -5424,8 +5348,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -5680,8 +5602,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-test
         trigger: true
-      - get: telegraf-ecr-registry-test
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -5690,8 +5610,6 @@ jobs:
         file: nginx-proxy-ecr-registry-test/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-test/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-test/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -6197,97 +6115,6 @@ jobs:
         params:
           image: nginx-forward-proxy-ecr-registry-test/image.tar
           additional_tags: nginx-forward-proxy-ecr-registry-test/tag
-
-  - name: unit-test-telegraf
-    plan:
-      - get: pay-ci
-      - get: telegraf-git-release
-        trigger: true
-      - task: run-telegraf-unit-tests
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: governmentdigitalservice/pay-concourse-runner
-          inputs:
-            - name: telegraf-git-release
-          run:
-            path: ./start.test.sh
-            dir: telegraf-git-release
-
-  - name: build-and-push-telegraf-to-test-ecr
-    plan:
-      - get: pay-ci
-      - get: telegraf-git-release
-        trigger: true
-        passed: [unit-test-telegraf]
-      - task: parse-release-tag
-        file: pay-ci/ci/tasks/parse-release-tag.yml
-        input_mapping:
-          git-release: telegraf-git-release
-      - load_var: release-tag
-        file: tags/tags
-      - task: generate-docker-creds-config
-        file: pay-ci/ci/tasks/generate-docker-config-file.yml
-        params:
-          USERNAME: ((docker-username))
-          PASSWORD: ((docker-access-token))
-          EMAIL: ((docker-email))
-      - task: build-telegraf-image
-        privileged: true
-        params:
-          DOCKER_CONFIG: docker_creds
-          CONTEXT: telegraf-git-release
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: concourse/oci-build-task
-          inputs:
-            - name: telegraf-git-release
-          outputs:
-            - name: image
-          run:
-            path: build
-      - put: telegraf-ecr-registry-test
-        params:
-         image: image/image.tar
-         additional_tags: telegraf-git-release/.git/ref
-    on_failure:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-announce'
-        silent: true
-        text: ':red-circle: telegraf image ((.:release-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
-    on_success:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-activity'
-        silent: true
-        text: ':hammer: telegraf image ((.:release-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
-
-
-  - name: push-telegraf-to-staging-ecr
-    plan:
-      - get: pay-ci
-      - get: telegraf-ecr-registry-test
-        params:
-          format: oci
-        trigger: true
-        passed: [deploy-toolbox]
-      - put: telegraf-ecr-registry-staging
-        params:
-          image: telegraf-ecr-registry-test/image.tar
-          additional_tags: telegraf-ecr-registry-test/tag
 
   - name: build-and-push-notifications-to-test-ecr
     plan:

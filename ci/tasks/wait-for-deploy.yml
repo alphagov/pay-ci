@@ -15,7 +15,6 @@ params:
   APP_NAME:
   APPLICATION_IMAGE_TAG:
   NGINX_IMAGE_TAG:
-  TELEGRAF_IMAGE_TAG:
   ENVIRONMENT:
 run:
   path: node

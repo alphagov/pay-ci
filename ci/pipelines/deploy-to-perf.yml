@@ -9,7 +9,6 @@ definitions:
     APPLICATION_IMAGE_TAG: ((.:application_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
     ENVIRONMENT: test-perf-1
 
   deploy_params: &deploy_params
@@ -17,7 +16,6 @@ definitions:
     APPLICATION_IMAGE_TAG: ((.:application_image_tag))
     NGINX_IMAGE_TAG: ((.:nginx_image_tag))
     ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    TELEGRAF_IMAGE_TAG: ((.:telegraf_image_tag))
     ACCOUNT: test
     ENVIRONMENT: test-perf-1
 
@@ -198,13 +196,6 @@ resources:
     icon: docker
     source:
       repository: govukpay/adot
-      variant: perf
-      <<: *aws_test_config
-  - name: telegraf-ecr-registry-perf
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/telegraf
       variant: perf
       <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-perf
@@ -389,9 +380,6 @@ groups:
   - name: notifications
     jobs:
       - deploy-notifications-to-perf
-  - name: telegraf
-    jobs:
-      - deploy-toolbox-to-perf
   - name: nginx-proxy
     jobs:
       - deploy-toolbox-to-perf
@@ -427,8 +415,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -437,8 +423,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -549,8 +533,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -559,8 +541,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -669,8 +649,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -679,8 +657,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -731,8 +707,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -741,8 +715,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -849,8 +821,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: nginx-proxy-ecr-registry-perf
         trigger: true
       - get: pay-infra
@@ -859,8 +829,6 @@ jobs:
         file: toolbox-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-perf/tag
       - put: slack-notification
@@ -913,8 +881,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -925,8 +891,6 @@ jobs:
         file: nginx-forward-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -979,8 +943,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -989,8 +951,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -1099,8 +1059,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1109,8 +1067,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -1161,8 +1117,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1171,8 +1125,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -1281,8 +1233,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1291,8 +1241,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -1343,8 +1291,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1353,8 +1299,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -1463,8 +1407,6 @@ jobs:
         trigger: true
       - get: adot-ecr-registry-perf
         trigger: true
-      - get: telegraf-ecr-registry-perf
-        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
@@ -1473,8 +1415,6 @@ jobs:
         file: nginx-proxy-ecr-registry-perf/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-perf/tag
-      - load_var: telegraf_image_tag
-        file: telegraf-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'

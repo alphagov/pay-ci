@@ -11,7 +11,6 @@ params:
   ENV:
   APPLICATION_IMAGE_TAG:
   ADOT_IMAGE_TAG:
-  TELEGRAF_IMAGE_TAG:
   NGINX_IMAGE_TAG:
   NGINX_FORWARD_PROXY_IMAGE_TAG:
 outputs:
@@ -47,12 +46,6 @@ run:
       [ -n "${ADOT_IMAGE_TAG}" ] && \
       ADOT_RELEASE_NUMBER=$(echo "${ADOT_IMAGE_TAG}" | sed 's/-release//') && \
       echo "- <https://github.com/alphagov/pay-adot/releases/tag/alpha_release-${ADOT_RELEASE_NUMBER}|adot v${ADOT_IMAGE_TAG}>" | \
-      tee -a snippet/failure || true
-
-      # Disable the shellcheck rule telling us this isn't an if-then-else. We know, and it's the desirable
-      # shellcheck disable=SC2015
-      [ -n "${TELEGRAF_IMAGE_TAG}" ] && \
-      echo "- <https://github.com/alphagov/pay-telegraf/releases/tag/${TELEGRAF_IMAGE_TAG}|telegraf v${TELEGRAF_IMAGE_TAG}>" | \
       tee -a snippet/failure || true
 
       # Disable the shellcheck rule telling us this isn't an if-then-else. We know, and it's the desirable
