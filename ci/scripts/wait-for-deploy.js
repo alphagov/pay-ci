@@ -8,7 +8,6 @@ const CHECK_INTERVAL = 5000
 const {
   APP_NAME: appName,
   APPLICATION_IMAGE_TAG: appVersion,
-  CARBON_RELAY_IMAGE_TAG: carbonRelayVersion,
   NGINX_IMAGE_TAG: nginxProxyVersion,
   NGINX_FORWARD_PROXY_IMAGE_TAG: nginxForwardProxyVersion,
   ADOT_IMAGE_TAG: adotVersion,
@@ -59,9 +58,6 @@ async function run () {
       }
       if (adotVersion) {
         deploymentDetails.adotVersion = adotVersion
-      }
-      if (carbonRelayVersion) {
-        deploymentDetails.carbonRelayVersion = carbonRelayVersion
       }
       if (nginxForwardProxyVersion) {
         deploymentDetails.nginxForwardProxyVersion = nginxForwardProxyVersion
