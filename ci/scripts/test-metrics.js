@@ -25,8 +25,9 @@ const ampEndpointHost = 'aps-workspaces.eu-west-1.amazonaws.com';
 const ampEndpointPath = '/workspaces/ws-ef55ad23-3e0c-44f6-997e-1b2d51f20102';
 const metric = `nodejs_version_info{
   awsAccountName="test", 
-  ecsServiceName="${ecsService}",
-  job="adot-sidecar-scrape-application"}`;
+  ecsClusterName="test-12-fargate",
+  ecsServiceName="${ecsService}"
+}`;
 
 const opts = {
   host: ampEndpointHost,
@@ -98,8 +99,6 @@ process.on('unhandledRejection', error => {
 });
 
 fetchMetrics();
-
-// process.exit(0);
 
 setInterval(function() {
   fetchMetrics();
