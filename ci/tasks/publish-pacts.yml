@@ -2,7 +2,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: dwdraju/alpine-curl-jq
+    repository: governmentdigitalservice/pay-concourse-runner
 inputs:
   - name: src
   - name: pacts
