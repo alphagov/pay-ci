@@ -1,0 +1,200 @@
+---
+resource_types:
+  # - name: cf-cli
+  #   type: docker-image
+  #   source:
+  #     repository: nulldriver/cf-cli-resource
+
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
+
+resources:
+  - name: stubs-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: PP-11459-create-stubs-ecs-pipeline
+      paths:
+        - ci/pipelines/stubs.yml
+
+  - name: stubs-src
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-stubs
+      branch: master
+      paths:
+        - ./*
+
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: PP-11459-create-stubs-ecs-pipeline
+
+  - name: pay-infra
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+  - name: stubs-ecr-registry-deploy
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stubs
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_deploy_account_id))"
+      aws_region: eu-west-1
+
+  - name: slack-notification
+    type: slack-notification
+    source:
+      url: https://hooks.slack.com/services/((slack-notification-secret))
+
+jobs:
+  - name: set-pipeline
+    plan:
+      - get: stubs-pipeline
+        trigger: true
+      - set_pipeline: stubs
+        file: stubs-pipeline/ci/pipelines/stubs.yml
+
+  - name: deploy-stubs
+    plan:
+      - get: pay-ci
+      - get: pay-infra
+      - get: stubs-ecr-registry-deploy
+        passed: [build-and-push-stubs]
+        trigger: true
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/pay-concourse-stubs-deploy-tooling
+          AWS_ROLE_SESSION_NAME: terraform-deploy-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: stubs_image_tag
+        file: stubs-ecr-registry-deploy/tag
+      - task: deploy-stubs
+        file: pay-ci/ci/tasks/deploy-stubs.yml
+        params:
+          ACCOUNT: deploy
+          ENVIRONMENT: deploy-tooling
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          STUBS_IMAGE_TAG: ((.:stubs_image_tag))
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          ACCOUNT: deploy
+          APP_NAME: stubs
+          ENVIRONMENT: deploy-tooling
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: "#govuk-pay-starling"
+        silent: true
+        text: ":red-circle: Failed to deploy stubs image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: "#govuk-pay-activity"
+        silent: true
+        text: ":green-circle: Deployed stubs image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: build-and-deploy-stubs
+    plan:
+      - in_parallel:
+        - get: stubs-src
+          trigger: true
+        - get: pay-ci
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-access-token))
+          EMAIL: ((docker-email))
+      - task: get-stubs-image-tag
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+              tag: latest
+          inputs:
+          - name: stubs-src
+          outputs:
+           - name: tags
+          run:
+            path: ash
+            args:
+              - -ec
+              - |
+                cat stubs-src/ci/docker/stubs/Dockerfile | grep -i FROM | head -n 1 | awk '{print $2;}' | cut -f 2 -d ":" | tee tags/tag
+      - task: build-stubs-image
+        privileged: true
+        params:
+          CONTEXT: stubs-src/ci/docker/stubs
+          DOCKER_CONFIG: docker_creds
+          UNPACK_ROOTFS: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: stubs-src
+            - name: docker_creds
+          outputs:
+            - name: image
+          run:
+            path: build
+      - put: stubs-ecr-registry-deploy
+        params:
+          image: image/image.tar
+          additional_tags: tags/tag
+        get_params:
+          skip_download: true
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: "#govuk-pay-starling"
+        silent: true
+        text: ":red-circle: Failed to build and push stubs image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: "#govuk-pay-activity"
+        silent: true
+        text: ":green-circle: Built and pushed stubs image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        icon_emoji: ":concourse:"
+        username: pay-concourse

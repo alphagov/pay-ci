@@ -1,0 +1,28 @@
+---
+platform: linux
+inputs:
+  - name: pay-infra
+image_resource:
+  type: registry-image
+  source:
+    repository: hashicorp/terraform
+    tag: 1.3.7
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
+  ACCOUNT:
+  ENVIRONMENT:
+  STUBS_IMAGE_TAG:
+run:
+  path: /bin/sh
+  args:
+    - -ec
+    - |
+      cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/${ENVIRONMENT}/environment/stubs
+      terraform init
+      terraform apply \
+        -var stubs_image_tag=${STUBS_IMAGE_TAG} \
+        -auto-approve
+       
