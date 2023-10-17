@@ -48,7 +48,7 @@ put_db_migration_slack_notification: &put_db_migration_slack_notification
     icon_emoji: ":postgres:"
     username: pay-concourse
     text: ":postgres: starting $BUILD_JOB_NAME on test-12\n
-          - <https://pay-cd.deploy.payments.service.gov.ukcd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+          - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
 put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
   on_success:
@@ -58,7 +58,7 @@ put_db_migration_success_slack_notification: &put_db_migration_success_slack_not
       icon_emoji: ":postgres:"
       username: pay-concourse
       text: ":green-circle: $BUILD_JOB_NAME completed successfully on test-12\n
-            - <https://pay-cd.deploy.payments.service.gov.ukcd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
 put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
   on_failure:
@@ -68,7 +68,7 @@ put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_not
       icon_emoji: ":postgres:"
       username: pay-concourse
       text: ":red-circle: $BUILD_JOB_NAME failed on test-12\n
-            - <https://pay-cd.deploy.payments.service.gov.ukcd.gds-reliability.engineering/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
 wait_for_deploy_params: &wait_for_deploy_params
   <<: *aws_assumed_role_creds
