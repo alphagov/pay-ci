@@ -153,8 +153,7 @@ jobs:
             path: ash
             args:
               - -ec
-              - |
-                cat stubs-src/ci/docker/stubs/Dockerfile | grep -i FROM | head -n 1 | awk '{print $2;}' | cut -f 2 -d ":" | tee tags/tag
+              - sed -n '/^FROM/s/^[^:]*:\(.*\)@.*/\1/p' stubs-src/ci/docker/stubs/Dockerfile | tee tags/tag
       - task: build-stubs-image
         privileged: true
         params:
