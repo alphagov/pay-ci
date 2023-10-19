@@ -55,7 +55,6 @@ jobs:
             image: node18-image
           params:
             CONTEXT: node-runner-src/ci/docker/node-runner
-            DOCKERFILE: node-runner-src/ci/docker/node-runner/Dockerfile.node18
             DOCKER_CONFIG: docker_creds
           config:
             platform: linux
