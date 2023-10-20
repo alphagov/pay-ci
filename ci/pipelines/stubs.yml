@@ -27,6 +27,8 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-stubs
       branch: master
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
       paths:
         - ./*
 
@@ -125,7 +127,7 @@ jobs:
     #     icon_emoji: ":concourse:"
     #     username: pay-concourse
 
-  - name: build-and-deploy-stubs
+  - name: build-and-push-stubs
     plan:
       - in_parallel:
         - get: stubs-src
@@ -157,7 +159,7 @@ jobs:
       - task: build-stubs-image
         privileged: true
         params:
-          CONTEXT: stubs-src/ci/docker/stubs
+          CONTEXT: stubs-src
           DOCKER_CONFIG: docker_creds
           UNPACK_ROOTFS: true
         config:
