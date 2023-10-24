@@ -4958,6 +4958,7 @@ jobs:
           LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
+          LABEL_build_date: ((.:date))
         config:
           platform: linux
           image_resource:
@@ -4975,7 +4976,7 @@ jobs:
         - put: webhooks-ecr-registry-test
           params:
             image: image/image.tar
-            additional_tags: tags/tags
+            additional_tags: tags/all-release-tags
           get_params:
             skip_download: true
         - put: webhooks-dockerhub
