@@ -129,16 +129,24 @@ jobs:
 
   - name: build-and-push-stubs
     plan:
-      - in_parallel:
-        - get: stubs-src
-          trigger: true
-        - get: pay-ci
+      - get: stubs-src
+        trigger: true
+      - get: pay-ci
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: stubs-src
+      - load_var: release-sha
+        file: tags/release-sha
+      - load_var: date
+        file: tags/date
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
+      # The Stubs image in Docker Hub is always tagged 'latest-master'
       - task: get-stubs-image-tag
         config:
           platform: linux
@@ -155,13 +163,15 @@ jobs:
             path: ash
             args:
               - -ec
-              - sed -n '/^FROM/s/^[^:]*:\(.*\)@.*/\1/p' stubs-src/ci/docker/stubs/Dockerfile | tee tags/tag
+              - echo latest-master | tee tags/tag
       - task: build-stubs-image
         privileged: true
         params:
-          CONTEXT: stubs-src
           DOCKER_CONFIG: docker_creds
+          CONTEXT: stubs-src
           UNPACK_ROOTFS: true
+          LABEL_release_sha: ((.:release-sha))
+          LABEL_build_date: ((.:date))
         config:
           platform: linux
           image_resource:
