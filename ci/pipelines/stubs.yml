@@ -1,10 +1,5 @@
 ---
 resource_types:
-  # - name: cf-cli
-  #   type: docker-image
-  #   source:
-  #     repository: nulldriver/cf-cli-resource
-
   # - name: slack-notification
   #   type: docker-image
   #   source:
@@ -30,7 +25,7 @@ resources:
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
       paths:
-        - ./*
+        - "alpha-release-(.*)"
 
   - name: pay-ci
     type: git
@@ -146,24 +141,6 @@ jobs:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
-      # The Stubs image in Docker Hub is always tagged 'latest-master'
-      - task: get-stubs-image-tag
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-              tag: latest
-          inputs:
-          - name: stubs-src
-          outputs:
-           - name: tags
-          run:
-            path: ash
-            args:
-              - -ec
-              - echo latest-master | tee tags/tag
       - task: build-stubs-image
         privileged: true
         params:
