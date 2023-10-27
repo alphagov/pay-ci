@@ -12,7 +12,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-11459-create-stubs-ecs-pipeline
+      branch: master
       paths:
         - ci/pipelines/stubs.yml
 
@@ -24,15 +24,14 @@ resources:
       branch: master
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
-      paths:
-        - "alpha-release-(.*)"
+      tag_regex: "alpha_release-(.*)"
 
   - name: pay-ci
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-11459-create-stubs-ecs-pipeline
+      branch: master
 
   - name: pay-infra
     type: git
@@ -135,6 +134,8 @@ jobs:
         file: tags/release-sha
       - load_var: date
         file: tags/date
+      - load_var: release-tag
+        file: tags/tags
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -165,7 +166,7 @@ jobs:
       - put: stubs-ecr-registry-deploy
         params:
           image: image/image.tar
-          additional_tags: tags/tag
+          additional_tags: tags/tags
         get_params:
           skip_download: true
     # on_failure:
