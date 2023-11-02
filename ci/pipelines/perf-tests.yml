@@ -95,7 +95,6 @@ resources:
       start: "03:15"
       stop: "03:25"
       days: [Sunday]
-      initial_version: true
 
   - name: every-sunday-at-0450
     type: time
@@ -105,7 +104,6 @@ resources:
       start: "04:50"
       stop: "05:00"
       days: [Sunday]
-      initial_version: true
 
 resource_types:
   - name: slack-notification
