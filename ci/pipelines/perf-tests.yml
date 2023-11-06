@@ -68,17 +68,6 @@ resources:
     source:
       url: https://hooks.slack.com/services/((slack-notification-secret))
 
-  - name: paas
-    type: cf-cli
-    icon: cloud-upload-outline
-    source:
-      api: https://api.cloud.service.gov.uk
-      org: govuk-pay
-      space: build
-      username: ((cf-username))
-      password: ((cf-password))
-      cf_cli_version: 7
-
   - name: every-night-at-11pm
     icon: alarm
     source:
