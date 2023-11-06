@@ -158,12 +158,15 @@ groups:
 definitions:
   - &scale-down-services
     in_parallel:
-      - put: scale-down-stubs
-        resource: paas
+      - task: scale-down-stubs
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
         params:
-          command: scale
-          app_name: pay-stubs
-          instances: ((.:service-volumes.scale_down_to.stubs))
+          SERVICE_NAME: stubs
+          SCALE_DIRECTION: in
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.stubs))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - task: scale-down-adminusers
         file: pay-ci/ci/tasks/scale-fargate-service.yml
         params:
@@ -413,11 +416,14 @@ definitions:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - put: scale-up-stubs
-        resource: paas
+        file: pay-ci/ci/tasks/scale-fargate-service.yml
         params:
-          command: scale
-          app_name: pay-stubs
-          instances: ((.:service-volumes.scale_up_to.stubs))
+          SERVICE_NAME: stubs
+          SCALE_DIRECTION: out
+          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.stubs))
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - do:
         - task: scale-up-webhooks-egress
           file: pay-ci/ci/tasks/scale-fargate-service.yml
