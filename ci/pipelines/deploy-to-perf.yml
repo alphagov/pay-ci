@@ -1588,7 +1588,7 @@ jobs:
         username: pay-concourse
         text: ":red_circle: Deployment of notifications to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-    - name: deploy-scheduled-tasks
+  - name: deploy-scheduled-tasks
     plan:
       - in_parallel:
         - get: alpine-ecr-registry-perf
