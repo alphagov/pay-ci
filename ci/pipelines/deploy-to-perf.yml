@@ -212,13 +212,6 @@ resources:
       repository: govukpay/nginx-forward-proxy
       variant: perf
       <<: *aws_test_config
-  - name: stubs-ecr-registry-perf
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/stubs
-      variant: perf
-      <<: *aws_test_config
   - name: slack-notification
     type: slack-notification
     source:
@@ -353,9 +346,6 @@ groups:
   - name: stream-s3-sqs
     jobs:
       - deploy-scheduled-tasks
-  - name: stubs
-    jobs:
-      - deploy-stubs-to-perf
   - name: update-deploy-to-perf-pipeline
     jobs:
       - update-deploy-to-perf-pipeline
@@ -1598,59 +1588,7 @@ jobs:
         username: pay-concourse
         text: ":red_circle: Deployment of notifications to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-  - name: deploy-stubs-to-perf
-    serial: true
-    plan:
-      - get: stubs-ecr-registry-perf
-        trigger: true
-      - get: adot-ecr-registry-perf
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
-      - load_var: application_image_tag
-        file: stubs-ecr-registry-perf/tag
-      - load_var: adot_image_tag
-        file: adot-ecr-registry-perf/tag
-      # - put: slack-notification
-      #   params:
-      #     channel: '#govuk-pay-activity'
-      #     icon_emoji: ":fargate:"
-      #     username: pay-concourse
-      #     text: ':rocket: Starting stubs deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-      - task: assume-role
-        file: pay-ci/ci/tasks/assume-role.yml
-        params:
-          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
-      - task: deploy-to-perf
-        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
-        params:
-          APP_NAME: stubs
-          <<: *deploy_params
-      - task: wait-for-deploy
-        file: pay-ci/ci/tasks/wait-for-deploy.yml
-        params:
-          APP_NAME: stubs
-          <<: *wait_for_deploy_params
-    # on_success:
-    #   put: slack-notification
-    #   params:
-    #     channel: '#govuk-pay-activity'
-    #     icon_emoji: ":fargate:"
-    #     username: pay-concourse
-    #     text: ":green-circle: Deployment of stubs to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    # on_failure:
-    #   put: slack-notification
-    #   params:
-    #     channel: '#govuk-pay-announce'
-    #     icon_emoji: ":fargate:"
-    #     username: pay-concourse
-    #     text: ":red_circle: Deployment of stubs to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"  - name: deploy-scheduled-tasks
-
-  - name: deploy-scheduled-tasks
+    - name: deploy-scheduled-tasks
     plan:
       - in_parallel:
         - get: alpine-ecr-registry-perf
