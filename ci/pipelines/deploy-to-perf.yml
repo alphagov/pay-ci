@@ -265,32 +265,6 @@ resources:
       repository: govukpay/webhooks
       variant: perf-db
       <<: *aws_test_config
-  - name: pay-stubs-manifest
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-ci
-      branch: master
-      paths:
-        - ci/pay_stubs
-  - name: paas
-    type: cf-cli
-    icon: cloud-upload-outline
-    source:
-      api: https://api.cloud.service.gov.uk
-      org: govuk-pay
-      space: build
-      username: ((cf-username))
-      password: ((cf-password))
-      cf_cli_version: 7
-  - name: stubs-dockerhub
-    type: registry-image
-    icon: docker
-    source:
-      repository: governmentdigitalservice/pay-stubs
-      tag: latest-master
-      password: ((docker-access-token))
-      username: ((docker-username))
 
 resource_types:
   - name: registry-image
@@ -372,9 +346,6 @@ groups:
   - name: stream-s3-sqs
     jobs:
       - deploy-scheduled-tasks
-  - name: stubs
-    jobs:
-      - deploy-stubs-to-perf
   - name: update-deploy-to-perf-pipeline
     jobs:
       - update-deploy-to-perf-pipeline
@@ -1616,26 +1587,6 @@ jobs:
         icon_emoji: ":fargate:"
         username: pay-concourse
         text: ":red_circle: Deployment of notifications to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-  - name: deploy-stubs-to-perf
-    serial: true
-    plan:
-      - get: stubs-dockerhub
-        trigger: true
-      - get: pay-stubs-manifest
-        trigger: true
-      - put: paas
-        params:
-          command: zero-downtime-push
-          current_app_name: pay-stubs
-          manifest: pay-stubs-manifest/ci/pay_stubs/pay-stubs_manifest.yml
-          docker_username: ((docker-username))
-          docker_password: ((docker-access-token))
-          docker_image: governmentdigitalservice/pay-stubs:latest-master
-          vars:
-            smartpay-expected-password: ((smartpay-expected-password))
-            smartpay-expected-user: ((smartpay-expected-user))
-            worldpay-expected-password: ((worldpay-expected-password))
-            worldpay-expected-user: ((worldpay-expected-user))
 
   - name: deploy-scheduled-tasks
     plan:
