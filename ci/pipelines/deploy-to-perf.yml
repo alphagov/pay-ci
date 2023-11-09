@@ -212,6 +212,13 @@ resources:
       repository: govukpay/nginx-forward-proxy
       variant: perf
       <<: *aws_test_config
+  - name: stubs-ecr-registry-perf
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/stubs
+      variant: perf
+      <<: *aws_test_config
   - name: slack-notification
     type: slack-notification
     source:
@@ -265,32 +272,6 @@ resources:
       repository: govukpay/webhooks
       variant: perf-db
       <<: *aws_test_config
-  - name: pay-stubs-manifest
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-ci
-      branch: master
-      paths:
-        - ci/pay_stubs
-  - name: paas
-    type: cf-cli
-    icon: cloud-upload-outline
-    source:
-      api: https://api.cloud.service.gov.uk
-      org: govuk-pay
-      space: build
-      username: ((cf-username))
-      password: ((cf-password))
-      cf_cli_version: 7
-  - name: stubs-dockerhub
-    type: registry-image
-    icon: docker
-    source:
-      repository: governmentdigitalservice/pay-stubs
-      tag: latest-master
-      password: ((docker-access-token))
-      username: ((docker-username))
 
 resource_types:
   - name: registry-image
@@ -1616,28 +1597,59 @@ jobs:
         icon_emoji: ":fargate:"
         username: pay-concourse
         text: ":red_circle: Deployment of notifications to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
   - name: deploy-stubs-to-perf
     serial: true
     plan:
-      - get: stubs-dockerhub
+      - get: stubs-ecr-registry-perf
         trigger: true
-      - get: pay-stubs-manifest
+      - get: adot-ecr-registry-perf
         trigger: true
-      - put: paas
+      - get: pay-infra
+      - get: pay-ci
+      - load_var: application_image_tag
+        file: stubs-ecr-registry-perf/tag
+      - load_var: adot_image_tag
+        file: adot-ecr-registry-perf/tag
+      # - put: slack-notification
+      #   params:
+      #     channel: '#govuk-pay-activity'
+      #     icon_emoji: ":fargate:"
+      #     username: pay-concourse
+      #     text: ':rocket: Starting stubs deployment to perf - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
         params:
-          command: zero-downtime-push
-          current_app_name: pay-stubs
-          manifest: pay-stubs-manifest/ci/pay_stubs/pay-stubs_manifest.yml
-          docker_username: ((docker-username))
-          docker_password: ((docker-access-token))
-          docker_image: governmentdigitalservice/pay-stubs:latest-master
-          vars:
-            smartpay-expected-password: ((smartpay-expected-password))
-            smartpay-expected-user: ((smartpay-expected-user))
-            worldpay-expected-password: ((worldpay-expected-password))
-            worldpay-expected-user: ((worldpay-expected-user))
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+          AWS_ROLE_SESSION_NAME: terraform-test-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: deploy-to-perf
+        file: pay-ci/ci/tasks/deploy-app-with-adot.yml
+        params:
+          APP_NAME: stubs
+          <<: *deploy_params
+      - task: wait-for-deploy
+        file: pay-ci/ci/tasks/wait-for-deploy.yml
+        params:
+          APP_NAME: stubs
+          <<: *wait_for_deploy_params
+    # on_success:
+    #   put: slack-notification
+    #   params:
+    #     channel: '#govuk-pay-activity'
+    #     icon_emoji: ":fargate:"
+    #     username: pay-concourse
+    #     text: ":green-circle: Deployment of stubs to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    # on_failure:
+    #   put: slack-notification
+    #   params:
+    #     channel: '#govuk-pay-announce'
+    #     icon_emoji: ":fargate:"
+    #     username: pay-concourse
+    #     text: ":red_circle: Deployment of stubs to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"  - name: deploy-scheduled-tasks
 
-  - name: deploy-scheduled-tasks
     plan:
       - in_parallel:
         - get: alpine-ecr-registry-perf
