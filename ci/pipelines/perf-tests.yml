@@ -147,15 +147,24 @@ groups:
 definitions:
   - &scale-down-services
     in_parallel:
-      - task: scale-down-stubs
-        file: pay-ci/ci/tasks/scale-fargate-service.yml
-        params:
-          SERVICE_NAME: stubs
-          SCALE_DIRECTION: in
-          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.stubs))
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - do: # Stubs is in the deploy account
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/pay-concourse-stubs-deploy-tooling
+            AWS_ROLE_SESSION_NAME: terraform-deploy-assume-role
+        - load_var: deploy-role
+          file: assume-role/assume-role.json
+        - task: scale-down-stubs
+          file: pay-ci/ci/tasks/scale-fargate-service.yml
+          params:
+            SERVICE_NAME: stubs
+            ECS_CLUSTER: deploy-tooling
+            SCALE_DIRECTION: in
+            DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_down_to.stubs))
+            AWS_ACCESS_KEY_ID: ((.:deploy-role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:deploy-role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:deploy-role.AWS_SESSION_TOKEN)
       - task: scale-down-adminusers
         file: pay-ci/ci/tasks/scale-fargate-service.yml
         params:
@@ -404,15 +413,24 @@ definitions:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - task: scale-up-stubs
-        file: pay-ci/ci/tasks/scale-fargate-service.yml
-        params:
-          SERVICE_NAME: stubs
-          SCALE_DIRECTION: out
-          DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.stubs))
-          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - do: # Stubs is in the deploy account
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/pay-concourse-stubs-deploy-tooling
+            AWS_ROLE_SESSION_NAME: terraform-deploy-assume-role
+        - load_var: deploy-role-stubs
+          file: assume-role/assume-role.json
+        - task: scale-up-stubs
+          file: pay-ci/ci/tasks/scale-fargate-service.yml
+          params:
+            SERVICE_NAME: stubs
+            ECS_CLUSTER: deploy-tooling
+            SCALE_DIRECTION: out
+            DESIRED_HEALTHY_INSTANCES: ((.:service-volumes.scale_up_to.stubs))
+            AWS_ACCESS_KEY_ID: ((.:deploy-role-stubs.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:deploy-role-stubs.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:deploy-role-stubs.AWS_SESSION_TOKEN)
       - do:
         - task: scale-up-webhooks-egress
           file: pay-ci/ci/tasks/scale-fargate-service.yml
