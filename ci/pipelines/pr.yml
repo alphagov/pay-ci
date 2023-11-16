@@ -608,6 +608,7 @@ jobs:
           path: src
           status: pending
           context: app-as-consumer pact verification
+      - get: adminusers-master
       - get: ledger-master
       - get: cardid-master
         params: { submodules: none }
@@ -615,6 +616,13 @@ jobs:
         params:
           consumer: connector
       - in_parallel:
+        - <<: *pact-provider-verification
+          task: adminusers-provider-pact-verification
+          input_mapping:
+            test_target: adminusers-master
+          params:
+            consumer: connector
+            provider: adminusers
         - <<: *pact-provider-verification
           task: ledger-provider-pact-verification
           input_mapping:
