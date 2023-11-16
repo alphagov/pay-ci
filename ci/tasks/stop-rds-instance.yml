@@ -7,7 +7,7 @@ image_resource:
 params:
   RDS_INSTANCE_NAME:
   AWS_DEFAULT_REGION: eu-west-1
-  MAX_ATTEMPTS: 140 # 40 minutes
+  MAX_ATTEMPTS: 240 # 60 minutes
 run:
   path: /bin/bash
   args:
