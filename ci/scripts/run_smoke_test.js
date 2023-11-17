@@ -104,7 +104,7 @@ async function run () {
       console.log('Check the Deploy account AWS Cloudwatch console at ')
       console.log(`https://eu-west-1.console.aws.amazon.com/cloudwatch/home?region=eu-west-1#synthetics:canary/detail/${SMOKE_TEST_NAME}`)
       console.log('Instructions on accessing Canaries if you do not have a Deploy account: ')
-      console.log('https://pay-team-manual.cloudapps.digital/manual/tools/canary.html#access')
+      console.log('https://manual.payments.service.gov.uk/manual/tools/canary.html#access')
       console.log('\n============================================================\n')
 
       process.exitCode = 1

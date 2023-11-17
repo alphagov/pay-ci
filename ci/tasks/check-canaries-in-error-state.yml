@@ -41,7 +41,7 @@ run:
         status=$(aws --region "$AWS_REGION" synthetics get-canary --name "$canary_name" | jq -r '.Canary.Status.State')
         if [ "$status" == "ERROR" ]
         then  
-          echo "Canary $canary_name is in an errored state. It must be manually deleted and created - see https://pay-team-manual.cloudapps.digital/manual/tools/canary.html#updating-canary-tests-in-error-state."
+          echo "Canary $canary_name is in an errored state. It must be manually deleted and created - see https://manual.payments.service.gov.uk/manual/tools/canary.html#updating-canary-tests-in-error-state."
           exit 1
         fi
       done
