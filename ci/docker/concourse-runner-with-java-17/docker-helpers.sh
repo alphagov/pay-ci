@@ -7,6 +7,10 @@ SKIP_PRIVILEGED=${SKIP_PRIVILEGED:-false}
 STARTUP_TIMEOUT=${STARTUP_TIMEOUT:-20}
 
 sanitize_cgroups() {
+  if [ -e /sys/fs/cgroup/cgroup.controllers ]; then
+    return
+  fi
+
   mkdir -p /sys/fs/cgroup
   mountpoint -q /sys/fs/cgroup || \
     mount -t tmpfs -o uid=0,gid=0,mode=0755 cgroup /sys/fs/cgroup
@@ -45,7 +49,7 @@ sanitize_cgroups() {
     fi
   done
 
-  if ! test -e /sys/fs/cgroup/systemd ; then
+  if [ ! -e /sys/fs/cgroup/systemd ] && [ $(cat /proc/self/cgroup | grep '^1:name=openrc:' | wc -l) -eq 0 ]; then
     mkdir /sys/fs/cgroup/systemd
     mount -t cgroup -o none,name=systemd none /sys/fs/cgroup/systemd
   fi
