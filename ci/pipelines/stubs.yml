@@ -47,6 +47,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/stubs
+      variant: release
       aws_access_key_id: ((readonly_access_key_id))
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
