@@ -76,7 +76,7 @@ services:
       driver: "json-file"
 
   localstack:
-    image: ${DOCKER_REGISTRY_URI:-}localstack/localstack:2.0
+    image: ${DOCKER_REGISTRY_URI:-}localstack/localstack:3
     volumes:
       - "./../docker-config/localstack-init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
     environment:
@@ -279,7 +279,7 @@ services:
       - MAVEN_OPTS=${END_TO_END_JAVA_OPTS}
     networks:
       - pymnt_network
-    mem_limit: ${END_TO_END_MEM_LIMIT}
+    mem_limit: ${END_TO_END_MEM_LIMIT:-1G}
     depends_on:
       selenium:
         condition: service_started
