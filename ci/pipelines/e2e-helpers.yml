@@ -188,23 +188,23 @@ resources:
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
 
-  - name: localstack-localstack-2
+  - name: localstack-localstack-3
     type: registry-image
     icon: docker
     check_every: 1h
     source:
       repository: localstack/localstack
-      tag: "2.0"
+      tag: "3"
       username: ((docker-username))
       password: ((docker-access-token))
 
-  - name: ecr-localstack-localstack-2
+  - name: ecr-localstack-localstack-3
     type: registry-image
     icon: docker
     check_every: never
     source:
       repository: localstack/localstack
-      tag: "2.0"
+      tag: "3"
       aws_access_key_id: ((readonly_access_key_id))
       aws_secret_access_key: ((readonly_secret_access_key))
       aws_session_token: ((readonly_session_token))
@@ -752,15 +752,15 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse
 
-  - name: copy-localstack-localstack-2
+  - name: copy-localstack-localstack-3
     plan:
-      - get: localstack-localstack-2
+      - get: localstack-localstack-3
         trigger: true
         params:
           format: oci
-      - put: ecr-localstack-localstack-2
+      - put: ecr-localstack-localstack-3
         params:
-          image: localstack-localstack-2/image.tar
+          image: localstack-localstack-3/image.tar
         get_params:
           skip_download: true
     on_failure:
