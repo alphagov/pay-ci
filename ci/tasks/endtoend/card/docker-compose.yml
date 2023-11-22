@@ -6,7 +6,7 @@ networks:
 
 services:
   publicapi:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_publicapi:-governmentdigitalservice/pay-publicapi}:${tag_publicapi:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_publicapi:-govukpay/publicapi}:${tag_publicapi:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/publicapi.env
@@ -26,7 +26,7 @@ services:
       driver: "json-file"
 
   frontend:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_frontend:-governmentdigitalservice/pay-frontend}:${tag_frontend:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_frontend:-govukpay/frontend}:${tag_frontend:-latest-master}
     env_file: ../docker-config/frontend.env
     networks:
       pymnt_network:
@@ -41,7 +41,7 @@ services:
       driver: "json-file"
 
   frontend_proxy:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-governmentdigitalservice/pay-reverse-proxy}:${tag_reverseproxy:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-govukpay/reverse-proxy}:${tag_reverseproxy:-latest-master}
     environment:
       - KEY_FILE=/ssl/keys/frontend.pymnt.localdomain.key
       - CERT_FILE=/ssl/certs/frontend.pymnt.localdomain.crt
@@ -92,7 +92,7 @@ services:
     mem_limit: 500M
 
   adminusers:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_adminusers:-governmentdigitalservice/pay-adminusers}:${tag_adminusers:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_adminusers:-govukpay/adminusers}:${tag_adminusers:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/adminusers.env
@@ -115,7 +115,7 @@ services:
       driver: "json-file"
 
   selfservice:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_selfservice:-governmentdigitalservice/pay-selfservice}:${tag_selfservice:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_selfservice:-govukpay/selfservice}:${tag_selfservice:-latest-master}
     env_file: ../docker-config/selfservice.env
     environment:
       - NODE_ENV=${NODE_ENV:-production}
@@ -133,7 +133,7 @@ services:
       driver: "json-file"
 
   selfservice_proxy:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-governmentdigitalservice/pay-reverse-proxy}:${tag_reverseproxy:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-govukpay/reverse-proxy}:${tag_reverseproxy:-latest-master}
     environment:
       - KEY_FILE=/ssl/keys/selfservice.pymnt.localdomain.key
       - CERT_FILE=/ssl/certs/selfservice.pymnt.localdomain.crt
@@ -154,7 +154,7 @@ services:
       driver: "json-file"
       
   connector:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_connector:-governmentdigitalservice/pay-connector}:${tag_connector:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_connector:-govukpay/connector}:${tag_connector:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/connector.env
@@ -179,7 +179,7 @@ services:
       driver: "json-file"
 
   ledger:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_ledger:-governmentdigitalservice/pay-ledger}:${tag_ledger:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_ledger:-govukpay/ledger}:${tag_ledger:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/ledger.env
@@ -202,7 +202,7 @@ services:
     logging:
       driver: "json-file"
   publicauth:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_publicauth:-governmentdigitalservice/pay-publicauth}:${tag_publicauth:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_publicauth:-govukpay/publicauth}:${tag_publicauth:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/publicauth.env
@@ -225,7 +225,7 @@ services:
       driver: "json-file"
 
   stubs:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_stubs:-governmentdigitalservice/pay-stubs}:${tag_stubs:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_stubs:-govukpay/stubs}:${tag_stubs:-latest-master}
     env_file: ../docker-config/stubs.env
     networks:
       pymnt_network:
@@ -236,7 +236,7 @@ services:
       driver: "json-file"
 
   stubs_proxy:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-governmentdigitalservice/pay-reverse-proxy}:${tag_reverseproxy:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-govukpay/reverse-proxy}:${tag_reverseproxy:-latest-master}
     volumes:
       - "./../docker-config/ssl:/ssl"
     environment:
@@ -255,7 +255,7 @@ services:
       driver: "json-file"
 
   cardid:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_cardid:-governmentdigitalservice/pay-cardid}:${tag_cardid:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_cardid:-govukpay/cardid}:${tag_cardid:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/cardid.env
@@ -273,7 +273,7 @@ services:
       driver: "json-file"
   
   endtoend:
-    image: ${DOCKER_REGISTRY_URI:-}${repo_endtoend:-governmentdigitalservice/pay-endtoend}:${tag_endtoend:-latest-master}
+    image: ${DOCKER_REGISTRY_URI:-}${repo_endtoend:-govukpay/endtoend}:${tag_endtoend:-latest-master}
     env_file: ../docker-config/endtoend.env
     environment:
       - MAVEN_OPTS=${END_TO_END_JAVA_OPTS}
