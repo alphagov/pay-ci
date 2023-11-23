@@ -36,6 +36,7 @@ jobs:
         run: |
           docker pull govukpay/postgres:11.1
           docker pull postgres:11.16
+          docker pull postgres:15.2
       - name: Set Pact Provider Version
         id: set-pact-provider-version
         run: |
