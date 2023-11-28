@@ -2195,27 +2195,6 @@ jobs:
           file: tags/candidate-tag
         - load_var: date
           file: tags/date
-      - task: build-jar
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: maven
-              tag: 3-openjdk-11
-          inputs:
-            - name: connector-git-release
-          outputs:
-            - name: build-jar
-          run:
-            path: bash
-            dir: connector-git-release
-            args:
-            - -ec
-            - |
-              mvn clean package
-              cp -r . ../build-jar
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -2237,7 +2216,7 @@ jobs:
             source:
               repository: concourse/oci-build-task
           inputs:
-            - name: build-jar
+            - name: connector-git-release
               path: .
           outputs:
             - name: image
@@ -4580,27 +4559,6 @@ jobs:
           file: tags/candidate-tag
         - load_var: date
           file: tags/date
-      - task: build-jar
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: maven
-              tag: 3-openjdk-11
-          inputs:
-            - name: cardid-git-release-with-submodules
-          outputs:
-            - name: build-jar
-          run:
-            path: bash
-            dir: cardid-git-release-with-submodules
-            args:
-            - -ec
-            - |
-              mvn clean package
-              cp -r . ../build-jar
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -4622,7 +4580,7 @@ jobs:
             source:
               repository: concourse/oci-build-task
           inputs:
-            - name: build-jar
+            - name: cardid-git-release
               path: .
           outputs:
             - name: image
