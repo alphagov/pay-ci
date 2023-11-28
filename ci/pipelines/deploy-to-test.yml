@@ -2536,27 +2536,6 @@ jobs:
           file: tags/candidate-tag
         - load_var: date
           file: tags/date
-      - task: build-jar
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: maven
-              tag: 3-openjdk-11
-          inputs:
-            - name: ledger-git-release
-          outputs:
-            - name: build-jar
-          run:
-            path: bash
-            dir: ledger-git-release
-            args:
-            - -ec
-            - |
-              mvn clean package
-              cp -r . ../build-jar
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -2578,7 +2557,7 @@ jobs:
             source:
               repository: concourse/oci-build-task
           inputs:
-            - name: build-jar
+            - name: ledger-git-release
               path: .
           outputs:
             - name: image
@@ -2898,27 +2877,6 @@ jobs:
           file: tags/candidate-tag
         - load_var: date
           file: tags/date
-      - task: build-jar
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: maven
-              tag: 3-openjdk-11
-          inputs:
-            - name: products-git-release
-          outputs:
-            - name: build-jar
-          run:
-            path: bash
-            dir: products-git-release
-            args:
-            - -ec
-            - |
-              mvn clean package
-              cp -r . ../build-jar
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -2940,7 +2898,7 @@ jobs:
             source:
               repository: concourse/oci-build-task
           inputs:
-            - name: build-jar
+            - name: products-git-release
               path: .
           outputs:
             - name: image
@@ -3559,27 +3517,6 @@ jobs:
           file: tags/candidate-tag
         - load_var: date
           file: tags/date
-      - task: build-jar
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: maven
-              tag: 3-openjdk-11
-          inputs:
-            - name: publicapi-git-release
-          outputs:
-            - name: build-jar
-          run:
-            path: bash
-            dir: publicapi-git-release
-            args:
-            - -ec
-            - |
-              mvn clean package
-              cp -r . ../build-jar
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -3601,7 +3538,7 @@ jobs:
             source:
               repository: concourse/oci-build-task
           inputs:
-            - name: build-jar
+            - name: publicapi-git-release
               path: .
           outputs:
             - name: image
@@ -4863,27 +4800,6 @@ jobs:
           file: tags/tags
         - load_var: date
           file: tags/date
-      - task: build-jar
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: maven
-              tag: 3-openjdk-17
-          inputs:
-            - name: webhooks-git-release
-          outputs:
-            - name: build-jar
-          run:
-            path: bash
-            dir: webhooks-git-release
-            args:
-            - -ec
-            - |
-              mvn clean package
-              cp -r . ../build-jar
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -4905,7 +4821,7 @@ jobs:
             source:
               repository: concourse/oci-build-task
           inputs:
-            - name: build-jar
+            - name: webhooks-git-release
               path: .
           outputs:
             - name: image
