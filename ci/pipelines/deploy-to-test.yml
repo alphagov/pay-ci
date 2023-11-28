@@ -4580,7 +4580,7 @@ jobs:
             source:
               repository: concourse/oci-build-task
           inputs:
-            - name: cardid-git-release
+            - name: cardid-git-release-with-submodules
               path: .
           outputs:
             - name: image
