@@ -21,9 +21,6 @@ definitions:
       path: src
       status: pending
       context: unit tests
-  - &run-java-package
-    task: run-java-package
-    file: ci/ci/tasks/java-package.yml
   - &run-java-unit-test
     task: run-unit-tests
     file: ci/ci/tasks/java-tests.yml
@@ -658,7 +655,6 @@ jobs:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
           put: card-connector-pull-request
-      - <<: *run-java-package
       - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
@@ -725,7 +721,6 @@ jobs:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
           put: endtoend-pull-request
-      - <<: *run-java-package
       - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
@@ -912,7 +907,6 @@ jobs:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
           put: publicapi-pull-request
-      - <<: *run-java-package
       - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
@@ -1137,7 +1131,6 @@ jobs:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
           put: adminusers-pull-request
-      - <<: *run-java-package
       - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
@@ -1294,7 +1287,6 @@ jobs:
                   git submodule update data
                   sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
                   sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
-      - <<: *run-java-package
       - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
@@ -1465,7 +1457,6 @@ jobs:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
           put: ledger-pull-request
-      - <<: *run-java-package
       - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
@@ -1569,7 +1560,6 @@ jobs:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
           put: publicauth-pull-request
-      - <<: *run-java-package
       - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
@@ -1704,7 +1694,6 @@ jobs:
         - <<: *get-ci
         - <<: *put-e2e-pending-status
           put: products-pull-request
-      - <<: *run-java-package
       - <<: *generate-docker-creds-config
       - <<: *build-docker-image
         params:
