@@ -39,6 +39,8 @@ run:
     trap cleanup EXIT
 
     file_suffix="PR-$(cat src/.git/resource/pr)-GIT-SHA-$(cat src/.git/resource/head_sha)"
+    
+    cd src
 
     cd build
 
