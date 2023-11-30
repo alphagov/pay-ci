@@ -40,8 +40,6 @@ run:
 
     file_suffix="PR-$(cat src/.git/resource/pr)-GIT-SHA-$(cat src/.git/resource/head_sha)"
 
-    cd build
-
     # bit hacky for now but remove the node_modules if they exist.
     rm -r node_modules || true
 
