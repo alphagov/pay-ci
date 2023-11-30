@@ -6,7 +6,6 @@ image_resource:
     repository: governmentdigitalservice/pay-concourse-runner
     tag: latest
 inputs:
-  - name: build
   - name: src
   - name: docker_creds
     optional: true
