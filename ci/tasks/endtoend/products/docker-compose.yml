@@ -61,20 +61,6 @@ services:
     logging:
       driver: "json-file"
 
-  postgres:
-    image: ${DOCKER_REGISTRY_URI:-}postgres:15-alpine
-    environment:
-      - POSTGRES_PASSWORD=mysecretpassword
-    volumes:
-      - ./../docker-config/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-    networks:
-      pymnt_network:
-        aliases:
-          - postgres.db.pymnt.localdomain
-    mem_limit: 500M
-    logging:
-      driver: "json-file"
-
   localstack:
     image: ${DOCKER_REGISTRY_URI:-}localstack/localstack:3
     volumes:
@@ -110,7 +96,21 @@ services:
       interval: 1m30s
       timeout: 10s
     depends_on:
-      - postgres
+      - postgres-adminusers
+    logging:
+      driver: "json-file"
+
+  postgres-adminusers:
+    image: ${DOCKER_REGISTRY_URI:-}postgres:15-alpine
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - ./../docker-config/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      pymnt_network:
+        aliases:
+          - postgres.db.pymnt.localdomain
+    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -169,7 +169,7 @@ services:
           - connector.internal.pymnt.localdomain
     mem_limit: 2G
     depends_on:
-      - postgres
+      - postgres-connector
       - localstack
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9300/healthcheck"]
@@ -177,6 +177,21 @@ services:
       timeout: 10s
     logging:
       driver: "json-file"
+
+  postgres-connector:
+    image: ${DOCKER_REGISTRY_URI:-}postgres:15-alpine
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - ./../docker-config/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      pymnt_network:
+        aliases:
+          - postgres.db.pymnt.localdomain
+    mem_limit: 100M
+    logging:
+      driver: "json-file"
+
 
   ledger:
     image: ${DOCKER_REGISTRY_URI:-}${repo_ledger:-govukpay/ledger}:${tag_ledger:-latest-master}
@@ -193,7 +208,7 @@ services:
           - ledger.internal.pymnt.localdomain
     mem_limit: 2G
     depends_on:
-      - postgres
+      - postgres-ledger
       - localstack
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:10700/healthcheck"]
@@ -201,6 +216,21 @@ services:
       timeout: 10s
     logging:
       driver: "json-file"
+
+  postgres-ledger:
+    image: ${DOCKER_REGISTRY_URI:-}postgres:15-alpine
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - ./../docker-config/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      pymnt_network:
+        aliases:
+          - postgres.db.pymnt.localdomain
+    mem_limit: 100M
+    logging:
+      driver: "json-file"
+
   publicauth:
     image: ${DOCKER_REGISTRY_URI:-}${repo_publicauth:-govukpay/publicauth}:${tag_publicauth:-latest-master}
     env_file:
@@ -220,7 +250,21 @@ services:
       interval: 1m30s
       timeout: 10s
     depends_on:
-      - postgres
+      - postgres-publicauth
+    logging:
+      driver: "json-file"
+
+  postgres-publicauth:
+    image: ${DOCKER_REGISTRY_URI:-}postgres:15-alpine
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - ./../docker-config/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      pymnt_network:
+        aliases:
+          - postgres.db.pymnt.localdomain
+    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -291,7 +335,21 @@ services:
       interval: 30s
       timeout: 10s
     depends_on:
-      - postgres
+      - postgres-products
+    logging:
+      driver: "json-file"
+
+  postgres-products:
+    image: ${DOCKER_REGISTRY_URI:-}postgres:15-alpine
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - ./../docker-config/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      pymnt_network:
+        aliases:
+          - postgres.db.pymnt.localdomain
+    mem_limit: 100M
     logging:
       driver: "json-file"
 

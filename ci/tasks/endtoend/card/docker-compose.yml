@@ -110,7 +110,7 @@ services:
       pymnt_network:
         aliases:
           - postgres.db.pymnt.localdomain
-    mem_limit: 500M
+    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -189,7 +189,7 @@ services:
       pymnt_network:
         aliases:
           - postgres.db.pymnt.localdomain
-    mem_limit: 500M
+    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -227,7 +227,7 @@ services:
       pymnt_network:
         aliases:
           - postgres.db.pymnt.localdomain
-    mem_limit: 500M
+    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -264,7 +264,7 @@ services:
       pymnt_network:
         aliases:
           - postgres.db.pymnt.localdomain
-    mem_limit: 500M
+    mem_limit: 100M
     logging:
       driver: "json-file"
 

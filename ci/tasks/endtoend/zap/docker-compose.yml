@@ -110,10 +110,9 @@ services:
       pymnt_network:
         aliases:
           - postgres.db.pymnt.localdomain
-    mem_limit: 500M
+    mem_limit: 100M
     logging:
       driver: "json-file"
-
 
   selfservice:
     image: ${DOCKER_REGISTRY_URI:-}${repo_selfservice:-govukpay/selfservice}:${tag_selfservice:-latest-master}
@@ -189,7 +188,7 @@ services:
       pymnt_network:
         aliases:
           - postgres.db.pymnt.localdomain
-    mem_limit: 500M
+    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -227,7 +226,7 @@ services:
       pymnt_network:
         aliases:
           - postgres.db.pymnt.localdomain
-    mem_limit: 500M
+    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -264,7 +263,7 @@ services:
       pymnt_network:
         aliases:
           - postgres.db.pymnt.localdomain
-    mem_limit: 500M
+    mem_limit: 100M
     logging:
       driver: "json-file"
 
