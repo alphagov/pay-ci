@@ -1,5 +1,26 @@
 ---
 resources:
+  - name: pull-request-builds-ecr
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/pull-request-builds
+      aws_access_key_id: ((readonly_access_key_id))
+      aws_secret_access_key: ((readonly_secret_access_key))
+      aws_session_token: ((readonly_session_token))
+      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+      aws_ecr_registry_id: "((pay_aws_test_account_id))"
+      aws_region: eu-west-1
+      tag: latest
+
+  - name: pay-perftests-pr
+    type: pull-request
+    icon: github
+    source:
+      repository: alphagov/pay-perftests
+      disable_forks: true
+      access_token: ((github-access-token))
+
   - name: perf-tests-pipeline
     type: git
     icon: github
@@ -106,6 +127,12 @@ resource_types:
     source:
       repository: nulldriver/cf-cli-resource
 
+  - name: pull-request
+    type: registry-image
+    source:
+      repository: teliaoss/github-pr-resource
+      tag: v0.21.0
+
 groups:
   - name: complete-perf-tests
     jobs:
@@ -126,6 +153,7 @@ groups:
   - name: perf-tests-build
     jobs:
       - build-and-push-perf-tests
+      - build-and-run-perftests-from-pr
   - name: update-perf-tests-pipeline
     jobs:
       - update-perf-tests-pipeline
@@ -142,6 +170,7 @@ groups:
       - scale-down-services
       - scale-down-all
       - build-and-push-perf-tests
+      - build-and-run-perftests-from-pr
       - update-perf-tests-pipeline
 
 definitions:
@@ -499,96 +528,10 @@ definitions:
 
   - &prepare-codebuild
     task: prepare-codebuild
-    config:
-      platform: linux
-      image_resource:
-        type: registry-image
-        source:
-          repository: alpine
-          tag: 3.16
-      outputs:
-        - name: run-codebuild-configuration
-      run:
-        path: ash
-        args:
-          - -euo
-          - pipefail
-          - -c
-          - |
-            echo "PaymentSimulation"
-            echo "------------------------------------------------------------------"
-            cat <<EOF | tee ./run-codebuild-configuration/perf-tests-PaymentSimulation.json
-            {
-              "projectName": "perf-tests-test-perf-1",
-              "sourceVersion": "",
-              "secondarySourcesVersions": {},
-              "environmentVariables": {
-                "PERF_TESTS_VERSION": "((.:release-tag))",
-                "GATLING_CLASS": "uk.gov.pay.PaymentSimulation",
-                "USE_CONCURRENT": "((.:gatling-simulation-settings.PaymentSimulation.USE_CONCURRENT))",
-                "RAMPUP_USERS_FROM": "((.:gatling-simulation-settings.PaymentSimulation.RAMPUP_USERS_FROM))",
-                "RAMPUP_USERS_TO": "((.:gatling-simulation-settings.PaymentSimulation.RAMPUP_USERS_TO))",
-                "RAMPUP_DURATION_IN_SECONDS": "((.:gatling-simulation-settings.PaymentSimulation.RAMPUP_DURATION_IN_SECONDS))",
-                "INITIAL_THROUGHPUT_RPS": "((.:gatling-simulation-settings.PaymentSimulation.INITIAL_THROUGHPUT_RPS))",
-                "INITIAL_THROUGHPUT_RAMPUP_SECONDS": "((.:gatling-simulation-settings.PaymentSimulation.INITIAL_THROUGHPUT_RAMPUP_SECONDS))",
-                "INITIAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.PaymentSimulation.INITIAL_THROUGHPUT_DURATION_MINUTES))",
-                "THROUGHPUT_TO_MAINTAIN": "((.:gatling-simulation-settings.PaymentSimulation.THROUGHPUT_TO_MAINTAIN))",
-                "FINAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.PaymentSimulation.FINAL_THROUGHPUT_DURATION_MINUTES))",
-                "CONSTANT_USERS_AFTER_RAMPUP": "((.:gatling-simulation-settings.PaymentSimulation.CONSTANT_USERS_AFTER_RAMPUP))",
-                "CONSTANT_DURATION_AFTER_RAMPUP": "((.:gatling-simulation-settings.PaymentSimulation.CONSTANT_DURATION_AFTER_RAMPUP))"
-              }
-            }
-            EOF
-
-            echo "SearchPaymentsSimulation"
-            echo "------------------------------------------------------------------"
-            cat <<EOF | tee ./run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json
-            {
-              "projectName": "perf-tests-test-perf-1",
-              "sourceVersion": "",
-              "secondarySourcesVersions": {},
-              "environmentVariables": {
-                "PERF_TESTS_VERSION": "((.:release-tag))",
-                "GATLING_CLASS": "uk.gov.pay.SearchPaymentsSimulation",
-                "USE_CONCURRENT": "((.:gatling-simulation-settings.SearchPaymentsSimulation.USE_CONCURRENT))",
-                "RAMPUP_USERS_FROM": "((.:gatling-simulation-settings.SearchPaymentsSimulation.RAMPUP_USERS_FROM))",
-                "RAMPUP_USERS_TO": "((.:gatling-simulation-settings.SearchPaymentsSimulation.RAMPUP_USERS_TO))",
-                "RAMPUP_DURATION_IN_SECONDS": "((.:gatling-simulation-settings.SearchPaymentsSimulation.RAMPUP_DURATION_IN_SECONDS))",
-                "INITIAL_THROUGHPUT_RPS": "((.:gatling-simulation-settings.SearchPaymentsSimulation.INITIAL_THROUGHPUT_RPS))",
-                "INITIAL_THROUGHPUT_RAMPUP_SECONDS": "((.:gatling-simulation-settings.SearchPaymentsSimulation.INITIAL_THROUGHPUT_RAMPUP_SECONDS))",
-                "INITIAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.SearchPaymentsSimulation.INITIAL_THROUGHPUT_DURATION_MINUTES))",
-                "THROUGHPUT_TO_MAINTAIN": "((.:gatling-simulation-settings.SearchPaymentsSimulation.THROUGHPUT_TO_MAINTAIN))",
-                "FINAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.SearchPaymentsSimulation.FINAL_THROUGHPUT_DURATION_MINUTES))",
-                "CONSTANT_USERS_AFTER_RAMPUP": "((.:gatling-simulation-settings.SearchPaymentsSimulation.CONSTANT_USERS_AFTER_RAMPUP))",
-                "CONSTANT_DURATION_AFTER_RAMPUP": "((.:gatling-simulation-settings.SearchPaymentsSimulation.CONSTANT_DURATION_AFTER_RAMPUP))"
-              }
-            }
-            EOF
-
-            echo "SelfServiceSimulation"
-            echo "------------------------------------------------------------------"
-            cat <<EOF | tee ./run-codebuild-configuration/perf-tests-SelfServiceSimulation.json
-            {
-              "projectName": "perf-tests-test-perf-1",
-              "sourceVersion": "",
-              "secondarySourcesVersions": {},
-              "environmentVariables": {
-                "PERF_TESTS_VERSION": "((.:release-tag))",
-                "GATLING_CLASS": "uk.gov.pay.SelfServiceSimulation",
-                "USE_CONCURRENT": "((.:gatling-simulation-settings.SelfServiceSimulation.USE_CONCURRENT))",
-                "RAMPUP_USERS_FROM": "((.:gatling-simulation-settings.SelfServiceSimulation.RAMPUP_USERS_FROM))",
-                "RAMPUP_USERS_TO": "((.:gatling-simulation-settings.SelfServiceSimulation.RAMPUP_USERS_TO))",
-                "RAMPUP_DURATION_IN_SECONDS": "((.:gatling-simulation-settings.SelfServiceSimulation.RAMPUP_DURATION_IN_SECONDS))",
-                "INITIAL_THROUGHPUT_RPS": "((.:gatling-simulation-settings.SelfServiceSimulation.INITIAL_THROUGHPUT_RPS))",
-                "INITIAL_THROUGHPUT_RAMPUP_SECONDS": "((.:gatling-simulation-settings.SelfServiceSimulation.INITIAL_THROUGHPUT_RAMPUP_SECONDS))",
-                "INITIAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.SelfServiceSimulation.INITIAL_THROUGHPUT_DURATION_MINUTES))",
-                "THROUGHPUT_TO_MAINTAIN": "((.:gatling-simulation-settings.SelfServiceSimulation.THROUGHPUT_TO_MAINTAIN))",
-                "FINAL_THROUGHPUT_DURATION_MINUTES": "((.:gatling-simulation-settings.SelfServiceSimulation.FINAL_THROUGHPUT_DURATION_MINUTES))",
-                "CONSTANT_USERS_AFTER_RAMPUP": "((.:gatling-simulation-settings.SelfServiceSimulation.CONSTANT_USERS_AFTER_RAMPUP))",
-                "CONSTANT_DURATION_AFTER_RAMPUP": "((.:gatling-simulation-settings.SelfServiceSimulation.CONSTANT_DURATION_AFTER_RAMPUP))"
-              }
-            }
-            EOF
+    file: pay-ci/ci/tasks/prepare-perftests-codebuild.yml
+    vars:
+      perf_tests_repo: "govukpay/perftests"
+      perf_tests_version: ((.:release-tag))
 
 jobs:
   - name: scale-and-run-all-simulations
@@ -834,8 +777,6 @@ jobs:
         text: ':green-circle: Individual performance test execution of PaymentSimulation completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
-
-
 
   - name: run-self-service-simulation-perf-test
     serial: true
@@ -1125,6 +1066,98 @@ jobs:
         text: ':green-circle: Built and pushed pay-perftests image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
+
+  - name: build-and-run-perftests-from-pr
+    plan:
+      - in_parallel:
+        - get: pay-perftests-pr
+        - get: pay-ci
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-access-token))
+          EMAIL: ((docker-email))
+      - in_parallel:
+          steps:
+          - task: build-perf-tests-image
+            privileged: true
+            params:
+              DOCKER_CONFIG: docker_creds
+            config:
+              platform: linux
+              image_resource:
+                type: registry-image
+                source:
+                  repository: concourse/oci-build-task
+              inputs:
+                - name: pay-perftests-pr
+                  path: .
+              outputs:
+                - name: image
+              run:
+                path: build
+          - task: assume-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+              AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - task: get-docker-image-info
+        file: pay-ci/ci/tasks/get-pr-build-docker-image-info.yml
+        params:
+          app_name: perftests
+        input_mapping:
+          src: pay-perftests-pr
+      - in_parallel:
+          steps:
+            - load_var: image_filename
+              file: image_info/image_filename
+            - load_var: image_tag
+              file: image_info/tag
+            - load_var: gatling-simulation-settings
+              file: pay-perftests-pr/ci/gatling-simulation-settings.json
+              format: json
+            - load_var: role
+              file: assume-role/assume-role.json
+              format: json
+      - in_parallel:
+          steps:
+          - put: pull-request-builds-ecr
+            params:
+              image: image/image.tar
+              additional_tags: image_info/tag
+            get_params:
+              skip_download: true
+          - <<: *prepare-codebuild
+            vars:
+              perf_tests_repo: govukpay/pull-request-builds
+              perf_tests_version: ((.:image_tag))
+      - in_parallel:
+          steps:
+            - try:
+                task: payment-simulation-perf-test
+                file: pay-ci/ci/tasks/run-codebuild.yml
+                params:
+                  PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
+                  AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+                  AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+                  AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            - try:
+                task: self-service-simulation-perf-test
+                file: pay-ci/ci/tasks/run-codebuild.yml
+                params:
+                  PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
+                  AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+                  AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+                  AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            - try:
+                task: search-payments-simulation-perf-test
+                file: pay-ci/ci/tasks/run-codebuild.yml
+                params:
+                  PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
+                  AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+                  AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+                  AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: update-perf-tests-pipeline
     plan:
