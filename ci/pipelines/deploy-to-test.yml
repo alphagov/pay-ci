@@ -828,6 +828,7 @@ groups:
       - smoke-test-cardid
       - cardid-pact-tag
       - push-cardid-to-staging-ecr
+      - codebuild-cardid
   - name: connector
     jobs:
       - build-and-push-connector-candidate
@@ -4415,7 +4416,7 @@ jobs:
           image: selfservice-ecr-registry-test/image.tar
           additional_tags: selfservice-ecr-registry-test/tag
 
-  - name: codebuild-cardid-candidate
+  - name: codebuild-cardid
     plan:
       - in_parallel:
         - get: pay-ci
@@ -4430,14 +4431,17 @@ jobs:
       - in_parallel:
         - load_var: release-number
           file: tags/release-number
-        - load_var: release-name
-          file: cardid-git-release-with-submodules/.git/ref
+        # - load_var: release-name
+        #   file: cardid-git-release-with-submodules/.git/ref
         - load_var: release-sha
           file: tags/release-sha
         - load_var: candidate-image-tag
           file: tags/candidate-tag
         - load_var: date
           file: tags/date
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-codebuild-multiarch.yml
         params:
@@ -4446,7 +4450,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           RELEASE_NUMBER: ((.:release-number)
-          RELEASE_NAME: ((.:release-name))
+          # RELEASE_NAME: ((.:release-name))
+          RELEASE_NAME: dummy-name
           RELEASE_SHA: ((.:release-sha)
           BUILD_DATE: ((.:date)
       - task: generate-docker-creds-config
@@ -4455,7 +4460,6 @@ jobs:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
-      - task: build-image
 
   - name: build-and-push-cardid-candidate
     plan:
