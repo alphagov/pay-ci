@@ -118,7 +118,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: PP-10386-build-cardid-in-codebuild
   - name: adot-git-release
     type: git
     icon: github
@@ -4445,10 +4445,10 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          RELEASE_NUMBER: ((.release-number)
-          RELEASE_NAME: ((.release-name))
-          RELEASE_SHA: ((.release-sha)
-          BUILD_DATE: ((.date)
+          RELEASE_NUMBER: ((.:release-number)
+          RELEASE_NAME: ((.:release-name))
+          RELEASE_SHA: ((.:release-sha)
+          BUILD_DATE: ((.:date)
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
