@@ -31,7 +31,7 @@ run:
       cat <<EOF | tee ./run-codebuild-configuration/${PROJECT_TO_BUILD}.json
       {
         "projectName": "${PROJECT_TO_BUILD}",
-        "sourceVersion": "${PAY_CI_VERSION_ID}",
+        "sourceVersion": "${RELEASE_SHA}",
         "secondarySourcesVersions": {},
         "environmentVariables": {
           "RELEASE_NUMBER": "${RELEASE_NUMBER}",

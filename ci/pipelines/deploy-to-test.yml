@@ -4439,6 +4439,11 @@ jobs:
           file: tags/candidate-tag
         - load_var: date
           file: tags/date
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
       - load_var: role
         file: assume-role/assume-role.json
         format: json
