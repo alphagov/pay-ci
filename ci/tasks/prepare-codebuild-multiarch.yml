@@ -30,7 +30,7 @@ run:
       echo "Writing CodeBuild configuration"
       cat <<EOF | tee ./run-codebuild-configuration/${PROJECT_TO_BUILD}.json
       {
-        "projectName": "${PROJECT_TO_BUILD}",
+        "projectName": "pay-${PROJECT_TO_BUILD}-amd64",
         "sourceVersion": "${RELEASE_SHA}",
         "secondarySourcesVersions": {},
         "environmentVariables": {
