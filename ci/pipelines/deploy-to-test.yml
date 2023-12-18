@@ -4450,7 +4450,7 @@ jobs:
               - -ec
               - |
                 apk add --quiet --no-progress git
-                sed -i "s/git@github.com:/https:\/\/${GH_ACCESS_TOKEN}@github.com\//" .gitmodules
+                sed -i "s/https:\/\/github.com/https:\/\/${GH_ACCESS_TOKEN}@github.com\//" .gitmodules
                 git submodule init -q data
                 git submodule update data
                 sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
@@ -4493,11 +4493,19 @@ jobs:
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
       - in_parallel:    
-        - task: run-codebuild-cardid
+        - task: run-codebuild-cardid-amd64
           attempts: 3
           file: pay-ci/ci/tasks/run-codebuild.yml
           params:
-            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/cardid.json"
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/cardid-amd64.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-cardid-armv8
+          attempts: 3
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/cardid-armv8.json"
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
