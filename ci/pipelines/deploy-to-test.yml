@@ -4428,11 +4428,39 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: cardid-git-release
+      - task: update-submodule
+        config:
+          container_limits: {}
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+              tag: 3.16
+          inputs:
+            - name: cardid-git-release
+          params:
+            GH_ACCESS_TOKEN: ((github-access-token))
+          outputs:
+            - name: cardid-git-release-with-submodules
+          run:
+            path: ash
+            dir: cardid-git-release
+            args:
+              - -ec
+              - |
+                apk add --quiet --no-progress git
+                sed -i "s/git@github.com:/https:\/\/${GH_ACCESS_TOKEN}@github.com\//" .gitmodules
+                git submodule init -q data
+                git submodule update data
+                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
+                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
+                cp -r . ../cardid-git-release-with-submodules
       - in_parallel:
         - load_var: release-number
           file: tags/release-number
-        # - load_var: release-name
-        #   file: cardid-git-release-with-submodules/.git/ref
+        - load_var: release-name
+          file: cardid-git-release-with-submodules/.git/ref
         - load_var: release-sha
           file: tags/release-sha
         - load_var: candidate-image-tag
@@ -4442,8 +4470,8 @@ jobs:
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
-            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
-            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12
+            AWS_ROLE_SESSION_NAME: codebuild-assume-role
       - load_var: role
         file: assume-role/assume-role.json
         format: json
@@ -4454,17 +4482,25 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          RELEASE_NUMBER: ((.:release-number)
-          # RELEASE_NAME: ((.:release-name))
-          RELEASE_NAME: dummy-name
-          RELEASE_SHA: ((.:release-sha)
-          BUILD_DATE: ((.:date)
+          RELEASE_NUMBER: ((.:release-number))
+          RELEASE_NAME: ((.:release-name))
+          RELEASE_SHA: ((.:release-sha))
+          BUILD_DATE: ((.:date))
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
+      - in_parallel:    
+        - task: run-codebuild-cardid
+          attempts: 3
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/cardid.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: build-and-push-cardid-candidate
     plan:
