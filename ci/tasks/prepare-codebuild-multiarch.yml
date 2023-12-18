@@ -27,10 +27,25 @@ run:
     - pipefail
     - -c
     - |
-      echo "Writing CodeBuild configuration"
-      cat <<EOF | tee ./run-codebuild-configuration/${PROJECT_TO_BUILD}.json
+      echo "Writing amd64 CodeBuild configuration"
+      cat <<EOAMD | tee ./run-codebuild-configuration/${PROJECT_TO_BUILD}-amd64.json
       {
         "projectName": "pay-${PROJECT_TO_BUILD}-amd64",
+        "sourceVersion": "${RELEASE_SHA}",
+        "secondarySourcesVersions": {},
+        "environmentVariables": {
+          "RELEASE_NUMBER": "${RELEASE_NUMBER}",
+          "RELEASE_NAME": "${RELEASE_NAME}",
+          "RELEASE_SHA": "${RELEASE_SHA}",
+          "BUILD_DATE": "${BUILD_DATE}"
+        }
+      }
+      EOAMD
+
+      echo "Writing armv8 CodeBuild configuration"
+      cat <<EOF | tee ./run-codebuild-configuration/${PROJECT_TO_BUILD}-armv8.json
+      {
+        "projectName": "pay-${PROJECT_TO_BUILD}-armv8",
         "sourceVersion": "${RELEASE_SHA}",
         "secondarySourcesVersions": {},
         "environmentVariables": {
