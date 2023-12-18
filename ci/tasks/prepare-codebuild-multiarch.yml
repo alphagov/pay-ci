@@ -56,3 +56,15 @@ run:
         }
       }
       EOF
+
+      echo "Writing manifest CodeBuild configuration"
+      cat <<EOF | tee ./run-codebuild-configuration/${PROJECT_TO_BUILD}-manifest.json
+      {
+        "projectName": "pay-${PROJECT_TO_BUILD}-armv8",
+        "secondarySourcesVersions": {},
+        "environmentVariables": {
+          "RELEASE_NUMBER": "${RELEASE_NUMBER}",
+          "BUILD_DATE": "${BUILD_DATE}"
+        }
+      }
+      EOF
