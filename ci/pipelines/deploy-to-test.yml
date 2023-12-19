@@ -4401,12 +4401,11 @@ jobs:
           additional_tags: selfservice-ecr-registry-test/tag
 
   - name: build-and-push-cardid-candidate
-  # - name: codebuild-cardid
     plan:
       - in_parallel:
         - get: pay-ci
         - get: cardid-git-release
-          trigger: false # TODO change this when we're done
+          trigger: true
           params:
             submodules: none
       - task: parse-release-tag
@@ -4587,6 +4586,7 @@ jobs:
     plan:
       - in_parallel:
         - get: cardid-candidate
+          trigger: true
           params:
             format: oci
         - get: pay-ci
