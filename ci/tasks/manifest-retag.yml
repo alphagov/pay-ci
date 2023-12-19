@@ -7,10 +7,16 @@ image_resource:
 params:
   SOURCE_MANIFEST:
   NEW_MANIFEST:
+  DOCKER_LOGIN_ECR: 0
+  AWS_ACCOUNT_ID: 
 
 run:
   path: bash
   args:
   - -ec
   - |
+    if [ "$DOCKER_LOGIN_ECR" -eq 1 ]; then
+      aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com
+    fi
+
     docker buildx imagetools create -t "$NEW_MANIFEST" "$SOURCE_MANIFEST"
