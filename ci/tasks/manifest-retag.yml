@@ -1,14 +1,20 @@
 platform: linux
+
 image_resource:
   type: registry-image
   source:
     repository: governmentdigitalservice/pay-concourse-runner
     tag: latest
+
 params:
   SOURCE_MANIFEST:
   NEW_MANIFEST:
   DOCKER_LOGIN_ECR: 0
   AWS_ACCOUNT_ID: 
+  DOCKER_CONFIG: docker_creds
+
+inputs:
+  - name: docker_creds
 
 run:
   path: bash
