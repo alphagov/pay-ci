@@ -4428,39 +4428,11 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: cardid-git-release
-      - task: update-submodule
-        config:
-          container_limits: {}
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: alpine
-              tag: 3.16
-          inputs:
-            - name: cardid-git-release
-          params:
-            GH_ACCESS_TOKEN: ((github-access-token))
-          outputs:
-            - name: cardid-git-release-with-submodules
-          run:
-            path: ash
-            dir: cardid-git-release
-            args:
-              - -ec
-              - |
-                apk add --quiet --no-progress git
-                sed -i "s/https:\/\/github.com/https:\/\/${GH_ACCESS_TOKEN}@github.com\//" .gitmodules
-                git submodule init -q data
-                git submodule update data
-                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
-                sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
-                cp -r . ../cardid-git-release-with-submodules
       - in_parallel:
         - load_var: release-number
           file: tags/release-number
         - load_var: release-name
-          file: cardid-git-release-with-submodules/.git/ref
+          file: cardid-git-release/.git/ref
         - load_var: release-sha
           file: tags/release-sha
         - load_var: candidate-image-tag
