@@ -1,0 +1,16 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+    tag: latest
+params:
+  SOURCE_MANIFEST:
+  NEW_MANIFEST:
+
+run:
+  path: bash
+  args:
+  - -ec
+  - |
+    docker buildx imagetools create -t "$NEW_MANIFEST" "$SOURCE_MANIFEST"
