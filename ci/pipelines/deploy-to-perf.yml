@@ -1139,7 +1139,7 @@ jobs:
       - task: start-publicauth-db
         file: pay-ci/ci/tasks/start-rds-instance.yml
         params:
-          RDS_INSTANCE_NAME: test-perf-1-publicauth-rds-0
+          RDS_INSTANCE_NAME: test-perf-1-publicauth-rds-1
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -1173,7 +1173,7 @@ jobs:
       task: stop-publicauth-db
       file: pay-ci/ci/tasks/stop-rds-instance.yml
       params:
-        RDS_INSTANCE_NAME: test-perf-1-publicauth-rds-0
+        RDS_INSTANCE_NAME: test-perf-1-publicauth-rds-1
         AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
         AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
         AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
