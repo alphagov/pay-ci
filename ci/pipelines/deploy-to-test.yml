@@ -118,7 +118,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: pp-10386/update-cardid-builds-to-retag-manifests
+      branch: master
   - name: adot-git-release
     type: git
     icon: github
