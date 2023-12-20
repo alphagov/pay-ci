@@ -118,7 +118,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-10386-build-cardid-in-codebuild
+      branch: pp-10386/update-cardid-builds-to-retag-manifests
   - name: adot-git-release
     type: git
     icon: github
@@ -371,14 +371,6 @@ resources:
       repository: govukpay/adminusers
       tag: latest
       <<: *aws_test_config
-  - name: cardid-dockerhub
-    type: registry-image
-    icon: docker
-    source:
-      repository: governmentdigitalservice/pay-cardid
-      tag: latest-master
-      password: ((docker-access-token))
-      username: ((docker-username))
   - name: cardid-ecr-registry-test
     type: registry-image
     icon: docker
@@ -393,13 +385,6 @@ resources:
       repository: govukpay/cardid
       variant: candidate
       <<: *aws_test_config
-  - name: cardid-latest
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/cardid
-      tag: latest
-      <<: *aws_test_config      
   - name: connector-dockerhub
     type: registry-image
     icon: docker
@@ -4416,12 +4401,11 @@ jobs:
           additional_tags: selfservice-ecr-registry-test/tag
 
   - name: build-and-push-cardid-candidate
-  # - name: codebuild-cardid
     plan:
       - in_parallel:
         - get: pay-ci
         - get: cardid-git-release
-          trigger: false # TODO change this when we're done
+          trigger: true
           params:
             submodules: none
       - task: parse-release-tag
@@ -4602,26 +4586,46 @@ jobs:
     plan:
       - in_parallel:
         - get: cardid-candidate
+          trigger: true
           params:
             format: oci
-          # trigger: true
-          # passed: [build-and-push-cardid-candidate]
         - get: pay-ci
       - in_parallel:
-        - task: parse-candidate-tag
-          file: pay-ci/ci/tasks/parse-candidate-tag.yml
-          input_mapping:
-            ecr-repo: cardid-candidate
-        - load_var: candidate_image_tag
-          file: cardid-candidate/tag
-        - task: assume-role
-          file: pay-ci/ci/tasks/assume-role.yml
-          params:
-            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
-            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
+          steps:
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+          - task: parse-candidate-tag
+            file: pay-ci/ci/tasks/parse-candidate-tag.yml
+            input_mapping:
+              ecr-repo: cardid-candidate
+          - load_var: candidate_image_tag
+            file: cardid-candidate/tag
+          - task: assume-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+              AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
+      - in_parallel:
+          steps:
+            - load_var: role
+              file: assume-role/assume-role.json
+              format: json
+            - load_var: retag-role
+              file: assume-retag-role/assume-role.json
+              format: json
+            - load_var: release_image_tag
+              file: parse-candidate-tag/release-tag
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
@@ -4647,23 +4651,32 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
-        - do:
-          - put: cardid-ecr-registry-test
-            params:
-              image: cardid-candidate/image.tar
-              additional_tags: parse-candidate-tag/release-tag
-            get_params:
-              skip_download: true
-          - put: cardid-latest
-            params:
-              image: cardid-candidate/image.tar
-            get_params:
-              skip_download: true
-        - put: cardid-dockerhub
-          params:
-            image: cardid-candidate/image.tar
-          get_params:
-            skip_download: true
+          steps:
+            - task: retag-candidate-as-release-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/cardid:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/cardid:((.:release_image_tag))"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+            - task: retag-candidate-as-latest-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/cardid:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/cardid:latest"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+            - task: retag-candidate-as-release-in-dockerhub
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                SOURCE_MANIFEST: "governmentdigitalservice/pay-cardid:((.:candidate_image_tag))"
+                NEW_MANIFEST: "governmentdigitalservice/pay-cardid:latest-master"
     on_failure:
       put: slack-notification
       attempts: 10
@@ -4689,7 +4702,6 @@ jobs:
     plan:
       - get: cardid-ecr-registry-test
         trigger: true
-        passed: [run-cardid-e2e]
       - get: adot-ecr-registry-test
         trigger: true
       - get: nginx-proxy-ecr-registry-test
