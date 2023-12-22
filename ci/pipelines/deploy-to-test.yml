@@ -342,14 +342,6 @@ resources:
       repository: govukpay/frontend
       tag: latest
       <<: *aws_test_config
-  - name: adminusers-dockerhub
-    type: registry-image
-    icon: docker
-    source:
-      repository: governmentdigitalservice/pay-adminusers
-      tag: latest-master
-      password: ((docker-access-token))
-      username: ((docker-username))
   - name: adminusers-ecr-registry-test
     type: registry-image
     icon: docker
@@ -363,13 +355,6 @@ resources:
     source:
       repository: govukpay/adminusers
       variant: candidate
-      <<: *aws_test_config
-  - name: adminusers-latest
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/adminusers
-      tag: latest
       <<: *aws_test_config
   - name: cardid-ecr-registry-test
     type: registry-image
@@ -1839,57 +1824,56 @@ jobs:
           file: tags/candidate-tag
         - load_var: date
           file: tags/date
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12
+            AWS_ROLE_SESSION_NAME: codebuild-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-codebuild-multiarch.yml
+        params:
+          PROJECT_TO_BUILD: adminusers
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          RELEASE_NUMBER: ((.:release-number))
+          RELEASE_NAME: ((.:release-name))
+          RELEASE_SHA: ((.:release-sha))
+          BUILD_DATE: ((.:date))
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
-      - task: build-image
-        privileged: true
+      - in_parallel:    
+        - task: run-codebuild-adminusers-amd64
+          attempts: 3
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/adminusers-amd64.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+        - task: run-codebuild-adminusers-armv8
+          attempts: 3
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/adminusers-armv8.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-codebuild-adminusers-manifest
+        attempts: 3
+        file: pay-ci/ci/tasks/run-codebuild.yml
         params:
-          DOCKER_CONFIG: docker_creds
-          LABEL_release_number: ((.:release-number))
-          LABEL_release_name: ((.:release-name))
-          LABEL_release_sha: ((.:release-sha))
-          LABEL_build_date: ((.:date))
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: concourse/oci-build-task
-          inputs:
-            - name: adminusers-git-release
-              path: .
-          outputs:
-            - name: image
-          run:
-            path: build
-      - put: adminusers-candidate
-        params:
-          image: image/image.tar
-          additional_tags: tags/all-candidate-tags
-        get_params:
-          skip_download: true
-    on_failure:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-announce'
-        silent: true
-        text: ':red-circle: adminusers candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
-    on_success:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-activity'
-        silent: true
-        text: ':hammer: adminusers candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/adminusers-manifest.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   - name: run-adminusers-e2e
     plan:
@@ -1898,23 +1882,43 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [build-and-push-adminusers-candidate]
         - get: pay-ci
       - in_parallel:
-        - task: parse-candidate-tag
-          file: pay-ci/ci/tasks/parse-candidate-tag.yml
-          input_mapping:
-            ecr-repo: adminusers-candidate
-        - load_var: candidate_image_tag
-          file: adminusers-candidate/tag
-        - task: assume-role
-          file: pay-ci/ci/tasks/assume-role.yml
-          params:
-            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
-            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
+          steps:
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+          - task: parse-candidate-tag
+            file: pay-ci/ci/tasks/parse-candidate-tag.yml
+            input_mapping:
+              ecr-repo: adminusers-candidate
+          - load_var: candidate_image_tag
+            file: adminusers-candidate/tag
+          - task: assume-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+              AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
+      - in_parallel:
+          steps:
+            - load_var: role
+              file: assume-role/assume-role.json
+              format: json
+            - load_var: retag-role
+              file: assume-retag-role/assume-role.json
+              format: json
+            - load_var: release_image_tag
+              file: parse-candidate-tag/release-tag
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
@@ -1932,23 +1936,32 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
-        - do:
-          - put: adminusers-ecr-registry-test
-            params:
-              image: adminusers-candidate/image.tar
-              additional_tags: parse-candidate-tag/release-tag
-            get_params:
-              skip_download: true
-          - put: adminusers-latest
-            params:
-              image: adminusers-candidate/image.tar
-            get_params:
-              skip_download: true
-        - put: adminusers-dockerhub
-          params:
-              image: adminusers-candidate/image.tar
-          get_params:
-            skip_download: true
+          steps:
+            - task: retag-candidate-as-release-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release_image_tag))"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+            - task: retag-candidate-as-latest-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:latest"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+            - task: retag-candidate-as-release-in-dockerhub
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                SOURCE_MANIFEST: "governmentdigitalservice/pay-adminusers:((.:candidate_image_tag))"
+                NEW_MANIFEST: "governmentdigitalservice/pay-adminusers:latest-master"
     on_failure:
       put: slack-notification
       attempts: 10
@@ -1974,7 +1987,6 @@ jobs:
     plan:
       - get: adminusers-ecr-registry-test
         trigger: true
-        passed: [run-adminusers-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: adot-ecr-registry-test
