@@ -1,0 +1,30 @@
+name: Check Dockerfile for valid manifest SHAs
+
+on:
+  workflow_call:
+    inputs:
+      file-path:
+        description: 'Path to the docker file'
+        required: true
+        type: string
+
+jobs:
+  check-dockerfile-manifest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+
+      - name: Check SHAs are valid manifests
+        run: |
+          image_names=$(awk 'toupper($1) == "FROM" {print $2}' ${{ inputs.file-path }})
+
+          for image_name in $image_names; do
+            if docker manifest inspect "$image_name" > /dev/null 2>&1; then
+              echo "Image '$image_name' in '${{ inputs.file-path }}' is a valid manifest."
+            else
+              echo "Image '$image_name' in '${{ inputs.file-path }}' is not have a valid manifest. See https://manual.payments.service.gov.uk/manual/reference/docker.html#updating-docker-base-images for instructions to get manifest SHAs."
+              exit 1
+            fi
+          done
