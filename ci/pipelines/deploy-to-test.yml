@@ -1814,6 +1814,24 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: adminusers candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: adminusers candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-adminusers-e2e
     plan:
@@ -2182,6 +2200,24 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: connector candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: connector candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-connector-e2e
     plan:
@@ -2550,6 +2586,24 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: ledger candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: ledger candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-ledger-e2e
     plan:
@@ -2918,6 +2972,24 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: products candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: products candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-products-e2e
     plan:
@@ -3587,6 +3659,24 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: publicapi candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: publicapi candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-publicapi-e2e
     plan:
@@ -4535,6 +4625,24 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-announce'
+        silent: true
+        text: ':red-circle: cardid candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-activity'
+        silent: true
+        text: ':hammer: cardid candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: run-cardid-e2e
     plan:
