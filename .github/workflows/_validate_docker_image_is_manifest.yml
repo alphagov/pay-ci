@@ -37,8 +37,7 @@ jobs:
 
           DOCKERFILE=${{ inputs.dockerfile }}
 
-          while read -r FROM_LINE; do
-            BASE_CONTAINER_DEFINITION=$(awk '{ print $2; }' <<<"$FROM_LINE")
+          while read -r BASE_CONTAINER_DEFINITION; do
             echo "Checking base container definition: $BASE_CONTAINER_DEFINITION"
 
             # Image definitions are going to be of one of the forms:
@@ -51,7 +50,7 @@ jobs:
             DIGEST=$(cut -f 2 -d "@" <<<"$BASE_CONTAINER_DEFINITION")
 
             if [ -z "$DIGEST" ]; then
-              echo "Error There was no image digest in the line '$FROM_LINE'"
+              echo "Error There was no image digest in '$BASE_CONTAINER_DEFINITION'"
               echo "The FROM lines must have a digest pin in order to use this workflow"
               exit 1
             fi
@@ -60,7 +59,7 @@ jobs:
             IMAGE_TAG=$(cut -f 2 -d ":" <<<"$IMAGE")
 
             if ! docker manifest inspect "$BASE_CONTAINER_DEFINITION" >> /dev/null 2>&1; then
-              echo "ERROR! The image specified in the line '$FROM_LINE' does not refer to a manifest"
+              echo "ERROR! The image specified by '$BASE_CONTAINER_DEFINITION' does not refer to a manifest"
               echo
               echo "All image sha pins must point to the image manifest, not to one of the architecture specific images"
               echo "This is required so our multi-architecture builds can succeed"
@@ -85,7 +84,7 @@ jobs:
 
             echo "Valid manifest for $BASE_CONTAINER_DEFINITION"
             echo
-          done < <(grep "^FROM " "$DOCKERFILE" | sort | uniq)
+          done < <(grep "^FROM " "$DOCKERFILE" | awk '{ print $2; }' | sort | uniq)
 
           echo "All FROM lines in $DOCKERFILE point to valid manifests"
           echo
