@@ -9,11 +9,14 @@ params:
   DESTINATION_ECR_REGISTRY:
   ECR_REPO_NAME:
   RELEASE_NUMBER:
+
 run:
   path: bash
   args:
     - -ec
     - |
+
+      set -euo pipefail
 
       function cleanup {
         echo "CLEANUP TRIGGERED"
@@ -27,8 +30,16 @@ run:
 
       start_docker
 
+      AWS_ACCESS_KEY_ID="$SOURCE_AWS_ACCESS_KEY_ID"
+      AWS_SECRET_ACCESS_KEY="$SOURCE_AWS_SECRET_ACCESS_KEY"
+      AWS_SESSION_TOKEN="$SOURCE_AWS_SESSION_TOKEN"
+
       echo "Logging in to source ECR"
       aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$SOURCE_ECR_REGISTRY"
+
+      AWS_ACCESS_KEY_ID="$DESTINATION_AWS_ACCESS_KEY_ID"
+      AWS_SECRET_ACCESS_KEY="$DESTINATION_AWS_SECRET_ACCESS_KEY"
+      AWS_SESSION_TOKEN="$DESTINATION_AWS_SESSION_TOKEN"
 
       echo "Logging in to destination ECR"
       aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$DESTINATION_ECR_REGISTRY"
