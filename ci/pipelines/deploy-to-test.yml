@@ -30,7 +30,7 @@ put_success_slack_notification: &put_success_slack_notification
       username: pay-concourse
       text: "((.:success_snippet)) |
             <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-  
+
 put_failure_slack_notification: &put_failure_slack_notification
   on_failure:
     put: slack-notification
@@ -447,7 +447,7 @@ resources:
     source:
       repository: govukpay/products-ui
       tag: latest
-      <<: *aws_test_config  
+      <<: *aws_test_config
   - name: publicapi-ecr-registry-test
     type: registry-image
     icon: docker
@@ -490,15 +490,7 @@ resources:
     source:
       repository: govukpay/publicauth
       tag: latest
-      <<: *aws_test_config      
-  - name: selfservice-dockerhub
-    type: registry-image
-    icon: docker
-    source:
-      repository: governmentdigitalservice/pay-selfservice
-      tag: latest-master
-      password: ((docker-access-token))
-      username: ((docker-username))
+      <<: *aws_test_config
   - name: selfservice-ecr-registry-test
     type: registry-image
     icon: docker
@@ -512,13 +504,6 @@ resources:
     source:
       repository: govukpay/selfservice
       variant: candidate
-      <<: *aws_test_config
-  - name: selfservice-latest
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/selfservice
-      tag: latest
       <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-test
     type: registry-image
@@ -1150,7 +1135,7 @@ jobs:
         username: pay-concourse
 
   - name: push-stream-s3-sqs-to-staging-ecr
-    plan:        
+    plan:
       - get: stream-s3-sqs-ecr-registry-test
         passed: [deploy-scheduled-tasks]
         params:
@@ -1169,7 +1154,7 @@ jobs:
         trigger: true
       - set_pipeline: deploy-to-test
         file: deploy-to-test-pipeline-definition/ci/pipelines/deploy-to-test.yml
-  
+
   - name: build-and-push-toolbox-to-test-ecr
     plan:
       - in_parallel:
@@ -1329,7 +1314,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: success_snippet
-        file: snippet/success  
+        file: snippet/success
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1360,7 +1345,7 @@ jobs:
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: test-12
-    <<: *put_success_slack_notification      
+    <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
 
@@ -1781,7 +1766,7 @@ jobs:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
-      - in_parallel:    
+      - in_parallel:
         - task: run-codebuild-adminusers-amd64
           attempts: 3
           file: pay-ci/ci/tasks/run-codebuild.yml
@@ -2041,7 +2026,7 @@ jobs:
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
     <<: *put_db_migration_success_slack_notification
-    <<: *put_db_migration_failure_slack_notification   
+    <<: *put_db_migration_failure_slack_notification
 
   - name: smoke-test-adminusers
     serial_groups: [smoke-test]
@@ -2426,8 +2411,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
-    <<: *put_db_migration_success_slack_notification    
-    <<: *put_db_migration_failure_slack_notification               
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: smoke-test-connector
     serial_groups: [smoke-test]
@@ -2890,8 +2875,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
-    <<: *put_db_migration_success_slack_notification    
-    <<: *put_db_migration_failure_slack_notification               
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: build-and-push-products-candidate
     plan:
@@ -3042,7 +3027,7 @@ jobs:
           PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))          
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
           steps:
             - task: retag-candidate-as-release-in-ecr
@@ -3200,8 +3185,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
-    <<: *put_db_migration_success_slack_notification    
-    <<: *put_db_migration_failure_slack_notification 
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: smoke-test-products
     serial_groups: [smoke-test]
@@ -3392,7 +3377,7 @@ jobs:
           PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))          
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
         - do:
           - put: products-ui-ecr-registry-test
@@ -4041,7 +4026,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - in_parallel:    
+      - in_parallel:
         - task: run-codebuild-card
           attempts: 3
           file: pay-ci/ci/tasks/run-codebuild.yml
@@ -4191,8 +4176,8 @@ jobs:
             path: node
             args:
               - pay-ci/ci/scripts/run-ecs-db-migration.js
-    <<: *put_db_migration_success_slack_notification    
-    <<: *put_db_migration_failure_slack_notification 
+    <<: *put_db_migration_success_slack_notification
+    <<: *put_db_migration_failure_slack_notification
 
   - name: smoke-test-publicauth
     serial_groups: [smoke-test]
@@ -4259,39 +4244,56 @@ jobs:
           file: tags/candidate-tag
         - load_var: date
           file: tags/date
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12
+            AWS_ROLE_SESSION_NAME: codebuild-assume-role
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-codebuild-multiarch.yml
+        params:
+          PROJECT_TO_BUILD: selfservice
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          RELEASE_NUMBER: ((.:release-number))
+          RELEASE_NAME: ((.:release-name))
+          RELEASE_SHA: ((.:release-sha))
+          BUILD_DATE: ((.:date))
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
-      - task: build
-        privileged: true
+      - in_parallel:
+          - task: run-codebuild-selfservice-amd64
+            attempts: 3
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/selfservice-amd64.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          - task: run-codebuild-selfservice-armv8
+            attempts: 3
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/selfservice-armv8.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-codebuild-selfservice-manifest
+        attempts: 3
+        file: pay-ci/ci/tasks/run-codebuild.yml
         params:
-          DOCKER_CONFIG: docker_creds
-          LABEL_release_number: ((.:release-number))
-          LABEL_release_name: ((.:release-name))
-          LABEL_release_sha: ((.:release-sha))
-          LABEL_build_date: ((.:date))
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: concourse/oci-build-task
-          inputs:
-            - name: selfservice-git-release
-              path: .
-          outputs:
-            - name: image
-          run:
-            path: build
-      - put: selfservice-candidate
-        params:
-          image: image/image.tar
-          additional_tags: tags/all-candidate-tags
-        get_params:
-          skip_download: true
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/selfservice-manifest.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
     on_failure:
       put: slack-notification
       attempts: 10
@@ -4318,23 +4320,43 @@ jobs:
           params:
             format: oci
           trigger: true
-          passed: [build-and-push-selfservice-candidate]
         - get: pay-ci
       - in_parallel:
-        - task: parse-candidate-tag
-          file: pay-ci/ci/tasks/parse-candidate-tag.yml
-          input_mapping:
-            ecr-repo: selfservice-candidate
-        - load_var: candidate_image_tag
-          file: selfservice-candidate/tag
-        - task: assume-role
-          file: pay-ci/ci/tasks/assume-role.yml
-          params:
-            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
-            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
+          steps:
+            - task: generate-docker-creds-config
+              file: pay-ci/ci/tasks/generate-docker-config-file.yml
+              params:
+                USERNAME: ((docker-username))
+                PASSWORD: ((docker-access-token))
+                EMAIL: ((docker-email))
+            - task: parse-candidate-tag
+              file: pay-ci/ci/tasks/parse-candidate-tag.yml
+              input_mapping:
+                ecr-repo: selfservice-candidate
+            - load_var: candidate_image_tag
+              file: selfservice-candidate/tag
+            - task: assume-role
+              file: pay-ci/ci/tasks/assume-role.yml
+              params:
+                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+                AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+            - task: assume-retag-role
+              file: pay-ci/ci/tasks/assume-role.yml
+              output_mapping:
+                assume-role: assume-retag-role
+              params:
+                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+                AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
+      - in_parallel:
+          steps:
+            - load_var: role
+              file: assume-role/assume-role.json
+              format: json
+            - load_var: retag-role
+              file: assume-retag-role/assume-role.json
+              format: json
+            - load_var: release_image_tag
+              file: parse-candidate-tag/release-tag
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
@@ -4360,23 +4382,32 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
-        - do:
-          - put: selfservice-ecr-registry-test
-            params:
-              image: selfservice-candidate/image.tar
-              additional_tags: parse-candidate-tag/release-tag
-            get_params:
-              skip_download: true
-          - put: selfservice-latest
-            params:
-              image: selfservice-candidate/image.tar
-            get_params:
-              skip_download: true
-        - put: selfservice-dockerhub
-          params:
-            image: selfservice-candidate/image.tar
-          get_params:
-            skip_download: true
+          steps:
+            - task: retag-candidate-as-release-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/selfservice:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/selfservice:((.:release_image_tag))"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+            - task: retag-candidate-as-latest-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/selfservice:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/selfservice:latest"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+            - task: retag-candidate-as-release-in-dockerhub
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                SOURCE_MANIFEST: "governmentdigitalservice/pay-selfservice:((.:candidate_image_tag))"
+                NEW_MANIFEST: "governmentdigitalservice/pay-selfservice:latest-master"
     on_failure:
       put: slack-notification
       attempts: 10
@@ -4402,7 +4433,6 @@ jobs:
     plan:
       - get: selfservice-ecr-registry-test
         trigger: true
-        passed: [run-selfservice-e2e]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: adot-ecr-registry-test
@@ -4592,7 +4622,7 @@ jobs:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
-      - in_parallel:    
+      - in_parallel:
         - task: run-codebuild-cardid-amd64
           attempts: 3
           file: pay-ci/ci/tasks/run-codebuild.yml
@@ -4688,7 +4718,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - in_parallel:    
+      - in_parallel:
         - task: run-codebuild-card
           attempts: 3
           file: pay-ci/ci/tasks/run-codebuild.yml
@@ -4697,7 +4727,7 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-        - task: run-codebuild-zap    
+        - task: run-codebuild-zap
           file: pay-ci/ci/tasks/run-codebuild.yml
           params:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
@@ -4894,7 +4924,7 @@ jobs:
         params:
           image: cardid-ecr-registry-test/image.tar
           additional_tags: cardid-ecr-registry-test/tag
-          
+
   - name: build-webhooks
     plan:
       - in_parallel:
@@ -5353,7 +5383,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: success_snippet
-        file: snippet/success  
+        file: snippet/success
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -5384,7 +5414,7 @@ jobs:
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: test-12
-    <<: *put_success_slack_notification      
+    <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
   - name: smoke-test-webhooks-egress
@@ -5418,7 +5448,7 @@ jobs:
           <<: *smoke-test-run-all-on-test
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
-  
+
   - name: push-webhooks-egress-to-staging-ecr
     plan:
       - get: webhooks-egress-ecr-registry-test
@@ -5605,7 +5635,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: success_snippet
-        file: snippet/success 
+        file: snippet/success
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -5659,7 +5689,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-    <<: *put_success_slack_notification 
+    <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
   - name: smoke-test-notifications
