@@ -1,0 +1,58 @@
+container_limits: {}
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+params:
+  SOURCE_ECR_REGISTRY:
+  DESTINATION_ECR_REGISTRY:
+  ECR_REPO_NAME:
+  RELEASE_NUMBER:
+run:
+  path: bash
+  args:
+    - -ec
+    - |
+
+      function cleanup {
+        echo "CLEANUP TRIGGERED"
+        clean_docker
+        stop_docker
+        echo "CLEANUP COMPLETE"
+      }
+
+      trap cleanup EXIT
+      source /docker-helpers.sh
+
+      start_docker
+
+      echo "Logging in to source ECR"
+      aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$SOURCE_ECR_REGISTRY"
+
+      echo "Logging in to destination ECR"
+      aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$DESTINATION_ECR_REGISTRY"
+
+      echo "Pulling images"
+      docker pull --quiet "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-arm64" &
+      docker pull --quiet "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64" &
+
+      echo "Waiting for pulls to complete"
+      wait
+
+      echo "Retagging images locally"
+      docker tag "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-arm64" "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-arm64"
+      docker tag "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64" "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64"
+
+      echo "Pushing images"
+      docker push --quiet "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-arm64" &
+      docker push --quiet "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64" &
+
+      echo "Waiting for pushes to complete"
+      wait
+
+      echo "Creating release manifest in destination registry"
+      docker buildx imagetools create \
+        -t "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-release" \
+        "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-arm64" \
+        "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64"
