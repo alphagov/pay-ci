@@ -129,19 +129,6 @@ resources:
       aws_region: eu-west-1
       variant: candidate
 
-  - name: stubs-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/stubs
-      tag: latest
-      aws_access_key_id: ((readonly_access_key_id))
-      aws_secret_access_key: ((readonly_secret_access_key))
-      aws_session_token: ((readonly_session_token))
-      aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
-      aws_ecr_registry_id: "((pay_aws_test_account_id))"
-      aws_region: eu-west-1
-
   - name: stubs-candidate-ecr-registry-test
     type: registry-image
     icon: docker
@@ -154,15 +141,6 @@ resources:
       aws_ecr_registry_id: "((pay_aws_test_account_id))"
       aws_region: eu-west-1
       variant: candidate
-
-  - name: stubs-dockerhub
-    type: registry-image
-    icon: docker
-    source:
-      repository: governmentdigitalservice/pay-stubs
-      tag: latest-master
-      password: ((docker-access-token))
-      username: ((docker-username))
 
   - name: postgres-15-alpine
     type: registry-image
@@ -582,45 +560,74 @@ jobs:
   - name: build-and-push-stubs-candidate
     plan:
       - in_parallel:
-        - get: stubs-git-release
-          trigger: true
-        - get: pay-ci
-      - task: generate-docker-creds-config
-        file: pay-ci/ci/tasks/generate-docker-config-file.yml
-        params:
-          USERNAME: ((docker-username))
-          PASSWORD: ((docker-access-token))
-          EMAIL: ((docker-email))
+          steps:
+          - get: stubs-git-release
+            trigger: true
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+          - task: assume-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12
+              AWS_ROLE_SESSION_NAME: codebuild-assume-role
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: stubs-git-release
-      - load_var: release_number_tag
-        file: tags/release-number
       - in_parallel:
-          - task: build-stubs-image
-            privileged: true
-            params:
-              CONTEXT: stubs-git-release
-              DOCKER_CONFIG: docker_creds
-            config:
-              platform: linux
-              image_resource:
-                type: registry-image
-                source:
-                  repository: concourse/oci-build-task
-              inputs:
-                - name: stubs-git-release
-              outputs:
-                - name: image
-              run:
-                path: build
-      - put: stubs-candidate-ecr-registry-test
+          steps:
+          - load_var: release-number
+            file: tags/release-number
+          - load_var: release-name
+            file: stubs-git-release/.git/ref
+          - load_var: release-sha
+            file: tags/release-sha
+          - load_var: date
+            file: tags/date
+          - load_var: role
+            file: assume-role/assume-role.json
+            format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-codebuild-multiarch.yml
         params:
-          image: image/image.tar
-          additional_tags: tags/candidate-tag
-        get_params:
-          skip_download: true
+          PROJECT_TO_BUILD: stubs
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          RELEASE_NUMBER: ((.:release-number))
+          RELEASE_NAME: ((.:release-name))
+          RELEASE_SHA: ((.:release-sha))
+          BUILD_DATE: ((.:date))
+      - in_parallel:
+          steps:
+          - task: run-codebuild-stubs-amd64
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/stubs-amd64.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          - task: run-codebuild-stubs-armv8
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/stubs-armv8.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-codebuild-stubs-manifest
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/stubs-manifest.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
     on_failure:
       put: slack-notification
       attempts: 10
@@ -643,30 +650,48 @@ jobs:
   - name: stubs-e2e
     plan:
       - in_parallel:
+          steps:
           - get: stubs-candidate-ecr-registry-test
-            passed: [build-and-push-stubs-candidate]
             trigger: true
             params:
               format: oci
           - get: pay-ci
-      - task: parse-candidate-tag
-        file: pay-ci/ci/tasks/parse-candidate-tag.yml
-        input_mapping:
-          ecr-repo: stubs-candidate-ecr-registry-test
-      - load_var: candidate_number_tag
-        file: parse-candidate-tag/release-number
       - in_parallel:
-          - task: assume-role
-            file: pay-ci/ci/tasks/assume-role.yml
-            params:
-              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
-              AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+          steps:
+            - task: generate-docker-creds-config
+              file: pay-ci/ci/tasks/generate-docker-config-file.yml
+              params:
+                USERNAME: ((docker-username))
+                PASSWORD: ((docker-access-token))
+                EMAIL: ((docker-email))
+            - task: parse-candidate-tag
+              file: pay-ci/ci/tasks/parse-candidate-tag.yml
+              input_mapping:
+                ecr-repo: stubs-candidate-ecr-registry-test
+            - task: assume-role
+              file: pay-ci/ci/tasks/assume-role.yml
+              params:
+                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+                AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+            - task: assume-retag-role
+              file: pay-ci/ci/tasks/assume-role.yml
+              output_mapping:
+                assume-role: assume-retag-role
+              params:
+                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+                AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
       - in_parallel:
-        - load_var: candidate_image_tag
-          file: stubs-candidate-ecr-registry-test/tag
-        - load_var: role
-          file: assume-role/assume-role.json
-          format: json
+          steps:
+          - load_var: candidate_image_tag
+            file: stubs-candidate-ecr-registry-test/tag
+          - load_var: role
+            file: assume-role/assume-role.json
+            format: json
+          - load_var: retag-role
+            file: assume-retag-role/assume-role.json
+            format: json
+          - load_var: release_image_tag
+            file: parse-candidate-tag/release-tag
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
@@ -676,33 +701,49 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
-        - task: run-codebuild-card
-          attempts: 3
-          file: pay-ci/ci/tasks/run-codebuild.yml
-          params:
-            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-        - task: run-codebuild-products
-          file: pay-ci/ci/tasks/run-codebuild.yml
-          params:
-            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
-            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          steps:
+          - task: run-codebuild-card
+            attempts: 3
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/card.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          - task: run-codebuild-products
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/products.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - in_parallel:
-        - put: stubs-ecr-registry-test
-          params:
-            image: stubs-candidate-ecr-registry-test/image.tar
-            additional_tags: parse-candidate-tag/release-tag
-          get_params:
-            skip_download: true
-        - put: stubs-dockerhub
-          params:
-            image: stubs-candidate-ecr-registry-test/image.tar
-          get_params:
-            skip_download: true
+          steps:
+          - task: retag-candidate-as-release-in-ecr
+            file: pay-ci/ci/tasks/manifest-retag.yml
+            params:
+              DOCKER_LOGIN_ECR: 1
+              AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+              SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/stubs:((.:candidate_image_tag))"
+              NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/stubs:((.:release_image_tag))"
+              AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+          - task: retag-candidate-as-latest-in-ecr
+            file: pay-ci/ci/tasks/manifest-retag.yml
+            params:
+              DOCKER_LOGIN_ECR: 1
+              AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+              SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/stubs:((.:candidate_image_tag))"
+              NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/stubs:latest"
+              AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+          - task: retag-candidate-as-release-in-dockerhub
+            file: pay-ci/ci/tasks/manifest-retag.yml
+            params:
+              SOURCE_MANIFEST: "governmentdigitalservice/pay-stubs:((.:candidate_image_tag))"
+              NEW_MANIFEST: "governmentdigitalservice/pay-stubs:latest-master"
     on_failure:
       put: slack-notification
       attempts: 10
