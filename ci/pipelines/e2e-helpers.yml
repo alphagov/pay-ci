@@ -680,6 +680,13 @@ jobs:
               params:
                 AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
                 AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
+            - task: assume-write-to-deploy-role
+              file: pay-ci/ci/tasks/assume-role.yml
+              output_mapping:
+                assume-role: assume-write-to-deploy-role
+              params:
+                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_dev_worker_ecr_access
+                AWS_ROLE_SESSION_NAME: write-ecr-to-deploy
       - in_parallel:
           steps:
           - load_var: candidate_image_tag
@@ -690,8 +697,13 @@ jobs:
           - load_var: retag-role
             file: assume-retag-role/assume-role.json
             format: json
+          - load_var: write-to-deploy-role
+            file: assume-write-to-deploy-role/assume-role.json
+            format: json
           - load_var: release_image_tag
             file: parse-candidate-tag/release-tag
+          - load_var: release_number
+            file: parse-candidate-tag/release-number
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
@@ -744,6 +756,20 @@ jobs:
             params:
               SOURCE_MANIFEST: "governmentdigitalservice/pay-stubs:((.:candidate_image_tag))"
               NEW_MANIFEST: "governmentdigitalservice/pay-stubs:latest-master"
+          - task: copy-images-to-stubs-ecr-registry-deploy
+            file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+            privileged: true
+            params:
+              SOURCE_ECR_REGISTRY: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+              DESTINATION_ECR_REGISTRY: "((pay_aws_deploy_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+              ECR_REPO_NAME: "govukpay/stubs"
+              RELEASE_NUMBER:  ((.:release_number))
+              SOURCE_AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+              SOURCE_AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+              SOURCE_AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+              DESTINATION_AWS_ACCESS_KEY_ID: ((.:write-to-deploy-role.AWS_ACCESS_KEY_ID))
+              DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:write-to-deploy-role.AWS_SECRET_ACCESS_KEY))
+              DESTINATION_AWS_SESSION_TOKEN: ((.:write-to-deploy-role.AWS_SESSION_TOKEN))
     on_failure:
       put: slack-notification
       attempts: 10
