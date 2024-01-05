@@ -418,13 +418,6 @@ resources:
       repository: govukpay/products-ui
       variant: candidate
       <<: *aws_test_config
-  # - name: products-ui-latest
-  #   type: registry-image
-  #   icon: docker
-  #   source:
-  #     repository: govukpay/products-ui
-  #     tag: latest
-  #     <<: *aws_test_config  
   - name: publicapi-ecr-registry-test
     type: registry-image
     icon: docker
