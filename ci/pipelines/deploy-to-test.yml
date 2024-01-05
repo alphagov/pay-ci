@@ -1146,13 +1146,25 @@ jobs:
           file: tags/tags
         - load_var: date
           file: tags/date
+        - load_var: candidate_image_tag
+          file: tags/candidate-tag
         - task: assume-role
           file: pay-ci/ci/tasks/assume-role.yml
           params:
             AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12
             AWS_ROLE_SESSION_NAME: codebuild-assume-role
+        - task: assume-retag-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          output_mapping:
+            assume-role: assume-retag-role
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+            AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
       - load_var: role
         file: assume-role/assume-role.json
+        format: json
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
         format: json
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-codebuild-multiarch.yml
@@ -1192,7 +1204,7 @@ jobs:
         attempts: 3
         file: pay-ci/ci/tasks/run-codebuild.yml
         params:
-          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/connector-manifest.json"
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/toolbox-manifest.json"
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
@@ -1248,7 +1260,6 @@ jobs:
     plan:
       - get: toolbox-ecr-registry-test
         trigger: true
-        passed: [build-and-push-toolbox-to-test-ecr]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
       - get: adot-candidate
