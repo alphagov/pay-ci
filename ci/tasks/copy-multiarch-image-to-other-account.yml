@@ -16,8 +16,6 @@ run:
     - -ec
     - |
 
-      set -euo pipefail
-
       function cleanup {
         echo "CLEANUP TRIGGERED"
         clean_docker
@@ -30,6 +28,7 @@ run:
 
       start_docker
 
+      set +x # This is a safety measure to prevent us accidentally leaking AWS secrets in the future
       AWS_ACCESS_KEY_ID="$SOURCE_AWS_ACCESS_KEY_ID"
       AWS_SECRET_ACCESS_KEY="$SOURCE_AWS_SECRET_ACCESS_KEY"
       AWS_SESSION_TOKEN="$SOURCE_AWS_SESSION_TOKEN"
@@ -37,6 +36,7 @@ run:
       echo "Logging in to source ECR"
       aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$SOURCE_ECR_REGISTRY"
 
+      set +x # This is a safety measure to prevent us accidentally leaking AWS secrets in the future
       AWS_ACCESS_KEY_ID="$DESTINATION_AWS_ACCESS_KEY_ID"
       AWS_SECRET_ACCESS_KEY="$DESTINATION_AWS_SECRET_ACCESS_KEY"
       AWS_SESSION_TOKEN="$DESTINATION_AWS_SESSION_TOKEN"
