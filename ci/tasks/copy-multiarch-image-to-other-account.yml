@@ -9,6 +9,12 @@ params:
   DESTINATION_ECR_REGISTRY:
   ECR_REPO_NAME:
   RELEASE_NUMBER:
+  SOURCE_AWS_ACCESS_KEY_ID:
+  SOURCE_AWS_SECRET_ACCESS_KEY:
+  SOURCE_AWS_SESSION_TOKEN:
+  DESTINATION_AWS_ACCESS_KEY_ID:
+  DESTINATION_AWS_SECRET_ACCESS_KEY:
+  DESTINATION_AWS_SESSION_TOKEN:
 
 run:
   path: bash
@@ -36,14 +42,6 @@ run:
       echo "Logging in to source ECR"
       aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$SOURCE_ECR_REGISTRY"
 
-      set +x # This is a safety measure to prevent us accidentally leaking AWS secrets in the future
-      AWS_ACCESS_KEY_ID="$DESTINATION_AWS_ACCESS_KEY_ID"
-      AWS_SECRET_ACCESS_KEY="$DESTINATION_AWS_SECRET_ACCESS_KEY"
-      AWS_SESSION_TOKEN="$DESTINATION_AWS_SESSION_TOKEN"
-
-      echo "Logging in to destination ECR"
-      aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$DESTINATION_ECR_REGISTRY"
-
       echo "Pulling images"
       docker pull --quiet "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-armv8" &
       docker pull --quiet "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64" &
@@ -54,6 +52,14 @@ run:
       echo "Retagging images locally"
       docker tag "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-armv8" "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-armv8"
       docker tag "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64" "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64"
+
+      set +x # This is a safety measure to prevent us accidentally leaking AWS secrets in the future
+      AWS_ACCESS_KEY_ID="$DESTINATION_AWS_ACCESS_KEY_ID"
+      AWS_SECRET_ACCESS_KEY="$DESTINATION_AWS_SECRET_ACCESS_KEY"
+      AWS_SESSION_TOKEN="$DESTINATION_AWS_SESSION_TOKEN"
+
+      echo "Logging in to destination ECR"
+      aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$DESTINATION_ECR_REGISTRY"
 
       echo "Pushing images"
       docker push --quiet "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-armv8" &
