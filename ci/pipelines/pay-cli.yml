@@ -1,0 +1,50 @@
+resources:
+  # GitHub Repos
+  - name: pay-cli-pipeline-definition
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/pay-cli.yml
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+  - name: pay-cli-git-main
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-cli
+      branch: main
+      commit_filter:
+        exclude: [ "\\[automated release\\]" ]
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+jobs:
+  - name: version-and-push
+    plan:
+      - in_parallel:
+          steps:
+          - get: pay-cli-git-main
+            trigger: true
+          - get: pay-ci
+      - task: npm-version-and-create-pr
+        file: pay-ci/ci/tasks/npm-version-and-create-pr.yml
+        input_mapping:
+          src: pay-cli-git-main
+        params:
+          BASE: main
+          REPO: alphagov/pay-cli
+          GITHUB_TOKEN: ((github-access-token))
+
+  - name: update-pay-cli-pipeline
+    plan:
+      - get: pay-cli-pipeline-definition
+        trigger: true
+      - set_pipeline: pay-cli
+        file: pay-cli-pipeline-definition/ci/pipelines/pay-cli.yml
