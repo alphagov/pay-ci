@@ -482,14 +482,14 @@ resources:
       variant: release
       repository: govukpay/docker-nginx-proxy
       <<: *aws_test_config
-  - name: docker-nginx-proxy-dockerhub
-    type: registry-image
-    icon: docker
-    source:
-      repository: governmentdigitalservice/pay-docker-nginx-proxy
-      tag: latest-master
-      password: ((docker-access-token))
-      username: ((docker-username))
+  # - name: docker-nginx-proxy-dockerhub
+  #   type: registry-image
+  #   icon: docker
+  #   source:
+  #     repository: governmentdigitalservice/pay-docker-nginx-proxy
+  #     tag: latest-master
+  #     password: ((docker-access-token))
+  #     username: ((docker-username))
   - name: webhooks-egress-ecr-registry-test
     type: registry-image
     icon: docker
@@ -5404,7 +5404,6 @@ jobs:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
-
       - in_parallel:
           - task: run-codebuild-nginx-proxy-amd64
             attempts: 3
