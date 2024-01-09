@@ -482,14 +482,6 @@ resources:
       variant: release
       repository: govukpay/docker-nginx-proxy
       <<: *aws_test_config
-  # - name: docker-nginx-proxy-dockerhub
-  #   type: registry-image
-  #   icon: docker
-  #   source:
-  #     repository: governmentdigitalservice/pay-docker-nginx-proxy
-  #     tag: latest-master
-  #     password: ((docker-access-token))
-  #     username: ((docker-username))
   - name: webhooks-egress-ecr-registry-test
     type: registry-image
     icon: docker
@@ -1642,7 +1634,6 @@ jobs:
         passed: [build-and-push-nginx-forward-proxy-to-test-ecr]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
-        passed: [build-and-push-nginx-proxy-to-test-ecr]
       - get: adot-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -3541,7 +3532,6 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
-        passed: [build-and-push-nginx-proxy-to-test-ecr]
       - get: adot-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -5363,6 +5353,12 @@ jobs:
         input_mapping:
           git-release: nginx-proxy-git-release
       - in_parallel:
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-name
+          file: nginx-proxy-git-release/.git/ref
+        - load_var: release-sha
+          file: tags/release-sha
         - load_var: release-tag
           file: tags/tags
         - load_var: date
@@ -5436,8 +5432,8 @@ jobs:
               params:
                 DOCKER_LOGIN_ECR: 1
                 AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
-                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/nginx-proxy:((.:candidate_image_tag))"
-                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/nginx-proxy:((.:release-tag))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:((.:release-tag))"
                 AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
                 AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
                 AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
@@ -5446,16 +5442,16 @@ jobs:
               params:
                 DOCKER_LOGIN_ECR: 1
                 AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
-                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/nginx-proxy:((.:candidate_image_tag))"
-                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/nginx-proxy:latest"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:latest"
                 AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
                 AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
                 AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
             - task: retag-candidate-as-release-in-dockerhub
               file: pay-ci/ci/tasks/manifest-retag.yml
               params:
-                SOURCE_MANIFEST: "governmentdigitalservice/pay-nginx-proxy:((.:candidate_image_tag))"
-                NEW_MANIFEST: "governmentdigitalservice/pay-nginx-proxy:latest-master"
+                SOURCE_MANIFEST: "governmentdigitalservice/pay-docker-nginx-proxy:((.:candidate_image_tag))"
+                NEW_MANIFEST: "governmentdigitalservice/pay-docker-nginx-proxy:latest-master"
     on_failure:
       put: slack-notification
       attempts: 10
