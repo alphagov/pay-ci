@@ -482,14 +482,6 @@ resources:
       variant: release
       repository: govukpay/docker-nginx-proxy
       <<: *aws_test_config
-  - name: docker-nginx-proxy-dockerhub
-    type: registry-image
-    icon: docker
-    source:
-      repository: governmentdigitalservice/pay-docker-nginx-proxy
-      tag: latest-master
-      password: ((docker-access-token))
-      username: ((docker-username))
   - name: webhooks-egress-ecr-registry-test
     type: registry-image
     icon: docker
@@ -1642,7 +1634,6 @@ jobs:
         passed: [build-and-push-nginx-forward-proxy-to-test-ecr]
       - get: nginx-proxy-ecr-registry-test
         trigger: true
-        passed: [build-and-push-nginx-proxy-to-test-ecr]
       - get: adot-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -3541,7 +3532,6 @@ jobs:
         trigger: true
       - get: nginx-proxy-ecr-registry-test
         trigger: true
-        passed: [build-and-push-nginx-proxy-to-test-ecr]
       - get: adot-ecr-registry-test
         trigger: true
       - get: pay-infra
@@ -5362,44 +5352,106 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: nginx-proxy-git-release
-      - load_var: release-tag
-        file: tags/tags
-      - load_var: date
-        file: tags/date
+      - in_parallel:
+        - load_var: release-number
+          file: tags/release-number
+        - load_var: release-name
+          file: nginx-proxy-git-release/.git/ref
+        - load_var: release-sha
+          file: tags/release-sha
+        - load_var: release-tag
+          file: tags/tags
+        - load_var: date
+          file: tags/date
+        - load_var: candidate_image_tag
+          file: tags/candidate-tag
+        - task: assume-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12
+            AWS_ROLE_SESSION_NAME: codebuild-assume-role
+        - task: assume-retag-role
+          file: pay-ci/ci/tasks/assume-role.yml
+          output_mapping:
+            assume-role: assume-retag-role
+          params:
+            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+            AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-codebuild-multiarch.yml
+        params:
+          PROJECT_TO_BUILD: nginx-proxy
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          RELEASE_NUMBER: ((.:release-number))
+          RELEASE_NAME: ((.:release-name))
+          RELEASE_SHA: ((.:release-sha))
+          BUILD_DATE: ((.:date))
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
           USERNAME: ((docker-username))
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
-      - task: build-nginx-proxy-image
-        privileged: true
-        params:
-          DOCKER_CONFIG: docker_creds
-          CONTEXT: nginx-proxy-git-release
-          LABEL_build_date: ((.:date))
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: concourse/oci-build-task
-          inputs:
-            - name: nginx-proxy-git-release
-          outputs:
-            - name: image
-          run:
-            path: build
       - in_parallel:
-        - put: nginx-proxy-ecr-registry-test
-          params:
-            image: image/image.tar
-            additional_tags: tags/all-release-tags
-        - put: docker-nginx-proxy-dockerhub
-          params:
-            image: image/image.tar
-          get_params:
-            skip_download: true
+          - task: run-codebuild-nginx-proxy-amd64
+            attempts: 3
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/nginx-proxy-amd64.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          - task: run-codebuild-nginx-proxy-armv8
+            attempts: 3
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/nginx-proxy-armv8.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-codebuild-nginx-proxy-manifest
+        attempts: 3
+        file: pay-ci/ci/tasks/run-codebuild.yml
+        params:
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/nginx-proxy-manifest.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+          steps:
+            - task: retag-candidate-as-release-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:((.:release-tag))"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+            - task: retag-candidate-as-latest-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:latest"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+            - task: retag-candidate-as-release-in-dockerhub
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                SOURCE_MANIFEST: "governmentdigitalservice/pay-docker-nginx-proxy:((.:candidate_image_tag))"
+                NEW_MANIFEST: "governmentdigitalservice/pay-docker-nginx-proxy:latest-master"
     on_failure:
       put: slack-notification
       attempts: 10
