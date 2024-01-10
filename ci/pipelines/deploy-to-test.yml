@@ -3103,8 +3103,6 @@ jobs:
               params:
                 SOURCE_MANIFEST: "governmentdigitalservice/pay-products:((.:candidate_image_tag))"
                 NEW_MANIFEST: "governmentdigitalservice/pay-products:latest-master"
-
-
     on_failure:
       put: slack-notification
       attempts: 10
@@ -4112,20 +4110,41 @@ jobs:
           trigger: true
         - get: pay-ci
       - in_parallel:
-        - task: parse-candidate-tag
-          file: pay-ci/ci/tasks/parse-candidate-tag.yml
-          input_mapping:
-            ecr-repo: publicauth-candidate
-        - load_var: candidate_image_tag
-          file: publicauth-candidate/tag
-        - task: assume-role
-          file: pay-ci/ci/tasks/assume-role.yml
-          params:
-            AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
-            AWS_ROLE_SESSION_NAME: e2e-test-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
+          steps:
+            - task: generate-docker-creds-config
+              file: pay-ci/ci/tasks/generate-docker-config-file.yml
+              params:
+                USERNAME: ((docker-username))
+                PASSWORD: ((docker-access-token))
+                EMAIL: ((docker-email))
+            - task: parse-candidate-tag
+              file: pay-ci/ci/tasks/parse-candidate-tag.yml
+              input_mapping:
+                ecr-repo: publicauth-candidate
+            - load_var: candidate_image_tag
+              file: publicauth-candidate/tag
+            - task: assume-role
+              file: pay-ci/ci/tasks/assume-role.yml
+              params:
+                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12
+                AWS_ROLE_SESSION_NAME: e2e-test-assume-role
+            - task: assume-retag-role
+              file: pay-ci/ci/tasks/assume-role.yml
+              output_mapping:
+                assume-role: assume-retag-role
+              params:
+                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+                AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
+      - in_parallel:
+          steps:
+            - load_var: role
+              file: assume-role/assume-role.json
+              format: json
+            - load_var: retag-role
+              file: assume-retag-role/assume-role.json
+              format: json
+            - load_var: release_image_tag
+              file: parse-candidate-tag/release-tag
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
