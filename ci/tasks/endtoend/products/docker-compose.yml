@@ -403,7 +403,7 @@ services:
       driver: "json-file"
 
   selenium:
-    image: ${DOCKER_REGISTRY_URI:-}selenium/standalone-chrome:3.141.59
+    image: ${DOCKER_REGISTRY_URI:-}${SELENIUM_IMAGE:-selenium/standalone-chrome:3.141.59}
     networks:
       - pymnt_network
     ports:
