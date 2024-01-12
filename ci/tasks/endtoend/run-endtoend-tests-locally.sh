@@ -24,8 +24,8 @@ fi
 
 export END_TO_END_TEST_SUITE=$1
 
-if [ $(uname -p) == "arm" ]; then
-  echo "WARNING: The actual end to end tests do not work on an ARM CPU. However everything else can be started up."
+if [ "$(uname -p)" == "arm" ] && [ "$1" == "zap" ]; then
+  echo "WARNING: The ZAP endtoend tests do not work on an ARM CPU. However the docker compose environment can be started up."
   echo
   read -p "Press enter to continue: "
 fi
@@ -47,6 +47,11 @@ export repo_stubs=governmentdigitalservice/pay-stubs
 export repo_reverse_proxy=governmentdigitalservice/pay-reverse-proxy
 export repo_cardid=governmentdigitalservice/pay-cardid
 export repo_endtoend=governmentdigitalservice/pay-endtoend
+
+if [ "$(uname -p)" == "arm" ]; then
+  # Overrides the default (AMD64 only) version of selenium
+  export SELENIUM_IMAGE=seleniarm/standalone-chromium:latest
+fi
 
 echo "|========================================================================="
 echo "| Running docker compose up"
