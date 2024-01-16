@@ -891,49 +891,104 @@ jobs:
         input_mapping:
           git-release: pay-alpine-git-release
       - in_parallel:
-        - load_var: release-name
-          file: pay-alpine-git-release/.git/ref
-        - load_var: release-tag
-          file: tags/tags
-        - load_var: release-number
-          file: tags/release-number
-        - load_var: release-sha
-          file: tags/release-sha
-        - load_var: date
-          file: tags/date
-      - task: generate-docker-creds-config
-        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+          - load_var: release-name
+            file: pay-alpine-git-release/.git/ref
+          - load_var: release-tag
+            file: tags/tags
+          - load_var: release-number
+            file: tags/release-number
+          - load_var: release-sha
+            file: tags/release-sha
+          - load_var: date
+            file: tags/date
+          - load_var: candidate_image_tag
+            file: tags/candidate-tag
+      - in_parallel:
+          steps:
+            - task: generate-docker-creds-config
+              file: pay-ci/ci/tasks/generate-docker-config-file.yml
+              params:
+                USERNAME: ((docker-username))
+                PASSWORD: ((docker-access-token))
+                EMAIL: ((docker-email))
+            - task: assume-role
+              file: pay-ci/ci/tasks/assume-role.yml
+              params:
+                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12
+                AWS_ROLE_SESSION_NAME: codebuild-assume-role
+            - task: assume-retag-role
+              file: pay-ci/ci/tasks/assume-role.yml
+              output_mapping:
+                assume-role: assume-retag-role
+              params:
+                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+                AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
+      - in_parallel:
+          steps:
+            - load_var: role
+              file: assume-role/assume-role.json
+              format: json
+            - load_var: retag-role
+              file: assume-retag-role/assume-role.json
+              format: json
+      - task: prepare-codebuild
+        file: pay-ci/ci/tasks/prepare-codebuild-multiarch.yml
         params:
-          USERNAME: ((docker-username))
-          PASSWORD: ((docker-access-token))
-          EMAIL: ((docker-email))
-      - task: build-alpine-image
-        privileged: true
+          PROJECT_TO_BUILD: alpine
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          RELEASE_NUMBER: ((.:release-number))
+          RELEASE_NAME: ((.:release-name))
+          RELEASE_SHA: ((.:release-sha))
+          BUILD_DATE: ((.:date))
+      - in_parallel:
+          - task: run-codebuild-alpine-amd64
+            attempts: 3
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/alpine-amd64.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          - task: run-codebuild-alpine-armv8
+            attempts: 3
+            file: pay-ci/ci/tasks/run-codebuild.yml
+            params:
+              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/alpine-armv8.json"
+              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - task: run-codebuild-alpine-manifest
+        attempts: 3
+        file: pay-ci/ci/tasks/run-codebuild.yml
         params:
-          CONTEXT: pay-alpine-git-release/images/docker/govukpay/alpine
-          DOCKER_CONFIG: docker_creds
-          LABEL_release_number: ((.:release-number))
-          LABEL_release_name: ((.:release-name))
-          LABEL_release_sha: ((.:release-sha))
-          LABEL_build_date: ((.:date))
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source:
-              repository: concourse/oci-build-task
-          inputs:
-            - name: pay-alpine-git-release
-          outputs:
-            - name: image
-          run:
-            path: build
-      - put: alpine-ecr-registry-test
-        params:
-          image: image/image.tar
-          additional_tags: tags/all-release-tags
-        get_params:
-          skip_download: true
+          PATH_TO_CONFIG: "../../../../run-codebuild-configuration/alpine-manifest.json"
+          AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+          AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+          AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+      - in_parallel:
+          steps:
+            - task: retag-candidate-as-release-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/alpine:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/alpine:((.:release-tag))"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+            - task: retag-candidate-as-latest-in-ecr
+              file: pay-ci/ci/tasks/manifest-retag.yml
+              params:
+                DOCKER_LOGIN_ECR: 1
+                AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+                SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/alpine:((.:candidate_image_tag))"
+                NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/alpine:latest"
+                AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
     on_failure:
       put: slack-notification
       attempts: 10
@@ -958,7 +1013,6 @@ jobs:
       - in_parallel:
         - get: alpine-ecr-registry-test
           trigger: true
-          passed: [build-and-push-alpine-to-ecr]
         - get: stream-s3-sqs-ecr-registry-test
           trigger: true
         - get: pay-ci
