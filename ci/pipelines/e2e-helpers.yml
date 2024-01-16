@@ -384,8 +384,7 @@ jobs:
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
           RELEASE_NUMBER: ((.:release-number))
           RELEASE_NAME: ((.:release-name))
-          #RELEASE_SHA: ((.:release-sha))
-          RELEASE_SHA: PP-12035-reverse-proxy-codebuild
+          RELEASE_SHA: ((.:release-sha))
           BUILD_DATE: ((.:date))
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
