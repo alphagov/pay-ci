@@ -138,7 +138,7 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-nginx-forward-proxy
       branch: main
-      tag_regex: "(.*)-release"
+      tag_regex: "alpha_release-(.*)"
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
