@@ -8,6 +8,7 @@ image_resource:
 params:
   APP_NAME:
   APPLICATION_IMAGE_TAG: #eg 1339-release
+  GITHUB_TOKEN:
 inputs:
   - name: pay-ci
 outputs:
