@@ -167,7 +167,7 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-dockerfiles
       branch: main
-      tag_regex: "alpha_release-(.*)"
+      tag_regex: "egress_alpha_release-(.*)"
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
   - name: frontend-git-release
