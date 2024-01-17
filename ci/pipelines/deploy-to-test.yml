@@ -1556,7 +1556,7 @@ jobs:
     serial_groups: [deploy-application]
     plan:
       - get: egress-ecr-registry-test
-        # trigger: true
+        trigger: true
       - get: pay-infra
       - get: pay-ci
       - load_var: application_image_tag
