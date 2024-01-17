@@ -113,12 +113,16 @@ resources:
       branch: master
       paths:
         - ci/pipelines/deploy-to-test.yml
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: pay-ci
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: adot-git-release
     type: git
     icon: github
@@ -126,6 +130,8 @@ resources:
       uri: https://github.com/alphagov/pay-adot
       branch: main
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: nginx-forward-proxy-git-release
     type: git
     icon: github
@@ -144,6 +150,8 @@ resources:
       uri: https://github.com/alphagov/pay-stream-s3-sqs
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: toolbox-git-release
     type: git
     icon: github
@@ -151,6 +159,8 @@ resources:
       uri: https://github.com/alphagov/pay-toolbox
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: frontend-git-release
     type: git
     icon: github
@@ -158,6 +168,8 @@ resources:
       uri: https://github.com/alphagov/pay-frontend
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: adminusers-git-release
     type: git
     icon: github
@@ -165,6 +177,8 @@ resources:
       uri: https://github.com/alphagov/pay-adminusers
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: cardid-git-release
     type: git
     icon: github
@@ -172,6 +186,8 @@ resources:
       uri: https://github.com/alphagov/pay-cardid
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: connector-git-release
     type: git
     icon: github
@@ -179,6 +195,8 @@ resources:
       uri: https://github.com/alphagov/pay-connector
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: ledger-git-release
     type: git
     icon: github
@@ -186,6 +204,8 @@ resources:
       uri: https://github.com/alphagov/pay-ledger
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: products-git-release
     type: git
     icon: github
@@ -193,6 +213,8 @@ resources:
       uri: https://github.com/alphagov/pay-products
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: products-ui-git-release
     type: git
     icon: github
@@ -200,6 +222,8 @@ resources:
       uri: https://github.com/alphagov/pay-products-ui
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: publicauth-git-release
     type: git
     icon: github
@@ -207,6 +231,8 @@ resources:
       uri: https://github.com/alphagov/pay-publicauth
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: publicapi-git-release
     type: git
     icon: github
@@ -214,6 +240,8 @@ resources:
       uri: https://github.com/alphagov/pay-publicapi
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: selfservice-git-release
     type: git
     icon: github
@@ -221,6 +249,8 @@ resources:
       uri: https://github.com/alphagov/pay-selfservice
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: webhooks-git-release
     type: git
     icon: github
@@ -228,6 +258,8 @@ resources:
       uri: https://github.com/alphagov/pay-webhooks
       branch: main
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: nginx-proxy-git-release
     type: git
     icon: github
@@ -235,6 +267,8 @@ resources:
       uri: https://github.com/alphagov/pay-nginx-proxy
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: webhooks-egress-git-release
     type: git
     icon: github
@@ -251,6 +285,8 @@ resources:
       uri: https://github.com/alphagov/pay-notifications
       branch: master
       tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: pay-infra
     type: git
     icon: github
@@ -1764,6 +1800,7 @@ jobs:
         params:
           APP_NAME: frontend
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1862,6 +1899,7 @@ jobs:
         params:
           APP_NAME: frontend
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -2114,6 +2152,7 @@ jobs:
         params:
           APP_NAME: adminusers
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -2248,6 +2287,7 @@ jobs:
         params:
           APP_NAME: adminusers
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -2500,6 +2540,7 @@ jobs:
         params:
           APP_NAME: connector
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -2634,6 +2675,7 @@ jobs:
         params:
           APP_NAME: connector
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -2886,6 +2928,7 @@ jobs:
         params:
           APP_NAME: ledger
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -2975,6 +3018,7 @@ jobs:
         params:
           APP_NAME: ledger
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -3272,6 +3316,7 @@ jobs:
         params:
           APP_NAME: products
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -3406,6 +3451,7 @@ jobs:
         params:
           APP_NAME: products
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -3657,6 +3703,7 @@ jobs:
         params:
           APP_NAME: products-ui
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -3749,6 +3796,7 @@ jobs:
         params:
           APP_NAME: products-ui
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -4016,6 +4064,7 @@ jobs:
         params:
           APP_NAME: publicapi
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -4105,6 +4154,7 @@ jobs:
         params:
           APP_NAME: publicapi
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -4712,6 +4762,7 @@ jobs:
         params:
           APP_NAME: selfservice
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -4803,6 +4854,7 @@ jobs:
         params:
           APP_NAME: selfservice
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -5065,6 +5117,7 @@ jobs:
         params:
           APP_NAME: cardid
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -5154,6 +5207,7 @@ jobs:
         params:
           APP_NAME: cardid
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -5420,6 +5474,7 @@ jobs:
         params:
           APP_NAME: webhooks
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact

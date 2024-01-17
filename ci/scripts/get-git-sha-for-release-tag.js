@@ -2,8 +2,8 @@
 
 const fs = require('fs')
 const { Octokit } = require('@octokit/rest')
-const octokit = new Octokit()
-const { APPLICATION_IMAGE_TAG: imageTag, APP_NAME: appName } = process.env
+const { APPLICATION_IMAGE_TAG: imageTag, APP_NAME: appName, GITHUB_TOKEN: githubToken } = process.env
+const octokit = new Octokit({ auth: githubToken })
 
 async function run () {
   try {

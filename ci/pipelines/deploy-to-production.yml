@@ -211,12 +211,16 @@ resources:
       branch: master
       paths:
         - ci/pipelines/deploy-to-production.yml
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: pay-ci
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
       branch: master
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
   - name: pay-infra
     type: git
     icon: github
@@ -773,6 +777,7 @@ jobs:
         params:
           APP_NAME: selfservice
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -879,6 +884,7 @@ jobs:
         params:
           APP_NAME: selfservice
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -926,6 +932,7 @@ jobs:
         params:
           APP_NAME: connector
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1032,6 +1039,7 @@ jobs:
         params:
           APP_NAME: connector
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1236,6 +1244,7 @@ jobs:
         params:
           APP_NAME: frontend
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1365,6 +1374,7 @@ jobs:
         params:
           APP_NAME: frontend
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1412,6 +1422,7 @@ jobs:
         params:
           APP_NAME: adminusers
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1580,6 +1591,7 @@ jobs:
         params:
           APP_NAME: adminusers
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1627,6 +1639,7 @@ jobs:
         params:
           APP_NAME: products
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1733,6 +1746,7 @@ jobs:
         params:
           APP_NAME: products
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -1842,6 +1856,7 @@ jobs:
         params:
           APP_NAME: products-ui
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -1948,6 +1963,7 @@ jobs:
         params:
           APP_NAME: products-ui
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -2163,6 +2179,7 @@ jobs:
         params:
           APP_NAME: cardid
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -2252,6 +2269,7 @@ jobs:
         params:
           APP_NAME: cardid
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -2316,6 +2334,7 @@ jobs:
         params:
           APP_NAME: publicapi
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -2422,6 +2441,7 @@ jobs:
         params:
           APP_NAME: publicapi
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -2469,6 +2489,7 @@ jobs:
         params:
           APP_NAME: ledger
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: check-pact-compatibility
@@ -2575,6 +2596,7 @@ jobs:
         params:
           APP_NAME: ledger
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
@@ -2902,6 +2924,7 @@ jobs:
         params:
           APP_NAME: webhooks
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: assume-role
@@ -2985,6 +3008,7 @@ jobs:
         params:
           APP_NAME: webhooks
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+          GITHUB_TOKEN: ((github-access-token))
       - load_var: git-sha
         file: git-sha/git-sha
       - task: tag-pact
