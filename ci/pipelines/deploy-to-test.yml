@@ -1510,12 +1510,6 @@ jobs:
           RELEASE_NAME: ((.:release-name))
           RELEASE_SHA: ((.:release-sha))
           BUILD_DATE: ((.:date))
-      - task: generate-docker-creds-config
-        file: pay-ci/ci/tasks/generate-docker-config-file.yml
-        params:
-          USERNAME: ((docker-username))
-          PASSWORD: ((docker-access-token))
-          EMAIL: ((docker-email))
       - in_parallel:
           steps:
             - task: run-codebuild-egress-amd64
