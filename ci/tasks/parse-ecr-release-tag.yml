@@ -1,0 +1,21 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+    tag: latest
+inputs:
+  - name: ecr-image
+outputs:
+  - name: ecr-release-info
+run:
+  path: ash
+  args:
+    - -ec
+    - |
+      echo -n "ECR Image Tag: "
+      cat ecr-image/tag
+      RELEASE_NUMBER=$(cut -f 1 -d "-" < ecr-image/tag)
+      echo -n "Release number: "
+      echo "${RELEASE_NUMBER}" | tee ecr-release-info/release-number
+
