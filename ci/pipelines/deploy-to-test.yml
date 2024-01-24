@@ -611,12 +611,6 @@ resources:
     source:
       repository: govukpay/webhooks-egress
       <<: *aws_staging_config
-  - name: frontend-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/frontend
-      <<: *aws_staging_config
   - name: ledger-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -2082,15 +2076,35 @@ jobs:
 
   - name: push-frontend-to-staging-ecr
     plan:
-      - get: frontend-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: frontend-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [frontend-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: frontend-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [frontend-pact-tag]
-      - put: frontend-ecr-registry-staging
-        params:
-          image: frontend-ecr-registry-test/image.tar
-          additional_tags: frontend-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/frontend"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-adminusers-candidate
     plan:
