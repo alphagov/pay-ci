@@ -1697,7 +1697,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [egress-pact-tag]
+            passed: [smoke-test-egress]
           - get: pay-ci
       - task: parse-ecr-release-tag
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
