@@ -618,12 +618,6 @@ resources:
       repository: govukpay/webhooks
       variant: release
       <<: *aws_staging_config
-  - name: products-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/products
-      <<: *aws_staging_config
   - name: products-ui-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -3703,15 +3697,35 @@ jobs:
 
   - name: push-products-to-staging-ecr
     plan:
-      - get: products-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: products-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [products-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: products-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [products-pact-tag]
-      - put: products-ecr-registry-staging
-        params:
-          image: products-ecr-registry-test/image.tar
-          additional_tags: products-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/products"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-products-ui-candidate
     plan:
