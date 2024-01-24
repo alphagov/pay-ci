@@ -367,13 +367,6 @@ resources:
       repository: govukpay/stream-s3-sqs
       variant: release
       <<: *aws_test_config
-  - name: stream-s3-sqs-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/stream-s3-sqs
-      variant: release
-      <<: *aws_staging_config
   - name: toolbox-ecr-registry-test
     type: registry-image
     icon: docker
@@ -1185,17 +1178,35 @@ jobs:
 
   - name: push-stream-s3-sqs-to-staging-ecr
     plan:
-      - get: stream-s3-sqs-ecr-registry-test
-        passed: [deploy-scheduled-tasks]
+      - in_parallel:
+          steps:
+          - get: stream-s3-sqs-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-scheduled-tasks]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: stream-s3-sqs-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - put: stream-s3-sqs-ecr-registry-staging
-        params:
-          image: stream-s3-sqs-ecr-registry-test/image.tar
-          additional_tags: stream-s3-sqs-ecr-registry-test/tag
-        get_params:
-          skip_download: true
+          ECR_REPO_NAME: "govukpay/stream-s3-sqs"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: update-deploy-to-test-pipeline
     plan:
