@@ -612,12 +612,6 @@ resources:
       repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_staging_config
-  - name: adot-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/adot
-      <<: *aws_staging_config
   - name: notifications-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -6876,13 +6870,32 @@ jobs:
 
   - name: push-adot-to-staging-ecr
     plan:
-      - get: adot-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: adot-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [run-adot-integration-test]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: adot-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [run-adot-integration-test]
-      - put: adot-ecr-registry-staging
-        params:
-          image: adot-ecr-registry-test/image.tar
-          additional_tags: adot-ecr-registry-test/tag
-
+          ECR_REPO_NAME: "govukpay/adot"
+          <<: *copy_ecr_from_test_to_staging_params
