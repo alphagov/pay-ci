@@ -599,12 +599,6 @@ resources:
       repository: govukpay/notifications
       variant: release
       <<: *aws_test_config
-  - name: toolbox-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/toolbox
-      <<: *aws_staging_config
   - name: webhooks-egress-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -1422,15 +1416,35 @@ jobs:
 
   - name: push-toolbox-to-staging-ecr
     plan:
-      - get: toolbox-ecr-registry-test
-        passed: [deploy-toolbox]
+      - in_parallel:
+          steps:
+          - get: toolbox-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-toolbox]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: toolbox-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - put: toolbox-ecr-registry-staging
-        params:
-          image: toolbox-ecr-registry-test/image.tar
-          additional_tags: toolbox-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/toolbox"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-egress-candidate
     plan:
