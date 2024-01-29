@@ -1,4 +1,40 @@
 definitions:
+  - &assume_copy_from_staging_ecr_role
+    task: assume-copy-from-ecr-staging-role
+    file: pay-ci/ci/tasks/assume-role.yml
+    output_mapping:
+      assume-role: assume-copy-from-ecr-staging-role
+    params:
+      AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+      AWS_ROLE_SESSION_NAME: copy-from-ecr-in-staging
+  - &assume_write_to_prod_ecr_role
+    task: assume-write-to-ecr-prod-role
+    file: pay-ci/ci/tasks/assume-role.yml
+    output_mapping:
+      assume-role: assume-write-to-ecr-prod-role
+    params:
+      AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+      AWS_ROLE_SESSION_NAME: copy-to-ecr-in-prod
+  - &load_copy_from_staging_ecr_role
+    load_var: copy-from-staging-ecr-role
+    file: assume-copy-from-ecr-staging-role/assume-role.json
+    format: json
+  - &load_write_to_prod_ecr_role
+    load_var: write-to-prod-ecr-role
+    file: assume-write-to-ecr-prod-role/assume-role.json
+    format: json
+
+copy_ecr_from_staging_to_prod_params: &copy_ecr_from_staging_to_prod_params
+  RELEASE_NUMBER:  ((.:release_number))
+  SOURCE_ECR_REGISTRY: "((pay_aws_staging_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+  DESTINATION_ECR_REGISTRY: "((pay_aws_prod_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+  SOURCE_AWS_ACCESS_KEY_ID: ((.:copy-from-staging-ecr-role.AWS_ACCESS_KEY_ID))
+  SOURCE_AWS_SECRET_ACCESS_KEY: ((.:copy-from-staging-ecr-role.AWS_SECRET_ACCESS_KEY))
+  SOURCE_AWS_SESSION_TOKEN: ((.:copy-from-staging-ecr-role.AWS_SESSION_TOKEN))
+  DESTINATION_AWS_ACCESS_KEY_ID: ((.:write-to-prod-ecr-role.AWS_ACCESS_KEY_ID))
+  DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:write-to-prod-ecr-role.AWS_SECRET_ACCESS_KEY))
+  DESTINATION_AWS_SESSION_TOKEN: ((.:write-to-prod-ecr-role.AWS_SESSION_TOKEN))
+
   aws_assumed_role_creds: &aws_assumed_role_creds
     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
     AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
@@ -311,12 +347,6 @@ resources:
       repository: govukpay/adminusers
       variant: release
       <<: *aws_staging_config
-  - name: adminusers-ecr-registry-prod
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/adminusers
-      <<: *aws_production_config
   - name: products-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -1742,25 +1772,36 @@ jobs:
 
   - name: push-adminusers-to-production-ecr
     plan:
-      - get: adminusers-ecr-registry-staging
-        params:
-          format: oci
-        trigger: true
-        passed: [adminusers-pact-tag]
-      - load_var: application_image_tag
-        file: adminusers-ecr-registry-staging/tag 
-      - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-staging
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [adminusers-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: adminusers-ecr-registry-staging
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
-      - put: adminusers-ecr-registry-prod
+          ecr-image: adminusers-ecr-registry-staging
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_staging_ecr_role
+          - *assume_write_to_prod_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_staging_ecr_role
+          - *load_write_to_prod_ecr_role
+      - task: copy-images-to-prod
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          image: adminusers-ecr-registry-staging/image.tar
-          additional_tags: adminusers-ecr-registry-staging/tag
-          
+          ECR_REPO_NAME: "govukpay/adminusers"
+          <<: *copy_ecr_from_staging_to_prod_params
+
   - name: deploy-products-to-staging
     serial: true
     serial_groups: [deploy-application]
