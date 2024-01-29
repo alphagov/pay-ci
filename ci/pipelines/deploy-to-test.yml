@@ -360,13 +360,6 @@ resources:
       repository: govukpay/alpine
       variant: release
       <<: *aws_test_config
-  - name: alpine-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/alpine
-      variant: release
-      <<: *aws_staging_config
   - name: stream-s3-sqs-ecr-registry-test
     type: registry-image
     icon: docker
@@ -374,13 +367,6 @@ resources:
       repository: govukpay/stream-s3-sqs
       variant: release
       <<: *aws_test_config
-  - name: stream-s3-sqs-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/stream-s3-sqs
-      variant: release
-      <<: *aws_staging_config
   - name: toolbox-ecr-registry-test
     type: registry-image
     icon: docker
@@ -599,110 +585,6 @@ resources:
       repository: govukpay/notifications
       variant: release
       <<: *aws_test_config
-  - name: toolbox-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/toolbox
-      <<: *aws_staging_config
-  - name: egress-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/egress
-      <<: *aws_staging_config
-  - name: webhooks-egress-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/webhooks-egress
-      <<: *aws_staging_config
-  - name: frontend-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/frontend
-      <<: *aws_staging_config
-  - name: connector-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/connector
-      <<: *aws_staging_config
-  - name: ledger-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/ledger
-      <<: *aws_staging_config
-  - name: webhooks-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/webhooks
-      variant: release
-      <<: *aws_staging_config
-  - name: products-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/products
-      <<: *aws_staging_config
-  - name: products-ui-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/products-ui
-      <<: *aws_staging_config
-  - name: publicapi-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/publicapi
-      <<: *aws_staging_config
-  - name: publicauth-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/publicauth
-      <<: *aws_staging_config
-  - name: selfservice-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/selfservice
-      <<: *aws_staging_config
-  - name: cardid-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/cardid
-      <<: *aws_staging_config
-  - name: nginx-proxy-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/docker-nginx-proxy
-      <<: *aws_staging_config
-  - name: nginx-forward-proxy-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/nginx-forward-proxy
-      variant: release
-      <<: *aws_staging_config
-  - name: adot-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/adot
-      <<: *aws_staging_config
-  - name: notifications-ecr-registry-staging
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/notifications
-      <<: *aws_staging_config
   - name: slack-notification
     type: slack-notification
     source:
@@ -1137,17 +1019,35 @@ jobs:
 
   - name: push-alpine-to-staging-ecr
     plan:
-      - get: alpine-ecr-registry-test
-        passed: [deploy-scheduled-tasks]
+      - in_parallel:
+          steps:
+          - get: alpine-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-scheduled-tasks]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: alpine-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - put: alpine-ecr-registry-staging
-        params:
-          image: alpine-ecr-registry-test/image.tar
-          additional_tags: alpine-ecr-registry-test/tag
-        get_params:
-          skip_download: true
+          ECR_REPO_NAME: "govukpay/alpine"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-stream-s3-sqs-to-test-ecr
     plan:
@@ -1278,17 +1178,35 @@ jobs:
 
   - name: push-stream-s3-sqs-to-staging-ecr
     plan:
-      - get: stream-s3-sqs-ecr-registry-test
-        passed: [deploy-scheduled-tasks]
+      - in_parallel:
+          steps:
+          - get: stream-s3-sqs-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-scheduled-tasks]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: stream-s3-sqs-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - put: stream-s3-sqs-ecr-registry-staging
-        params:
-          image: stream-s3-sqs-ecr-registry-test/image.tar
-          additional_tags: stream-s3-sqs-ecr-registry-test/tag
-        get_params:
-          skip_download: true
+          ECR_REPO_NAME: "govukpay/stream-s3-sqs"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: update-deploy-to-test-pipeline
     plan:
@@ -1482,15 +1400,35 @@ jobs:
 
   - name: push-toolbox-to-staging-ecr
     plan:
-      - get: toolbox-ecr-registry-test
-        passed: [deploy-toolbox]
+      - in_parallel:
+          steps:
+          - get: toolbox-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-toolbox]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: toolbox-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - put: toolbox-ecr-registry-staging
-        params:
-          image: toolbox-ecr-registry-test/image.tar
-          additional_tags: toolbox-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/toolbox"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-egress-candidate
     plan:
@@ -1708,15 +1646,35 @@ jobs:
 
   - name: push-egress-to-staging-ecr
     plan:
-      - get: egress-ecr-registry-test
-        passed: [smoke-test-egress]
+      - in_parallel:
+          steps:
+          - get: egress-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-egress]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: egress-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - put: egress-ecr-registry-staging
-        params:
-          image: egress-ecr-registry-test/image.tar
-          additional_tags: egress-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/egress"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-frontend-candidate
     plan:
@@ -2080,15 +2038,35 @@ jobs:
 
   - name: push-frontend-to-staging-ecr
     plan:
-      - get: frontend-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: frontend-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [frontend-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: frontend-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [frontend-pact-tag]
-      - put: frontend-ecr-registry-staging
-        params:
-          image: frontend-ecr-registry-test/image.tar
-          additional_tags: frontend-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/frontend"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-adminusers-candidate
     plan:
@@ -2876,15 +2854,35 @@ jobs:
 
   - name: push-connector-to-staging-ecr
     plan:
-      - get: connector-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: connector-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [connector-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: connector-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [connector-pact-tag]
-      - put: connector-ecr-registry-staging
-        params:
-          image: connector-ecr-registry-test/image.tar
-          additional_tags: connector-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/connector"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-ledger-candidate
     plan:
@@ -3219,15 +3217,36 @@ jobs:
 
   - name: push-ledger-to-staging-ecr
     plan:
-      - get: ledger-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: ledger-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [ledger-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: ledger-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [ledger-pact-tag]
-      - put: ledger-ecr-registry-staging
-        params:
-          image: ledger-ecr-registry-test/image.tar
-          additional_tags: ledger-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/ledger"
+          <<: *copy_ecr_from_test_to_staging_params
+
 
   - name: ledger-db-migration
     plan:
@@ -3652,15 +3671,35 @@ jobs:
 
   - name: push-products-to-staging-ecr
     plan:
-      - get: products-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: products-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [products-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: products-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [products-pact-tag]
-      - put: products-ecr-registry-staging
-        params:
-          image: products-ecr-registry-test/image.tar
-          additional_tags: products-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/products"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-products-ui-candidate
     plan:
@@ -3997,16 +4036,36 @@ jobs:
 
   - name: push-products-ui-to-staging-ecr
     plan:
-      - get: products-ui-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: products-ui-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [products-ui-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: products-ui-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [products-ui-pact-tag]
-      - put: products-ui-ecr-registry-staging
-        params:
-          image: products-ui-ecr-registry-test/image.tar
-          additional_tags: products-ui-ecr-registry-test/tag
-
+          ECR_REPO_NAME: "govukpay/products-ui"
+          <<: *copy_ecr_from_test_to_staging_params
+  
   - name: build-and-push-publicapi-candidate
     plan:
       - in_parallel:
@@ -4355,15 +4414,35 @@ jobs:
 
   - name: push-publicapi-to-staging-ecr
     plan:
-      - get: publicapi-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: publicapi-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [publicapi-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: publicapi-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [publicapi-pact-tag]
-      - put: publicapi-ecr-registry-staging
-        params:
-          image: publicapi-ecr-registry-test/image.tar
-          additional_tags: publicapi-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/publicapi"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-publicauth-candidate
     plan:
@@ -4702,15 +4781,35 @@ jobs:
 
   - name: push-publicauth-to-staging-ecr
     plan:
-      - get: publicauth-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: publicauth-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-publicauth]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: publicauth-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [smoke-test-publicauth]
-      - put: publicauth-ecr-registry-staging
-        params:
-          image: publicauth-ecr-registry-test/image.tar
-          additional_tags: publicauth-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/publicauth"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-selfservice-candidate
     plan:
@@ -5055,15 +5154,35 @@ jobs:
 
   - name: push-selfservice-to-staging-ecr
     plan:
-      - get: selfservice-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: selfservice-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [selfservice-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: selfservice-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [selfservice-pact-tag]
-      - put: selfservice-ecr-registry-staging
-        params:
-          image: selfservice-ecr-registry-test/image.tar
-          additional_tags: selfservice-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/selfservice"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-cardid-candidate
     plan:
@@ -5408,15 +5527,36 @@ jobs:
 
   - name: push-cardid-to-staging-ecr
     plan:
-      - get: cardid-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: cardid-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [cardid-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: cardid-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [cardid-pact-tag]
-      - put: cardid-ecr-registry-staging
-        params:
-          image: cardid-ecr-registry-test/image.tar
-          additional_tags: cardid-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/cardid"
+          <<: *copy_ecr_from_test_to_staging_params
+
 
   - name: build-webhooks
     plan:
@@ -5720,15 +5860,35 @@ jobs:
 
   - name: push-webhooks-to-staging-ecr
     plan:
-      - get: webhooks-ecr-registry-test
-        passed: [webhooks-pact-tag]
+      - in_parallel:
+          steps:
+          - get: webhooks-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [webhooks-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: webhooks-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - put: webhooks-ecr-registry-staging
-        params:
-          image: webhooks-ecr-registry-test/image.tar
-          additional_tags: webhooks-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/webhooks"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-nginx-proxy-to-test-ecr
     plan:
@@ -6073,28 +6233,67 @@ jobs:
 
   - name: push-webhooks-egress-to-staging-ecr
     plan:
-      - get: webhooks-egress-ecr-registry-test
-        passed: [smoke-test-webhooks-egress]
+      - in_parallel:
+          steps:
+          - get: webhooks-egress-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-webhooks-egress]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: webhooks-egress-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - put: webhooks-egress-ecr-registry-staging
-        params:
-          image: webhooks-egress-ecr-registry-test/image.tar
-          additional_tags: webhooks-egress-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/webhooks-egress"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: push-nginx-proxy-to-staging-ecr
     plan:
-      - get: pay-ci
-      - get: nginx-proxy-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: nginx-proxy-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-frontend, smoke-test-products-ui]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: nginx-proxy-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [smoke-test-frontend, smoke-test-products-ui]
-      - put: nginx-proxy-ecr-registry-staging
-        params:
-          image: nginx-proxy-ecr-registry-test/image.tar
-          additional_tags: nginx-proxy-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/docker-nginx-proxy"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-nginx-forward-proxy-to-test-ecr
     plan:
@@ -6225,16 +6424,35 @@ jobs:
 
   - name: push-nginx-forward-proxy-to-staging-ecr
     plan:
-      - get: pay-ci
-      - get: nginx-forward-proxy-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: nginx-forward-proxy-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-frontend]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: nginx-forward-proxy-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [smoke-test-frontend]
-      - put: nginx-forward-proxy-ecr-registry-staging
-        params:
-          image: nginx-forward-proxy-ecr-registry-test/image.tar
-          additional_tags: nginx-forward-proxy-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/nginx-forward-proxy"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-notifications-to-test-ecr
     plan:
@@ -6475,15 +6693,35 @@ jobs:
 
   - name: push-notifications-to-staging-ecr
     plan:
-      - get: notifications-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: notifications-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-notifications]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: notifications-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [smoke-test-notifications]
-      - put: notifications-ecr-registry-staging
-        params:
-          image: notifications-ecr-registry-test/image.tar
-          additional_tags: notifications-ecr-registry-test/tag
+          ECR_REPO_NAME: "govukpay/notifications"
+          <<: *copy_ecr_from_test_to_staging_params
 
   - name: build-and-push-adot-candidate
     plan:
@@ -6693,13 +6931,32 @@ jobs:
 
   - name: push-adot-to-staging-ecr
     plan:
-      - get: adot-ecr-registry-test
+      - in_parallel:
+          steps:
+          - get: adot-ecr-registry-test
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [run-adot-integration-test]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: adot-ecr-registry-test
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_test_ecr_role
+          - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_test_ecr_role
+          - *load_write_to_staging_ecr_role
+      - task: copy-images-to-staging
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [run-adot-integration-test]
-      - put: adot-ecr-registry-staging
-        params:
-          image: adot-ecr-registry-test/image.tar
-          additional_tags: adot-ecr-registry-test/tag
-
+          ECR_REPO_NAME: "govukpay/adot"
+          <<: *copy_ecr_from_test_to_staging_params
