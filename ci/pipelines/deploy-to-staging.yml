@@ -35,203 +35,203 @@ copy_ecr_from_staging_to_prod_params: &copy_ecr_from_staging_to_prod_params
   DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:write-to-prod-ecr-role.AWS_SECRET_ACCESS_KEY))
   DESTINATION_AWS_SESSION_TOKEN: ((.:write-to-prod-ecr-role.AWS_SESSION_TOKEN))
 
-  aws_assumed_role_creds: &aws_assumed_role_creds
-    AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-    AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-    AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+aws_assumed_role_creds: &aws_assumed_role_creds
+  AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+  AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+  AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
-  wait_for_deploy_params: &wait_for_deploy_params
-    <<: *aws_assumed_role_creds
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-    ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    ENVIRONMENT: staging-2
+wait_for_deploy_params: &wait_for_deploy_params
+  <<: *aws_assumed_role_creds
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
+  ENVIRONMENT: staging-2
 
-  deploy_params: &deploy_params
-    <<: *aws_assumed_role_creds
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-    ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    ACCOUNT: staging
-    ENVIRONMENT: staging-2
+deploy_params: &deploy_params
+  <<: *aws_assumed_role_creds
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
+  ACCOUNT: staging
+  ENVIRONMENT: staging-2
 
-  check_release_versions_params: &check_release_versions_params
-    <<: *aws_assumed_role_creds
-    AWS_REGION: "eu-west-1"
-    CLUSTER_NAME: "staging-2-fargate"
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+check_release_versions_params: &check_release_versions_params
+  <<: *aws_assumed_role_creds
+  AWS_REGION: "eu-west-1"
+  CLUSTER_NAME: "staging-2-fargate"
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
 
-    
-  aws_production_config: &aws_production_config
-    aws_access_key_id: ((readonly_access_key_id))
-    aws_secret_access_key: ((readonly_secret_access_key))
-    aws_session_token: ((readonly_session_token))
-    aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
-    aws_ecr_registry_id: "((pay_aws_prod_account_id))"
-    aws_region: eu-west-1
   
-  aws_staging_config: &aws_staging_config
-    aws_access_key_id: ((readonly_access_key_id))
-    aws_secret_access_key: ((readonly_secret_access_key))
-    aws_session_token: ((readonly_session_token))
-    aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
-    aws_ecr_registry_id: "((pay_aws_staging_account_id))"
-    aws_region: eu-west-1
+aws_production_config: &aws_production_config
+  aws_access_key_id: ((readonly_access_key_id))
+  aws_secret_access_key: ((readonly_secret_access_key))
+  aws_session_token: ((readonly_session_token))
+  aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+  aws_ecr_registry_id: "((pay_aws_prod_account_id))"
+  aws_region: eu-west-1
 
-  put_start_slack_notification: &put_start_slack_notification
+aws_staging_config: &aws_staging_config
+  aws_access_key_id: ((readonly_access_key_id))
+  aws_secret_access_key: ((readonly_secret_access_key))
+  aws_session_token: ((readonly_session_token))
+  aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+  aws_ecr_registry_id: "((pay_aws_staging_account_id))"
+  aws_region: eu-west-1
+
+put_start_slack_notification: &put_start_slack_notification
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-announce'
+    icon_emoji: ":fargate:"
+    username: pay-concourse
+    text: "((.:start_snippet)) |
+          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+put_success_slack_notification_p1: &put_success_slack_notification_p1
+  on_success:
     put: slack-notification
     params:
       channel: '#govuk-pay-announce'
       icon_emoji: ":fargate:"
       username: pay-concourse
-      text: "((.:start_snippet)) |
+      text: "((.:success_snippet)) |
             <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-  put_success_slack_notification_p1: &put_success_slack_notification_p1
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: "((.:success_snippet)) |
-              <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+put_success_slack_notification: &put_success_slack_notification
+  on_success:
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-activity'
+      icon_emoji: ":fargate:"
+      username: pay-concourse
+      text: "((.:success_snippet)) \n\n
+            <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+  
+put_failure_slack_notification: &put_failure_slack_notification
+  on_failure:
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-announce'
+      icon_emoji: ":fargate:"
+      username: pay-concourse
+      text: "((.:failure_snippet)) \n
+            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-  put_success_slack_notification: &put_success_slack_notification
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: "((.:success_snippet)) \n\n
-              <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    
-  put_failure_slack_notification: &put_failure_slack_notification
-    on_failure:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: "((.:failure_snippet)) \n
-              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+put_db_migration_slack_notification: &put_db_migration_slack_notification
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-announce'
+    icon_emoji: ":postgres:"
+    username: pay-concourse
+    text: ":postgres: starting $BUILD_JOB_NAME on staging-2\n
+          - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-  put_db_migration_slack_notification: &put_db_migration_slack_notification
+put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
+  on_success:
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-activity'
+      icon_emoji: ":postgres:"
+      username: pay-concourse
+      text: ":green-circle: $BUILD_JOB_NAME completed successfully on staging-2\n
+            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
+  on_failure:
     put: slack-notification
     params:
       channel: '#govuk-pay-announce'
       icon_emoji: ":postgres:"
       username: pay-concourse
-      text: ":postgres: starting $BUILD_JOB_NAME on staging-2\n
+      text: ":red-circle: $BUILD_JOB_NAME failed on staging-2\n
             - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-  put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
-    on_success:
-      put: slack-notification
+snippet_params_all_versions: &snippet_params_all_versions
+  ENV: staging-2
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+
+snippet_params_app_version: &snippet_params_app_version
+  ENV: staging-2
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+
+# Separate tasks for each combination of scenario/environment
+smoke-test-run-all-on-staging: &smoke-test-run-all-on-staging
+  limit: 8
+  steps:
+    - task: run_create_card_payment_sandbox-staging
+      file: pay-ci/ci/tasks/run-smoke-test.yml
       params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":postgres:"
-        username: pay-concourse
-        text: ":green-circle: $BUILD_JOB_NAME completed successfully on staging-2\n
-              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-  put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
-    on_failure:
-      put: slack-notification
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_sandbox_stag"
+    - task: run_recurring_card_payment_sandbox-staging
+      file: pay-ci/ci/tasks/run-smoke-test.yml
       params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":postgres:"
-        username: pay-concourse
-        text: ":red-circle: $BUILD_JOB_NAME failed on staging-2\n
-              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-  snippet_params_all_versions: &snippet_params_all_versions
-    ENV: staging-2
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-  
-  snippet_params_app_version: &snippet_params_app_version
-    ENV: staging-2
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-
-  # Separate tasks for each combination of scenario/environment
-  smoke-test-run-all-on-staging: &smoke-test-run-all-on-staging
-    limit: 8
-    steps:
-      - task: run_create_card_payment_sandbox-staging
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_sandbox_stag"
-      - task: run_recurring_card_payment_sandbox-staging
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "rec_card_sandbox_stag"
-      - task: run_create_card_payment_worldpay_with_3ds2-staging
-        attempts: 10
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_3ds2_stag"
-      - task: run_create_card_payment_worldpay_with_3ds2_exemption-staging
-        attempts: 10
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_3ds2ex_stag"
-      - task: run_create_card_payment_worldpay_without_3ds-staging
-        attempts: 10
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_stag"
-      - task: run_recurring_card_payment_worldpay-staging
-        attempts: 10
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "reccard_worldpay_stag"
-      - task: run_cancel_card_payment_sandbox-staging
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "cancel_sandbox_stag"
-      - task: run_use_payment_link_sandbox-staging
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "pymntlnk_sandbox_stag"
-      - task: run_create_card_payment_stripe-staging
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_stripe_stag"
-      - task: run_recurring_card_payment_stripe-staging
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "rec_card_stripe_stag"
-      - task: run_notifications_sandbox-stag
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "notifcatns_sndbx_stag"
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "rec_card_sandbox_stag"
+    - task: run_create_card_payment_worldpay_with_3ds2-staging
+      attempts: 10
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_wpay_3ds2_stag"
+    - task: run_create_card_payment_worldpay_with_3ds2_exemption-staging
+      attempts: 10
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_wpay_3ds2ex_stag"
+    - task: run_create_card_payment_worldpay_without_3ds-staging
+      attempts: 10
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_wpay_stag"
+    - task: run_recurring_card_payment_worldpay-staging
+      attempts: 10
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "reccard_worldpay_stag"
+    - task: run_cancel_card_payment_sandbox-staging
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "cancel_sandbox_stag"
+    - task: run_use_payment_link_sandbox-staging
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "pymntlnk_sandbox_stag"
+    - task: run_create_card_payment_stripe-staging
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_stripe_stag"
+    - task: run_recurring_card_payment_stripe-staging
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "rec_card_stripe_stag"
+    - task: run_notifications_sandbox-stag
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "notifcatns_sndbx_stag"
 
 resources:
   - name: deploy-to-staging-pipeline-definition
