@@ -308,13 +308,6 @@ resources:
       repository: govukpay/webhooks-egress
       variant: release
       <<: *aws_staging_config
-  - name: webhooks-egress-ecr-registry-prod
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/webhooks-egress
-      variant: release
-      <<: *aws_production_config
   - name: frontend-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -1388,15 +1381,35 @@ jobs:
 
   - name: push-webhooks-egress-to-production-ecr
     plan:
-      - get: webhooks-egress-ecr-registry-staging
-        passed: [smoke-test-webhooks-egress-on-staging]
+      - in_parallel:
+          steps:
+          - get: webhooks-egress-ecr-registry-staging
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-webhooks-egress-on-staging]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: webhooks-egress-ecr-registry-staging
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_staging_ecr_role
+          - *assume_write_to_prod_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_staging_ecr_role
+          - *load_write_to_prod_ecr_role
+      - task: copy-images-to-prod
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - put: webhooks-egress-ecr-registry-prod
-        params:
-          image: webhooks-egress-ecr-registry-staging/image.tar
-          additional_tags: webhooks-egress-ecr-registry-staging/tag
+          ECR_REPO_NAME: "govukpay/webhooks-egress"
+          <<: *copy_ecr_from_staging_to_prod_params
 
   - name: deploy-frontend-to-staging
     serial: true
