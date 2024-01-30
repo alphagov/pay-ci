@@ -392,12 +392,6 @@ resources:
       repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_staging_config
-  - name: nginx-forward-proxy-ecr-registry-prod
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/nginx-forward-proxy
-      <<: *aws_production_config
   - name: notifications-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -3201,15 +3195,35 @@ jobs:
 
   - name: push-nginx-forward-proxy-to-production-ecr
     plan:
-      - get: nginx-forward-proxy-ecr-registry-staging
+      - in_parallel:
+          steps:
+          - get: nginx-forward-proxy-ecr-registry-staging
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-frontend-on-staging]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: nginx-forward-proxy-ecr-registry-staging
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_staging_ecr_role
+          - *assume_write_to_prod_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_staging_ecr_role
+          - *load_write_to_prod_ecr_role
+      - task: copy-images-to-prod
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [smoke-test-frontend-on-staging]
-      - put: nginx-forward-proxy-ecr-registry-prod
-        params:
-          image: nginx-forward-proxy-ecr-registry-staging/image.tar
-          additional_tags: nginx-forward-proxy-ecr-registry-staging/tag
+          ECR_REPO_NAME: "govukpay/nginx-forward-proxy"
+          <<: *copy_ecr_from_staging_to_prod_params
 
   - name: deploy-notifications-to-staging
     serial: true
