@@ -377,12 +377,6 @@ resources:
       repository: govukpay/selfservice
       variant: release
       <<: *aws_staging_config
-  - name: selfservice-ecr-registry-prod
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/selfservice
-      <<: *aws_production_config
   - name: publicapi-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -854,24 +848,35 @@ jobs:
 
   - name: push-selfservice-to-production-ecr
     plan:
-      - get: selfservice-ecr-registry-staging
-        params:
-          format: oci
-        trigger: true
-        passed: [selfservice-pact-tag]
-      - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - in_parallel:
+          steps:
+          - get: selfservice-ecr-registry-staging
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [selfservice-pact-tag]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: selfservice-ecr-registry-staging
-      - load_var: application_image_tag
-        file: selfservice-ecr-registry-staging/tag
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
-      - put: selfservice-ecr-registry-prod
+          ecr-image: selfservice-ecr-registry-staging
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_staging_ecr_role
+          - *assume_write_to_prod_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_staging_ecr_role
+          - *load_write_to_prod_ecr_role
+      - task: copy-images-to-prod
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          image: selfservice-ecr-registry-staging/image.tar
-          additional_tags: selfservice-ecr-registry-staging/tag
+          ECR_REPO_NAME: "govukpay/selfservice"
+          <<: *copy_ecr_from_staging_to_prod_params
 
   - name: deploy-connector-to-staging
     serial: true
