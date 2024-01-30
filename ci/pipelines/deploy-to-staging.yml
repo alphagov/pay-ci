@@ -356,12 +356,6 @@ resources:
       repository: govukpay/publicauth
       variant: release
       <<: *aws_staging_config
-  - name: publicauth-ecr-registry-prod
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/publicauth
-      <<: *aws_production_config
   - name: cardid-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -2335,15 +2329,35 @@ jobs:
 
   - name: push-publicauth-to-production-ecr
     plan:
-      - get: publicauth-ecr-registry-staging
+      - in_parallel:
+          steps:
+          - get: publicauth-ecr-registry-staging
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-publicauth-on-staging]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: publicauth-ecr-registry-staging
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_staging_ecr_role
+          - *assume_write_to_prod_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_staging_ecr_role
+          - *load_write_to_prod_ecr_role
+      - task: copy-images-to-prod
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-        passed: [smoke-test-publicauth-on-staging]
-      - put: publicauth-ecr-registry-prod
-        params:
-          image: publicauth-ecr-registry-staging/image.tar
-          additional_tags: publicauth-ecr-registry-staging/tag
+          ECR_REPO_NAME: "govukpay/publicauth"
+          <<: *copy_ecr_from_staging_to_prod_params
 
   - name: deploy-cardid-to-staging
     serial: true
