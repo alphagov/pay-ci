@@ -62,7 +62,6 @@ check_release_versions_params: &check_release_versions_params
   APPLICATION_IMAGE_TAG: ((.:application_image_tag))
   ADOT_IMAGE_TAG: ((.:adot_image_tag))
   NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-
   
 aws_production_config: &aws_production_config
   aws_access_key_id: ((readonly_access_key_id))
@@ -267,13 +266,6 @@ resources:
       repository: govukpay/adot
       variant: release
       <<: *aws_staging_config
-  - name: adot-ecr-registry-prod
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/adot
-      variant: release
-      <<: *aws_production_config
   - name: alpine-ecr-registry-staging
     type: registry-image
     icon: docker
@@ -573,23 +565,34 @@ groups:
 jobs:
   - name: push-adot-to-production-ecr
     plan:
-      - get: adot-ecr-registry-staging
-        params:
-          format: oci
-        trigger: true
-      - load_var: application_image_tag
-        file: adot-ecr-registry-staging/tag
-      - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - in_parallel:
+          steps:
+          - get: adot-ecr-registry-staging
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: adot-ecr-registry-staging
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
-      - put: adot-ecr-registry-prod
+          ecr-image: adot-ecr-registry-staging
+      - load_var: release_number
+        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *assume_copy_from_staging_ecr_role
+          - *assume_write_to_prod_ecr_role
+      - in_parallel:
+          steps:
+          - *load_copy_from_staging_ecr_role
+          - *load_write_to_prod_ecr_role
+      - task: copy-images-to-prod
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          image: adot-ecr-registry-staging/image.tar
-          additional_tags: adot-ecr-registry-staging/tag
+          ECR_REPO_NAME: "govukpay/adot"
+          <<: *copy_ecr_from_staging_to_prod_params
 
   - name: push-stream-s3-sqs-to-production-ecr
     plan:        
