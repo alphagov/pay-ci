@@ -30,7 +30,7 @@ run:
         echo "CLEANUP COMPLETE"
       }
 
-      RELEASE_LABEL=${TAG_LABEL:-candidate}
+      TAG_LABEL=${TAG_LABEL:-candidate}
 
       trap cleanup EXIT
       source /docker-helpers.sh
