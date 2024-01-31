@@ -15,6 +15,7 @@ params:
   DESTINATION_AWS_ACCESS_KEY_ID:
   DESTINATION_AWS_SECRET_ACCESS_KEY:
   DESTINATION_AWS_SESSION_TOKEN:
+  TAG_LABEL:
 
 run:
   path: bash
@@ -28,6 +29,8 @@ run:
         stop_docker
         echo "CLEANUP COMPLETE"
       }
+
+      RELEASE_LABEL=${TAG_LABEL:-candidate}
 
       trap cleanup EXIT
       source /docker-helpers.sh
@@ -46,15 +49,15 @@ run:
       aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$SOURCE_ECR_REGISTRY"
 
       echo "Pulling images"
-      docker pull --quiet "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-armv8" &
-      docker pull --quiet "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64" &
+      docker pull --quiet "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-armv8" &
+      docker pull --quiet "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-amd64" &
 
       echo "Waiting for pulls to complete"
       wait
 
       echo "Retagging images locally"
-      docker tag "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-armv8" "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-armv8"
-      docker tag "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64" "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64"
+      docker tag "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-armv8" "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-armv8"
+      docker tag "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-amd64" "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-amd64"
 
       set +x # This is a safety measure to prevent us accidentally leaking AWS secrets in the future
       AWS_ACCESS_KEY_ID="$DESTINATION_AWS_ACCESS_KEY_ID"
@@ -68,8 +71,8 @@ run:
       aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$DESTINATION_ECR_REGISTRY"
 
       echo "Pushing images"
-      docker push --quiet "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-armv8" &
-      docker push --quiet "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64" &
+      docker push --quiet "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-armv8" &
+      docker push --quiet "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-amd64" &
 
       echo "Waiting for pushes to complete"
       wait
@@ -77,5 +80,5 @@ run:
       echo "Creating release manifest in destination registry"
       docker buildx imagetools create \
         -t "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-release" \
-        "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-armv8" \
-        "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-candidate-amd64"
+        "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-armv8" \
+        "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-amd64"
