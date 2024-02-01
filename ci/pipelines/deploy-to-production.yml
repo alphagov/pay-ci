@@ -301,6 +301,13 @@ resources:
     source:
       repository: govukpay/frontend
       <<: *aws_test_config
+  - name: adminusers-candidate
+    type: registry-image
+    icon: docker
+    source:
+      repository: govukpay/adminusers
+      variant: candidate
+      <<: *aws_test_config
   - name: adminusers-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -1579,14 +1586,28 @@ jobs:
             trigger: true
             passed: [adminusers-pact-tag]
           - get: pay-ci
+      # - task: parse-perf-release-tag
+      #   file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+      #   input_mapping:
+      #     ecr-repo: adminusers-ecr-registry-prod
       - task: parse-perf-release-tag
         file: pay-ci/ci/tasks/parse-perf-release-tag.yml
         input_mapping:
           ecr-repo: adminusers-ecr-registry-prod
+      # - task: parse-release-tag
+      #   file: pay-ci/ci/tasks/parse-release-tag.yml
+      #   input_mapping:
+      #     git-release: pay-adminusers-git-release
+      # - put: products-ecr-registry-test
+      #   params:
+      #     image: products-ecr-registry-prod/image.tar
+      #     additional_tags: parse-perf-release-tag/tag
       - in_parallel:
           steps:
-          - load_var: release_number
-            file: ecr-release-info/release-number
+          # - load_var: release_number
+          #   file: ecr-release-info/release-number
+          - load_var: candidate_image_tag
+            file: tags/candidate-tag
           - load_var: perf-tag
             file: parse-perf-release-tag/tag
           - task: assume-retag-role
