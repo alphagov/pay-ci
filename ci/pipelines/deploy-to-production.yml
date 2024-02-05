@@ -301,13 +301,6 @@ resources:
     source:
       repository: govukpay/frontend
       <<: *aws_test_config
-  - name: adminusers-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/adminusers
-      variant: release
-      <<: *aws_test_config
   - name: adminusers-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -1501,7 +1494,6 @@ jobs:
     plan:
       - in_parallel:
           steps:
-          - get: adminusers-ecr-registry-test
           - get: adminusers-ecr-registry-prod
             params:
               skip_download: true
@@ -1514,7 +1506,7 @@ jobs:
           - task: parse-ecr-release-tag
             file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
             input_mapping:
-              ecr-image: adminusers-ecr-registry-test
+              ecr-image: adminusers-ecr-registry-prod
           - task: parse-perf-release-tag
             file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
             input_mapping:
@@ -1588,7 +1580,6 @@ jobs:
     plan:
       - in_parallel:
           steps:
-          - get: adminusers-ecr-registry-test
           - get: adminusers-ecr-registry-prod
             params:
               skip_download: true
@@ -1601,7 +1592,7 @@ jobs:
           - task: parse-ecr-release-tag
             file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
             input_mapping:
-              ecr-image: adminusers-ecr-registry-test
+              ecr-image: adminusers-ecr-registry-prod
           - task: parse-perf-release-tag
             file: pay-ci/ci/tasks/parse-perf-release-tag.yml
             input_mapping:
