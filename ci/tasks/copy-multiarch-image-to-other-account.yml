@@ -16,6 +16,8 @@ params:
   DESTINATION_AWS_SECRET_ACCESS_KEY:
   DESTINATION_AWS_SESSION_TOKEN:
   TAG_LABEL: candidate
+  SOURCE_REGION: eu-west-1
+  DESTINATION_REGION: eu-west-1
 
 run:
   path: bash
@@ -44,7 +46,7 @@ run:
       export AWS_SESSION_TOKEN
 
       echo "Logging in to source ECR"
-      aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$SOURCE_ECR_REGISTRY"
+      aws ecr get-login-password --region ${SOURCE_REGION} | docker login --username AWS --password-stdin "$SOURCE_ECR_REGISTRY"
 
       echo "Pulling images"
       docker pull --quiet "${SOURCE_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-armv8" &
@@ -66,7 +68,7 @@ run:
       export AWS_SESSION_TOKEN
 
       echo "Logging in to destination ECR"
-      aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$DESTINATION_ECR_REGISTRY"
+      aws ecr get-login-password --region ${DESTINATION_REGION} | docker login --username AWS --password-stdin "$DESTINATION_ECR_REGISTRY"
 
       echo "Pushing images"
       docker push --quiet "${DESTINATION_ECR_REGISTRY}/${ECR_REPO_NAME}:${RELEASE_NUMBER}-${TAG_LABEL}-armv8" &
