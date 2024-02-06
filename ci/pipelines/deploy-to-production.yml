@@ -1,3 +1,4 @@
+
 definitions:
   aws_assumed_role_creds: &aws_assumed_role_creds
     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -110,6 +111,27 @@ definitions:
         username: pay-concourse
         text: ":red-circle: $BUILD_JOB_NAME failed on production-2\n
               - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  copy_to_eu_west_params: &copy_to_eu_west_params
+    RELEASE_NUMBER:  ((.:release-number))
+    SOURCE_ECR_REGISTRY: "((pay_aws_test_account_id)).dkr.ecr.eu-central-1.amazonaws.com"
+    DESTINATION_ECR_REGISTRY: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    SOURCE_AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+    SOURCE_AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+    SOURCE_AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+    SOURCE_REGION: eu-central-1
+    DESTINATION_AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+    DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+    DESTINATION_AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+    DESTINATION_REGION: eu-west-1
+
+  retag_for_perf_test: &retag_for_perf_test
+    DOCKER_LOGIN_ECR: 1
+    AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+    SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
+    AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+    AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+    AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
 
   snippet_params_all_versions: &snippet_params_all_versions
     ENV: production-2
@@ -1533,18 +1555,18 @@ jobs:
       - load_var: retag-role
         file: assume-retag-role/assume-role.json
         format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
+        params:
+          ECR_REPO_NAME: "govukpay/adminusers"
+          <<: *copy_to_eu_west_params
       - task: retag-candidate-as-perf-in-ecr
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          DOCKER_LOGIN_ECR: 1
-          REGION: eu-central-1
-          AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
-          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
+          <<: *retag_for_perf_test
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:perf-tag))"
-          AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
-
+          
   - name: smoke-test-adminusers-on-prod
     serial_groups: [smoke-test]
     plan:
@@ -1620,16 +1642,17 @@ jobs:
       - load_var: retag-role
         file: assume-retag-role/assume-role.json
         format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
+        params:
+          ECR_REPO_NAME: "govukpay/adminusers"
+          <<: *copy_to_eu_west_params
       - task: retag-candidate-as-perf-in-ecr
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          DOCKER_LOGIN_ECR: 1
-          AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
-          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
+          <<: *retag_for_perf_test
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:perf-tag))"
-          AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
-          AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
-          AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
 
   - name: adminusers-pact-tag
     plan:
