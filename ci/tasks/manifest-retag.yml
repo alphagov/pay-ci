@@ -13,7 +13,6 @@ params:
   DOCKER_LOGIN_ECR: 0
   AWS_ACCOUNT_ID: 
   DOCKER_CONFIG: docker_creds
-  REGION: 
 
 inputs:
   - name: docker_creds
@@ -24,7 +23,7 @@ run:
   - -ec
   - |
     if [ "$DOCKER_LOGIN_ECR" -eq 1 ]; then
-      aws ecr get-login-password --region ${REGION:-eu-west-1} | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.${REGION:-eu-west-1}.amazonaws.com"
+      aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com"
     fi
 
     docker buildx imagetools create -t "$NEW_MANIFEST" "$SOURCE_MANIFEST"
