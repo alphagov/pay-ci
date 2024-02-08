@@ -1,4 +1,3 @@
-
 definitions:
   aws_assumed_role_creds: &aws_assumed_role_creds
     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -128,7 +127,6 @@ definitions:
   retag_for_perf_test: &retag_for_perf_test
     DOCKER_LOGIN_ECR: 1
     AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
-    SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
     AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
     AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
     AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
@@ -252,12 +250,6 @@ resources:
       repository: govukpay/egress
       variant: egress-release
       <<: *aws_prod_config      
-  - name: egress-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/egress
-      <<: *aws_test_config      
   - name: adot-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -265,12 +257,6 @@ resources:
       repository: govukpay/adot
       variant: release
       <<: *aws_prod_config
-  - name: adot-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/adot
-      <<: *aws_test_config
   - name: alpine-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -278,12 +264,6 @@ resources:
       repository: govukpay/alpine
       variant: release
       <<: *aws_prod_config
-  - name: alpine-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/alpine
-      <<: *aws_test_config
   - name: stream-s3-sqs-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -291,12 +271,6 @@ resources:
       repository: govukpay/stream-s3-sqs
       variant: release
       <<: *aws_prod_config
-  - name: stream-s3-sqs-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/stream-s3-sqs
-      <<: *aws_test_config
   - name: toolbox-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -304,12 +278,6 @@ resources:
       repository: govukpay/toolbox
       variant: release
       <<: *aws_prod_config
-  - name: toolbox-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/toolbox
-      <<: *aws_test_config
   - name: frontend-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -317,12 +285,6 @@ resources:
       repository: govukpay/frontend
       variant: release
       <<: *aws_prod_config
-  - name: frontend-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/frontend
-      <<: *aws_test_config
   - name: adminusers-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -337,12 +299,6 @@ resources:
       repository: govukpay/products
       variant: release
       <<: *aws_prod_config
-  - name: products-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/products
-      <<: *aws_test_config
   - name: products-ui-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -350,12 +306,6 @@ resources:
       repository: govukpay/products-ui
       variant: release
       <<: *aws_prod_config
-  - name: products-ui-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/products-ui
-      <<: *aws_test_config
   - name: publicauth-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -363,12 +313,6 @@ resources:
       repository: govukpay/publicauth
       variant: release
       <<: *aws_prod_config
-  - name: publicauth-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/publicauth
-      <<: *aws_test_config
   - name: cardid-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -376,12 +320,6 @@ resources:
       repository: govukpay/cardid
       variant: release
       <<: *aws_prod_config
-  - name: cardid-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/cardid
-      <<: *aws_test_config
   - name: connector-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -389,12 +327,6 @@ resources:
       repository: govukpay/connector
       variant: release
       <<: *aws_prod_config
-  - name: connector-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/connector
-      <<: *aws_test_config
   - name: selfservice-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -402,12 +334,6 @@ resources:
       repository: govukpay/selfservice
       variant: release
       <<: *aws_prod_config
-  - name: selfservice-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/selfservice
-      <<: *aws_test_config
   - name: nginx-proxy-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -415,12 +341,6 @@ resources:
       repository: govukpay/docker-nginx-proxy
       variant: release
       <<: *aws_prod_config
-  - name: nginx-proxy-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/docker-nginx-proxy
-      <<: *aws_test_config
   - name: nginx-forward-proxy-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -428,12 +348,6 @@ resources:
       repository: govukpay/nginx-forward-proxy
       variant: release
       <<: *aws_prod_config
-  - name: nginx-forward-proxy-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/nginx-forward-proxy
-      <<: *aws_test_config
   - name: ledger-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -441,12 +355,6 @@ resources:
       repository: govukpay/ledger
       variant: release
       <<: *aws_prod_config
-  - name: ledger-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/ledger
-      <<: *aws_test_config
   - name: publicapi-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -454,12 +362,6 @@ resources:
       repository: govukpay/publicapi
       variant: release
       <<: *aws_prod_config
-  - name: publicapi-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/publicapi
-      <<: *aws_test_config
   - name: notifications-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -467,12 +369,6 @@ resources:
       repository: govukpay/notifications
       variant: release
       <<: *aws_prod_config
-  - name: notifications-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/notifications
-      <<: *aws_test_config
   - name: slack-notification
     type: slack-notification
     source:
@@ -484,12 +380,6 @@ resources:
       repository: govukpay/webhooks
       variant: release
       <<: *aws_prod_config
-  - name: webhooks-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/webhooks
-      <<: *aws_test_config
   - name: webhooks-egress-ecr-registry-prod
     type: registry-image
     icon: docker
@@ -497,12 +387,6 @@ resources:
       repository: govukpay/webhooks-egress
       variant: release
       <<: *aws_prod_config
-  - name: webhooks-egress-ecr-registry-test
-    type: registry-image
-    icon: docker
-    source:
-      repository: govukpay/webhooks-egress
-      <<: *aws_test_config
 
 resource_types:
   - name: registry-image
@@ -736,20 +620,59 @@ jobs:
 
   - name: retag-egress-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: egress-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: egress-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-egress-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: egress-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: egress-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-egress-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: egress-ecr-registry-prod
-      - put: egress-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/egress"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: egress-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag        
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/egress:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/egress:((.:release-number))-candidate"
 
   - name: deploy-selfservice-to-prod
     serial: true
@@ -856,20 +779,59 @@ jobs:
 
   - name: retag-selfservice-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: selfservice-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: selfservice-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-selfservice-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: selfservice-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: selfservice-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-selfservice-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: selfservice-ecr-registry-prod
-      - put: selfservice-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/selfservice"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: selfservice-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/selfservice:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/selfservice:((.:release-number))-candidate"
 
   - name: selfservice-pact-tag
     plan:
@@ -1011,20 +973,59 @@ jobs:
 
   - name: retag-connector-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: connector-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: connector-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-connector-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: connector-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: connector-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-connector-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: connector-ecr-registry-prod
-      - put: connector-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/connector"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: connector-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:release-number))-candidate"
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:perf-tag))"
 
   - name: connector-pact-tag
     plan:
@@ -1108,20 +1109,59 @@ jobs:
 
   - name: retag-connector-image-for-test-perf-db
     plan:
-      - get: pay-ci
-      - get: connector-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: connector-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [connector-db-migration-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: connector-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+            input_mapping:
+              ecr-repo: connector-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-db-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [connector-db-migration-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
-        input_mapping:
-          ecr-repo: connector-ecr-registry-prod
-      - put: connector-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/connector"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: connector-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-db-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:release-number))-candidate"
 
   - name: deploy-toolbox-to-prod
     serial: true
@@ -1182,37 +1222,115 @@ jobs:
 
   - name: retag-toolbox-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: toolbox-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: toolbox-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-toolbox-to-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: toolbox-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: toolbox-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [deploy-toolbox-to-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: toolbox-ecr-registry-prod
-      - put: toolbox-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/toolbox"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: toolbox-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/toolbox:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/toolbox:((.:release-number))-candidate"
 
   - name: retag-nginx-proxy-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: nginx-proxy-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: nginx-proxy-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-toolbox-to-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: nginx-proxy-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: nginx-proxy-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [deploy-toolbox-to-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: nginx-proxy-ecr-registry-prod
-      - put: nginx-proxy-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/docker-nginx-proxy"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: nginx-proxy-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/docker-nginx-proxy:((.:release-number))-candidate"
 
   - name: deploy-frontend-to-prod
     serial: true
@@ -1329,37 +1447,115 @@ jobs:
 
   - name: retag-frontend-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: frontend-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: frontend-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-frontend-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: frontend-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: frontend-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-frontend-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: frontend-ecr-registry-prod
-      - put: frontend-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/frontend"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: frontend-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/frontend:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/frontend:((.:release-number))-candidate"
 
   - name: retag-nginx-forward-proxy-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: nginx-forward-proxy-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: nginx-forward-proxy-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-frontend-to-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: nginx-forward-proxy-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: nginx-forward-proxy-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [deploy-frontend-to-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: nginx-forward-proxy-ecr-registry-prod
-      - put: nginx-forward-proxy-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/nginx-forward-proxy"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: nginx-forward-proxy-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/nginx-forward-proxy:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/nginx-forward-proxy:((.:release-number))-candidate"
 
   - name: frontend-pact-tag
     plan:
@@ -1565,6 +1761,7 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:perf-tag))"
           
   - name: smoke-test-adminusers-on-prod
@@ -1652,6 +1849,7 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:perf-tag))"
 
   - name: adminusers-pact-tag
@@ -1794,20 +1992,59 @@ jobs:
 
   - name: retag-products-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: products-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: products-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-products-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: products-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: products-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-products-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: products-ecr-registry-prod
-      - put: products-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/products"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: products-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/products:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/products:((.:release-number))-candidate"
 
   - name: products-pact-tag
     plan:
@@ -1891,20 +2128,59 @@ jobs:
 
   - name: retag-products-image-for-test-perf-db
     plan:
-      - get: pay-ci
-      - get: products-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: products-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [products-db-migration-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: products-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+            input_mapping:
+              ecr-repo: products-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-db-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [products-db-migration-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
-        input_mapping:
-          ecr-repo: products-ecr-registry-prod
-      - put: products-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/products"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: products-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-db-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/products:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/products:((.:release-number))-candidate"
 
   - name: deploy-products-ui-to-prod
     serial: true
@@ -2011,20 +2287,59 @@ jobs:
 
   - name: retag-products-ui-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: products-ui-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: products-ui-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-products-ui-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: products-ui-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: products-ui-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-products-ui-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: products-ui-ecr-registry-prod
-      - put: products-ui-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/products-ui"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: products-ui-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/products-ui:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/products-ui:((.:release-number))-candidate"
 
   - name: products-ui-pact-tag
     plan:
@@ -2165,20 +2480,59 @@ jobs:
 
   - name: retag-publicauth-image-for-test-perf-db
     plan:
-      - get: pay-ci
-      - get: publicauth-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: publicauth-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [publicauth-db-migration-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: publicauth-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: publicauth-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [publicauth-db-migration-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
-        input_mapping:
-          ecr-repo: publicauth-ecr-registry-prod
-      - put: publicauth-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/publicauth"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: publicauth-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-db-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/publicauth:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/publicauth:((.:release-number))-candidate"
 
   - name: smoke-test-publicauth-on-prod
     serial_groups: [smoke-test]
@@ -2214,20 +2568,59 @@ jobs:
 
   - name: retag-publicauth-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: publicauth-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: publicauth-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-publicauth-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: publicauth-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+            input_mapping:
+              ecr-repo: publicauth-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-db-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-publicauth-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: publicauth-ecr-registry-prod
-      - put: publicauth-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/publicauth"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: publicauth-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/publicauth:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/publicauth:((.:release-number))-candidate"
 
   - name: deploy-cardid-to-prod
     serial: true
@@ -2369,20 +2762,59 @@ jobs:
 
   - name: retag-cardid-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: cardid-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: cardid-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [cardid-pact-tag]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: cardid-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: cardid-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [cardid-pact-tag]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: cardid-ecr-registry-prod        
-      - put: cardid-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/cardid"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: cardid-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/cardid:((.:release-number))-candidate"
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/cardid:((.:perf-tag))"
 
   - name: deploy-publicapi-to-prod
     serial: true
@@ -2489,20 +2921,59 @@ jobs:
 
   - name: retag-publicapi-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: publicapi-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: publicapi-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-publicapi-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: publicapi-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: publicapi-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-publicapi-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: publicapi-ecr-registry-prod        
-      - put: publicapi-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/publicapi"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: publicapi-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag   
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/publicapi:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/publicapi:((.:release-number))-candidate"
 
   - name: publicapi-pact-tag
     plan:
@@ -2644,20 +3115,59 @@ jobs:
 
   - name: retag-ledger-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: ledger-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: ledger-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-ledger-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: ledger-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: ledger-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-ledger-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: ledger-ecr-registry-prod
-      - put: ledger-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/ledger"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: ledger-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/ledger:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/ledger:((.:release-number))-candidate"
 
   - name: ledger-pact-tag
     plan:
@@ -2741,20 +3251,59 @@ jobs:
 
   - name: retag-ledger-image-for-test-perf-db
     plan:
-      - get: pay-ci
-      - get: ledger-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: ledger-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [ledger-db-migration-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: ledger-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+            input_mapping:
+              ecr-repo: ledger-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-db-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [ledger-db-migration-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
-        input_mapping:
-          ecr-repo: ledger-ecr-registry-prod
-      - put: ledger-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/ledger"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: ledger-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-db-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/ledger:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/ledger:((.:release-number))-candidate"
 
   - name: deploy-notifications-to-prod
     serial: true
@@ -2871,20 +3420,59 @@ jobs:
 
   - name: retag-notifications-for-test-perf
     plan:
-      - get: pay-ci
-      - get: notifications-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: notifications-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-notifications-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: notifications-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: notifications-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [smoke-test-notifications-on-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: notifications-ecr-registry-prod
-      - put: notifications-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/notifications"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: notifications-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/notifications:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/notifications:((.:release-number))-candidate"
 
   - name: deploy-scheduled-tasks
     plan:
@@ -2938,41 +3526,115 @@ jobs:
 
   - name: retag-alpine-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: alpine-ecr-registry-prod
-        passed: [deploy-scheduled-tasks]
+      - in_parallel:
+          steps:
+          - get: alpine-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-scheduled-tasks]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: alpine-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: alpine-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: alpine-ecr-registry-prod
-      - put: alpine-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/alpine"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: alpine-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
-        get_params:
-          skip_download: true
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/alpine:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/alpine:((.:release-number))-candidate"
 
   - name: retag-stream-s3-sqs-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: stream-s3-sqs-ecr-registry-prod
-        passed: [deploy-scheduled-tasks]
+      - in_parallel:
+          steps:
+          - get: stream-s3-sqs-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [deploy-scheduled-tasks]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: stream-s3-sqs-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: stream-s3-sqs-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: stream-s3-sqs-ecr-registry-prod
-      - put: stream-s3-sqs-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/stream-s3-sqs"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: stream-s3-sqs-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
-        get_params:
-          skip_download: true
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/stream-s3-sqs:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/stream-s3-sqs:((.:release-number))-candidate"
 
   - name: deploy-webhooks-to-prod
     serial: true
@@ -3108,20 +3770,59 @@ jobs:
 
   - name: retag-webhooks-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: webhooks-ecr-registry-prod
-        trigger: true
-        passed: [smoke-test-webhooks-on-prod]
+      - in_parallel:
+          steps:
+          - get: webhooks-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-webhooks-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: webhooks-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: webhooks-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: webhooks-ecr-registry-prod
-      - put: webhooks-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/webhooks"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: webhooks-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/webhooks:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/webhooks:((.:release-number))-candidate"
 
   - name: webhooks-db-migration-prod
     plan:
@@ -3170,20 +3871,59 @@ jobs:
 
   - name: retag-webhooks-image-for-test-perf-db
     plan:
-      - get: pay-ci
-      - get: webhooks-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: webhooks-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [webhooks-db-migration-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: webhooks-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+            input_mapping:
+              ecr-repo: webhooks-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-db-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        passed: [webhooks-db-migration-prod]
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
-        input_mapping:
-          ecr-repo: webhooks-ecr-registry-prod
-      - put: webhooks-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/webhooks"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: webhooks-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-db-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/webhooks:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/webhooks:((.:release-number))-candidate"
 
   - name: deploy-webhooks-egress-to-prod
     serial: true
@@ -3276,35 +4016,111 @@ jobs:
 
   - name: retag-webhooks-egress-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: webhooks-egress-ecr-registry-prod
-        trigger: true
-        passed: [smoke-test-webhooks-egress-on-prod]
+      - in_parallel:
+          steps:
+          - get: webhooks-egress-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+            passed: [smoke-test-webhooks-egress-on-prod]
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: webhooks-egress-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: webhooks-egress-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: webhooks-egress-ecr-registry-prod
-      - put: webhooks-egress-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/webhooks-egress"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: webhooks-egress-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/webhooks-egress:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/webhooks-egress:((.:release-number))-candidate"
 
   - name: retag-adot-image-for-test-perf
     plan:
-      - get: pay-ci
-      - get: adot-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - get: adot-ecr-registry-prod
+            params:
+              skip_download: true
+              format: oci
+            trigger: true
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: adot-ecr-registry-prod
+          - task: parse-perf-release-tag
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+            input_mapping:
+              ecr-repo: adot-ecr-registry-prod
+      - in_parallel:
+          steps:
+          - load_var: release-number
+            file: ecr-release-info/release-number
+          - load_var: perf-tag
+            file: parse-perf-release-tag/tag
+          - task: assume-retag-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            output_mapping:
+              assume-role: assume-retag-role
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
+              AWS_ROLE_SESSION_NAME: retag-ecr-image-as-perf
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - load_var: retag-role
+        file: assume-retag-role/assume-role.json
+        format: json
+      - task: copy-images-to-eu-west
+        file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
+        privileged: true
         params:
-          format: oci
-        trigger: true
-      - task: parse-perf-release-tag
-        file: pay-ci/ci/tasks/parse-perf-release-tag.yml
-        input_mapping:
-          ecr-repo: adot-ecr-registry-prod
-      - put: adot-ecr-registry-test
+          ECR_REPO_NAME: "govukpay/adot"
+          <<: *copy_to_eu_west_params
+      - task: retag-candidate-as-perf-in-ecr
+        file: pay-ci/ci/tasks/manifest-retag.yml
         params:
-          image: adot-ecr-registry-prod/image.tar
-          additional_tags: parse-perf-release-tag/tag
-        get_params:
-          skip_download: true
+          <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adot:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adot:((.:release-number))-candidate"
