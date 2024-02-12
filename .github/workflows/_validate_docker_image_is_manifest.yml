@@ -59,7 +59,7 @@ jobs:
             IMAGE_TAG=$(cut -f 2 -d ":" <<<"$IMAGE")
 
             MEDIATYPE=$(docker buildx imagetools inspect "$BASE_CONTAINER_DEFINITION" --raw 2>&1 | jq --raw-output .mediaType)
-            if [[ "$MEDIATYPE" != "application/vnd.docker.distribution.manifest.list.v2+json" ]] ; then
+            if [[ "$MEDIATYPE" != "application/vnd.docker.distribution.manifest.list.v2+json" ]] && [[ "$MEDIATYPE" != "application/vnd.oci.image.index.v1+json" ]]; then
               echo "ERROR! The image specified by '$BASE_CONTAINER_DEFINITION' does not refer to a manifest"
               echo
               echo "All image sha pins must point to the image manifest, not to one of the architecture specific images"
