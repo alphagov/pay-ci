@@ -1,0 +1,41 @@
+---
+resource_types:
+  - name: grafana-annotation
+    type: docker-image
+    source:
+      repository: gdsre/grafana-annotation-resource
+      tag: latest
+
+resources:
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: PP-12145-SPIKE-deployment-events
+  - name: spike-annotation
+    type: grafana-annotation
+    source:
+      url: "https://grafana.monitoring.pay-cd.deploy.payments.service.gov.uk"
+      username: concourse-dev
+      password: xRFW2BI88xPQeiVEdGEzav0VOMQ2LVxxEdk
+      tags:
+        - spike-test
+
+jobs:
+  - name: dummy-release
+    plan:
+      - get: pay-ci
+      - put: pretend-release-annotation
+        params:
+          tags:
+            - started
+      - task: pretend-to-release
+        file: pay-ci/ci/tasks/kill-time.yml
+      - put: pretend-release-annotation
+        params:
+        params:
+          tags:
+            - complete
+          template:  "pretend release of ${BUILD_ID}"
+          path: pretend-release-annotation
