@@ -173,7 +173,7 @@ jobs:
         params:
           CONTEXT: prometheus-pushgateway-resource-release
           DOCKER_CONFIG: docker_creds
-          LABEL_release_numer: ((.:release-number))
+          LABEL_release_number: ((.:release-number))
           LABEL_release_name: ((.:release-name))
           LABEL_release_sha: ((.:release-sha))
           LABEL_build_date: ((.:date))
