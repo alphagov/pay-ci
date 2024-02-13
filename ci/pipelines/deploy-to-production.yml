@@ -1811,7 +1811,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [smoke-test-adminusers-on-prod]
+            passed: [adminusers-pact-tag]
           - get: pay-ci
       - in_parallel:
           steps:
