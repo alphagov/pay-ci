@@ -6,6 +6,8 @@ definitions:
     image: updateThisValue
     config:
       platform: linux
+      inputs:
+        - name: app-repo
       run:
         path: /bin/bash
         args:
@@ -18,6 +20,23 @@ definitions:
             start_docker
 
             docker ps -a
+
+            cd app-repo
+
+            export MAVEN_HOME=/usr/lib/mvn
+            export PATH=$MAVEN_HOME/bin:$PATH
+            export MAVEN_REPO="$PWD/.m2"
+
+            cat <<'EOF' >settings.xml
+            <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+            https://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <localRepository>${env.MAVEN_REPO}</localRepository>
+            </settings>
+            EOF
+
+            mvn --global-settings settings.xml clean verify
 
             stop_docker
 
@@ -49,6 +68,20 @@ resources:
         - "ci/docker/concourse-runner/**"
         - "ci/docker/concourse-runner-with-java-17/**"
         - "ci/pipelines/concourse-runner.yml"
+
+  - name: adminusers-master
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-adminusers
+      branch: master
+
+  - name: webhooks-main
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-webhooks
+      branch: main
 
   - name: concourse-runner-src
     type: git
@@ -109,7 +142,7 @@ jobs:
           EMAIL: ((docker-email))
       - task: build
         privileged: true
-        params: 
+        params:
           CONTEXT: concourse-runner-src/ci/docker/concourse-runner
           DOCKER_CONFIG: docker_creds
           UNPACK_ROOTFS: true
@@ -144,7 +177,7 @@ jobs:
           EMAIL: ((docker-email))
       - task: build
         privileged: true
-        params: 
+        params:
           CONTEXT: concourse-runner-with-java-17-src/ci/docker/concourse-runner-with-java-17
           DOCKER_CONFIG: docker_creds
           UNPACK_ROOTFS: true
@@ -178,6 +211,12 @@ jobs:
         - get: concourse-runner-pr
           trigger: true
         - get: pay-ci
+          trigger: false
+        - get: adminusers-master
+          params: { depth: 1 }
+          trigger: false
+        - get: webhooks-main
+          params: { depth: 1 }
           trigger: false
       - put: concourse-runner-pr
         params:
@@ -235,9 +274,13 @@ jobs:
         - <<: *test-concourse-runner
           task: test-concourse-runner
           image: concourse-runner-image
+          input_mapping:
+            app-repo: adminusers-master
         - <<: *test-concourse-runner
           task: test-concourse-runner-with-java-17
           image: concourse-runner-with-java-17-image
+          input_mapping:
+            app-repo: webhooks-main
       - put: concourse-runner-pr
         params:
           path: concourse-runner-pr
