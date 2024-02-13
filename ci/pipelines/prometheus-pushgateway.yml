@@ -17,6 +17,15 @@ definitions:
     aws_region: eu-west-1
 
 resources:
+  - name: prometheus-pushgateway-pipeline
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/prometheus-pushgateway.yml
+
   - name: prometheus-pushgateway
     type: registry-image
     icon: docker
@@ -196,3 +205,10 @@ jobs:
           additional_tags: tags/tags
         get_params:
           skip_download: true
+
+  - name: update-prometheus-pushgateway-pipeline
+    plan:
+      - get: prometheus-pushgateway-pipeline
+        trigger: true
+      - set_pipeline: prometheus-pushgateway
+        file: prometheus-pushgateway-pipeline/ci/pipelines/prometheus-pushgateway.yml
