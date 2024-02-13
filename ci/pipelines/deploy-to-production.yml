@@ -792,7 +792,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [smoke-test-selfservice-on-prod]
+            passed: [selfservice-pact-tag]
           - get: pay-ci
       - in_parallel:
           steps:
@@ -986,7 +986,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [smoke-test-connector-on-prod]
+            passed: [connector-pact-tag]
           - get: pay-ci
       - in_parallel:
           steps:
@@ -1460,7 +1460,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [smoke-test-frontend-on-prod]
+            passed: [frontend-pact-tag]
           - get: pay-ci
       - in_parallel:
           steps:
@@ -1723,7 +1723,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [adminusers-pact-tag]
+            passed: [adminusers-db-migration-prod]
           - get: pay-ci
       - in_parallel:
           steps:
@@ -1811,7 +1811,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [adminusers-pact-tag]
+            passed: [smoke-test-adminusers-on-prod]
           - get: pay-ci
       - in_parallel:
           steps:
@@ -2005,7 +2005,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [smoke-test-products-on-prod]
+            passed: [products-pact-tag]
           - get: pay-ci
       - in_parallel:
           steps:
@@ -2300,7 +2300,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [smoke-test-products-ui-on-prod]
+            passed: [products-ui-pact-tag]
           - get: pay-ci
       - in_parallel:
           steps:
@@ -2934,7 +2934,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [smoke-test-publicapi-on-prod]
+            passed: [publicapi-pact-tag]
           - get: pay-ci
       - in_parallel:
           steps:
@@ -3128,7 +3128,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [smoke-test-ledger-on-prod]
+            passed: [ledger-pact-tag]
           - get: pay-ci
       - in_parallel:
           steps:
@@ -3783,7 +3783,7 @@ jobs:
               skip_download: true
               format: oci
             trigger: true
-            passed: [smoke-test-webhooks-on-prod]
+            passed: [webhooks-pact-tag]
           - get: pay-ci
       - in_parallel:
           steps:
