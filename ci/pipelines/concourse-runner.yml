@@ -134,6 +134,9 @@ jobs:
         - get: concourse-runner-src
           trigger: true
         - get: pay-ci
+        - get: adminusers-master
+          params: { depth: 1 }
+          trigger: false
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -160,6 +163,8 @@ jobs:
             path: build
       - <<: *test-concourse-runner
         image: image
+        input_mapping:
+          app-repo: adminusers-master
       - put: concourse-runner
         params: {image: image/image.tar}
 
@@ -169,6 +174,9 @@ jobs:
         - get: concourse-runner-with-java-17-src
           trigger: true
         - get: pay-ci
+        - get: webhooks-main
+          params: { depth: 1 }
+          trigger: false
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
         params:
@@ -195,6 +203,8 @@ jobs:
             path: build
       - <<: *test-concourse-runner
         image: image
+        input_mapping:
+          app-repo: webhooks-main
       - put: concourse-runner-with-java-17
         params: {image: image/image.tar}
 
