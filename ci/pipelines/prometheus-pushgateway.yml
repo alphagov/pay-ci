@@ -23,7 +23,7 @@ resources:
     check_every: 1h
     source:
       repository: prom/pushgateway
-      tag: v1.6.0
+      tag: v1.7.0
       username: ((docker-username))
       password: ((docker-access-token))
 
@@ -33,7 +33,7 @@ resources:
     check_every: never
     source:
       repository: pushgateway
-      tag: v1.6.0
+      tag: v1.7.0
       <<: *aws_deploy_config
 
   - name: adot-ecr-registry-staging
@@ -56,6 +56,33 @@ resources:
     type: slack-notification
     source:
       url: https://hooks.slack.com/services/((slack-notification-secret))
+  
+  - name: prometheus-pushgateway-resource-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-prometheus-pushgateway-resource
+      tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+  - name: prometheus-pushgateway-resource-dockerhub
+    type: registry-image
+    icon: docker
+    source:
+      repository: governmentdigitalservice/pay-prometheus-pushgateway-resource
+      tag: latest-master
+      username: ((docker-username))
+      password: ((docker-access-token))
 
 resource_types:
   - name: slack-notification
@@ -109,3 +136,63 @@ jobs:
         text: ":green-circle: Copied pushgateway:v1.6.0 image from Docker Hub to ECR - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
         icon_emoji: ":concourse:"
         username: pay-concourse
+
+  - name: build-and-push-prometheus-pushgateway-resource
+    plan:
+      - in_parallel:
+          steps:
+          - get: prometheus-pushgateway-resource-release
+            trigger: true
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - task: parse-release-tag
+            file: pay-ci/ci/tasks/parse-release-tag.yml
+            input_mapping:
+              git-release: prometheus-pushgateway-resource-release
+          - task: generate-docker-creds-config
+            file: pay-ci/ci/tasks/generate-docker-config-file.yml
+            params:
+              USERNAME: ((docker-username))
+              PASSWORD: ((docker-access-token))
+              EMAIL: ((docker-email))
+      - in_parallel:
+          steps:
+          - load_var: release-name
+            file: prometheus-pushgateway-resource-release/.git/ref
+          - load_var: release-tag
+            file: tags/tags
+          - load_var: release-number
+            file: tags/release-number
+          - load_var: release-sha
+            file: tags/release-sha
+          - load_var: date
+            file: tags/date
+      - task: build-prometheus-pushgateway-resource
+        privileged: true
+        params:
+          CONTEXT: prometheus-pushgateway-resource-release
+          DOCKER_CONFIG: docker_creds
+          LABEL_release_number: ((.:release-number))
+          LABEL_release_name: ((.:release-name))
+          LABEL_release_sha: ((.:release-sha))
+          LABEL_build_date: ((.:date))
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: prometheus-pushgateway-resource-release
+            - name: docker_creds
+          outputs:
+            - name: image
+          run:
+            path: build
+      - put: prometheus-pushgateway-resource-dockerhub
+        params:
+          image: image/image.tar
+          additional_tags: tags/tags
+        get_params:
+          skip_download: true
