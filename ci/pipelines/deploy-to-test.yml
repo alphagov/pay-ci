@@ -1,4 +1,19 @@
 definitions:
+  - &load_app_name
+    load_var: app_name
+    file: snippet/app_name
+  - &load_app_release_number
+    load_var: app_release_number
+    file: snippet/app_release_number
+  - &load_adot_release_number
+    load_var: adot_release_number
+    file: snippet/adot_release_number
+  - &load_nginx_release_number
+    load_var: nginx_release_number
+    file: snippet/nginx_release_number
+  - &load_nginx_forward_proxy_release_number
+    load_var: nginx_forward_proxy_release_number
+    file: snippet/nginx_forward_proxy_release_number
   - &assume_copy_from_test_ecr_role
     task: assume-copy-from-ecr-test-role
     file: pay-ci/ci/tasks/assume-role.yml
@@ -35,6 +50,7 @@ copy_ecr_from_test_to_staging_params: &copy_ecr_from_test_to_staging_params
   DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:write-to-staging-ecr-role.AWS_SECRET_ACCESS_KEY))
   DESTINATION_AWS_SESSION_TOKEN: ((.:write-to-staging-ecr-role.AWS_SESSION_TOKEN))
 
+
 aws_test_config: &aws_test_config
   aws_access_key_id: ((readonly_access_key_id))
   aws_secret_access_key: ((readonly_secret_access_key))
@@ -67,6 +83,52 @@ put_success_slack_notification: &put_success_slack_notification
       username: pay-concourse
       text: "((.:success_snippet)) |
             <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+put_success_slack_and_metric_notification_with_nginx: &put_success_slack_and_metric_notification
+  on_success:
+    in_parallel:
+        steps:
+        - put: slack-notification
+          params:
+            channel: '#govuk-pay-activity'
+            icon_emoji: ":fargate:"
+            username: pay-concourse
+            text: "((.:success_snippet)) |
+                  <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        - put: send-app-release-number-metric
+          resource: prometheus-pushgateway
+          params:
+            metric: deployment_pipeline_app_release_number_gauge
+            value: "((.:app_release_number))"
+            labels:
+              pipeline: "$BUILD_PIPELINE_NAME"
+              conocurse_job: "$BUILD_JOB_NAME"
+              app: "((.:app_name))"
+              outcome: success
+        - put: send-nginx-release-number-metric
+          resource: prometheus-pushgateway
+          params:
+            metric: deployment_pipeline_sidecar_release_number_gauge
+            value: "((.:nginx_release_number))"
+            labels:
+              pipeline: "$BUILD_PIPELINE_NAME"
+              conocurse_job: "$BUILD_JOB_NAME"
+              app: "((.:app_name))"
+              outcome: success
+              sidecar: nginx
+        - put: send-adot-release-number-metric
+          resource: prometheus-pushgateway
+          params:
+            metric: deployment_pipeline_sidecar_release_number_gauge
+            value: "((.:nginx_release_number))"
+            labels:
+              pipeline: "$BUILD_PIPELINE_NAME"
+              conocurse_job: "$BUILD_JOB_NAME"
+              app: "((.:app_name))"
+              outcome: success
+              sidecar: nginx
+
+
 
 put_failure_slack_notification: &put_failure_slack_notification
   on_failure:
@@ -142,6 +204,11 @@ snippet_params_app_version: &snippet_params_app_version
 
 
 resources:
+  - name: prometheus-pushgateway
+    type: prometheus-pushgateway
+    source:
+      url: https://prometheus-pushgateway.deploy.payments.service.gov.uk
+      job: concourse_deploy_metric
   - name: deploy-to-test-pipeline-definition
     type: git
     icon: github
@@ -157,7 +224,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master
+      branch: pp-12123/send-release-metric-for-adminusers-deploy
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
   - name: adot-git-release
@@ -601,6 +668,11 @@ resource_types:
     source:
       repository: cfcommunity/slack-notification-resource
       tag: latest
+  - name: prometheus-pushgateway
+    type: docker-image
+    source:
+      repository: governmentdigitalservice/pay-prometheus-pushgateway-resource
+      tag: latest-master
 
 groups:
   - name: adminusers
@@ -2288,10 +2360,16 @@ jobs:
           APP_NAME: adminusers
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -2329,7 +2407,7 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification
+    <<: *put_success_slack_and_metric_notification
     <<: *put_failure_slack_notification
 
   - name: adminusers-db-migration
