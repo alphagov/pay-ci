@@ -84,6 +84,13 @@ put_success_slack_notification: &put_success_slack_notification
       text: "((.:success_snippet)) |
             <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
+pushgateway_default_labels: &pushgateway_default_labels
+  pipeline: "$BUILD_PIPELINE_NAME"
+  conocurse_job: "$BUILD_JOB_NAME"
+  app: "((.:app_name))"
+  environment: test-12
+  instance: "concourse"
+
 put_success_slack_and_metric_notification_with_nginx: &put_success_slack_and_metric_notification
   on_success:
     in_parallel:
@@ -98,37 +105,73 @@ put_success_slack_and_metric_notification_with_nginx: &put_success_slack_and_met
         - put: send-app-release-number-metric
           resource: prometheus-pushgateway
           params:
-            metric: deployment_pipeline_app_release_number_gauge
+            metric: deployment_pipeline_app_release_number
             value: "((.:app_release_number))"
+            job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/success"
             labels:
-              pipeline: "$BUILD_PIPELINE_NAME"
-              conocurse_job: "$BUILD_JOB_NAME"
-              app: "((.:app_name))"
+              <<: *pushgateway_default_labels
               outcome: success
         - put: send-nginx-release-number-metric
           resource: prometheus-pushgateway
           params:
-            metric: deployment_pipeline_sidecar_release_number_gauge
+            metric: deployment_pipeline_sidecar_release_number
             value: "((.:nginx_release_number))"
+            job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
             labels:
-              pipeline: "$BUILD_PIPELINE_NAME"
-              conocurse_job: "$BUILD_JOB_NAME"
-              app: "((.:app_name))"
+              <<: *pushgateway_default_labels
               outcome: success
               sidecar: nginx
         - put: send-adot-release-number-metric
           resource: prometheus-pushgateway
           params:
-            metric: deployment_pipeline_sidecar_release_number_gauge
-            value: "((.:nginx_release_number))"
+            metric: deployment_pipeline_sidecar_release_number
+            value: "((.:adot_release_number))"
+            job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/success"
             labels:
-              pipeline: "$BUILD_PIPELINE_NAME"
-              conocurse_job: "$BUILD_JOB_NAME"
-              app: "((.:app_name))"
+              <<: *pushgateway_default_labels
               outcome: success
+              sidecar: adot
+
+put_failure_slack_and_metric_notification_with_nginx: &put_failure_slack_and_metric_notification
+  on_failure:
+    in_parallel:
+        steps:
+        - put: slack-notification
+          params:
+            channel: '#govuk-pay-announce'
+            icon_emoji: ":fargate:"
+            username: pay-concourse
+            text: "((.:failure_snippet)) \n
+                  - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        - put: send-app-release-number-metric
+          resource: prometheus-pushgateway
+          params:
+            metric: deployment_pipeline_app_release_number
+            value: "((.:app_release_number))"
+            job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/failure"
+            labels:
+              <<: *pushgateway_default_labels
+              outcome: failure
+        - put: send-nginx-release-number-metric
+          resource: prometheus-pushgateway
+          params:
+            metric: deployment_pipeline_sidecar_release_number
+            value: "((.:nginx_release_number))"
+            job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
+            labels:
+              <<: *pushgateway_default_labels
+              outcome: failure
               sidecar: nginx
-
-
+        - put: send-adot-release-number-metric
+          resource: prometheus-pushgateway
+          params:
+            metric: deployment_pipeline_sidecar_release_number
+            value: "((.:adot_release_number))"
+            job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/failure"
+            labels:
+              <<: *pushgateway_default_labels
+              outcome: failure
+              sidecar: adot
 
 put_failure_slack_notification: &put_failure_slack_notification
   on_failure:
@@ -208,7 +251,7 @@ resources:
     type: prometheus-pushgateway
     source:
       url: https://prometheus-pushgateway.deploy.payments.service.gov.uk
-      job: concourse_deploy_metric
+      job: deployment_pipeline_release_number
   - name: deploy-to-test-pipeline-definition
     type: git
     icon: github
@@ -2340,14 +2383,16 @@ jobs:
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: adminusers-ecr-registry-test
-        trigger: true
-      - get: nginx-proxy-ecr-registry-test
-        trigger: true
-      - get: adot-ecr-registry-test
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-test
+            trigger: true
+          - get: nginx-proxy-ecr-registry-test
+            trigger: true
+          - get: adot-ecr-registry-test
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - load_var: nginx_image_tag
@@ -2408,7 +2453,7 @@ jobs:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
     <<: *put_success_slack_and_metric_notification
-    <<: *put_failure_slack_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: adminusers-db-migration
     plan:
