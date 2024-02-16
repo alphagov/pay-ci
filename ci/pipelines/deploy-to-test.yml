@@ -74,15 +74,31 @@ aws_assumed_role_creds: &aws_assumed_role_creds
   AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
   AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
+slack-notification-success: &slack_notification_success
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-activity'
+    icon_emoji: ":fargate:"
+    username: pay-concourse
+    text: "((.:success_snippet)) |
+          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
 put_success_slack_notification: &put_success_slack_notification
   on_success:
-    put: slack-notification
-    params:
-      channel: '#govuk-pay-activity'
-      icon_emoji: ":fargate:"
-      username: pay-concourse
-      text: "((.:success_snippet)) |
-            <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    *slack_notification_success
+
+slack-notification-failure: &slack_notification_failure
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-announce'
+    icon_emoji: ":fargate:"
+    username: pay-concourse
+    text: "((.:failure_snippet)) \n
+          - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+put_failure_slack_notification: &put_failure_slack_notification
+  on_failure:
+    *slack_notification_failure
 
 pushgateway_default_labels: &pushgateway_default_labels
   pipeline: "$BUILD_PIPELINE_NAME"
@@ -91,97 +107,115 @@ pushgateway_default_labels: &pushgateway_default_labels
   environment: test-12
   instance: "concourse"
 
-put_success_slack_and_metric_notification_with_nginx: &put_success_slack_and_metric_notification
+send_app_release_metric_success: &send_app_release_metric_success
+  put: send-app-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_app_release_number
+    value: "((.:app_release_number))"
+    job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/success"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: success
+
+send_nginx_release_metric_success: &send_nginx_release_metric_success
+  put: send-nginx-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_sidecar_release_number
+    value: "((.:nginx_release_number))"
+    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: success
+      sidecar: nginx
+
+send_adot_release_metric_success: &send_adot_release_metric_success
+  put: send-adot-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_sidecar_release_number
+    value: "((.:adot_release_number))"
+    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/success"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: success
+      sidecar: adot
+
+send_app_release_metric_failure: &send_app_release_metric_failure
+  put: send-app-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_app_release_number
+    value: "((.:app_release_number))"
+    job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/failure"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: failure
+
+send_nginx_release_metric_failure: &send_nginx_release_metric_failure
+  put: send-nginx-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_sidecar_release_number
+    value: "((.:nginx_release_number))"
+    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: failure
+      sidecar: nginx
+
+send_adot_release_metric_failure: &send_adot_release_metric_failure
+  put: send-adot-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_sidecar_release_number
+    value: "((.:adot_release_number))"
+    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/failure"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: failure
+      sidecar: adot
+
+put_success_metric: &put_success_metric
+  on_success:
+    *send_app_release_metric_success
+
+put_failure_metric: &put_failure_metric
+  on_failure:
+    *send_app_release_metric_failure
+
+put_success_slack_and_metric_notification: &put_success_slack_and_metric_notification
   on_success:
     in_parallel:
         steps:
-        - put: slack-notification
-          params:
-            channel: '#govuk-pay-activity'
-            icon_emoji: ":fargate:"
-            username: pay-concourse
-            text: "((.:success_snippet)) |
-                  <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-        - put: send-app-release-number-metric
-          resource: prometheus-pushgateway
-          params:
-            metric: deployment_pipeline_app_release_number
-            value: "((.:app_release_number))"
-            job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/success"
-            labels:
-              <<: *pushgateway_default_labels
-              outcome: success
-        - put: send-nginx-release-number-metric
-          resource: prometheus-pushgateway
-          params:
-            metric: deployment_pipeline_sidecar_release_number
-            value: "((.:nginx_release_number))"
-            job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
-            labels:
-              <<: *pushgateway_default_labels
-              outcome: success
-              sidecar: nginx
-        - put: send-adot-release-number-metric
-          resource: prometheus-pushgateway
-          params:
-            metric: deployment_pipeline_sidecar_release_number
-            value: "((.:adot_release_number))"
-            job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/success"
-            labels:
-              <<: *pushgateway_default_labels
-              outcome: success
-              sidecar: adot
+        - *slack_notification_success
+        - *send_app_release_metric_success
 
-put_failure_slack_and_metric_notification_with_nginx: &put_failure_slack_and_metric_notification
+put_failure_slack_and_metric_notification: &put_failure_slack_and_metric_notification
   on_failure:
     in_parallel:
         steps:
-        - put: slack-notification
-          params:
-            channel: '#govuk-pay-announce'
-            icon_emoji: ":fargate:"
-            username: pay-concourse
-            text: "((.:failure_snippet)) \n
-                  - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-        - put: send-app-release-number-metric
-          resource: prometheus-pushgateway
-          params:
-            metric: deployment_pipeline_app_release_number
-            value: "((.:app_release_number))"
-            job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/failure"
-            labels:
-              <<: *pushgateway_default_labels
-              outcome: failure
-        - put: send-nginx-release-number-metric
-          resource: prometheus-pushgateway
-          params:
-            metric: deployment_pipeline_sidecar_release_number
-            value: "((.:nginx_release_number))"
-            job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
-            labels:
-              <<: *pushgateway_default_labels
-              outcome: failure
-              sidecar: nginx
-        - put: send-adot-release-number-metric
-          resource: prometheus-pushgateway
-          params:
-            metric: deployment_pipeline_sidecar_release_number
-            value: "((.:adot_release_number))"
-            job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/failure"
-            labels:
-              <<: *pushgateway_default_labels
-              outcome: failure
-              sidecar: adot
+        - *slack_notification_failure
+        - *send_app_release_metric_failure
 
-put_failure_slack_notification: &put_failure_slack_notification
+put_success_slack_and_metric_notification_with_nginx_and_adot: &put_success_slack_and_metric_notification_with_nginx_and_adot
+  on_success:
+    in_parallel:
+        steps:
+        - *slack_notification_success
+        - *send_app_release_metric_success
+        - *send_nginx_release_metric_success
+        - *send_adot_release_metric_success 
+
+put_failure_slack_and_metric_notification_with_nginx_and_adot: &put_failure_slack_and_metric_notification_with_nginx_and_adot
   on_failure:
-    put: slack-notification
-    params:
-      channel: '#govuk-pay-announce'
-      icon_emoji: ":fargate:"
-      username: pay-concourse
-      text: "((.:failure_snippet)) \n
-            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    in_parallel:
+        steps:
+        - *slack_notification_failure
+        - *send_app_release_metric_failure
+        - *send_nginx_release_metric_failure
+        - *send_adot_release_metric_failure
 
 put_db_migration_slack_notification: &put_db_migration_slack_notification
   put: slack-notification
@@ -2452,8 +2486,8 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_and_metric_notification
-    <<: *put_failure_slack_and_metric_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: adminusers-db-migration
     plan:
@@ -2503,10 +2537,12 @@ jobs:
   - name: smoke-test-adminusers
     serial_groups: [smoke-test]
     plan:
-      - get: adminusers-ecr-registry-test
-        trigger: true
-        passed: [deploy-adminusers]
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-test
+            trigger: true
+            passed: [deploy-adminusers]
+          - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -2515,10 +2551,14 @@ jobs:
           APP_NAME: adminusers
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -2529,27 +2569,33 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: adminusers-pact-tag
     plan:
-      - get: adminusers-ecr-registry-test
-        passed: [smoke-test-adminusers]
-        trigger: true
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-test
+            passed: [smoke-test-adminusers]
+            trigger: true
+          - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-test/tag
-      - get: pay-ci
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: adminusers
           ACTION_NAME: Pact tag
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -2564,8 +2610,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: adminusers
           PACT_TAG: test-fargate
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: push-adminusers-to-staging-ecr
     plan:
