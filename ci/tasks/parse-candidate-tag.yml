@@ -22,3 +22,10 @@ run:
       RELEASE_NUMBER=$(cut -f 1 -d "-" < ecr-repo/tag)
       echo "${RELEASE_NUMBER}-release" | tee parse-candidate-tag/release-tag
       echo "$RELEASE_NUMBER" > parse-candidate-tag/release-number
+
+      # ecr-repo/respository looks like '223851549868.dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers'
+      # in awk FS is the field separator and NF is the number of fields, meaning we separate on / and print the last field
+      APP_NAME=$(awk 'BEGIN { FS="/" } { print $NF }' < ecr-repo/repository)
+      echo -n "APP name: "
+      echo "${APP_NAME}" | tee parse-candidate-tag/app_name
+      echo
