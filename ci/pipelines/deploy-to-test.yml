@@ -5,12 +5,18 @@ definitions:
   - &load_app_name_from_parse_ecr_release_tag
     load_var: app_name
     file: ecr-release-info/app_name
+  - &load_app_name_from_parse_candidate_tag
+    load_var: app_name
+    file: parse-candidate-tag/app_name
   - &load_app_release_number
     load_var: app_release_number
     file: snippet/app_release_number
   - &load_app_release_number_from_parse_ecr_release_tag
     load_var: app_release_number
     file: ecr-release-info/release-number
+  - &load_app_release_number_from_parse_candidate_tag
+    load_var: app_release_number
+    file: parse-candidate-tag/release-number
   - &load_adot_release_number
     load_var: adot_release_number
     file: snippet/adot_release_number
@@ -2357,6 +2363,8 @@ jobs:
               format: json
             - load_var: release_image_tag
               file: parse-candidate-tag/release-tag
+            - *load_app_name_from_parse_candidate_tag
+            - *load_app_release_number_from_parse_candidate_tag
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
@@ -2401,23 +2409,29 @@ jobs:
                 SOURCE_MANIFEST: "governmentdigitalservice/pay-adminusers:((.:candidate_image_tag))"
                 NEW_MANIFEST: "governmentdigitalservice/pay-adminusers:latest-master"
     on_failure:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-announce'
-        silent: true
-        text: ':red-circle: adminusers candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-announce'
+            silent: true
+            text: ':red-circle: adminusers candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_failure
     on_success:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-activity'
-        silent: true
-        text: ':green-circle: adminusers candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-activity'
+            silent: true
+            text: ':green-circle: adminusers candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_success
 
   - name: deploy-adminusers
     serial: true
