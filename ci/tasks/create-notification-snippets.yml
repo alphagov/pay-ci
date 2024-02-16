@@ -16,7 +16,7 @@ params:
 outputs:
   - name: snippet
 run:
-  path: sh
+  path: ash
   args:
     - -c
     - |

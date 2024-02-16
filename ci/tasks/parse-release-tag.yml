@@ -26,7 +26,7 @@ run:
       cat tags/date >> tags/all-candidate-tags
 
       # in awk FS is the field separator and NF is the number of fields, meaning we separate on / and print the last field
-      APP_NAME=$(cat git-release/.git/config | grep 'url = ' | awk '{ print $3 }' | awk 'BEGIN { FS="/" } { print $NF }' | sed -E 's/^pay-//')
+      APP_NAME=$(grep 'url = ' < git-release/.git/config | awk '{ print $3 }' | awk 'BEGIN { FS="/" } { print $NF }' | sed -E 's/^pay-//')
       echo -n "APP name: "
       echo "${APP_NAME}" | tee tags/app_name
       echo
