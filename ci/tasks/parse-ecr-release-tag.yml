@@ -15,7 +15,16 @@ run:
     - |
       echo -n "ECR Image Tag: "
       cat ecr-image/tag
+      echo
       RELEASE_NUMBER=$(cut -f 1 -d "-" < ecr-image/tag)
       echo -n "Release number: "
       echo "${RELEASE_NUMBER}" | tee ecr-release-info/release-number
+      echo
+
+      # ecr-image/respository looks like '223851549868.dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers'
+      # in awk FS is the field separator and NF is the number of fields, meaning we separate on / and print the last field
+      APP_NAME=$(awk 'BEGIN { FS="/" } { print $NF }' < ecr-image/repository)
+      echo -n "APP name: "
+      echo "${APP_NAME}" | tee ecr-release-info/app_name
+      echo
 

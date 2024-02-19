@@ -16,11 +16,14 @@ params:
 outputs:
   - name: snippet
 run:
-  path: sh
+  path: ash
   args:
     - -c
     - |
       APP_RELEASE_NUMBER=$(echo "${APPLICATION_IMAGE_TAG}" | sed 's/-release//')
+
+      echo -n "${APP_NAME}" | tee -a snippet/app_name
+      echo -n "${APP_RELEASE_NUMBER}" | tee -a snippet/app_release_number
 
       cat <<EOT >> snippet/start
       :rocket: ${ACTION_NAME} of <https://github.com/alphagov/pay-${APP_NAME}/releases/tag/alpha_release-${APP_RELEASE_NUMBER}|${APP_NAME} ${APP_RELEASE_NUMBER}-release> on ${ENV} is beginning
@@ -38,6 +41,7 @@ run:
       # shellcheck disable=SC2015
       [ -n "${NGINX_IMAGE_TAG}" ] && \
       NGINX_RELEASE_NUMBER=$(echo "${NGINX_IMAGE_TAG}" | sed 's/-release//') && \
+      echo -n "${NGINX_RELEASE_NUMBER}" | tee -a snippet/nginx_release_number && \
       echo "- <https://github.com/alphagov/pay-nginx-proxy/releases/tag/alpha_release-${NGINX_RELEASE_NUMBER}|nginx-proxy v${NGINX_IMAGE_TAG}>" | \
       tee -a snippet/failure || true
 
@@ -45,11 +49,14 @@ run:
       # shellcheck disable=SC2015
       [ -n "${ADOT_IMAGE_TAG}" ] && \
       ADOT_RELEASE_NUMBER=$(echo "${ADOT_IMAGE_TAG}" | sed 's/-release//') && \
+      echo -n "${ADOT_RELEASE_NUMBER}" | tee -a snippet/adot_release_number && \
       echo "- <https://github.com/alphagov/pay-adot/releases/tag/alpha_release-${ADOT_RELEASE_NUMBER}|adot v${ADOT_IMAGE_TAG}>" | \
       tee -a snippet/failure || true
 
       # Disable the shellcheck rule telling us this isn't an if-then-else. We know, and it's the desirable
       # shellcheck disable=SC2015
       [ -n "${NGINX_FORWARD_PROXY_IMAGE_TAG}" ] && \
+      NGINX_FORWARD_PROXY_RELEASE_NUMBER=$(echo "${NGINX_FORWARD_PROXY_IMAGE_TAG}" | sed 's/-release//') && \
+      echo -n "${NGINX_FORWARD_PROXY_RELEASE_NUMBER}" | tee -a snippet/nginx_forward_proxy_release_number && \
       echo "- <https://github.com/alphagov/pay-nginx-forward-proxy/releases/tag/${NGINX_FORWARD_PROXY_IMAGE_TAG}|nginx-forward-proxy v${NGINX_FORWARD_PROXY_IMAGE_TAG}>" | \
       tee -a snippet/failure || true
