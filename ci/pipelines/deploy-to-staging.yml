@@ -934,14 +934,12 @@ jobs:
         trigger: true
         passed: [deploy-selfservice-to-staging]
       - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: selfservice-ecr-registry-staging
+          ecr-image: selfservice-ecr-registry-staging
       - load_var: application_image_tag
         file: selfservice-ecr-registry-staging/tag
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -971,14 +969,12 @@ jobs:
         passed: [smoke-test-selfservice-on-staging]
         trigger: true
       - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: selfservice-ecr-registry-staging
+          ecr-image: selfservice-ecr-registry-staging
       - load_var: application_image_tag
         file: selfservice-ecr-registry-staging/tag
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1266,14 +1262,12 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: toolbox-ecr-registry-staging
+          ecr-image: toolbox-ecr-registry-staging
       - load_var: application_image_tag
         file: toolbox-ecr-registry-staging/tag
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
       - load_var: adot_image_tag
         file: adot-ecr-registry-staging/tag
       - load_var: nginx_image_tag
@@ -1783,14 +1777,12 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: adminusers-ecr-registry-staging
+          ecr-image: adminusers-ecr-registry-staging
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: adot_image_tag
@@ -1900,14 +1892,12 @@ jobs:
         trigger: true
         passed: [deploy-adminusers-to-staging]
       - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: adminusers-ecr-registry-staging
+          ecr-image: adminusers-ecr-registry-staging
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -1939,12 +1929,10 @@ jobs:
       - load_var: application_image_tag
         file: adminusers-ecr-registry-staging/tag
       - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: adminusers-ecr-registry-staging
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
+          ecr-image: adminusers-ecr-registry-staging
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -2908,14 +2896,12 @@ jobs:
         trigger: true
       - get: pay-infra
       - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: ledger-ecr-registry-staging 
+          ecr-image: ledger-ecr-registry-staging 
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
       - load_var: nginx_image_tag
         file: nginx-proxy-ecr-registry-staging/tag
       - load_var: adot_image_tag
@@ -2979,14 +2965,12 @@ jobs:
         trigger: true
         passed: [deploy-ledger-to-staging]
       - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: ledger-ecr-registry-staging 
+          ecr-image: ledger-ecr-registry-staging 
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
@@ -3016,14 +3000,12 @@ jobs:
         passed: [smoke-test-ledger-on-staging]
         trigger: true 
       - get: pay-ci
-      - task: parse-staging-release-tag
-        file: pay-ci/ci/tasks/parse-staging-release-tag.yml
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-repo: ledger-ecr-registry-staging
+          ecr-image: ledger-ecr-registry-staging
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
-      - load_var: parse_staging_release_tag
-        file: parse-staging-release-tag/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
