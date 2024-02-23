@@ -121,16 +121,6 @@ put_start_slack_notification: &put_start_slack_notification
     text: "((.:start_snippet)) |
           <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-put_success_slack_notification_p1: &put_success_slack_notification_p1
-  on_success:
-    put: slack-notification
-    params:
-      channel: '#govuk-pay-announce'
-      icon_emoji: ":fargate:"
-      username: pay-concourse
-      text: "((.:success_snippet)) |
-            <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
 slack_notification_success: &slack_notification_success
   put: slack-notification
   params:
@@ -140,9 +130,22 @@ slack_notification_success: &slack_notification_success
     text: "((.:success_snippet)) \n\n
           <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
+slack_notification_success_announce: &slack_notification_success_announce
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-announce'
+    icon_emoji: ":fargate:"
+    username: pay-concourse
+    text: "((.:success_snippet)) \n\n
+          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
 put_success_slack_notification: &put_success_slack_notification
   on_success:
     *slack_notification_success
+
+put_success_slack_notification_announce: &put_success_slack_notification_announce
+  on_success:
+    *slack_notification_success_announce
 
 slack_notification_failure: &slack_notification_failure
     put: slack-notification
@@ -249,6 +252,13 @@ put_success_slack_and_metric_notification: &put_success_slack_and_metric_notific
         - *slack_notification_success
         - *send_app_release_metric_success
 
+put_success_slack_and_metric_notification_announce: &put_success_slack_and_metric_notification_announce
+  on_success:
+    in_parallel:
+        steps:
+        - *slack_notification_success_announce
+        - *send_app_release_metric_success
+
 put_failure_slack_and_metric_notification: &put_failure_slack_and_metric_notification
   on_failure:
     in_parallel:
@@ -263,7 +273,16 @@ put_success_slack_and_metric_notification_with_nginx_and_adot: &put_success_slac
         - *slack_notification_success
         - *send_app_release_metric_success
         - *send_nginx_release_metric_success
-        - *send_adot_release_metric_success 
+        - *send_adot_release_metric_success
+
+put_success_slack_and_metric_notification_with_nginx_and_adot_announce: &put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+  on_success:
+    in_parallel:
+        steps:
+        - *slack_notification_success_announce
+        - *send_app_release_metric_success
+        - *send_nginx_release_metric_success
+        - *send_adot_release_metric_success
 
 put_failure_slack_and_metric_notification_with_nginx_and_adot: &put_failure_slack_and_metric_notification_with_nginx_and_adot
   on_failure:
@@ -924,7 +943,7 @@ jobs:
         params:
           APP_NAME: selfservice
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-selfservice-on-staging
@@ -1102,7 +1121,7 @@ jobs:
         params:
           APP_NAME: connector
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-connector-on-staging
@@ -1308,7 +1327,7 @@ jobs:
         params:
           APP_NAME: toolbox
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: push-toolbox-to-production-ecr
@@ -1397,7 +1416,7 @@ jobs:
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: staging-2
-    <<: *put_success_slack_notification_p1      
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-egress-on-staging
@@ -1518,7 +1537,7 @@ jobs:
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: staging-2
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-webhooks-egress-on-staging
@@ -1660,7 +1679,7 @@ jobs:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-frontend-on-staging
@@ -1837,7 +1856,7 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: adminusers-db-migration-staging
@@ -2060,7 +2079,7 @@ jobs:
         params:
           APP_NAME: products
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-products-on-staging
@@ -2275,7 +2294,7 @@ jobs:
         params:
           APP_NAME: products-ui
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-products-ui-on-staging
@@ -2431,7 +2450,7 @@ jobs:
         params:
           APP_NAME: publicauth
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-publicauth-on-staging
@@ -2611,7 +2630,7 @@ jobs:
         params:
           APP_NAME: cardid
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-cardid-on-staging
@@ -2781,7 +2800,7 @@ jobs:
         params:
           APP_NAME: publicapi
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-publicapi-on-staging
@@ -2955,7 +2974,7 @@ jobs:
         params:
           APP_NAME: ledger
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-ledger-on-staging
@@ -3172,7 +3191,7 @@ jobs:
         params:
           APP_NAME: webhooks
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-webhooks-on-staging
