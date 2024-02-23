@@ -395,6 +395,11 @@ smoke-test-run-all-on-staging: &smoke-test-run-all-on-staging
         SMOKE_TEST_NAME: "notifcatns_sndbx_stag"
 
 resources:
+  - name: prometheus-pushgateway
+    type: prometheus-pushgateway
+    source:
+      url: https://prometheus-pushgateway.deploy.payments.service.gov.uk
+      job: deployment_pipeline_release_number
   - name: deploy-to-staging-pipeline-definition
     type: git
     icon: github
@@ -577,6 +582,11 @@ resource_types:
     source:
       repository: cfcommunity/slack-notification-resource
       tag: latest
+  - name: prometheus-pushgateway
+    type: docker-image
+    source:
+      repository: governmentdigitalservice/pay-prometheus-pushgateway-resource
+      tag: latest-master
 
 groups:
   - name: adminusers
