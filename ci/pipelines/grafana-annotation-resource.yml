@@ -133,4 +133,4 @@ jobs:
       - get: grafana-annotation-resource-pipeline
         trigger: true
       - set_pipeline: grafana-annotation-resource
-        file: grafana-annotation-pipeline/ci/pipelines/grafana-annotation.yml
+        file: grafana-annotation-resource-pipeline/ci/pipelines/grafana-annotation-resource.yml
