@@ -399,6 +399,11 @@ smoke-test-run-all-on-production: &smoke-test-run-all-on-production
         SMOKE_TEST_NAME: "notifcatns_sndbx_prod"
 
 resources:
+  - name: prometheus-pushgateway
+    type: prometheus-pushgateway
+    source:
+      url: https://prometheus-pushgateway.deploy.payments.service.gov.uk
+      job: deployment_pipeline_release_number
   - name: deploy-to-prod-pipeline-definition
     type: git
     icon: github
@@ -581,6 +586,11 @@ resource_types:
     source:
       repository: cfcommunity/slack-notification-resource
       tag: latest
+  - name: prometheus-pushgateway
+    type: docker-image
+    source:
+      repository: governmentdigitalservice/pay-prometheus-pushgateway-resource
+      tag: latest-master
 
 groups:
   - name: adminusers
@@ -1778,14 +1788,16 @@ jobs:
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: adminusers-ecr-registry-prod
-        trigger: true
-      - get: nginx-proxy-ecr-registry-prod
-        trigger: true
-      - get: adot-ecr-registry-prod
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-prod
+            trigger: true
+          - get: nginx-proxy-ecr-registry-prod
+            trigger: true
+          - get: adot-ecr-registry-prod
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-prod/tag
       - load_var: nginx_image_tag
@@ -1798,12 +1810,18 @@ jobs:
           APP_NAME: adminusers
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: start_snippet
-        file: snippet/start
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
+          - load_var: start_snippet
+            file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -1842,8 +1860,8 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_announce
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: adminusers-db-migration-prod
     plan:
@@ -1949,10 +1967,12 @@ jobs:
   - name: smoke-test-adminusers-on-prod
     serial_groups: [smoke-test]
     plan:
-      - get: adminusers-ecr-registry-prod
-        trigger: true
-        passed: [deploy-adminusers-to-prod]
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-prod
+            trigger: true
+            passed: [deploy-adminusers-to-prod]
+          - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-prod/tag
       - task: create-notification-snippets
@@ -1961,10 +1981,14 @@ jobs:
           APP_NAME: adminusers
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1975,8 +1999,8 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-production
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: retag-adminusers-image-for-test-perf
     plan:
@@ -2001,6 +2025,8 @@ jobs:
               ecr-repo: adminusers-ecr-registry-prod
       - in_parallel:
           steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
           - load_var: release-number
             file: ecr-release-info/release-number
           - load_var: perf-tag
@@ -2033,25 +2059,33 @@ jobs:
           <<: *retag_for_perf_test
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:perf-tag))"
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: adminusers-pact-tag
     plan:
-      - get: adminusers-ecr-registry-prod
-        passed: [smoke-test-adminusers-on-prod]
-        trigger: true
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-prod
+            passed: [smoke-test-adminusers-on-prod]
+            trigger: true
+          - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-prod/tag
-      - get: pay-ci
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: adminusers
           ACTION_NAME: Pact tag
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -2066,8 +2100,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: adminusers
           PACT_TAG: production-fargate
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: deploy-products-to-prod
     serial: true
