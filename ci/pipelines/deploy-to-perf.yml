@@ -1,4 +1,72 @@
 definitions:
+  array_anchors:
+    - &load_app_name_from_parse_ecr_release_tag
+      load_var: app_name
+      file: ecr-release-info/app_name
+    - &load_app_release_number_from_parse_ecr_release_tag
+      load_var: app_release_number
+      file: ecr-release-info/release-number
+    - &load_adot_release_number_from_parse_ecr_release_tag
+      load_var: adot_release_number
+      file: adot-release-info/release-number
+    - &load_nginx_release_number_from_parse_ecr_release_tag
+      load_var: nginx_release_number
+      file: nginx-release-info/release-number
+    - &load_nginx_forward_proxy_release_number_from_parse_ecr_release_tag
+      load_var: nginx_forward_proxy_release_number
+      file: nginx-forward-proxy-release-info/release-number
+    - &parse_app_release_tag
+      in_parallel:
+        steps:
+        - task: parse-ecr-release-tag
+          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+          input_mapping:
+            ecr-image: adminusers-ecr-registry-perf
+    - &parse_app_adot_nginx_release_tags
+      in_parallel:
+        steps:
+        - task: parse-ecr-release-tag
+          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+          input_mapping:
+            ecr-image: adminusers-ecr-registry-perf
+        - task: parse-adot-ecr-release-tag
+          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+          input_mapping:
+            ecr-image: adot-ecr-registry-perf
+          output_mapping:
+            ecr-release-info: adot-release-info
+        - task: parse-nginx-ecr-release-tag
+          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+          input_mapping:
+            ecr-image: nginx-proxy-ecr-registry-perf
+          output_mapping:
+            ecr-release-info: nginx-release-info
+    - &parse_app_adot_nginx_and_forward_proxy_release_tags
+      in_parallel:
+        steps:
+        - task: parse-ecr-release-tag
+          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+          input_mapping:
+            ecr-image: adminusers-ecr-registry-perf
+        - task: parse-adot-ecr-release-tag
+          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+          input_mapping:
+            ecr-image: adot-ecr-registry-perf
+          output_mapping:
+            ecr-release-info: adot-release-info
+        - task: parse-nginx-ecr-release-tag
+          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+          input_mapping:
+            ecr-image: nginx-proxy-ecr-registry-perf
+          output_mapping:
+            ecr-release-info: nginx-release-info
+        - task: parse-nginx-forward-proxy-ecr-release-tag
+          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+          input_mapping:
+            ecr-image: nginx-forward-proxy-ecr-registry-perf
+          output_mapping:
+            ecr-release-info: nginx-forward-proxy-release-info
+
   aws_assumed_role_creds: &aws_assumed_role_creds
     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
     AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
@@ -56,7 +124,181 @@ definitions:
         text: ":red-circle: $BUILD_JOB_NAME failed on test-perf-1\n
               - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
+  slack_notification_success: &slack_notification_success
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-activity'
+      icon_emoji: ":fargate:"
+      username: pay-concourse
+      text: ":green-circle: Deployment of ((.:app_name)) to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  slack_notification_failure: &slack_notification_failure
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-announce'
+      icon_emoji: ":fargate:"
+      username: pay-concourse
+      text: ":red_circle: Deployment of ((.:app_name)) to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  pushgateway_default_labels: &pushgateway_default_labels
+    pipeline: "$BUILD_PIPELINE_NAME"
+    conocurse_job: "$BUILD_JOB_NAME"
+    app: "((.:app_name))"
+    environment: test-perf-1
+    instance: "concourse"
+
+  send_app_release_metric_success: &send_app_release_metric_success
+    put: send-app-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_app_release_number
+      value: "((.:app_release_number))"
+      job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/success"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: success
+
+  send_app_release_metric_failure: &send_app_release_metric_failure
+    put: send-app-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_app_release_number
+      value: "((.:app_release_number))"
+      job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/failure"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: failure
+
+  send_adot_release_metric_success: &send_adot_release_metric_success
+    put: send-adot-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:adot_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/success"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: success
+        sidecar: adot
+
+  send_adot_release_metric_failure: &send_adot_release_metric_failure
+    put: send-adot-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:adot_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/failure"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: failure
+        sidecar: adot
+
+  send_nginx_release_metric_success: &send_nginx_release_metric_success
+    put: send-nginx-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:nginx_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: success
+        sidecar: nginx
+
+  send_nginx_release_metric_failure: &send_nginx_release_metric_failure
+    put: send-nginx-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:nginx_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: failure
+        sidecar: nginx
+
+  send_nginx_forward_proxy_release_metric_success: &send_nginx_forward_proxy_release_metric_success
+    put: send-nginx-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:nginx_forward_proxy_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: success
+        sidecar: nginx-forward-proxy
+
+  send_nginx_forward_proxy_release_metric_failure: &send_nginx_forward_proxy_release_metric_failure
+    put: send-nginx-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:nginx_forward_proxy_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: failure
+        sidecar: nginx-forward-proxy
+
+  put_success_slack_and_metric_notification: &put_success_slack_and_metric_notification
+    on_success:
+      in_parallel:
+          steps:
+          - *slack_notification_success
+          - *send_app_release_metric_success
+
+  put_failure_slack_and_metric_notification: &put_failure_slack_and_metric_notification
+    on_failure:
+      in_parallel:
+          steps:
+          - *slack_notification_failure
+          - *send_app_release_metric_failure
+
+  put_success_slack_and_metric_notification_with_nginx_and_adot: &put_success_slack_and_metric_notification_with_nginx_and_adot
+    on_success:
+      in_parallel:
+          steps:
+          - *slack_notification_success
+          - *send_app_release_metric_success
+          - *send_nginx_release_metric_success
+          - *send_adot_release_metric_success
+
+  put_failure_slack_and_metric_notification_with_nginx_and_adot: &put_failure_slack_and_metric_notification_with_nginx_and_adot
+    on_failure:
+      in_parallel:
+          steps:
+          - *slack_notification_failure
+          - *send_app_release_metric_failure
+          - *send_nginx_release_metric_failure
+          - *send_adot_release_metric_failure
+
+  put_success_slack_and_metric_notification_with_nginx_and_adot_and_forward_proxy: &put_success_slack_and_metric_notification_with_nginx_and_adot_and_forward_proxy
+    on_success:
+      in_parallel:
+          steps:
+          - *slack_notification_success
+          - *send_app_release_metric_success
+          - *send_nginx_release_metric_success
+          - *send_nginx_forward_proxy_release_metric_success
+          - *send_adot_release_metric_success
+
+  put_failure_slack_and_metric_notification_with_nginx_and_adot_and_forward_proxy: &put_failure_slack_and_metric_notification_with_nginx_and_adot_and_forward_proxy
+    on_failure:
+      in_parallel:
+          steps:
+          - *slack_notification_failure
+          - *send_app_release_metric_failure
+          - *send_nginx_release_metric_failure
+          - *send_nginx_forward_proxy_release_metric_failure
+          - *send_adot_release_metric_failure
+
 resources:
+  - name: prometheus-pushgateway
+    type: prometheus-pushgateway
+    source:
+      url: https://prometheus-pushgateway.deploy.payments.service.gov.uk
+      job: deployment_pipeline_release_number
   - name: deploy-to-perf-pipeline-definition
     type: git
     icon: github
@@ -281,6 +523,11 @@ resource_types:
     type: registry-image
     source:
       repository: nulldriver/cf-cli-resource
+  - name: prometheus-pushgateway
+    type: docker-image
+    source:
+      repository: governmentdigitalservice/pay-prometheus-pushgateway-resource
+      tag: latest-master
 
 groups:
   - name: adminusers
@@ -361,22 +608,31 @@ jobs:
   - name: deploy-adminusers-to-perf
     serial: true
     plan:
-      - get: adminusers-ecr-registry-perf
-        trigger: true
-      - get: adminusers-db-ecr-registry-perf
-        trigger: true
-      - get: nginx-proxy-ecr-registry-perf
-        trigger: true
-      - get: adot-ecr-registry-perf
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
-      - load_var: application_image_tag
-        file: adminusers-ecr-registry-perf/tag
-      - load_var: nginx_image_tag
-        file: nginx-proxy-ecr-registry-perf/tag
-      - load_var: adot_image_tag
-        file: adot-ecr-registry-perf/tag
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-perf
+            trigger: true
+          - get: adminusers-db-ecr-registry-perf
+            trigger: true
+          - get: nginx-proxy-ecr-registry-perf
+            trigger: true
+          - get: adot-ecr-registry-perf
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
+      - *parse_app_adot_nginx_release_tags
+      - in_parallel:
+          steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
+          - *load_adot_release_number_from_parse_ecr_release_tag
+          - *load_nginx_release_number_from_parse_ecr_release_tag
+          - load_var: application_image_tag
+            file: adminusers-ecr-registry-perf/tag
+          - load_var: nginx_image_tag
+            file: nginx-proxy-ecr-registry-perf/tag
+          - load_var: adot_image_tag
+            file: adot-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -401,20 +657,8 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":green-circle: Deployment of adminusers to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    on_failure:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":red_circle: Deployment of adminusers to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: adminusers-db-migration-perf
     plan:
