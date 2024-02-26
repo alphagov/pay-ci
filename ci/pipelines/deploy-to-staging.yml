@@ -1,417 +1,418 @@
 definitions:
-  - &load_app_name
-    load_var: app_name
-    file: snippet/app_name
-  - &load_app_name_from_parse_release_tag
-    load_var: app_name
-    file: tags/app_name
-  - &load_app_name_from_parse_ecr_release_tag
-    load_var: app_name
-    file: ecr-release-info/app_name
-  - &load_app_name_from_parse_candidate_tag
-    load_var: app_name
-    file: parse-candidate-tag/app_name
-  - &load_app_release_number
-    load_var: app_release_number
-    file: snippet/app_release_number
-  - &load_app_release_number_from_parse_release_tag
-    load_var: app_release_number
-    file: tags/release-number
-  - &load_app_release_number_from_parse_ecr_release_tag
-    load_var: app_release_number
-    file: ecr-release-info/release-number
-  - &load_app_release_number_from_parse_candidate_tag
-    load_var: app_release_number
-    file: parse-candidate-tag/release-number
-  - &load_adot_release_number
-    load_var: adot_release_number
-    file: snippet/adot_release_number
-  - &load_nginx_release_number
-    load_var: nginx_release_number
-    file: snippet/nginx_release_number
-  - &load_nginx_forward_proxy_release_number
-    load_var: nginx_forward_proxy_release_number
-    file: snippet/nginx_forward_proxy_release_number
-  - &assume_copy_from_staging_ecr_role
-    task: assume-copy-from-ecr-staging-role
-    file: pay-ci/ci/tasks/assume-role.yml
-    output_mapping:
-      assume-role: assume-copy-from-ecr-staging-role
-    params:
-      AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
-      AWS_ROLE_SESSION_NAME: copy-from-ecr-in-staging
-  - &assume_write_to_prod_ecr_role
-    task: assume-write-to-ecr-prod-role
-    file: pay-ci/ci/tasks/assume-role.yml
-    output_mapping:
-      assume-role: assume-write-to-ecr-prod-role
-    params:
-      AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
-      AWS_ROLE_SESSION_NAME: copy-to-ecr-in-prod
-  - &load_copy_from_staging_ecr_role
-    load_var: copy-from-staging-ecr-role
-    file: assume-copy-from-ecr-staging-role/assume-role.json
-    format: json
-  - &load_write_to_prod_ecr_role
-    load_var: write-to-prod-ecr-role
-    file: assume-write-to-ecr-prod-role/assume-role.json
-    format: json
+  array_anchors:
+    - &load_app_name
+      load_var: app_name
+      file: snippet/app_name
+    - &load_app_name_from_parse_release_tag
+      load_var: app_name
+      file: tags/app_name
+    - &load_app_name_from_parse_ecr_release_tag
+      load_var: app_name
+      file: ecr-release-info/app_name
+    - &load_app_name_from_parse_candidate_tag
+      load_var: app_name
+      file: parse-candidate-tag/app_name
+    - &load_app_release_number
+      load_var: app_release_number
+      file: snippet/app_release_number
+    - &load_app_release_number_from_parse_release_tag
+      load_var: app_release_number
+      file: tags/release-number
+    - &load_app_release_number_from_parse_ecr_release_tag
+      load_var: app_release_number
+      file: ecr-release-info/release-number
+    - &load_app_release_number_from_parse_candidate_tag
+      load_var: app_release_number
+      file: parse-candidate-tag/release-number
+    - &load_adot_release_number
+      load_var: adot_release_number
+      file: snippet/adot_release_number
+    - &load_nginx_release_number
+      load_var: nginx_release_number
+      file: snippet/nginx_release_number
+    - &load_nginx_forward_proxy_release_number
+      load_var: nginx_forward_proxy_release_number
+      file: snippet/nginx_forward_proxy_release_number
+    - &assume_copy_from_staging_ecr_role
+      task: assume-copy-from-ecr-staging-role
+      file: pay-ci/ci/tasks/assume-role.yml
+      output_mapping:
+        assume-role: assume-copy-from-ecr-staging-role
+      params:
+        AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+        AWS_ROLE_SESSION_NAME: copy-from-ecr-in-staging
+    - &assume_write_to_prod_ecr_role
+      task: assume-write-to-ecr-prod-role
+      file: pay-ci/ci/tasks/assume-role.yml
+      output_mapping:
+        assume-role: assume-write-to-ecr-prod-role
+      params:
+        AWS_ROLE_ARN: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+        AWS_ROLE_SESSION_NAME: copy-to-ecr-in-prod
+    - &load_copy_from_staging_ecr_role
+      load_var: copy-from-staging-ecr-role
+      file: assume-copy-from-ecr-staging-role/assume-role.json
+      format: json
+    - &load_write_to_prod_ecr_role
+      load_var: write-to-prod-ecr-role
+      file: assume-write-to-ecr-prod-role/assume-role.json
+      format: json
 
-copy_ecr_from_staging_to_prod_params: &copy_ecr_from_staging_to_prod_params
-  RELEASE_NUMBER:  ((.:release_number))
-  SOURCE_ECR_REGISTRY: "((pay_aws_staging_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
-  DESTINATION_ECR_REGISTRY: "((pay_aws_prod_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
-  SOURCE_AWS_ACCESS_KEY_ID: ((.:copy-from-staging-ecr-role.AWS_ACCESS_KEY_ID))
-  SOURCE_AWS_SECRET_ACCESS_KEY: ((.:copy-from-staging-ecr-role.AWS_SECRET_ACCESS_KEY))
-  SOURCE_AWS_SESSION_TOKEN: ((.:copy-from-staging-ecr-role.AWS_SESSION_TOKEN))
-  DESTINATION_AWS_ACCESS_KEY_ID: ((.:write-to-prod-ecr-role.AWS_ACCESS_KEY_ID))
-  DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:write-to-prod-ecr-role.AWS_SECRET_ACCESS_KEY))
-  DESTINATION_AWS_SESSION_TOKEN: ((.:write-to-prod-ecr-role.AWS_SESSION_TOKEN))
+  copy_ecr_from_staging_to_prod_params: &copy_ecr_from_staging_to_prod_params
+    RELEASE_NUMBER:  ((.:release_number))
+    SOURCE_ECR_REGISTRY: "((pay_aws_staging_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    DESTINATION_ECR_REGISTRY: "((pay_aws_prod_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    SOURCE_AWS_ACCESS_KEY_ID: ((.:copy-from-staging-ecr-role.AWS_ACCESS_KEY_ID))
+    SOURCE_AWS_SECRET_ACCESS_KEY: ((.:copy-from-staging-ecr-role.AWS_SECRET_ACCESS_KEY))
+    SOURCE_AWS_SESSION_TOKEN: ((.:copy-from-staging-ecr-role.AWS_SESSION_TOKEN))
+    DESTINATION_AWS_ACCESS_KEY_ID: ((.:write-to-prod-ecr-role.AWS_ACCESS_KEY_ID))
+    DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:write-to-prod-ecr-role.AWS_SECRET_ACCESS_KEY))
+    DESTINATION_AWS_SESSION_TOKEN: ((.:write-to-prod-ecr-role.AWS_SESSION_TOKEN))
 
-aws_assumed_role_creds: &aws_assumed_role_creds
-  AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-  AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-  AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+  aws_assumed_role_creds: &aws_assumed_role_creds
+    AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+    AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+    AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
-wait_for_deploy_params: &wait_for_deploy_params
-  <<: *aws_assumed_role_creds
-  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-  ADOT_IMAGE_TAG: ((.:adot_image_tag))
-  ENVIRONMENT: staging-2
+  wait_for_deploy_params: &wait_for_deploy_params
+    <<: *aws_assumed_role_creds
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+    ADOT_IMAGE_TAG: ((.:adot_image_tag))
+    ENVIRONMENT: staging-2
 
-deploy_params: &deploy_params
-  <<: *aws_assumed_role_creds
-  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-  ADOT_IMAGE_TAG: ((.:adot_image_tag))
-  ACCOUNT: staging
-  ENVIRONMENT: staging-2
+  deploy_params: &deploy_params
+    <<: *aws_assumed_role_creds
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+    ADOT_IMAGE_TAG: ((.:adot_image_tag))
+    ACCOUNT: staging
+    ENVIRONMENT: staging-2
 
-check_release_versions_params: &check_release_versions_params
-  <<: *aws_assumed_role_creds
-  AWS_REGION: "eu-west-1"
-  CLUSTER_NAME: "staging-2-fargate"
-  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-  ADOT_IMAGE_TAG: ((.:adot_image_tag))
-  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-  
-aws_production_config: &aws_production_config
-  aws_access_key_id: ((readonly_access_key_id))
-  aws_secret_access_key: ((readonly_secret_access_key))
-  aws_session_token: ((readonly_session_token))
-  aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
-  aws_ecr_registry_id: "((pay_aws_prod_account_id))"
-  aws_region: eu-west-1
+  check_release_versions_params: &check_release_versions_params
+    <<: *aws_assumed_role_creds
+    AWS_REGION: "eu-west-1"
+    CLUSTER_NAME: "staging-2-fargate"
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+    ADOT_IMAGE_TAG: ((.:adot_image_tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
 
-aws_staging_config: &aws_staging_config
-  aws_access_key_id: ((readonly_access_key_id))
-  aws_secret_access_key: ((readonly_secret_access_key))
-  aws_session_token: ((readonly_session_token))
-  aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
-  aws_ecr_registry_id: "((pay_aws_staging_account_id))"
-  aws_region: eu-west-1
+  aws_production_config: &aws_production_config
+    aws_access_key_id: ((readonly_access_key_id))
+    aws_secret_access_key: ((readonly_secret_access_key))
+    aws_session_token: ((readonly_session_token))
+    aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+    aws_ecr_registry_id: "((pay_aws_prod_account_id))"
+    aws_region: eu-west-1
 
-put_start_slack_notification: &put_start_slack_notification
-  put: slack-notification
-  params:
-    channel: '#govuk-pay-announce'
-    icon_emoji: ":fargate:"
-    username: pay-concourse
-    text: "((.:start_snippet)) |
-          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+  aws_staging_config: &aws_staging_config
+    aws_access_key_id: ((readonly_access_key_id))
+    aws_secret_access_key: ((readonly_secret_access_key))
+    aws_session_token: ((readonly_session_token))
+    aws_role_arn: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
+    aws_ecr_registry_id: "((pay_aws_staging_account_id))"
+    aws_region: eu-west-1
 
-slack_notification_success: &slack_notification_success
-  put: slack-notification
-  params:
-    channel: '#govuk-pay-activity'
-    icon_emoji: ":fargate:"
-    username: pay-concourse
-    text: "((.:success_snippet)) \n\n
-          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-slack_notification_success_announce: &slack_notification_success_announce
-  put: slack-notification
-  params:
-    channel: '#govuk-pay-announce'
-    icon_emoji: ":fargate:"
-    username: pay-concourse
-    text: "((.:success_snippet)) |
-          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-put_success_slack_notification: &put_success_slack_notification
-  on_success:
-    *slack_notification_success
-
-put_success_slack_notification_announce: &put_success_slack_notification_announce
-  on_success:
-    *slack_notification_success_announce
-
-slack_notification_failure: &slack_notification_failure
+  put_start_slack_notification: &put_start_slack_notification
     put: slack-notification
     params:
       channel: '#govuk-pay-announce'
       icon_emoji: ":fargate:"
       username: pay-concourse
-      text: "((.:failure_snippet)) \n
-            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+      text: "((.:start_snippet)) |
+            <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-put_failure_slack_notification: &put_failure_slack_notification
-  on_failure:
-    *slack_notification_failure
-
-pushgateway_default_labels: &pushgateway_default_labels
-  pipeline: "$BUILD_PIPELINE_NAME"
-  conocurse_job: "$BUILD_JOB_NAME"
-  app: "((.:app_name))"
-  environment: staging-2
-  instance: "concourse"
-
-send_app_release_metric_success: &send_app_release_metric_success
-  put: send-app-release-number-metric
-  resource: prometheus-pushgateway
-  params:
-    metric: deployment_pipeline_app_release_number
-    value: "((.:app_release_number))"
-    job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/success"
-    labels:
-      <<: *pushgateway_default_labels
-      outcome: success
-
-send_nginx_release_metric_success: &send_nginx_release_metric_success
-  put: send-nginx-release-number-metric
-  resource: prometheus-pushgateway
-  params:
-    metric: deployment_pipeline_sidecar_release_number
-    value: "((.:nginx_release_number))"
-    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
-    labels:
-      <<: *pushgateway_default_labels
-      outcome: success
-      sidecar: nginx
-
-send_adot_release_metric_success: &send_adot_release_metric_success
-  put: send-adot-release-number-metric
-  resource: prometheus-pushgateway
-  params:
-    metric: deployment_pipeline_sidecar_release_number
-    value: "((.:adot_release_number))"
-    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/success"
-    labels:
-      <<: *pushgateway_default_labels
-      outcome: success
-      sidecar: adot
-
-send_app_release_metric_failure: &send_app_release_metric_failure
-  put: send-app-release-number-metric
-  resource: prometheus-pushgateway
-  params:
-    metric: deployment_pipeline_app_release_number
-    value: "((.:app_release_number))"
-    job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/failure"
-    labels:
-      <<: *pushgateway_default_labels
-      outcome: failure
-
-send_nginx_release_metric_failure: &send_nginx_release_metric_failure
-  put: send-nginx-release-number-metric
-  resource: prometheus-pushgateway
-  params:
-    metric: deployment_pipeline_sidecar_release_number
-    value: "((.:nginx_release_number))"
-    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
-    labels:
-      <<: *pushgateway_default_labels
-      outcome: failure
-      sidecar: nginx
-
-send_adot_release_metric_failure: &send_adot_release_metric_failure
-  put: send-adot-release-number-metric
-  resource: prometheus-pushgateway
-  params:
-    metric: deployment_pipeline_sidecar_release_number
-    value: "((.:adot_release_number))"
-    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/failure"
-    labels:
-      <<: *pushgateway_default_labels
-      outcome: failure
-      sidecar: adot
-
-put_success_metric: &put_success_metric
-  on_success:
-    *send_app_release_metric_success
-
-put_failure_metric: &put_failure_metric
-  on_failure:
-    *send_app_release_metric_failure
-
-put_success_slack_and_metric_notification: &put_success_slack_and_metric_notification
-  on_success:
-    in_parallel:
-        steps:
-        - *slack_notification_success
-        - *send_app_release_metric_success
-
-put_success_slack_and_metric_notification_announce: &put_success_slack_and_metric_notification_announce
-  on_success:
-    in_parallel:
-        steps:
-        - *slack_notification_success_announce
-        - *send_app_release_metric_success
-
-put_failure_slack_and_metric_notification: &put_failure_slack_and_metric_notification
-  on_failure:
-    in_parallel:
-        steps:
-        - *slack_notification_failure
-        - *send_app_release_metric_failure
-
-put_success_slack_and_metric_notification_with_nginx_and_adot: &put_success_slack_and_metric_notification_with_nginx_and_adot
-  on_success:
-    in_parallel:
-        steps:
-        - *slack_notification_success
-        - *send_app_release_metric_success
-        - *send_nginx_release_metric_success
-        - *send_adot_release_metric_success
-
-put_success_slack_and_metric_notification_with_nginx_and_adot_announce: &put_success_slack_and_metric_notification_with_nginx_and_adot_announce
-  on_success:
-    in_parallel:
-        steps:
-        - *slack_notification_success_announce
-        - *send_app_release_metric_success
-        - *send_nginx_release_metric_success
-        - *send_adot_release_metric_success
-
-put_failure_slack_and_metric_notification_with_nginx_and_adot: &put_failure_slack_and_metric_notification_with_nginx_and_adot
-  on_failure:
-    in_parallel:
-        steps:
-        - *slack_notification_failure
-        - *send_app_release_metric_failure
-        - *send_nginx_release_metric_failure
-        - *send_adot_release_metric_failure
-
-put_db_migration_slack_notification: &put_db_migration_slack_notification
-  put: slack-notification
-  params:
-    channel: '#govuk-pay-announce'
-    icon_emoji: ":postgres:"
-    username: pay-concourse
-    text: ":postgres: starting $BUILD_JOB_NAME on staging-2\n
-          - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
-  on_success:
+  slack_notification_success: &slack_notification_success
     put: slack-notification
     params:
       channel: '#govuk-pay-activity'
-      icon_emoji: ":postgres:"
+      icon_emoji: ":fargate:"
       username: pay-concourse
-      text: ":green-circle: $BUILD_JOB_NAME completed successfully on staging-2\n
-            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+      text: "((.:success_snippet)) \n\n
+            <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
-  on_failure:
+  slack_notification_success_announce: &slack_notification_success_announce
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-announce'
+      icon_emoji: ":fargate:"
+      username: pay-concourse
+      text: "((.:success_snippet)) |
+            <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  put_success_slack_notification: &put_success_slack_notification
+    on_success:
+      *slack_notification_success
+
+  put_success_slack_notification_announce: &put_success_slack_notification_announce
+    on_success:
+      *slack_notification_success_announce
+
+  slack_notification_failure: &slack_notification_failure
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":fargate:"
+        username: pay-concourse
+        text: "((.:failure_snippet)) \n
+              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+  put_failure_slack_notification: &put_failure_slack_notification
+    on_failure:
+      *slack_notification_failure
+
+  pushgateway_default_labels: &pushgateway_default_labels
+    pipeline: "$BUILD_PIPELINE_NAME"
+    conocurse_job: "$BUILD_JOB_NAME"
+    app: "((.:app_name))"
+    environment: staging-2
+    instance: "concourse"
+
+  send_app_release_metric_success: &send_app_release_metric_success
+    put: send-app-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_app_release_number
+      value: "((.:app_release_number))"
+      job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/success"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: success
+
+  send_nginx_release_metric_success: &send_nginx_release_metric_success
+    put: send-nginx-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:nginx_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: success
+        sidecar: nginx
+
+  send_adot_release_metric_success: &send_adot_release_metric_success
+    put: send-adot-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:adot_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/success"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: success
+        sidecar: adot
+
+  send_app_release_metric_failure: &send_app_release_metric_failure
+    put: send-app-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_app_release_number
+      value: "((.:app_release_number))"
+      job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/failure"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: failure
+
+  send_nginx_release_metric_failure: &send_nginx_release_metric_failure
+    put: send-nginx-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:nginx_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: failure
+        sidecar: nginx
+
+  send_adot_release_metric_failure: &send_adot_release_metric_failure
+    put: send-adot-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:adot_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/failure"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: failure
+        sidecar: adot
+
+  put_success_metric: &put_success_metric
+    on_success:
+      *send_app_release_metric_success
+
+  put_failure_metric: &put_failure_metric
+    on_failure:
+      *send_app_release_metric_failure
+
+  put_success_slack_and_metric_notification: &put_success_slack_and_metric_notification
+    on_success:
+      in_parallel:
+          steps:
+          - *slack_notification_success
+          - *send_app_release_metric_success
+
+  put_success_slack_and_metric_notification_announce: &put_success_slack_and_metric_notification_announce
+    on_success:
+      in_parallel:
+          steps:
+          - *slack_notification_success_announce
+          - *send_app_release_metric_success
+
+  put_failure_slack_and_metric_notification: &put_failure_slack_and_metric_notification
+    on_failure:
+      in_parallel:
+          steps:
+          - *slack_notification_failure
+          - *send_app_release_metric_failure
+
+  put_success_slack_and_metric_notification_with_nginx_and_adot: &put_success_slack_and_metric_notification_with_nginx_and_adot
+    on_success:
+      in_parallel:
+          steps:
+          - *slack_notification_success
+          - *send_app_release_metric_success
+          - *send_nginx_release_metric_success
+          - *send_adot_release_metric_success
+
+  put_success_slack_and_metric_notification_with_nginx_and_adot_announce: &put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    on_success:
+      in_parallel:
+          steps:
+          - *slack_notification_success_announce
+          - *send_app_release_metric_success
+          - *send_nginx_release_metric_success
+          - *send_adot_release_metric_success
+
+  put_failure_slack_and_metric_notification_with_nginx_and_adot: &put_failure_slack_and_metric_notification_with_nginx_and_adot
+    on_failure:
+      in_parallel:
+          steps:
+          - *slack_notification_failure
+          - *send_app_release_metric_failure
+          - *send_nginx_release_metric_failure
+          - *send_adot_release_metric_failure
+
+  put_db_migration_slack_notification: &put_db_migration_slack_notification
     put: slack-notification
     params:
       channel: '#govuk-pay-announce'
       icon_emoji: ":postgres:"
       username: pay-concourse
-      text: ":red-circle: $BUILD_JOB_NAME failed on staging-2\n
+      text: ":postgres: starting $BUILD_JOB_NAME on staging-2\n
             - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-snippet_params_all_versions: &snippet_params_all_versions
-  ENV: staging-2
-  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-  ADOT_IMAGE_TAG: ((.:adot_image_tag))
-  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
+    on_success:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-activity'
+        icon_emoji: ":postgres:"
+        username: pay-concourse
+        text: ":green-circle: $BUILD_JOB_NAME completed successfully on staging-2\n
+              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-snippet_params_app_version: &snippet_params_app_version
-  ENV: staging-2
-  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
+    on_failure:
+      put: slack-notification
+      params:
+        channel: '#govuk-pay-announce'
+        icon_emoji: ":postgres:"
+        username: pay-concourse
+        text: ":red-circle: $BUILD_JOB_NAME failed on staging-2\n
+              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-# Separate tasks for each combination of scenario/environment
-smoke-test-run-all-on-staging: &smoke-test-run-all-on-staging
-  limit: 8
-  steps:
-    - task: run_create_card_payment_sandbox-staging
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "card_sandbox_stag"
-    - task: run_recurring_card_payment_sandbox-staging
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "rec_card_sandbox_stag"
-    - task: run_create_card_payment_worldpay_with_3ds2-staging
-      attempts: 10
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "card_wpay_3ds2_stag"
-    - task: run_create_card_payment_worldpay_with_3ds2_exemption-staging
-      attempts: 10
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "card_wpay_3ds2ex_stag"
-    - task: run_create_card_payment_worldpay_without_3ds-staging
-      attempts: 10
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "card_wpay_stag"
-    - task: run_recurring_card_payment_worldpay-staging
-      attempts: 10
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "reccard_worldpay_stag"
-    - task: run_cancel_card_payment_sandbox-staging
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "cancel_sandbox_stag"
-    - task: run_use_payment_link_sandbox-staging
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "pymntlnk_sandbox_stag"
-    - task: run_create_card_payment_stripe-staging
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "card_stripe_stag"
-    - task: run_create_card_payment_stripe_3ds-staging
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "card_stripe_3ds_stag"
-    - task: run_recurring_card_payment_stripe-staging
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "rec_card_stripe_stag"
-    - task: run_notifications_sandbox-stag
-      file: pay-ci/ci/tasks/run-smoke-test.yml
-      params:
-        <<: *aws_assumed_role_creds
-        AWS_REGION: "eu-west-1"
-        SMOKE_TEST_NAME: "notifcatns_sndbx_stag"
+  snippet_params_all_versions: &snippet_params_all_versions
+    ENV: staging-2
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+    ADOT_IMAGE_TAG: ((.:adot_image_tag))
+    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+
+  snippet_params_app_version: &snippet_params_app_version
+    ENV: staging-2
+    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+
+  # Separate tasks for each combination of scenario/environment
+  smoke-test-run-all-on-staging: &smoke-test-run-all-on-staging
+    limit: 8
+    steps:
+      - task: run_create_card_payment_sandbox-staging
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_sandbox_stag"
+      - task: run_recurring_card_payment_sandbox-staging
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "rec_card_sandbox_stag"
+      - task: run_create_card_payment_worldpay_with_3ds2-staging
+        attempts: 10
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_wpay_3ds2_stag"
+      - task: run_create_card_payment_worldpay_with_3ds2_exemption-staging
+        attempts: 10
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_wpay_3ds2ex_stag"
+      - task: run_create_card_payment_worldpay_without_3ds-staging
+        attempts: 10
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_wpay_stag"
+      - task: run_recurring_card_payment_worldpay-staging
+        attempts: 10
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "reccard_worldpay_stag"
+      - task: run_cancel_card_payment_sandbox-staging
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "cancel_sandbox_stag"
+      - task: run_use_payment_link_sandbox-staging
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "pymntlnk_sandbox_stag"
+      - task: run_create_card_payment_stripe-staging
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_stripe_stag"
+      - task: run_create_card_payment_stripe_3ds-staging
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "card_stripe_3ds_stag"
+      - task: run_recurring_card_payment_stripe-staging
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "rec_card_stripe_stag"
+      - task: run_notifications_sandbox-stag
+        file: pay-ci/ci/tasks/run-smoke-test.yml
+        params:
+          <<: *aws_assumed_role_creds
+          AWS_REGION: "eu-west-1"
+          SMOKE_TEST_NAME: "notifcatns_sndbx_stag"
 
 resources:
   - name: prometheus-pushgateway
@@ -424,7 +425,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master 
+      branch: master
       paths:
         - ci/pipelines/deploy-to-staging.yml
       username: alphagov-pay-ci-concourse
@@ -755,7 +756,7 @@ jobs:
           <<: *copy_ecr_from_staging_to_prod_params
 
   - name: push-stream-s3-sqs-to-production-ecr
-    plan:        
+    plan:
       - in_parallel:
           steps:
           - get: stream-s3-sqs-ecr-registry-staging
@@ -904,7 +905,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -1082,7 +1083,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -1302,7 +1303,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
@@ -1384,8 +1385,8 @@ jobs:
       - load_var: success_snippet
         file: snippet/success
       - load_var: start_snippet
-        file: snippet/start    
-      - <<: *put_start_slack_notification  
+        file: snippet/start
+      - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1637,7 +1638,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -1783,7 +1784,7 @@ jobs:
         params:
           ECR_REPO_NAME: "govukpay/frontend"
           <<: *copy_ecr_from_staging_to_prod_params
-          
+
   - name: deploy-adminusers-to-staging
     serial: true
     serial_groups: [deploy-application]
@@ -1916,7 +1917,7 @@ jobs:
     serial_groups: [smoke-test]
     plan:
       - in_parallel:
-          steps: 
+          steps:
           - get: adminusers-ecr-registry-staging
             trigger: true
             passed: [deploy-adminusers-to-staging]
@@ -2064,7 +2065,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -2279,7 +2280,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -2419,7 +2420,7 @@ jobs:
         params:
           ECR_REPO_NAME: "govukpay/products-ui"
           <<: *copy_ecr_from_staging_to_prod_params
-          
+
   - name: deploy-publicauth-to-staging
     serial: true
     serial_groups: [deploy-application]
@@ -2449,7 +2450,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
@@ -2615,7 +2616,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -2755,7 +2756,7 @@ jobs:
         params:
          ECR_REPO_NAME: "govukpay/cardid"
          <<: *copy_ecr_from_staging_to_prod_params
-          
+
   - name: deploy-publicapi-to-staging
     serial: true
     serial_groups: [deploy-application]
@@ -2785,7 +2786,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -2894,7 +2895,7 @@ jobs:
           PACT_TAG: staging-fargate
     <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
-          
+
   - name: push-publicapi-to-production-ecr
     plan:
       - in_parallel:
@@ -2942,7 +2943,7 @@ jobs:
       - task: parse-ecr-release-tag
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-image: ledger-ecr-registry-staging 
+          ecr-image: ledger-ecr-registry-staging
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
       - load_var: nginx_image_tag
@@ -2960,7 +2961,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: start_snippet
-        file: snippet/start  
+        file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -3011,7 +3012,7 @@ jobs:
       - task: parse-ecr-release-tag
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
-          ecr-image: ledger-ecr-registry-staging 
+          ecr-image: ledger-ecr-registry-staging
       - load_var: application_image_tag
         file: ledger-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -3041,7 +3042,7 @@ jobs:
     plan:
       - get: ledger-ecr-registry-staging
         passed: [smoke-test-ledger-on-staging]
-        trigger: true 
+        trigger: true
       - get: pay-ci
       - task: parse-ecr-release-tag
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
@@ -3447,7 +3448,7 @@ jobs:
       - load_var: failure_snippet
         file: snippet/failure
       - load_var: success_snippet
-        file: snippet/success 
+        file: snippet/success
       - load_var: start_snippet
         file: snippet/start
       - <<: *put_start_slack_notification
@@ -3504,7 +3505,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-    <<: *put_success_slack_notification 
+    <<: *put_success_slack_notification
     <<: *put_failure_slack_notification
 
   - name: smoke-test-notifications-on-staging
