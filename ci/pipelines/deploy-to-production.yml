@@ -1,228 +1,409 @@
 definitions:
-  aws_assumed_role_creds: &aws_assumed_role_creds
-    AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-    AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-    AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+  - &load_app_name
+    load_var: app_name
+    file: snippet/app_name
+  - &load_app_name_from_parse_release_tag
+    load_var: app_name
+    file: tags/app_name
+  - &load_app_name_from_parse_ecr_release_tag
+    load_var: app_name
+    file: ecr-release-info/app_name
+  - &load_app_name_from_parse_candidate_tag
+    load_var: app_name
+    file: parse-candidate-tag/app_name
+  - &load_app_release_number
+    load_var: app_release_number
+    file: snippet/app_release_number
+  - &load_app_release_number_from_parse_release_tag
+    load_var: app_release_number
+    file: tags/release-number
+  - &load_app_release_number_from_parse_ecr_release_tag
+    load_var: app_release_number
+    file: ecr-release-info/release-number
+  - &load_app_release_number_from_parse_candidate_tag
+    load_var: app_release_number
+    file: parse-candidate-tag/release-number
+  - &load_adot_release_number
+    load_var: adot_release_number
+    file: snippet/adot_release_number
+  - &load_nginx_release_number
+    load_var: nginx_release_number
+    file: snippet/nginx_release_number
+  - &load_nginx_forward_proxy_release_number
+    load_var: nginx_forward_proxy_release_number
+    file: snippet/nginx_forward_proxy_release_number
 
-  wait_for_deploy_params: &wait_for_deploy_params
-    <<: *aws_assumed_role_creds
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-    ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    ENVIRONMENT: production-2
+aws_assumed_role_creds: &aws_assumed_role_creds
+  AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+  AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+  AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
-  deploy_params: &deploy_params
-    <<: *aws_assumed_role_creds
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-    ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    ACCOUNT: production
-    ENVIRONMENT: production-2
+wait_for_deploy_params: &wait_for_deploy_params
+  <<: *aws_assumed_role_creds
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
+  ENVIRONMENT: production-2
 
-  check_release_versions_params: &check_release_versions_params
-    <<: *aws_assumed_role_creds
-    AWS_REGION: "eu-west-1"
-    CLUSTER_NAME: "production-2-fargate"
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+deploy_params: &deploy_params
+  <<: *aws_assumed_role_creds
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
+  ACCOUNT: production
+  ENVIRONMENT: production-2
 
-  aws_prod_config: &aws_prod_config
-    aws_access_key_id: ((readonly_access_key_id))
-    aws_secret_access_key: ((readonly_secret_access_key))
-    aws_session_token: ((readonly_session_token))
-    aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
-    aws_ecr_registry_id: "((pay_aws_prod_account_id))"
-    aws_region: eu-west-1
+check_release_versions_params: &check_release_versions_params
+  <<: *aws_assumed_role_creds
+  AWS_REGION: "eu-west-1"
+  CLUSTER_NAME: "production-2-fargate"
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
 
-  aws_test_config: &aws_test_config
-    aws_access_key_id: ((readonly_access_key_id))
-    aws_secret_access_key: ((readonly_secret_access_key))
-    aws_session_token: ((readonly_session_token))
-    aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse_deploy_worker_ecr_access
-    aws_ecr_registry_id: "((pay_aws_test_account_id))"
-    aws_region: eu-west-1
+aws_prod_config: &aws_prod_config
+  aws_access_key_id: ((readonly_access_key_id))
+  aws_secret_access_key: ((readonly_secret_access_key))
+  aws_session_token: ((readonly_session_token))
+  aws_role_arn: arn:aws:iam::((pay_aws_prod_account_id)):role/concourse
+  aws_ecr_registry_id: "((pay_aws_prod_account_id))"
+  aws_region: eu-west-1
 
-  put_start_slack_notification: &put_start_slack_notification
+aws_test_config: &aws_test_config
+  aws_access_key_id: ((readonly_access_key_id))
+  aws_secret_access_key: ((readonly_secret_access_key))
+  aws_session_token: ((readonly_session_token))
+  aws_role_arn: arn:aws:iam::((pay_aws_test_account_id)):role/concourse_deploy_worker_ecr_access
+  aws_ecr_registry_id: "((pay_aws_test_account_id))"
+  aws_region: eu-west-1
+
+put_start_slack_notification: &put_start_slack_notification
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-announce'
+    icon_emoji: ":fargate:"
+    username: pay-concourse
+    text: "((.:start_snippet)) \n\n
+          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+slack_notification_success_announce: &slack_notification_success_announce
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-announce'
+    icon_emoji: ":fargate:"
+    username: pay-concourse
+    text: "((.:success_snippet)) \n\n
+          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+
+put_success_slack_notification_announce: &put_success_slack_notification_announce
+  on_success:
+    *slack_notification_success_announce
+
+slack_notification_success: &slack_notification_success
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-activity'
+    icon_emoji: ":fargate:"
+    username: pay-concourse
+    text: "((.:success_snippet)) \n\n
+          Build: https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+
+put_success_slack_notification: &put_success_slack_notification
+  on_success:
+    *slack_notification_success
+
+slack_notification_failure: &slack_notification_failure
     put: slack-notification
     params:
       channel: '#govuk-pay-announce'
       icon_emoji: ":fargate:"
       username: pay-concourse
-      text: "((.:start_snippet)) \n\n
-            <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+      text: "((.:failure_snippet)) \n
+            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-  put_success_slack_notification_p1: &put_success_slack_notification_p1
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: "((.:success_snippet)) \n\n
-              <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+put_failure_slack_notification: &put_failure_slack_notification
+  on_failure:
+    *slack_notification_failure
 
-  put_success_slack_notification: &put_success_slack_notification
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: "((.:success_snippet)) \n\n
-              Build: https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+put_db_migration_slack_notification: &put_db_migration_slack_notification
+  put: slack-notification
+  params:
+    channel: '#govuk-pay-announce'
+    icon_emoji: ":postgres:"
+    username: pay-concourse
+    text: ":postgres: starting $BUILD_JOB_NAME on production-2\n
+          - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-  put_failure_slack_notification: &put_failure_slack_notification
-    on_failure:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: "((.:failure_snippet)) \n
-              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
+  on_success:
+    put: slack-notification
+    params:
+      channel: '#govuk-pay-activity'
+      icon_emoji: ":postgres:"
+      username: pay-concourse
+      text: ":green-circle: $BUILD_JOB_NAME completed successfully on production-2\n
+            - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-  put_db_migration_slack_notification: &put_db_migration_slack_notification
+put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
+  on_failure:
     put: slack-notification
     params:
       channel: '#govuk-pay-announce'
       icon_emoji: ":postgres:"
       username: pay-concourse
-      text: ":postgres: starting $BUILD_JOB_NAME on production-2\n
+      text: ":red-circle: $BUILD_JOB_NAME failed on production-2\n
             - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
-  put_db_migration_success_slack_notification: &put_db_migration_success_slack_notification
-    on_success:
-      put: slack-notification
+pushgateway_default_labels: &pushgateway_default_labels
+  pipeline: "$BUILD_PIPELINE_NAME"
+  conocurse_job: "$BUILD_JOB_NAME"
+  app: "((.:app_name))"
+  environment: production-2
+  instance: "concourse"
+
+send_app_release_metric_success: &send_app_release_metric_success
+  put: send-app-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_app_release_number
+    value: "((.:app_release_number))"
+    job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/success"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: success
+
+send_nginx_release_metric_success: &send_nginx_release_metric_success
+  put: send-nginx-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_sidecar_release_number
+    value: "((.:nginx_release_number))"
+    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: success
+      sidecar: nginx
+
+send_adot_release_metric_success: &send_adot_release_metric_success
+  put: send-adot-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_sidecar_release_number
+    value: "((.:adot_release_number))"
+    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/success"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: success
+      sidecar: adot
+
+send_app_release_metric_failure: &send_app_release_metric_failure
+  put: send-app-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_app_release_number
+    value: "((.:app_release_number))"
+    job: "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/failure"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: failure
+
+send_nginx_release_metric_failure: &send_nginx_release_metric_failure
+  put: send-nginx-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_sidecar_release_number
+    value: "((.:nginx_release_number))"
+    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: failure
+      sidecar: nginx
+
+send_adot_release_metric_failure: &send_adot_release_metric_failure
+  put: send-adot-release-number-metric
+  resource: prometheus-pushgateway
+  params:
+    metric: deployment_pipeline_sidecar_release_number
+    value: "((.:adot_release_number))"
+    job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/failure"
+    labels:
+      <<: *pushgateway_default_labels
+      outcome: failure
+      sidecar: adot
+
+put_success_metric: &put_success_metric
+  on_success:
+    *send_app_release_metric_success
+
+put_failure_metric: &put_failure_metric
+  on_failure:
+    *send_app_release_metric_failure
+
+put_success_slack_and_metric_notification: &put_success_slack_and_metric_notification
+  on_success:
+    in_parallel:
+        steps:
+        - *slack_notification_success
+        - *send_app_release_metric_success
+
+put_success_slack_and_metric_notification_announce: &put_success_slack_and_metric_notification_announce
+  on_success:
+    in_parallel:
+        steps:
+        - *slack_notification_success_announce
+        - *send_app_release_metric_success
+
+put_failure_slack_and_metric_notification: &put_failure_slack_and_metric_notification
+  on_failure:
+    in_parallel:
+        steps:
+        - *slack_notification_failure
+        - *send_app_release_metric_failure
+
+put_success_slack_and_metric_notification_with_nginx_and_adot: &put_success_slack_and_metric_notification_with_nginx_and_adot
+  on_success:
+    in_parallel:
+        steps:
+        - *slack_notification_success
+        - *send_app_release_metric_success
+        - *send_nginx_release_metric_success
+        - *send_adot_release_metric_success
+
+put_success_slack_and_metric_notification_with_nginx_and_adot_announce: &put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+  on_success:
+    in_parallel:
+        steps:
+        - *slack_notification_success_announce
+        - *send_app_release_metric_success
+        - *send_nginx_release_metric_success
+        - *send_adot_release_metric_success
+
+put_failure_slack_and_metric_notification_with_nginx_and_adot: &put_failure_slack_and_metric_notification_with_nginx_and_adot
+  on_failure:
+    in_parallel:
+        steps:
+        - *slack_notification_failure
+        - *send_app_release_metric_failure
+        - *send_nginx_release_metric_failure
+        - *send_adot_release_metric_failure
+
+copy_to_eu_west_params: &copy_to_eu_west_params
+  RELEASE_NUMBER:  ((.:release-number))
+  SOURCE_ECR_REGISTRY: "((pay_aws_test_account_id)).dkr.ecr.eu-central-1.amazonaws.com"
+  DESTINATION_ECR_REGISTRY: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+  SOURCE_AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+  SOURCE_AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+  SOURCE_AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+  SOURCE_REGION: eu-central-1
+  DESTINATION_AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+  DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+  DESTINATION_AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+  DESTINATION_REGION: eu-west-1
+
+retag_for_perf_test: &retag_for_perf_test
+  DOCKER_LOGIN_ECR: 1
+  AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
+  AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
+  AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
+  AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
+
+snippet_params_all_versions: &snippet_params_all_versions
+  ENV: production-2
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+  ADOT_IMAGE_TAG: ((.:adot_image_tag))
+  NGINX_IMAGE_TAG: ((.:nginx_image_tag))
+
+snippet_params_app_version: &snippet_params_app_version
+  ENV: production-2
+  APPLICATION_IMAGE_TAG: ((.:application_image_tag))
+
+# Separate tasks for each combination of scenario/environment
+smoke-test-run-all-on-production: &smoke-test-run-all-on-production
+  limit: 8
+  steps:
+    - task: run_create_card_payment_sandbox-production
+      file: pay-ci/ci/tasks/run-smoke-test.yml
       params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":postgres:"
-        username: pay-concourse
-        text: ":green-circle: $BUILD_JOB_NAME completed successfully on production-2\n
-              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-  put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
-    on_failure:
-      put: slack-notification
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_sandbox_prod"
+    - task: run_recurring_card_payment_sandbox-production
+      file: pay-ci/ci/tasks/run-smoke-test.yml
       params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":postgres:"
-        username: pay-concourse
-        text: ":red-circle: $BUILD_JOB_NAME failed on production-2\n
-              - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-  copy_to_eu_west_params: &copy_to_eu_west_params
-    RELEASE_NUMBER:  ((.:release-number))
-    SOURCE_ECR_REGISTRY: "((pay_aws_test_account_id)).dkr.ecr.eu-central-1.amazonaws.com"
-    DESTINATION_ECR_REGISTRY: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
-    SOURCE_AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
-    SOURCE_AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
-    SOURCE_AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
-    SOURCE_REGION: eu-central-1
-    DESTINATION_AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
-    DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
-    DESTINATION_AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
-    DESTINATION_REGION: eu-west-1
-
-  retag_for_perf_test: &retag_for_perf_test
-    DOCKER_LOGIN_ECR: 1
-    AWS_ACCOUNT_ID: "((pay_aws_test_account_id))"
-    AWS_ACCESS_KEY_ID: ((.:retag-role.AWS_ACCESS_KEY_ID))
-    AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
-    AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
-
-  snippet_params_all_versions: &snippet_params_all_versions
-    ENV: production-2
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-    ADOT_IMAGE_TAG: ((.:adot_image_tag))
-    NGINX_IMAGE_TAG: ((.:nginx_image_tag))
-
-  snippet_params_app_version: &snippet_params_app_version
-    ENV: production-2
-    APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-
-  # Separate tasks for each combination of scenario/environment
-  smoke-test-run-all-on-production: &smoke-test-run-all-on-production
-    limit: 8
-    steps:
-      - task: run_create_card_payment_sandbox-production
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_sandbox_prod"
-      - task: run_recurring_card_payment_sandbox-production
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "rec_card_sandbox_prod"
-      - task: run_create_card_payment_worldpay_with_3ds2-production
-        attempts: 10
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_3ds2_prod"
-      - task: run_create_card_payment_worldpay_with_3ds2_exemption-production
-        attempts: 10
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_3ds2ex_prod"
-      - task: run_create_card_payment_worldpay_without_3ds-production
-        attempts: 10
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_wpay_prod"
-      - task: run_recurring_card_payment_worldpay-production
-        attempts: 10
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "reccard_worldpay_prod"
-      - task: run_cancel_card_payment_sandbox-production
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "cancel_sandbox_prod"
-      - task: run_use_payment_link_sandbox-production
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "pymntlnk_sandbox_prod"
-      - task: run_create_card_payment_stripe-production
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_stripe_prod"
-      - task: run_create_card_payment_stripe_3ds-production
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "card_stripe_3ds_prod"
-      - task: run_recurring_card_payment_stripe-production
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "rec_card_stripe_prod"
-      - task: run_notifications_sandbox-prod
-        file: pay-ci/ci/tasks/run-smoke-test.yml
-        params:
-          <<: *aws_assumed_role_creds
-          AWS_REGION: "eu-west-1"
-          SMOKE_TEST_NAME: "notifcatns_sndbx_prod"
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "rec_card_sandbox_prod"
+    - task: run_create_card_payment_worldpay_with_3ds2-production
+      attempts: 10
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_wpay_3ds2_prod"
+    - task: run_create_card_payment_worldpay_with_3ds2_exemption-production
+      attempts: 10
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_wpay_3ds2ex_prod"
+    - task: run_create_card_payment_worldpay_without_3ds-production
+      attempts: 10
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_wpay_prod"
+    - task: run_recurring_card_payment_worldpay-production
+      attempts: 10
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "reccard_worldpay_prod"
+    - task: run_cancel_card_payment_sandbox-production
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "cancel_sandbox_prod"
+    - task: run_use_payment_link_sandbox-production
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "pymntlnk_sandbox_prod"
+    - task: run_create_card_payment_stripe-production
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_stripe_prod"
+    - task: run_create_card_payment_stripe_3ds-production
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "card_stripe_3ds_prod"
+    - task: run_recurring_card_payment_stripe-production
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "rec_card_stripe_prod"
+    - task: run_notifications_sandbox-prod
+      file: pay-ci/ci/tasks/run-smoke-test.yml
+      params:
+        <<: *aws_assumed_role_creds
+        AWS_REGION: "eu-west-1"
+        SMOKE_TEST_NAME: "notifcatns_sndbx_prod"
 
 resources:
+  - name: prometheus-pushgateway
+    type: prometheus-pushgateway
+    source:
+      url: https://prometheus-pushgateway.deploy.payments.service.gov.uk
+      job: deployment_pipeline_release_number
   - name: deploy-to-prod-pipeline-definition
     type: git
     icon: github
@@ -405,6 +586,11 @@ resource_types:
     source:
       repository: cfcommunity/slack-notification-resource
       tag: latest
+  - name: prometheus-pushgateway
+    type: docker-image
+    source:
+      repository: governmentdigitalservice/pay-prometheus-pushgateway-resource
+      tag: latest-master
 
 groups:
   - name: adminusers
@@ -589,7 +775,7 @@ jobs:
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: production-2
-    <<: *put_success_slack_notification_p1      
+    <<: *put_success_slack_notification_announce      
     <<: *put_failure_slack_notification
 
   - name: smoke-test-egress-on-prod
@@ -748,7 +934,7 @@ jobs:
         params:
           APP_NAME: selfservice
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-selfservice-on-prod
@@ -942,7 +1128,7 @@ jobs:
         params:
           APP_NAME: connector
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-connector-on-prod
@@ -1223,7 +1409,7 @@ jobs:
         params:
           APP_NAME: toolbox
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: retag-toolbox-image-for-test-perf
@@ -1413,7 +1599,7 @@ jobs:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-frontend-on-prod
@@ -1602,14 +1788,16 @@ jobs:
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: adminusers-ecr-registry-prod
-        trigger: true
-      - get: nginx-proxy-ecr-registry-prod
-        trigger: true
-      - get: adot-ecr-registry-prod
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-prod
+            trigger: true
+          - get: nginx-proxy-ecr-registry-prod
+            trigger: true
+          - get: adot-ecr-registry-prod
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-prod/tag
       - load_var: nginx_image_tag
@@ -1622,12 +1810,18 @@ jobs:
           APP_NAME: adminusers
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: start_snippet
-        file: snippet/start
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
+          - load_var: start_snippet
+            file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -1666,8 +1860,8 @@ jobs:
         params:
           APP_NAME: adminusers
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: adminusers-db-migration-prod
     plan:
@@ -1773,10 +1967,12 @@ jobs:
   - name: smoke-test-adminusers-on-prod
     serial_groups: [smoke-test]
     plan:
-      - get: adminusers-ecr-registry-prod
-        trigger: true
-        passed: [deploy-adminusers-to-prod]
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-prod
+            trigger: true
+            passed: [deploy-adminusers-to-prod]
+          - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-prod/tag
       - task: create-notification-snippets
@@ -1785,10 +1981,14 @@ jobs:
           APP_NAME: adminusers
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1799,8 +1999,8 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-production
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: retag-adminusers-image-for-test-perf
     plan:
@@ -1825,6 +2025,8 @@ jobs:
               ecr-repo: adminusers-ecr-registry-prod
       - in_parallel:
           steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
           - load_var: release-number
             file: ecr-release-info/release-number
           - load_var: perf-tag
@@ -1857,25 +2059,33 @@ jobs:
           <<: *retag_for_perf_test
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:perf-tag))"
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: adminusers-pact-tag
     plan:
-      - get: adminusers-ecr-registry-prod
-        passed: [smoke-test-adminusers-on-prod]
-        trigger: true
+      - in_parallel:
+          steps:
+          - get: adminusers-ecr-registry-prod
+            passed: [smoke-test-adminusers-on-prod]
+            trigger: true
+          - get: pay-ci
       - load_var: application_image_tag
         file: adminusers-ecr-registry-prod/tag
-      - get: pay-ci
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: adminusers
           ACTION_NAME: Pact tag
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1890,8 +2100,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: adminusers
           PACT_TAG: production-fargate
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: deploy-products-to-prod
     serial: true
@@ -1961,7 +2171,7 @@ jobs:
         params:
           APP_NAME: products
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-products-on-prod
@@ -2256,7 +2466,7 @@ jobs:
         params:
           APP_NAME: products-ui
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-products-ui-on-prod
@@ -2436,7 +2646,7 @@ jobs:
         params:
           APP_NAME: publicauth
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: publicauth-db-migration-prod
@@ -2696,7 +2906,7 @@ jobs:
         params:
           APP_NAME: cardid
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-cardid-on-prod
@@ -2890,7 +3100,7 @@ jobs:
         params:
           APP_NAME: publicapi
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-publicapi-on-prod
@@ -3084,7 +3294,7 @@ jobs:
         params:
           APP_NAME: ledger
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-ledger-on-prod
@@ -3116,7 +3326,7 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-production
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: retag-ledger-image-for-test-perf
@@ -3388,7 +3598,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-notifications-on-prod
@@ -3704,7 +3914,7 @@ jobs:
         params:
           APP_NAME: webhooks
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-webhooks-on-prod
@@ -3985,7 +4195,7 @@ jobs:
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: production-2
-    <<: *put_success_slack_notification_p1
+    <<: *put_success_slack_notification_announce
     <<: *put_failure_slack_notification
 
   - name: smoke-test-webhooks-egress-on-prod
