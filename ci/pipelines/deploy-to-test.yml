@@ -69,7 +69,6 @@ definitions:
     DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:write-to-staging-ecr-role.AWS_SECRET_ACCESS_KEY))
     DESTINATION_AWS_SESSION_TOKEN: ((.:write-to-staging-ecr-role.AWS_SESSION_TOKEN))
 
-
   aws_test_config: &aws_test_config
     aws_access_key_id: ((readonly_access_key_id))
     aws_secret_access_key: ((readonly_secret_access_key))
@@ -255,6 +254,14 @@ definitions:
         text: ":green-circle: $BUILD_JOB_NAME completed successfully on test-12\n
               - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
 
+  put_release_annotation: &put_release_annotation
+    on_success:
+      put: grafana-annotation
+      params:
+        tags:
+          - complete
+        template:  "released build ${BUILD_ID}"
+
   put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
     on_failure:
       put: slack-notification
@@ -422,6 +429,14 @@ resources:
       tag_regex: "alpha_release-(.*)"
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
+  - name: grafana-annotation
+    type: grafana-annotation
+    source:
+      url: "https://grafana.monitoring.pay-cd.deploy.payments.service.gov.uk"
+      username: pay_cd
+      password: ((grafana-annotations-password))
+      tags:
+        - test-12
 
   # Github Releases
   - name: stream-s3-sqs-git-release
@@ -850,6 +865,11 @@ resource_types:
     source:
       repository: governmentdigitalservice/pay-prometheus-pushgateway-resource
       tag: latest-master
+  - name: grafana-annotation
+    type: docker-image
+    source:
+      repository: governmentdigitalservice/pay-grafana-annotation-resource
+      tag: latest
 
 groups:
   - name: adminusers
@@ -2523,6 +2543,7 @@ jobs:
           <<: *wait_for_deploy_params
     <<: *put_success_slack_and_metric_notification_with_nginx_and_adot
     <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
+    <<: *put_release_annotation
 
   - name: adminusers-db-migration
     plan:
