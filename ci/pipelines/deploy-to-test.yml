@@ -93,15 +93,6 @@ definitions:
     AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
 
   slack-notification-success: &slack_notification_success
-slack-notification-success: &slack_notification_success
-  put: slack-notification
-  params:
-    channel: '#govuk-pay-activity'
-    icon_emoji: ":fargate:"
-    username: pay-concourse
-    text: "((.:success_snippet)) |
-          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
     put: slack-notification
     params:
       channel: '#govuk-pay-activity'
@@ -126,6 +117,13 @@ slack-notification-success: &slack_notification_success
   put_failure_slack_notification: &put_failure_slack_notification
     on_failure:
       *slack_notification_failure
+
+  send_app_release_annotation: &send_app_release_annotation
+    put: grafana-annotation
+    params:
+      tags:
+        - ((.:app_name))
+      template:  "released ${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME} release ((.:app_release_number)) (build ${BUILD_ID})"
 
   pushgateway_default_labels: &pushgateway_default_labels
     pipeline: "$BUILD_PIPELINE_NAME"
@@ -234,6 +232,8 @@ slack-notification-success: &slack_notification_success
           - *send_app_release_metric_success
           - *send_nginx_release_metric_success
           - *send_adot_release_metric_success
+          - *send_app_release_annotation
+
 
   put_failure_slack_and_metric_notification_with_nginx_and_adot: &put_failure_slack_and_metric_notification_with_nginx_and_adot
     on_failure:
@@ -262,14 +262,6 @@ slack-notification-success: &slack_notification_success
         username: pay-concourse
         text: ":green-circle: $BUILD_JOB_NAME completed successfully on test-12\n
               - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-
-  put_release_annotation: &put_release_annotation
-    on_success:
-      put: grafana-annotation
-      params:
-        tags:
-          - complete
-        template:  "released build ${BUILD_ID}"
 
   put_db_migration_failure_slack_notification: &put_db_migration_failure_slack_notification
     on_failure:
