@@ -69,7 +69,6 @@ definitions:
     DESTINATION_AWS_SECRET_ACCESS_KEY: ((.:write-to-staging-ecr-role.AWS_SECRET_ACCESS_KEY))
     DESTINATION_AWS_SESSION_TOKEN: ((.:write-to-staging-ecr-role.AWS_SESSION_TOKEN))
 
-
   aws_test_config: &aws_test_config
     aws_access_key_id: ((readonly_access_key_id))
     aws_secret_access_key: ((readonly_secret_access_key))
@@ -118,6 +117,13 @@ definitions:
   put_failure_slack_notification: &put_failure_slack_notification
     on_failure:
       *slack_notification_failure
+
+  send_app_release_annotation: &send_app_release_annotation
+    put: grafana-annotation
+    params:
+      tags:
+        - ((.:app_name))
+      template:  "released ${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME} release ((.:app_release_number)) (build ${BUILD_ID})"
 
   pushgateway_default_labels: &pushgateway_default_labels
     pipeline: "$BUILD_PIPELINE_NAME"
@@ -226,6 +232,8 @@ definitions:
           - *send_app_release_metric_success
           - *send_nginx_release_metric_success
           - *send_adot_release_metric_success
+          - *send_app_release_annotation
+
 
   put_failure_slack_and_metric_notification_with_nginx_and_adot: &put_failure_slack_and_metric_notification_with_nginx_and_adot
     on_failure:
@@ -379,7 +387,6 @@ definitions:
           AWS_REGION: "eu-west-1"
           SMOKE_TEST_NAME: "notifcatns_sndbx_test"
 
-
 resources:
   - name: prometheus-pushgateway
     type: prometheus-pushgateway
@@ -422,6 +429,15 @@ resources:
       tag_regex: "alpha_release-(.*)"
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
+  - name: grafana-annotation
+    type: grafana-annotation
+    source:
+      url: "https://grafana.monitoring.pay-cd.deploy.payments.service.gov.uk"
+      username: pay_cd
+      password: ((grafana-annotations-password))
+      tags:
+        - test-12
+        - release
 
   # Github Releases
   - name: stream-s3-sqs-git-release
@@ -850,6 +866,11 @@ resource_types:
     source:
       repository: governmentdigitalservice/pay-prometheus-pushgateway-resource
       tag: latest-master
+  - name: grafana-annotation
+    type: docker-image
+    source:
+      repository: governmentdigitalservice/pay-grafana-annotation-resource
+      tag: latest
 
 groups:
   - name: adminusers
