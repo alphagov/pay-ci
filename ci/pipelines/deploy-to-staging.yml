@@ -2035,6 +2035,8 @@ jobs:
         params:
           ECR_REPO_NAME: "govukpay/adminusers"
           <<: *copy_ecr_from_staging_to_prod_params
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: deploy-products-to-staging
     serial: true
