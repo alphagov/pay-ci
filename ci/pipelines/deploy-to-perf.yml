@@ -15,57 +15,27 @@ definitions:
     - &load_nginx_forward_proxy_release_number_from_parse_ecr_release_tag
       load_var: nginx_forward_proxy_release_number
       file: nginx-forward-proxy-release-info/release-number
-    - &parse_app_release_tag
-      in_parallel:
-        steps:
-        - task: parse-ecr-release-tag
-          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
-          input_mapping:
-            ecr-image: adminusers-ecr-registry-perf
-    - &parse_app_adot_nginx_release_tags
-      in_parallel:
-        steps:
-        - task: parse-ecr-release-tag
-          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
-          input_mapping:
-            ecr-image: adminusers-ecr-registry-perf
-        - task: parse-adot-ecr-release-tag
-          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
-          input_mapping:
-            ecr-image: adot-ecr-registry-perf
-          output_mapping:
-            ecr-release-info: adot-release-info
-        - task: parse-nginx-ecr-release-tag
-          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
-          input_mapping:
-            ecr-image: nginx-proxy-ecr-registry-perf
-          output_mapping:
-            ecr-release-info: nginx-release-info
-    - &parse_app_adot_nginx_and_forward_proxy_release_tags
-      in_parallel:
-        steps:
-        - task: parse-ecr-release-tag
-          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
-          input_mapping:
-            ecr-image: adminusers-ecr-registry-perf
-        - task: parse-adot-ecr-release-tag
-          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
-          input_mapping:
-            ecr-image: adot-ecr-registry-perf
-          output_mapping:
-            ecr-release-info: adot-release-info
-        - task: parse-nginx-ecr-release-tag
-          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
-          input_mapping:
-            ecr-image: nginx-proxy-ecr-registry-perf
-          output_mapping:
-            ecr-release-info: nginx-release-info
-        - task: parse-nginx-forward-proxy-ecr-release-tag
-          file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
-          input_mapping:
-            ecr-image: nginx-forward-proxy-ecr-registry-perf
-          output_mapping:
-            ecr-release-info: nginx-forward-proxy-release-info
+    - &parse-adot-ecr-release-tag
+      task: parse-adot-ecr-release-tag
+      file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+      input_mapping:
+        ecr-image: adot-ecr-registry-perf
+      output_mapping:
+        ecr-release-info: adot-release-info
+    - &parse-nginx-ecr-release-tag
+      task: parse-nginx-ecr-release-tag
+      file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+      input_mapping:
+        ecr-image: nginx-proxy-ecr-registry-perf
+      output_mapping:
+        ecr-release-info: nginx-release-info
+    - &parse-nginx-forward-proxy-ecr-release-tag
+      task: parse-nginx-forward-proxy-ecr-release-tag
+      file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+      input_mapping:
+        ecr-image: nginx-forward-proxy-ecr-registry-perf
+      output_mapping:
+        ecr-release-info: nginx-forward-proxy-release-info
 
   aws_assumed_role_creds: &aws_assumed_role_creds
     AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
@@ -304,7 +274,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: master 
+      branch: master
       paths:
         - ci/pipelines/deploy-to-perf.yml
   - name: pay-ci
@@ -355,7 +325,7 @@ resources:
     source:
       repository: govukpay/products
       variant: perf-db
-      <<: *aws_test_config      
+      <<: *aws_test_config
   - name: products-ui-ecr-registry-perf
     type: registry-image
     icon: docker
@@ -425,7 +395,7 @@ resources:
     source:
       repository: govukpay/ledger
       variant: perf-db
-      <<: *aws_test_config      
+      <<: *aws_test_config
   - name: toolbox-ecr-registry-perf
     type: registry-image
     icon: docker
@@ -620,7 +590,14 @@ jobs:
             trigger: true
           - get: pay-infra
           - get: pay-ci
-      - *parse_app_adot_nginx_release_tags
+      - in_parallel:
+          steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: adminusers-ecr-registry-perf
+          - *parse-adot-ecr-release-tag
+          - *parse-nginx-ecr-release-tag
       - in_parallel:
           steps:
           - *load_app_name_from_parse_ecr_release_tag
