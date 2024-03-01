@@ -1085,12 +1085,18 @@ jobs:
           APP_NAME: connector
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: start_snippet
-        file: snippet/start
+      - in_parallel:
+          steps:
+            - *load_app_name
+            - *load_app_release_number
+            - *load_adot_release_number
+            - *load_nginx_release_number
+            - load_var: success_snippet
+              file: snippet/success
+            - load_var: failure_snippet
+              file: snippet/failure
+            - load_var: start_snippet
+              file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -1129,8 +1135,8 @@ jobs:
         params:
           APP_NAME: connector
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_announce
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: smoke-test-connector-on-prod
     serial_groups: [smoke-test]
@@ -1147,10 +1153,14 @@ jobs:
           APP_NAME: connector
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+            - *load_app_name
+            - *load_app_release_number
+            - load_var: success_snippet
+              file: snippet/success
+            - load_var: failure_snippet
+              file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1161,8 +1171,8 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-production
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: retag-connector-image-for-test-perf
     plan:
@@ -1187,6 +1197,8 @@ jobs:
               ecr-repo: connector-ecr-registry-prod
       - in_parallel:
           steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
           - load_var: release-number
             file: ecr-release-info/release-number
           - load_var: perf-tag
@@ -1219,6 +1231,8 @@ jobs:
           <<: *retag_for_perf_test
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:release-number))-candidate"
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:perf-tag))"
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: connector-pact-tag
     plan:
@@ -1234,10 +1248,14 @@ jobs:
           APP_NAME: connector
           ACTION_NAME: Pact tag
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+            - *load_app_name
+            - *load_app_release_number
+            - load_var: success_snippet
+              file: snippet/success
+            - load_var: failure_snippet
+              file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -1252,8 +1270,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: connector
           PACT_TAG: production-fargate
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: connector-db-migration-prod
     plan:
