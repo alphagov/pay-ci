@@ -188,24 +188,24 @@ definitions:
         sidecar: nginx
 
   send_nginx_forward_proxy_release_metric_success: &send_nginx_forward_proxy_release_metric_success
-    put: send-nginx-release-number-metric
+    put: send-nginx-forward-proxy-release-number-metric
     resource: prometheus-pushgateway
     params:
       metric: deployment_pipeline_sidecar_release_number
       value: "((.:nginx_forward_proxy_release_number))"
-      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx-forward-proxy/outcome/success"
       labels:
         <<: *pushgateway_default_labels
         outcome: success
         sidecar: nginx-forward-proxy
 
   send_nginx_forward_proxy_release_metric_failure: &send_nginx_forward_proxy_release_metric_failure
-    put: send-nginx-release-number-metric
+    put: send-nginx-forward-proxy-release-number-metric
     resource: prometheus-pushgateway
     params:
       metric: deployment_pipeline_sidecar_release_number
       value: "((.:nginx_forward_proxy_release_number))"
-      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx-forward-proxy/outcome/failure"
       labels:
         <<: *pushgateway_default_labels
         outcome: failure
@@ -1052,24 +1052,42 @@ jobs:
   - name: deploy-frontend-to-perf
     serial: true
     plan:
-      - get: frontend-ecr-registry-perf
-        trigger: true
-      - get: nginx-forward-proxy-ecr-registry-perf
-        trigger: true
-      - get: nginx-proxy-ecr-registry-perf
-        trigger: true
-      - get: adot-ecr-registry-perf
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
-      - load_var: application_image_tag
-        file: frontend-ecr-registry-perf/tag
-      - load_var: nginx_image_tag
-        file: nginx-proxy-ecr-registry-perf/tag
-      - load_var: nginx_forward_proxy_image_tag
-        file: nginx-forward-proxy-ecr-registry-perf/tag
-      - load_var: adot_image_tag
-        file: adot-ecr-registry-perf/tag
+      - in_parallel:
+          steps:
+            - get: frontend-ecr-registry-perf
+              trigger: true
+            - get: nginx-forward-proxy-ecr-registry-perf
+              trigger: true
+            - get: nginx-proxy-ecr-registry-perf
+              trigger: true
+            - get: adot-ecr-registry-perf
+              trigger: true
+            - get: pay-infra
+            - get: pay-ci
+      - in_parallel:
+          steps:
+            - task: parse-ecr-release-tag
+              file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+              input_mapping:
+                ecr-image: frontend-ecr-registry-perf
+            - *parse-adot-ecr-release-tag
+            - *parse-nginx-ecr-release-tag
+            - *parse-nginx-forward-proxy-ecr-release-tag
+      - in_parallel:
+          steps:
+            - *load_app_name_from_parse_ecr_release_tag
+            - *load_app_release_number_from_parse_ecr_release_tag
+            - *load_adot_release_number_from_parse_ecr_release_tag
+            - *load_nginx_release_number_from_parse_ecr_release_tag
+            - *load_nginx_forward_proxy_release_number_from_parse_ecr_release_tag
+            - load_var: application_image_tag
+              file: frontend-ecr-registry-perf/tag
+            - load_var: nginx_image_tag
+              file: nginx-proxy-ecr-registry-perf/tag
+            - load_var: nginx_forward_proxy_image_tag
+              file: nginx-forward-proxy-ecr-registry-perf/tag
+            - load_var: adot_image_tag
+              file: adot-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -1096,20 +1114,8 @@ jobs:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *wait_for_deploy_params
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":green-circle: Deployment of frontend to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    on_failure:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":red_circle: Deployment of frontend to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_and_forward_proxy
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot_and_forward_proxy
 
   - name: deploy-products-to-perf
     serial: true
