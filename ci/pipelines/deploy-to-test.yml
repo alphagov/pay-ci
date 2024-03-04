@@ -155,6 +155,18 @@ definitions:
         outcome: success
         sidecar: nginx
 
+  send_nginx_forward_proxy_release_metric_success: &send_nginx_forward_proxy_release_metric_success
+    put: send-nginx-forward-proxy-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:nginx_forward_proxy_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx-forward-proxy/outcome/success"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: success
+        sidecar: nginx-forward-proxy
+
   send_adot_release_metric_success: &send_adot_release_metric_success
     put: send-adot-release-number-metric
     resource: prometheus-pushgateway
@@ -189,6 +201,18 @@ definitions:
         <<: *pushgateway_default_labels
         outcome: failure
         sidecar: nginx
+
+  send_nginx_forward_proxy_release_metric_failure: &send_nginx_forward_proxy_release_metric_failure
+    put: send-nginx-forward-proxy-release-number-metric
+    resource: prometheus-pushgateway
+    params:
+      metric: deployment_pipeline_sidecar_release_number
+      value: "((.:nginx_forward_proxy_release_number))"
+      job: "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx-forward-proxy/outcome/failure"
+      labels:
+        <<: *pushgateway_default_labels
+        outcome: failure
+        sidecar: nginx-forward-proxy
 
   send_adot_release_metric_failure: &send_adot_release_metric_failure
     put: send-adot-release-number-metric
@@ -242,6 +266,27 @@ definitions:
           - *slack_notification_failure
           - *send_app_release_metric_failure
           - *send_nginx_release_metric_failure
+          - *send_adot_release_metric_failure
+
+  put_success_slack_and_metric_notification_with_nginx_forward_proxy_and_adot: &put_success_slack_and_metric_notification_with_nginx_forward_proxy_and_adot
+    on_success:
+      in_parallel:
+          steps:
+          - *slack_notification_success
+          - *send_app_release_metric_success
+          - *send_nginx_release_metric_success
+          - *send_nginx_forward_proxy_release_metric_success
+          - *send_adot_release_metric_success
+          - *send_app_release_annotation
+
+  put_failure_slack_and_metric_notification_with_nginx_forward_proxy_and_adot: &put_failure_slack_and_metric_notification_with_nginx_forward_proxy_and_adot
+    on_failure:
+      in_parallel:
+          steps:
+          - *slack_notification_failure
+          - *send_app_release_metric_failure
+          - *send_nginx_release_metric_failure
+          - *send_nginx_forward_proxy_release_metric_failure
           - *send_adot_release_metric_failure
 
   put_db_migration_slack_notification: &put_db_migration_slack_notification
@@ -1876,6 +1921,8 @@ jobs:
         input_mapping:
           git-release: frontend-git-release
       - in_parallel:
+        - *load_app_name_from_parse_release_tag
+        - *load_app_release_number_from_parse_release_tag
         - load_var: release-number
           file: tags/release-number
         - load_var: release-name
@@ -1937,23 +1984,29 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
     on_failure:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-announce'
-        silent: true
-        text: ':red-circle: frontend candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-announce'
+            silent: true
+            text: ':red-circle: frontend candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_failure
     on_success:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-activity'
-        silent: true
-        text: ':hammer: frontend candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-activity'
+            silent: true
+            text: ':hammer: frontend candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_success
 
   - name: run-frontend-e2e
     plan:
@@ -2058,23 +2111,29 @@ jobs:
                 SOURCE_MANIFEST: "governmentdigitalservice/pay-frontend:((.:candidate_image_tag))"
                 NEW_MANIFEST: "governmentdigitalservice/pay-frontend:latest-master"
     on_failure:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-announce'
-        silent: true
-        text: ':red-circle: frontend candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-announce'
+            silent: true
+            text: ':red-circle: frontend candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_failure
     on_success:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-activity'
-        silent: true
-        text: ':green-circle: frontend candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-activity'
+            silent: true
+            text: ':green-circle: frontend candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_success
 
   - name: deploy-frontend
     serial: true
@@ -2105,10 +2164,17 @@ jobs:
           ACTION_NAME: Deployment
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+            - *load_app_name
+            - *load_app_release_number
+            - *load_adot_release_number
+            - *load_nginx_release_number
+            - *load_nginx_forward_proxy_release_number
+            - load_var: success_snippet
+              file: snippet/success
+            - load_var: failure_snippet
+              file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -2149,8 +2215,8 @@ jobs:
           APP_NAME: frontend
           NGINX_FORWARD_PROXY_IMAGE_TAG: ((.:nginx_forward_proxy_image_tag))
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_forward_proxy_and_adot
+    <<: *put_failure_slack_and_metric_notification_with_nginx_forward_proxy_and_adot
 
   - name: smoke-test-frontend
     serial_groups: [smoke-test]
@@ -2173,10 +2239,14 @@ jobs:
           APP_NAME: frontend
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+            - *load_app_name
+            - *load_app_release_number
+            - load_var: success_snippet
+              file: snippet/success
+            - load_var: failure_snippet
+              file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -2187,8 +2257,8 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: frontend-pact-tag
     plan:
@@ -2204,10 +2274,14 @@ jobs:
           APP_NAME: frontend
           ACTION_NAME: Pact tag
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+            - *load_app_name
+            - *load_app_release_number
+            - load_var: success_snippet
+              file: snippet/success
+            - load_var: failure_snippet
+              file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -2222,8 +2296,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: frontend
           PACT_TAG: test-fargate
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: push-frontend-to-staging-ecr
     plan:
@@ -2240,8 +2314,12 @@ jobs:
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
           ecr-image: frontend-ecr-registry-test
-      - load_var: release_number
-        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+            - *load_app_name_from_parse_ecr_release_tag
+            - *load_app_release_number_from_parse_ecr_release_tag
+            - load_var: release_number
+              file: ecr-release-info/release-number
       - in_parallel:
           steps:
           - *assume_copy_from_test_ecr_role
@@ -2256,6 +2334,8 @@ jobs:
         params:
           ECR_REPO_NAME: "govukpay/frontend"
           <<: *copy_ecr_from_test_to_staging_params
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: build-and-push-adminusers-candidate
     plan:
