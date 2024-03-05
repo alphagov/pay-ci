@@ -1,0 +1,52 @@
+import "@concourse_pipeline/Pipeline.pkl"
+
+import "./shared_resources.pkl"
+
+function PayPipelineSelfUpdateResource(pkl_pipeline_file: String, branch: String): Pipeline.Resource = new shared_resources.PayGitHubResource {
+    name = "pipeline-source"
+    source = new Mapping {
+        ["uri"] = "https://github.com/alphagov/pay-ci"
+        ["branch"] = branch
+        ["paths"] = new Listing<String> { "ci/pkl-pipelines/\(pkl_pipeline_file)" }
+    }
+}
+
+payPipelineSelfUpdateGroup: Pipeline.Group = new {
+    name = "update-pipeline"
+    jobs = new {
+        "update-pipeline"
+    }
+}
+
+function PayPipelineSelfUpdateJob(pkl_pipeline_file: String): Pipeline.Job = new {
+    local yml_pipeline_file = pkl_pipeline_file.replaceLast(".pkl", ".yaml")
+
+    name = "update-pipeline"
+    plan = new {
+        new Pipeline.GetStep {
+            get = "pipeline-source"
+            trigger = true
+        }
+        new Pipeline.TaskStep {
+            task = "generate-yaml-from-pkl"
+            config = new {
+                platform = "linux"
+                image_resource = shared_resources.anonymousConcourseRunnerResource
+                inputs = new {
+                    new { name = "pipeline-source" }
+                }
+                run = new {
+                    path = "ash"
+                    dir = "pipeline-source/ci/pkl-pipelines/"
+                    args = new {
+                        "pkl eval '\(pkl_pipeline_file)' > '\(yml_pipeline_file)'"
+                    }
+                }
+            }
+        }
+        new Pipeline.SetPipelineStep {
+            set_pipeline = "self"
+            file = "pipeline-source/ci/pkl-pipelines/\(yml_pipeline_file)"
+        }
+    }
+}

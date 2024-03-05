@@ -1,0 +1,23 @@
+import "@concourse_pipeline/Pipeline.pkl"
+import "@concourse_pipeline/TaskConfig.pkl"
+
+class PayGitHubResource extends Pipeline.Resource {
+    type = "git"
+    icon = "github"
+}
+
+anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
+    type = "registry-image"
+    source = new {
+        ["repository"] = "governmentdigitalservice/pay-concourse-runner"
+        ["tag"] = "latest"
+    }
+}
+
+payCiGitHubResource: PayGitHubResource = new {
+    name = "pay-ci"
+    source = new Mapping {
+        ["uri"] = "https://github.com/alphagov/pay-ci"
+        ["branch"] = "master"
+    }
+}
