@@ -21,3 +21,25 @@ payCiGitHubResource: PayGitHubResource = new {
         ["branch"] = "master"
     }
 }
+
+function PayDockerHubResource(resource_name: String, repo: String, tag: String): Pipeline.Resource = new {
+    name = resource_name
+    type = "registry-image"
+    icon = "docker"
+    source = new {
+        ["repository"] = repo
+        ["tag"] = tag
+        ["username"] = "((dockerhub-username))"
+        ["password"] = "((dockerhub-password))"
+    }
+}
+
+generateDockerCredsConfigStep = new Pipeline.TaskStep {
+    task = "generate-docker-creds-config"
+    file = "pay-ci/ci/tasks/generate-docker-config-file.yml"
+    params = new {
+        ["USERNAME"] = "((docker-username))"
+        ["PASSWORD"] = "((docker-password))"
+        ["EMAIL"] = "((docker-email))"
+    }
+}
