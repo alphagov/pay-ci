@@ -3081,12 +3081,18 @@ jobs:
           APP_NAME: ledger
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: start_snippet
-        file: snippet/start
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
+          - load_var: start_snippet
+            file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -3124,8 +3130,8 @@ jobs:
         params:
           APP_NAME: ledger
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_announce
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: smoke-test-ledger-on-staging
     serial_groups: [smoke-test]
@@ -3146,10 +3152,14 @@ jobs:
           APP_NAME: ledger
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -3160,8 +3170,8 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: ledger-pact-tag
     plan:
@@ -3181,10 +3191,14 @@ jobs:
           APP_NAME: ledger
           ACTION_NAME: Pact tag
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -3199,8 +3213,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: ledger
           PACT_TAG: staging-fargate
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: ledger-db-migration-staging
     plan:
@@ -3262,8 +3276,12 @@ jobs:
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
           ecr-image: ledger-ecr-registry-staging
-      - load_var: release_number
-        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+            - *load_app_name_from_parse_ecr_release_tag
+            - *load_app_release_number_from_parse_ecr_release_tag
+            - load_var: release_number
+              file: ecr-release-info/release-number
       - in_parallel:
           steps:
           - *assume_copy_from_staging_ecr_role
@@ -3278,6 +3296,8 @@ jobs:
         params:
           ECR_REPO_NAME: "govukpay/ledger"
           <<: *copy_ecr_from_staging_to_prod_params
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: deploy-webhooks-to-staging
     serial: true
