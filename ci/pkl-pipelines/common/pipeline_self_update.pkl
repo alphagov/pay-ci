@@ -7,7 +7,10 @@ function PayPipelineSelfUpdateResource(pkl_pipeline_file: String, branch: String
     source = new Mapping {
         ["uri"] = "https://github.com/alphagov/pay-ci"
         ["branch"] = branch
-        ["paths"] = new Listing<String> { "ci/pkl-pipelines/\(pkl_pipeline_file)" }
+        ["paths"] = new Listing<String> { 
+            "ci/pkl-pipelines/\(pkl_pipeline_file)"
+            "ci/pkl-pipelines/common/**"
+        }
     }
 }
 
