@@ -20,6 +20,7 @@ payPipelineSelfUpdateGroup: Pipeline.Group = new {
 
 function PayPipelineSelfUpdateJob(pkl_pipeline_file: String): Pipeline.Job = new {
     local yml_pipeline_file = pkl_pipeline_file.replaceLast(".pkl", ".yaml")
+    local pipeline_name = pkl_pipeline_file.replaceLast(".pkl", "")
 
     name = "update-pipeline"
     plan = new {
@@ -35,17 +36,21 @@ function PayPipelineSelfUpdateJob(pkl_pipeline_file: String): Pipeline.Job = new
                 inputs = new {
                     new { name = "pipeline-source" }
                 }
+                outputs = new {
+                    new { name = "pipeline-source" }
+                }
                 run = new {
                     path = "ash"
                     dir = "pipeline-source/ci/pkl-pipelines/"
                     args = new {
+                        "-c"
                         "pkl eval '\(pkl_pipeline_file)' > '\(yml_pipeline_file)'"
                     }
                 }
             }
         }
         new Pipeline.SetPipelineStep {
-            set_pipeline = "self"
+            set_pipeline = "\(pipeline_name)-test"
             file = "pipeline-source/ci/pkl-pipelines/\(yml_pipeline_file)"
         }
     }
