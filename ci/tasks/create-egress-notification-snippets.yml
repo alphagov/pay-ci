@@ -17,7 +17,7 @@ run:
   args:
     - -c
     - |
-      APP_RELEASE_NUMBER=$(echo "${APPLICATION_IMAGE_TAG}" | sed 's/-release//')
+      APP_RELEASE_NUMBER=$(echo "${APPLICATION_IMAGE_TAG}" | cut -f 1 -d '-')
 
       echo -n "${APP_NAME}" | tee -a snippet/app_name
       echo -n "${APP_RELEASE_NUMBER}" | tee -a snippet/app_release_number
