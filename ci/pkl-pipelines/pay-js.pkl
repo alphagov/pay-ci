@@ -17,6 +17,10 @@ local payJsLibraries: Listing<PayJsLibraryPipeline> = new {
         name = "metrics"
         source_branch = "main"
     }
+    new {
+        name = "logging-pipeline"
+        source_branch = "main"
+    }
 }
 
 resources = new {
@@ -79,3 +83,4 @@ jobs = new {
         }
     }
 }    
+
