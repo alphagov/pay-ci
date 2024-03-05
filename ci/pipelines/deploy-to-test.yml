@@ -2052,6 +2052,8 @@ jobs:
               format: json
             - load_var: release_image_tag
               file: parse-candidate-tag/release-tag
+            - *load_app_name_from_parse_candidate_tag
+            - *load_app_release_number_from_parse_candidate_tag
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
