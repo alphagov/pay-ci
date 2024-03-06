@@ -507,9 +507,9 @@ resources:
     type: git
     icon: github
     source:
-      uri: https://github.com/alphagov/pay-dockerfiles
+      uri: https://github.com/alphagov/pay-egress
       branch: main
-      tag_regex: "egress_alpha_release-(.*)"
+      tag_regex: "alpha_release-(.*)"
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
   - name: frontend-git-release
@@ -624,9 +624,9 @@ resources:
     type: git
     icon: github
     source:
-      uri: https://github.com/alphagov/pay-dockerfiles
+      uri: https://github.com/alphagov/pay-webhooks-egress
       branch: main
-      tag_regex: "webhooks_egress_alpha_release-(.*)"
+      tag_regex: "alpha_release-(.*)"
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
   - name: notifications-git-release
@@ -684,7 +684,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/egress
-      variant: egress-release
+      variant: release
       <<: *aws_test_config
   - name: frontend-ecr-registry-test
     type: registry-image

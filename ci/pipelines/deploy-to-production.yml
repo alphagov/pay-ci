@@ -480,7 +480,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/egress
-      variant: egress-release
+      variant: release
       <<: *aws_prod_config
   - name: adot-ecr-registry-prod
     type: registry-image
