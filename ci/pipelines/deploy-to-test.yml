@@ -1674,6 +1674,8 @@ jobs:
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: egress-git-release
+        params:
+          APP_NAME: egress
       - in_parallel:
           - *load_app_name_from_parse_release_tag
           - *load_app_release_number_from_parse_release_tag
@@ -1685,6 +1687,8 @@ jobs:
             file: tags/release-sha
           - load_var: date
             file: tags/date
+          - load_var: release-tag
+            file: tags/tags
           - task: assume-role
             file: pay-ci/ci/tasks/assume-role.yml
             params:
@@ -1711,22 +1715,23 @@ jobs:
           PASSWORD: ((docker-access-token))
           EMAIL: ((docker-email))
       - in_parallel:
-          - task: run-codebuild-egress-amd64
-            attempts: 3
-            file: pay-ci/ci/tasks/run-codebuild.yml
-            params:
-              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/egress-amd64.json"
-              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          - task: run-codebuild-egress-armv8
-            attempts: 3
-            file: pay-ci/ci/tasks/run-codebuild.yml
-            params:
-              PATH_TO_CONFIG: "../../../../run-codebuild-configuration/egress-armv8.json"
-              AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
-              AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-              AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          steps:
+            - task: run-codebuild-egress-amd64
+              attempts: 3
+              file: pay-ci/ci/tasks/run-codebuild.yml
+              params:
+                PATH_TO_CONFIG: "../../../../run-codebuild-configuration/egress-amd64.json"
+                AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+            - task: run-codebuild-egress-armv8
+              attempts: 3
+              file: pay-ci/ci/tasks/run-codebuild.yml
+              params:
+                PATH_TO_CONFIG: "../../../../run-codebuild-configuration/egress-armv8.json"
+                AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+                AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+                AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - task: run-codebuild-egress-manifest
         attempts: 3
         file: pay-ci/ci/tasks/run-codebuild.yml
@@ -1744,11 +1749,11 @@ jobs:
           AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
       - in_parallel:
           steps:
-            - load_var: retag-role
-              file: assume-retag-role/assume-role.json
-              format: json
-            - load_var: candidate-image-tag
-              file: tags/candidate-tag
+          - load_var: retag-role
+            file: assume-retag-role/assume-role.json
+            format: json
+          - load_var: candidate-image-tag
+            file: tags/candidate-tag
       - in_parallel:
           steps:
             - task: retag-candidate-as-release-in-ecr
