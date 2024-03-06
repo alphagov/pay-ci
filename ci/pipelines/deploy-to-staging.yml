@@ -2376,14 +2376,20 @@ jobs:
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: products-ui-ecr-registry-staging
-        trigger: true
-      - get: nginx-proxy-ecr-registry-staging
-        trigger: true
-      - get: adot-ecr-registry-staging
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: products-ui-ecr-registry-staging
+            trigger: true
+          - get: nginx-proxy-ecr-registry-staging
+            trigger: true
+          - get: adot-ecr-registry-staging
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: products-ui-ecr-registry-staging
       - load_var: application_image_tag
         file: products-ui-ecr-registry-staging/tag
       - load_var: nginx_image_tag
@@ -2396,12 +2402,18 @@ jobs:
           APP_NAME: products-ui
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: start_snippet
-        file: snippet/start
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
+          - load_var: start_snippet
+            file: snippet/start
       - <<: *put_start_slack_notification
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
@@ -2440,16 +2452,22 @@ jobs:
         params:
           APP_NAME: products-ui
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_announce
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: smoke-test-products-ui-on-staging
     serial_groups: [smoke-test]
     plan:
-      - get: products-ui-ecr-registry-staging
-        trigger: true
-        passed: [deploy-products-ui-to-staging]
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: products-ui-ecr-registry-staging
+            trigger: true
+            passed: [deploy-products-ui-to-staging]
+          - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: products-ui-ecr-registry-staging
       - load_var: application_image_tag
         file: products-ui-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -2458,10 +2476,14 @@ jobs:
           APP_NAME: products-ui
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -2472,27 +2494,33 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: products-ui-pact-tag
     plan:
-      - get: products-ui-ecr-registry-staging
-        passed: [smoke-test-products-ui-on-staging]
-        trigger: true
+      - in_parallel:
+          steps:
+          - get: products-ui-ecr-registry-staging
+            passed: [smoke-test-products-ui-on-staging]
+            trigger: true
+          - get: pay-ci
       - load_var: application_image_tag
         file: products-ui-ecr-registry-staging/tag
-      - get: pay-ci
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: products-ui
           ACTION_NAME: Pact tag
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -2507,8 +2535,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: products-ui
           PACT_TAG: staging-fargate
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: push-products-ui-to-production-ecr
     plan:
@@ -2525,8 +2553,12 @@ jobs:
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
           ecr-image: products-ui-ecr-registry-staging
-      - load_var: release_number
-        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
+          - load_var: release_number
+            file: ecr-release-info/release-number
       - in_parallel:
           steps:
           - *assume_copy_from_staging_ecr_role
@@ -2541,6 +2573,8 @@ jobs:
         params:
           ECR_REPO_NAME: "govukpay/products-ui"
           <<: *copy_ecr_from_staging_to_prod_params
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: deploy-publicauth-to-staging
     serial: true

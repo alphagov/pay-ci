@@ -1242,20 +1242,36 @@ jobs:
   - name: deploy-products-ui-to-perf
     serial: true
     plan:
-      - get: products-ui-ecr-registry-perf
-        trigger: true
-      - get: nginx-proxy-ecr-registry-perf
-        trigger: true
-      - get: adot-ecr-registry-perf
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
-      - load_var: application_image_tag
-        file: products-ui-ecr-registry-perf/tag
-      - load_var: nginx_image_tag
-        file: nginx-proxy-ecr-registry-perf/tag
-      - load_var: adot_image_tag
-        file: adot-ecr-registry-perf/tag
+      - in_parallel:
+          steps:
+          - get: products-ui-ecr-registry-perf
+            trigger: true
+          - get: nginx-proxy-ecr-registry-perf
+            trigger: true
+          - get: adot-ecr-registry-perf
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
+      - in_parallel:
+          steps:
+            - task: parse-ecr-release-tag
+              file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+              input_mapping:
+                ecr-image: products-ui-ecr-registry-perf
+            - *parse-adot-ecr-release-tag
+            - *parse-nginx-ecr-release-tag
+      - in_parallel:
+          steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
+          - *load_adot_release_number_from_parse_ecr_release_tag
+          - *load_nginx_release_number_from_parse_ecr_release_tag
+          - load_var: application_image_tag
+            file: products-ui-ecr-registry-perf/tag
+          - load_var: nginx_image_tag
+            file: nginx-proxy-ecr-registry-perf/tag
+          - load_var: adot_image_tag
+            file: adot-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -1280,20 +1296,8 @@ jobs:
         params:
           APP_NAME: products-ui
           <<: *wait_for_deploy_params
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":green-circle: Deployment of products-ui to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    on_failure:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":red_circle: Deployment of products-ui to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: deploy-publicauth-to-perf
     serial: true
