@@ -4,7 +4,7 @@ image_resource:
   type: docker-image
   source:
     repository: alpine
-    tag: 3.16
+    tag: 3.19
 params:
   APP_NAME:
   ACTION_NAME:
@@ -13,10 +13,15 @@ params:
 outputs:
   - name: snippet
 run:
-  path: sh
+  path: ash
   args:
     - -c
     - |
+      APP_RELEASE_NUMBER=$(echo "${APPLICATION_IMAGE_TAG}" | cut -f 1 -d '-')
+
+      echo -n "${APP_NAME}" | tee -a snippet/app_name
+      echo -n "${APP_RELEASE_NUMBER}" | tee -a snippet/app_release_number
+      
       cat <<EOT >> snippet/start
       :rocket: ${ACTION_NAME} of <https://github.com/alphagov/pay-dockerfiles/releases/tag/${APPLICATION_IMAGE_TAG}|${APP_NAME} v${APPLICATION_IMAGE_TAG}> on ${ENV} is beginning
       EOT

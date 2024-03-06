@@ -1667,38 +1667,33 @@ jobs:
   - name: build-and-push-egress-candidate
     plan:
       - in_parallel:
-        - get: pay-ci
-        - get: egress-git-release
-          trigger: true
+          - get: pay-ci
+          - get: egress-git-release
+            trigger: true
       - task: parse-release-tag
         file: pay-ci/ci/tasks/parse-release-tag.yml
         input_mapping:
           git-release: egress-git-release
+        params:
+          APP_NAME: egress
       - in_parallel:
-          steps:
-            - load_var: release-number
-              file: tags/release-number
-            - load_var: release-name
-              file: egress-git-release/.git/ref
-            - load_var: release-sha
-              file: tags/release-sha
-            - load_var: date
-              file: tags/date
-            - load_var: release-tag
-              file: tags/tags
-      - in_parallel:
-          steps:
-            - task: generate-docker-creds-config
-              file: pay-ci/ci/tasks/generate-docker-config-file.yml
-              params:
-                USERNAME: ((docker-username))
-                PASSWORD: ((docker-access-token))
-                EMAIL: ((docker-email))
-            - task: assume-role
-              file: pay-ci/ci/tasks/assume-role.yml
-              params:
-                AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12
-                AWS_ROLE_SESSION_NAME: codebuild-assume-role
+          - *load_app_name_from_parse_release_tag
+          - *load_app_release_number_from_parse_release_tag
+          - load_var: release-number
+            file: tags/release-number
+          - load_var: release-name
+            file: egress-git-release/.git/ref
+          - load_var: release-sha
+            file: tags/release-sha
+          - load_var: date
+            file: tags/date
+          - load_var: release-tag
+            file: tags/tags
+          - task: assume-role
+            file: pay-ci/ci/tasks/assume-role.yml
+            params:
+              AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12
+              AWS_ROLE_SESSION_NAME: codebuild-assume-role
       - load_var: role
         file: assume-role/assume-role.json
         format: json
@@ -1713,6 +1708,12 @@ jobs:
           RELEASE_NAME: ((.:release-name))
           RELEASE_SHA: ((.:release-sha))
           BUILD_DATE: ((.:date))
+      - task: generate-docker-creds-config
+        file: pay-ci/ci/tasks/generate-docker-config-file.yml
+        params:
+          USERNAME: ((docker-username))
+          PASSWORD: ((docker-access-token))
+          EMAIL: ((docker-email))
       - in_parallel:
           steps:
             - task: run-codebuild-egress-amd64
@@ -1746,11 +1747,13 @@ jobs:
         params:
           AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse
           AWS_ROLE_SESSION_NAME: retag-ecr-image-as-release
-      - load_var: retag-role
-        file: assume-retag-role/assume-role.json
-        format: json
-      - load_var: candidate-image-tag
-        file: tags/candidate-tag
+      - in_parallel:
+          steps:
+          - load_var: retag-role
+            file: assume-retag-role/assume-role.json
+            format: json
+          - load_var: candidate-image-tag
+            file: tags/candidate-tag
       - in_parallel:
           steps:
             - task: retag-candidate-as-release-in-ecr
@@ -1774,32 +1777,40 @@ jobs:
                 AWS_SECRET_ACCESS_KEY: ((.:retag-role.AWS_SECRET_ACCESS_KEY))
                 AWS_SESSION_TOKEN: ((.:retag-role.AWS_SESSION_TOKEN))
     on_failure:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-announce'
-        silent: true
-        text: ':red-circle: egress candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+          - put: slack-notification
+            attempts: 10
+            params:
+              channel: '#govuk-pay-announce'
+              silent: true
+              text: ':red-circle: egress candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+              icon_emoji: ":concourse:"
+              username: pay-concourse
+          - *send_app_release_metric_failure
     on_success:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-activity'
-        silent: true
-        text: ':hammer: egress candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+          - put: slack-notification
+            attempts: 10
+            params:
+              channel: '#govuk-pay-activity'
+              silent: true
+              text: ':hammer: egress candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+              icon_emoji: ":concourse:"
+              username: pay-concourse
+          - *send_app_release_metric_success
 
   - name: deploy-egress
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: egress-ecr-registry-test
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
+      - in_parallel:
+          steps:
+            - get: egress-ecr-registry-test
+              trigger: true
+            - get: pay-infra
+            - get: pay-ci
       - load_var: application_image_tag
         file: egress-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -1807,12 +1818,15 @@ jobs:
         params:
           APP_NAME: egress
           ACTION_NAME: Deployment
-          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-          ENV: test-12
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: success_snippet
-        file: snippet/success
+          <<: *snippet_params_app_version
+      - in_parallel:
+          steps:
+            - *load_app_name
+            - *load_app_release_number
+            - load_var: success_snippet
+              file: snippet/success
+            - load_var: failure_snippet
+              file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1843,16 +1857,18 @@ jobs:
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: test-12
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: smoke-test-egress
     serial_groups: [smoke-test]
     plan:
-      - get: egress-ecr-registry-test
-        trigger: true
-        passed: [deploy-egress]
-      - get: pay-ci
+      - in_parallel:
+          steps:
+            - get: egress-ecr-registry-test
+              trigger: true
+              passed: [deploy-egress]
+            - get: pay-ci
       - load_var: application_image_tag
         file: egress-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -1861,10 +1877,14 @@ jobs:
           APP_NAME: egress
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+            - *load_app_name
+            - *load_app_release_number
+            - load_var: success_snippet
+              file: snippet/success
+            - load_var: failure_snippet
+              file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -1875,40 +1895,46 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: push-egress-to-staging-ecr
     plan:
       - in_parallel:
           steps:
-          - get: egress-ecr-registry-test
-            params:
-              skip_download: true
-              format: oci
-            trigger: true
-            passed: [smoke-test-egress]
-          - get: pay-ci
+            - get: egress-ecr-registry-test
+              params:
+                skip_download: true
+                format: oci
+              trigger: true
+              passed: [smoke-test-egress]
+            - get: pay-ci
       - task: parse-ecr-release-tag
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
           ecr-image: egress-ecr-registry-test
-      - load_var: release_number
-        file: ecr-release-info/release-number
       - in_parallel:
           steps:
-          - *assume_copy_from_test_ecr_role
-          - *assume_write_to_staging_ecr_role
+            - *load_app_name_from_parse_ecr_release_tag
+            - *load_app_release_number_from_parse_ecr_release_tag
+            - load_var: release_number
+              file: ecr-release-info/release-number
       - in_parallel:
           steps:
-          - *load_copy_from_test_ecr_role
-          - *load_write_to_staging_ecr_role
+            - *assume_copy_from_test_ecr_role
+            - *assume_write_to_staging_ecr_role
+      - in_parallel:
+          steps:
+            - *load_copy_from_test_ecr_role
+            - *load_write_to_staging_ecr_role
       - task: copy-images-to-staging
         file: pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml
         privileged: true
         params:
           ECR_REPO_NAME: "govukpay/egress"
           <<: *copy_ecr_from_test_to_staging_params
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: build-and-push-frontend-candidate
     plan:
