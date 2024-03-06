@@ -433,7 +433,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/egress
-      variant: egress-perf
+      variant: perf
       <<: *aws_test_config
   - name: webhooks-egress-ecr-registry-perf
     type: registry-image

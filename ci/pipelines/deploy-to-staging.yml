@@ -516,7 +516,7 @@ resources:
     icon: docker
     source:
       repository: govukpay/egress
-      variant: egress-release
+      variant: release
       <<: *aws_staging_config
   - name: webhooks-egress-ecr-registry-staging
     type: registry-image
