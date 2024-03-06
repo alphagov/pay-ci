@@ -4169,6 +4169,8 @@ jobs:
         input_mapping:
           git-release: products-ui-git-release
       - in_parallel:
+        - *load_app_name_from_parse_release_tag
+        - *load_app_release_number_from_parse_release_tag
         - load_var: release-number
           file: tags/release-number
         - load_var: release-name
@@ -4230,23 +4232,29 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
     on_failure:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-announce'
-        silent: true
-        text: ':red-circle: products-ui candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-announce'
+            silent: true
+            text: ':red-circle: products-ui candidate image ((.:candidate-image-tag)) failed to build - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_failure
     on_success:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-activity'
-        silent: true
-        text: ':hammer: products-ui candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-activity'
+            silent: true
+            text: ':hammer: products-ui candidate image ((.:candidate-image-tag)) built successfully - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_success
 
   - name: run-products-ui-e2e
     plan:
@@ -4292,6 +4300,8 @@ jobs:
               format: json
             - load_var: release_image_tag
               file: parse-candidate-tag/release-tag
+            - *load_app_name_from_parse_candidate_tag
+            - *load_app_release_number_from_parse_candidate_tag
       - task: prepare-codebuild
         file: pay-ci/ci/tasks/prepare-e2e-codebuild.yml
         params:
@@ -4335,36 +4345,44 @@ jobs:
                 SOURCE_MANIFEST: "governmentdigitalservice/pay-products-ui:((.:candidate_image_tag))"
                 NEW_MANIFEST: "governmentdigitalservice/pay-products-ui:latest-master"
     on_failure:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-announce'
-        silent: true
-        text: ':red-circle: products-ui candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-announce'
+            silent: true
+            text: ':red-circle: products-ui candidate image ((.:candidate_image_tag)) failed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_failure
     on_success:
-      put: slack-notification
-      attempts: 10
-      params:
-        channel: '#govuk-pay-activity'
-        silent: true
-        text: ':green-circle: products-ui candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
-        icon_emoji: ":concourse:"
-        username: pay-concourse
+      in_parallel:
+        steps:
+        - put: slack-notification
+          attempts: 10
+          params:
+            channel: '#govuk-pay-activity'
+            silent: true
+            text: ':green-circle: products-ui candidate image ((.:candidate_image_tag)) passed post-merge end to end tests - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+            icon_emoji: ":concourse:"
+            username: pay-concourse
+        - *send_app_release_metric_success
 
   - name: deploy-products-ui
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: products-ui-ecr-registry-test
-        trigger: true
-      - get: nginx-proxy-ecr-registry-test
-        trigger: true
-      - get: adot-ecr-registry-test
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: products-ui-ecr-registry-test
+            trigger: true
+          - get: nginx-proxy-ecr-registry-test
+            trigger: true
+          - get: adot-ecr-registry-test
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
       - load_var: application_image_tag
         file: products-ui-ecr-registry-test/tag
       - load_var: nginx_image_tag
@@ -4377,10 +4395,16 @@ jobs:
           APP_NAME: products-ui
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -4418,19 +4442,21 @@ jobs:
         params:
           APP_NAME: products-ui
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: smoke-test-products-ui
     serial_groups: [smoke-test]
     plan:
-      - get: products-ui-ecr-registry-test
-        trigger: true
-        passed: [deploy-products-ui]
-      - get: nginx-proxy-ecr-registry-test
-        trigger: true
-        passed: [deploy-products-ui]
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: products-ui-ecr-registry-test
+            trigger: true
+            passed: [deploy-products-ui]
+          - get: nginx-proxy-ecr-registry-test
+            trigger: true
+            passed: [deploy-products-ui]
+          - get: pay-ci
       - load_var: application_image_tag
         file: products-ui-ecr-registry-test/tag
       - task: create-notification-snippets
@@ -4439,10 +4465,14 @@ jobs:
           APP_NAME: products-ui
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -4453,27 +4483,33 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-test
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: products-ui-pact-tag
     plan:
-      - get: products-ui-ecr-registry-test
-        passed: [smoke-test-products-ui]
-        trigger: true
+      - in_parallel:
+          steps:
+          - get: products-ui-ecr-registry-test
+            passed: [smoke-test-products-ui]
+            trigger: true
+          - get: pay-ci
       - load_var: application_image_tag
         file: products-ui-ecr-registry-test/tag
-      - get: pay-ci
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: products-ui
           ACTION_NAME: Pact tag
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: get-git-sha-for-release-tag
         file: pay-ci/ci/tasks/get-git-sha-for-release-tag.yml
         params:
@@ -4488,8 +4524,8 @@ jobs:
           GIT_SHA: ((.:git-sha))
           APP_NAME: products-ui
           PACT_TAG: test-fargate
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: push-products-ui-to-staging-ecr
     plan:
@@ -4506,8 +4542,12 @@ jobs:
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
           ecr-image: products-ui-ecr-registry-test
-      - load_var: release_number
-        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
+          - load_var: release_number
+            file: ecr-release-info/release-number
       - in_parallel:
           steps:
           - *assume_copy_from_test_ecr_role
@@ -4522,6 +4562,8 @@ jobs:
         params:
           ECR_REPO_NAME: "govukpay/products-ui"
           <<: *copy_ecr_from_test_to_staging_params
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: build-and-push-publicapi-candidate
     plan:
