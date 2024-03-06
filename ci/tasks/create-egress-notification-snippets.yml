@@ -4,7 +4,7 @@ image_resource:
   type: docker-image
   source:
     repository: alpine
-    tag: 3.16
+    tag: 3.19
 params:
   APP_NAME:
   ACTION_NAME:
@@ -13,7 +13,7 @@ params:
 outputs:
   - name: snippet
 run:
-  path: sh
+  path: ash
   args:
     - -c
     - |
