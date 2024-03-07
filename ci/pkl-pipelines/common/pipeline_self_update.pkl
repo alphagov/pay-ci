@@ -1,8 +1,8 @@
-import "@concourse_pipeline/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
 
 import "./shared_resources.pkl"
 
-function PayPipelineSelfUpdateResource(pkl_pipeline_file: String, branch: String): Pipeline.Resource = new shared_resources.PayGitHubResource {
+function PayPipelineSelfUpdateResource(pkl_pipeline_file: String, branch: String): shared_resources.PayGitHubResource = new {
     name = "pipeline-source"
     source = new Mapping {
         ["uri"] = "https://github.com/alphagov/pay-ci"

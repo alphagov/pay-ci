@@ -1,5 +1,5 @@
-import "@concourse_pipeline/Pipeline.pkl"
-import "@concourse_pipeline/TaskConfig.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/TaskConfig.pkl"
 
 class PayGitHubResource extends Pipeline.Resource {
     type = "git"
