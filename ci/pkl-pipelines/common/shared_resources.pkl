@@ -6,6 +6,62 @@ class PayGitHubResource extends Pipeline.Resource {
     icon = "github"
 }
 
+function PayGithubPullRequestResource(_name: String, alphagovRepo: String): Pipeline.Resource = new {
+    name = _name
+    type = "git"
+    icon = "github"
+    source = new {
+        ["disable_forks"] = true
+        ["repository"] = "alphagov/\(alphagovRepo)"
+        ["access-token"] = "((github-access-token))"
+    }
+}
+
+pullRequestResourceType = new Pipeline.ResourceType {
+    name = "pull-request"
+    type = "registry-image"
+    source = new {
+        ["respository"] = "teliaoss/github-pr-resource"
+        ["tag"] = "v0.23.0"
+    }
+}
+
+function PutPRTestPendingStatus(resourceName: String): Pipeline.PutStep = new {
+    put = resourceName
+    get_params {
+        ["skip_download"] = true
+    }
+    params {
+        ["path"] = resourceName
+        ["status"] = "pending"
+        ["context"] = "test"
+    }
+}
+
+function PutPRTestSuccessStatus(resourceName: String): Pipeline.PutStep = new {
+    put = resourceName
+    get_params {
+        ["skip_download"] = true
+    }
+    params {
+        ["path"] = resourceName
+        ["status"] = "success"
+        ["context"] = "test"
+    }
+}
+
+function PutPRTestFailedStatus(resourceName: String): Pipeline.PutStep = new {
+    put = resourceName
+    get_params {
+        ["skip_download"] = true
+    }
+    params {
+        ["path"] = resourceName
+        ["status"] = "failed"
+        ["context"] = "test"
+    }
+}
+
 anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
     type = "registry-image"
     source = new {
