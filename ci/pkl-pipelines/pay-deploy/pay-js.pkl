@@ -1,7 +1,7 @@
 amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
 
-import "common/pipeline_self_update.pkl"
-import "common/shared_resources.pkl"
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
 
 local class PayJsLibraryPipeline {
     name: String
