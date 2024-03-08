@@ -1067,7 +1067,6 @@ groups:
     jobs:
       - update-deploy-to-test-pipeline
 
-
 docker_credentials: &docker_credentials
   DOCKER_USERNAME: ((docker-username))
   DOCKER_AUTH_TOKEN: ((docker-access-token))

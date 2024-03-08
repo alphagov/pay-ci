@@ -642,9 +642,9 @@ groups:
     jobs:
       - deploy-adminusers-to-prod
       - smoke-test-adminusers-on-prod
-      - retag-adminusers-image-for-test-perf
       - adminusers-pact-tag
       - adminusers-db-migration-prod
+      - retag-adminusers-image-for-test-perf
       - retag-adminusers-image-for-test-perf-db
   - name: cardid
     jobs:
@@ -656,8 +656,8 @@ groups:
     jobs:
       - deploy-connector-to-prod
       - smoke-test-connector-on-prod
-      - retag-connector-image-for-test-perf
       - connector-pact-tag
+      - retag-connector-image-for-test-perf
       - connector-db-migration-prod
       - retag-connector-image-for-test-perf-db
   - name: egress
@@ -675,16 +675,16 @@ groups:
     jobs:
       - deploy-ledger-to-prod
       - smoke-test-ledger-on-prod
-      - retag-ledger-image-for-test-perf
       - ledger-pact-tag
+      - retag-ledger-image-for-test-perf
       - ledger-db-migration-prod
       - retag-ledger-image-for-test-perf-db
   - name: products
     jobs:
       - deploy-products-to-prod
       - smoke-test-products-on-prod
-      - retag-products-image-for-test-perf
       - products-pact-tag
+      - retag-products-image-for-test-perf
       - products-db-migration-prod
       - retag-products-image-for-test-perf-db
   - name: products-ui
@@ -756,7 +756,6 @@ groups:
   - name: update-deploy-to-prod-pipeline
     jobs:
       - update-deploy-to-prod-pipeline
-
 
 jobs:
   - name: update-deploy-to-prod-pipeline
