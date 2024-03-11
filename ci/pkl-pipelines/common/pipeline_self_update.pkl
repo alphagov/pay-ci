@@ -3,58 +3,58 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "./shared_resources.pkl"
 
 function PayPipelineSelfUpdateResource(pkl_pipeline_file: String, branch: String): shared_resources.PayGitHubResource = new {
-    name = "pipeline-source"
-    source = new Mapping {
-        ["uri"] = "https://github.com/alphagov/pay-ci"
-        ["branch"] = branch
-        ["paths"] = new Listing<String> {
-            "ci/pkl-pipelines/\(pkl_pipeline_file)"
-            "ci/pkl-pipelines/common/**"
-        }
+  name = "pipeline-source"
+  source = new Mapping {
+    ["uri"] = "https://github.com/alphagov/pay-ci"
+    ["branch"] = branch
+    ["paths"] = new Listing<String> {
+      "ci/pkl-pipelines/\(pkl_pipeline_file)"
+      "ci/pkl-pipelines/common/**"
     }
+  }
 }
 
 payPipelineSelfUpdateGroup: Pipeline.Group = new {
-    name = "update-pipeline"
-    jobs = new {
-        "update-pipeline"
-    }
+  name = "update-pipeline"
+  jobs = new {
+    "update-pipeline"
+  }
 }
 
 function PayPipelineSelfUpdateJob(pkl_pipeline_file: String): Pipeline.Job = new {
-    local yml_pipeline_file = pkl_pipeline_file.replaceLast(".pkl", ".yaml")
-    local pipeline_name = pkl_pipeline_file.replaceLast(".pkl", "").replaceLast("pay-deploy/","")
+  local yml_pipeline_file = pkl_pipeline_file.replaceLast(".pkl", ".yaml")
+  local pipeline_name = pkl_pipeline_file.replaceLast(".pkl", "").replaceLast("pay-deploy/", "")
 
-    name = "update-pipeline"
-    plan = new {
-        new Pipeline.GetStep {
-            get = "pipeline-source"
-            trigger = true
-        }
-        new Pipeline.TaskStep {
-            task = "generate-yaml-from-pkl"
-            config = new {
-                platform = "linux"
-                image_resource = shared_resources.anonymousConcourseRunnerResource
-                inputs = new {
-                    new { name = "pipeline-source" }
-                }
-                outputs = new {
-                    new { name = "pipeline-source" }
-                }
-                run = new {
-                    path = "ash"
-                    dir = "pipeline-source/ci/pkl-pipelines/"
-                    args = new {
-                        "-c"
-                        "pkl eval '\(pkl_pipeline_file)' > '\(yml_pipeline_file)'"
-                    }
-                }
-            }
-        }
-        new Pipeline.SetPipelineStep {
-            set_pipeline = "\(pipeline_name)-test"
-            file = "pipeline-source/ci/pkl-pipelines/\(yml_pipeline_file)"
-        }
+  name = "update-pipeline"
+  plan = new {
+    new Pipeline.GetStep {
+      get = "pipeline-source"
+      trigger = true
     }
+    new Pipeline.TaskStep {
+      task = "generate-yaml-from-pkl"
+      config = new {
+        platform = "linux"
+        image_resource = shared_resources.anonymousConcourseRunnerResource
+        inputs = new {
+          new { name = "pipeline-source" }
+        }
+        outputs = new {
+          new { name = "pipeline-source" }
+        }
+        run = new {
+          path = "ash"
+          dir = "pipeline-source/ci/pkl-pipelines/"
+          args = new {
+            "-c"
+            "pkl eval '\(pkl_pipeline_file)' > '\(yml_pipeline_file)'"
+          }
+        }
+      }
+    }
+    new Pipeline.SetPipelineStep {
+      set_pipeline = "\(pipeline_name)-test"
+      file = "pipeline-source/ci/pkl-pipelines/\(yml_pipeline_file)"
+    }
+  }
 }
