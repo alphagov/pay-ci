@@ -24,13 +24,10 @@ payCiGitHubResource: PayGitHubResource = new {
   }
 }
 
-function payDockerHubResource(resource_name: String, repo: String, tag: String, checkInterval: String): Pipeline.Resource = new {
+function payDockerHubResource(resource_name: String, repo: String, tag: String): Pipeline.Resource = new {
   name = resource_name
   type = "registry-image"
   icon = "docker"
-  when (checkInterval.length > 0) {
-    check_every = checkInterval
-  }
   source = new {
     ["repository"] = repo
     ["tag"] = tag

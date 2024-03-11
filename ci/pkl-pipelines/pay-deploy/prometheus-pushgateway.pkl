@@ -10,8 +10,10 @@ resources = new {
   }
   shared_resources.payECRResourceWithVariant("adot-ecr-registry-staging", "govukpay/adot", "pay_aws_staging_account_id", "release")
   shared_resources.payECRResourceWithVariant("adot-ecr-registry-deploy", "govukpay/adot", "pay_aws_deploy_account_id", "release")
-  shared_resources.payDockerHubResource("prometheus-pushgateway-resource-dockerhub", "governmentdigitalservice/pay-prometheus-pushgateway-resource", "latest-master", "")
-  shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", "v1.7.0", "1h")
+  shared_resources.payDockerHubResource("prometheus-pushgateway-resource-dockerhub", "governmentdigitalservice/pay-prometheus-pushgateway-resource", "latest-master")
+  (shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", "v1.7.0")) {
+    check_every = "1h"
+  }
   shared_resources.payCiGitHubResource
   (shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource")) {
     source { ["tag_regex"] = "alpha_release-(.*)" }
