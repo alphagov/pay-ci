@@ -769,10 +769,12 @@ jobs:
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: egress-ecr-registry-prod
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: egress-ecr-registry-prod
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
       - load_var: application_image_tag
         file: egress-ecr-registry-prod/tag
       - task: create-notification-snippets
@@ -780,14 +782,17 @@ jobs:
         params:
           APP_NAME: egress
           ACTION_NAME: Deployment
-          APPLICATION_IMAGE_TAG: ((.:application_image_tag))
-          ENV: production-2
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: start_snippet
-        file: snippet/start
+          <<: *snippet_params_app_version
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
+          - load_var: start_snippet
+            file: snippet/start
       - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
@@ -819,16 +824,18 @@ jobs:
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: production-2
-    <<: *put_success_slack_notification_announce
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_announce
+    <<: *put_failure_slack_and_metric_notification
 
   - name: smoke-test-egress-on-prod
     serial_groups: [smoke-test]
     plan:
-      - get: egress-ecr-registry-prod
-        trigger: true
-        passed: [deploy-egress-to-prod]
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: egress-ecr-registry-prod
+            trigger: true
+            passed: [deploy-egress-to-prod]
+          - get: pay-ci
       - load_var: application_image_tag
         file: egress-ecr-registry-prod/tag
       - task: create-notification-snippets
@@ -837,10 +844,14 @@ jobs:
           APP_NAME: egress
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -851,8 +862,8 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-production
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: retag-egress-image-for-test-perf
     plan:
@@ -877,6 +888,8 @@ jobs:
               ecr-repo: egress-ecr-registry-prod
       - in_parallel:
           steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
           - load_var: release-number
             file: ecr-release-info/release-number
           - load_var: perf-tag
@@ -909,6 +922,8 @@ jobs:
           <<: *retag_for_perf_test
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/egress:((.:perf-tag))"
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/egress:((.:release-number))-candidate"
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: deploy-selfservice-to-prod
     serial: true
