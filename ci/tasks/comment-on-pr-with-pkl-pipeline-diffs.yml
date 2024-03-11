@@ -29,6 +29,8 @@ run:
 
       mkdir -p "diffs/${CONCOURSE_TEAM}/"
 
+      FAILED_EVALUATIONS=""
+
       for DIR in "$MASTER" "$PR"; do
         echo "Generting YML from PKL in $DIR"
 
@@ -42,12 +44,22 @@ run:
           find . -mindepth 1 -maxdepth 1 -type f -name '*.pkl' | while read -r PKL_FILE; do
             echo "Generating YML for $PKL_FILE"
             YAML_FILE=$(echo "$PKL_FILE" | sed -E 's/\.pkl$/.yml/')
-            pkl eval "$PKL_FILE" > "$YAML_FILE"
+            if ! pkl eval "$PKL_FILE" > "$YAML_FILE"; then
+              FAILED_EVALUATIONS="$FAILED_EVALUATIONS\n$PKL_FILE"
+            fi
           done
         fi
 
         cd - >> /dev/null 2>&1
       done
+
+      if [ -n "$FAILED_EVALUATIONS" ]; then
+        echo "ERROR: Some pkl pipelines were not able to be evaluated. The following pipelines failed:"
+        echo 
+        echo "$FAILED_EVALUATIONS"
+        echo
+        exit 1
+      fi
 
       YAML_FILES_TO_DIFF=$(
         find \
