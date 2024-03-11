@@ -109,3 +109,56 @@ generateDockerCredsConfigStep = new Pipeline.TaskStep {
         ["EMAIL"] = "((docker-email))"
     }
 }
+
+pullRequestResourceType = new Pipeline.ResourceType {
+  name = "pull-request"
+  type = "registry-image"
+  source = new {
+    ["repository"] = "teliaoss/github-pr-resource"
+    ["tag"] = "v0.23.0"
+  }
+}
+
+function payGithubPullRequestResource(_name: String, alphagovRepo: String): Pipeline.Resource = new {
+  name = _name
+  type = "pull-request"
+  icon = "github"
+  source = new {
+    ["disable_forks"] = true
+    ["repository"] = "alphagov/\(alphagovRepo)"
+    ["access_token"] = "((github-access-token))"
+  }
+}
+
+function putPRTestPendingStatus(resourceName: String): Pipeline.PutStep = new {
+  put = resourceName
+  params {
+    ["path"] = resourceName
+    ["status"] = "pending"
+    ["context"] = "test"
+  }
+}
+
+function putPRTestSuccessStatus(resourceName: String): Pipeline.PutStep = new {
+  put = resourceName
+  get_params {
+    ["skip_download"] = true
+  }
+  params {
+    ["path"] = resourceName
+    ["status"] = "success"
+    ["context"] = "test"
+  }
+}
+
+function putPRTestFailedStatus(resourceName: String): Pipeline.PutStep = new {
+  put = resourceName
+  get_params {
+    ["skip_download"] = true
+  }
+  params {
+    ["path"] = resourceName
+    ["status"] = "failure"
+    ["context"] = "test"
+  }
+}
