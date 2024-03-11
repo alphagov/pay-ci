@@ -39,15 +39,14 @@ function payDockerHubResource(resource_name: String, repo: String, tag: String, 
   }
 }
 
-function payGithubResource(resource_name: String, repo: String, tagRegex: String, repo_branch: String): Pipeline.Resource = new {
+function payGithubResource(resource_name: String, repo: String) = payGithubResourceWithBranch(resource_name, repo, "")
+
+function payGithubResourceWithBranch(resource_name: String, repo: String, repo_branch: String): Pipeline.Resource = new {
   name = resource_name
   type = "git"
   icon = "github"
   source = new {
     ["uri"] = "https://github.com/alphagov/\(repo)"
-    when (tagRegex.length > 0) {
-      ["tag_regex"] = tagRegex
-    }
     when (repo_branch.length > 0) {
       ["branch"] = repo_branch
     }
@@ -80,21 +79,16 @@ function paySlackNotificationForSuccess(channel_name: String, message: String): 
   }
 }
 
-function payECRResource(resource_name: String, repo: String, aws_account_id: String,
-  check_interval: String?, tag: String?, variant: String?): Pipeline.Resource = new {
+function payECRResource(resource_name: String, repo: String, aws_account_id: String): Pipeline.Resource = payECRResourceWithVariant(resource_name, repo, aws_account_id, "")
+
+function payECRResourceWithVariant(resource_name: String, repo: String, aws_account_id: String, variant: String): Pipeline.Resource = new {
   name = resource_name
   type = "registry-image"
   icon = "docker"
-  when (check_interval != null && check_interval.length > 0) {
-    check_every = check_interval
-  }
   source = new {
     ["repository"] = repo
     when (variant != null && variant.length > 0) {
       ["variant"] = variant
-    }
-    when (tag != null && tag.length > 0) {
-      ["tag"] = tag
     }
     ["aws_access_key_id"] = "((readonly_access_key_id))"
     ["aws_secret_access_key"] = "((readonly_secret_access_key))"

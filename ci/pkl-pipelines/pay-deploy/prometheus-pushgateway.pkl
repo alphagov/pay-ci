@@ -4,14 +4,19 @@ import "../common/shared_resources.pkl"
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/TaskConfig.pkl"
 
 resources = new {
-  shared_resources.payECRResource("ecr-prometheus-pushgateway", "pushgateway", "pay_aws_deploy_account_id", "never", "v1.7.0", "")
-  shared_resources.payECRResource("adot-ecr-registry-staging", "govukpay/adot", "pay_aws_staging_account_id", "", "", "release")
-  shared_resources.payECRResource("adot-ecr-registry-deploy", "govukpay/adot", "pay_aws_deploy_account_id", "", "", "release")
+  (shared_resources.payECRResource("ecr-prometheus-pushgateway", "pushgateway", "pay_aws_deploy_account_id")) {
+    check_every = "never"
+    source { ["tag"] = "v1.7.0" }
+  }
+  shared_resources.payECRResourceWithVariant("adot-ecr-registry-staging", "govukpay/adot", "pay_aws_staging_account_id", "release")
+  shared_resources.payECRResourceWithVariant("adot-ecr-registry-deploy", "govukpay/adot", "pay_aws_deploy_account_id", "release")
   shared_resources.payDockerHubResource("prometheus-pushgateway-resource-dockerhub", "governmentdigitalservice/pay-prometheus-pushgateway-resource", "latest-master", "")
   shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", "v1.7.0", "1h")
   shared_resources.payCiGitHubResource
-  shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource", "alpha_release-(.*)", "")
-  (shared_resources.payGithubResource("prometheus-pushgateway-pipeline", "pay-ci", "", "master")) {
+  (shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource")) {
+    source { ["tag_regex"] = "alpha_release-(.*)" }
+  }
+  (shared_resources.payGithubResourceWithBranch("prometheus-pushgateway-pipeline", "pay-ci", "master")) {
     source { ["paths"] = new Listing<String> { "ci/pipelines/prometheus-pushgateway.yml" } }
   }
   shared_resources.slackNotificationResource
