@@ -3,7 +3,7 @@ extends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/p
 import "../pipeline_self_update.pkl"
 import "../shared_resources.pkl"
 
-hidden concourseTeamName = "foo"
+hidden concourseTeamName = "UPDATE_ME"
 
 resource_types {
   shared_resources.pullRequestResourceType

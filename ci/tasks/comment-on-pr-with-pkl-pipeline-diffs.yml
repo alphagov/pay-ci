@@ -79,7 +79,7 @@ run:
       echo "$YAML_FILES_TO_DIFF" | cut -f 5 -d '/' | sort | uniq | while read -r PIPELINE_YAML; do
         if diff -uN "$MASTER/ci/pkl-pipelines/$CONCOURSE_TEAM/$PIPELINE_YAML" "$PR/ci/pkl-pipelines/$CONCOURSE_TEAM/$PIPELINE_YAML" >>/dev/null 2>&1; then
           echo "No diff in $PIPELINE_YAML"
-          echo "$PIPELINE_YAML" >> "$NO_DIFF_TMPFILE"
+          echo "$CONCOURSE_TEAM/$PIPELINE_YAML" >> "$NO_DIFF_TMPFILE"
         else
           echo "Diff in $PIPELINE_YAML"
           set +e
