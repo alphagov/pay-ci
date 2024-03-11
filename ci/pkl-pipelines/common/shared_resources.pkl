@@ -29,8 +29,8 @@ function PayDockerHubResource(resource_name: String, repo: String, tag: String):
     source = new {
         ["repository"] = repo
         ["tag"] = tag
-        ["username"] = "((dockerhub-username))"
-        ["password"] = "((dockerhub-password))"
+        ["username"] = "((docker-username))"
+        ["password"] = "((docker-access-token))"
     }
 }
 
@@ -39,7 +39,7 @@ generateDockerCredsConfigStep = new Pipeline.TaskStep {
     file = "pay-ci/ci/tasks/generate-docker-config-file.yml"
     params = new {
         ["USERNAME"] = "((docker-username))"
-        ["PASSWORD"] = "((docker-password))"
+        ["PASSWORD"] = "((docker-access-token))"
         ["EMAIL"] = "((docker-email))"
     }
 }
