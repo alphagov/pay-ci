@@ -118,6 +118,15 @@ slackNotificationResource = new Pipeline.Resource{
   }
 }
 
+slackNotificationResourceType = new Pipeline.ResourceType{
+  name = "slack-notification"
+  type = "docker-image"
+  source = new {
+    ["repository"] = "cfcommunity/slack-notification-resource"
+    ["tag"] = "latest"
+  }
+}
+
 generateDockerCredsConfigStep = new Pipeline.TaskStep {
     task = "generate-docker-creds-config"
     file = "pay-ci/ci/tasks/generate-docker-config-file.yml"

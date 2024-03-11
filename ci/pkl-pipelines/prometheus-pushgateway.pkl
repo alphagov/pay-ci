@@ -3,42 +3,10 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "common/shared_resources.pkl"
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/TaskConfig.pkl"
 
-local class ECRRepo {
-  name: String
-  aws_account_id: String
-  repository: String
-  check_every: String? = ""
-  tag: String? = ""
-  variant: String? = ""
-}
-
-local resourcesECRRepos: Listing<ECRRepo> = new {
-  new {
-    name = "ecr-prometheus-pushgateway"
-    aws_account_id = "pay_aws_deploy_account_id"
-    repository = "pushgateway"
-    check_every = "never"
-    tag = "v1.7.0"
-  }
-  new {
-    name = "adot-ecr-registry-staging"
-    aws_account_id = "pay_aws_staging_account_id"
-    repository = "govukpay/adot"
-    variant = "release"
-  }
-  new {
-    name = "adot-ecr-registry-deploy"
-    aws_account_id = "pay_aws_deploy_account_id"
-    repository = "govukpay/adot"
-    variant = "release"
-  }
-}
-
 resources = new {
-  for (ecrRepo in resourcesECRRepos) {
-    shared_resources.payECRResource(ecrRepo.name, ecrRepo.repository, ecrRepo.aws_account_id,
-      ecrRepo.check_every, ecrRepo.tag, ecrRepo.variant)
-  }
+  shared_resources.payECRResource("ecr-prometheus-pushgateway", "pushgateway", "pay_aws_deploy_account_id","never", "v1.7.0", "")
+  shared_resources.payECRResource("adot-ecr-registry-staging", "govukpay/adot","pay_aws_staging_account_id", "", "", "release")
+  shared_resources.payECRResource("adot-ecr-registry-deploy", "govukpay/adot", "pay_aws_deploy_account_id", "", "", "release")
   shared_resources.payDockerHubResource("prometheus-pushgateway-resource-dockerhub", "governmentdigitalservice/pay-prometheus-pushgateway-resource", "latest-master", "")
   shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", "v1.7.0", "1h")
   shared_resources.payCiGitHubResource
@@ -48,16 +16,8 @@ resources = new {
 }
 
 resource_types = new {
-  new {
-    name = "slack-notification"
-    type = "docker-image"
-    source = new {
-      ["repository"] = "cfcommunity/slack-notification-resource"
-      ["tag"] = "latest"
-    }
-  }
+  shared_resources.slackNotificationResourceType
 }
-
 
 jobs = new {
   new {
@@ -149,7 +109,6 @@ jobs = new {
     }
   }
 }
-
 
 local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
   load_var = variable
