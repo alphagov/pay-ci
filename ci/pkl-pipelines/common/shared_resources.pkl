@@ -2,36 +2,120 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/TaskConfig.pkl"
 
 class PayGitHubResource extends Pipeline.Resource {
-    type = "git"
-    icon = "github"
+  type = "git"
+  icon = "github"
 }
 
 anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
-    type = "registry-image"
-    source = new {
-        ["repository"] = "governmentdigitalservice/pay-concourse-runner"
-        ["tag"] = "latest"
-    }
+  type = "registry-image"
+  source = new {
+    ["repository"] = "governmentdigitalservice/pay-concourse-runner"
+    ["tag"] = "latest"
+  }
 }
 
 payCiGitHubResource: PayGitHubResource = new {
-    name = "pay-ci"
-    source = new Mapping {
-        ["uri"] = "https://github.com/alphagov/pay-ci"
-        ["branch"] = "master"
-    }
+  name = "pay-ci"
+  source = new Mapping {
+    ["uri"] = "https://github.com/alphagov/pay-ci"
+    ["branch"] = "master"
+    ["username"] = "alphagov-pay-ci-concourse"
+    ["password"] = "((github-access-token))"
+  }
 }
 
-function PayDockerHubResource(resource_name: String, repo: String, tag: String): Pipeline.Resource = new {
-    name = resource_name
-    type = "registry-image"
-    icon = "docker"
-    source = new {
-        ["repository"] = repo
-        ["tag"] = tag
-        ["username"] = "((docker-username))"
-        ["password"] = "((docker-access-token))"
+function payDockerHubResource(resource_name: String, repo: String, tag: String, checkInterval: String): Pipeline.Resource = new {
+  name = resource_name
+  type = "registry-image"
+  icon = "docker"
+  when (checkInterval.length > 0) {
+    check_every = checkInterval
+  }
+  source = new {
+    ["repository"] = repo
+    ["tag"] = tag
+    ["username"] = "((docker-username))"
+    ["password"] = "((docker-access-token))"
+  }
+}
+
+function payGithubResource(resource_name: String, repo: String, tagRegex: String, path: String, repo_branch: String): Pipeline.Resource = new {
+  name = resource_name
+  type = "git"
+  icon = "github"
+  source = new {
+    ["uri"] = "https://github.com/alphagov/\(repo)"
+    when (tagRegex.length > 0) {
+      ["tag_regex"] = tagRegex
     }
+    when (repo_branch.length > 0) {
+      ["branch"] = repo_branch
+    }
+    ["username"] = "alphagov-pay-ci-concourse"
+    ["password"] = "((github-access-token))"
+    when (path.length > 0) {
+      ["paths"] = new Listing<String> {
+        path
+      }
+    }
+  }
+}
+
+function paySlackNotificationForFail(channel_name: String, message: String): Pipeline.PutStep = new Pipeline.PutStep {
+  put = "slack-notification"
+  attempts = 10
+  params = new Mapping {
+    ["channel"] = channel_name
+    ["silent"] = true
+    ["text"] = ":red-circle: \(message) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    ["icon_emoji"] = ":concourse:"
+    ["username"] = "pay-concourse"
+  }
+}
+
+function paySlackNotificationForSuccess(channel_name: String, message: String): Pipeline.PutStep = new Pipeline.PutStep {
+  put = "slack-notification"
+  attempts = 10
+  params = new Mapping {
+    ["channel"] = channel_name
+    ["silent"] = true
+    ["text"] = ":green-circle: \(message) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    ["icon_emoji"] = ":concourse:"
+    ["username"] = "pay-concourse"
+  }
+}
+
+function payECRResource(resource_name: String, repo: String, aws_account_id: String,
+  check_interval: String?, tag: String?, variant: String?): Pipeline.Resource = new {
+  name = resource_name
+  type = "registry-image"
+  icon = "docker"
+  when (check_interval != null && check_interval.length > 0) {
+    check_every = check_interval
+  }
+  source = new {
+    ["repository"] = repo
+    when (variant != null && variant.length > 0) {
+      ["variant"] = variant
+    }
+    when (tag != null && tag.length > 0) {
+      ["tag"] = tag
+    }
+    ["aws_access_key_id"] = "((readonly_access_key_id))"
+    ["aws_secret_access_key"] = "((readonly_secret_access_key))"
+    ["aws_session_token"] = "((readonly_session_token))"
+    ["aws_role_arn"] = "arn:aws:iam::((\(aws_account_id))):role/concourse"
+    ["aws_ecr_registry_id"] = "((\(aws_account_id)))"
+    ["aws_region"] = "eu-west-1"
+  }
+}
+
+slackNotificationResource = new Pipeline.Resource{
+  name = "slack-notification"
+  type = "slack-notification"
+  source = new {
+    ["url"] = "https://hooks.slack.com/services/((slack-notification-secret))"
+  }
 }
 
 generateDockerCredsConfigStep = new Pipeline.TaskStep {

@@ -1,0 +1,191 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
+
+import "common/shared_resources.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/TaskConfig.pkl"
+
+local class ECRRepo {
+  name: String
+  aws_account_id: String
+  repository: String
+  check_every: String? = ""
+  tag: String? = ""
+  variant: String? = ""
+}
+
+local resourcesECRRepos: Listing<ECRRepo> = new {
+  new {
+    name = "ecr-prometheus-pushgateway"
+    aws_account_id = "pay_aws_deploy_account_id"
+    repository = "pushgateway"
+    check_every = "never"
+    tag = "v1.7.0"
+  }
+  new {
+    name = "adot-ecr-registry-staging"
+    aws_account_id = "pay_aws_staging_account_id"
+    repository = "govukpay/adot"
+    variant = "release"
+  }
+  new {
+    name = "adot-ecr-registry-deploy"
+    aws_account_id = "pay_aws_deploy_account_id"
+    repository = "govukpay/adot"
+    variant = "release"
+  }
+}
+
+resources = new {
+  for (ecrRepo in resourcesECRRepos) {
+    shared_resources.payECRResource(ecrRepo.name, ecrRepo.repository, ecrRepo.aws_account_id,
+      ecrRepo.check_every, ecrRepo.tag, ecrRepo.variant)
+  }
+  shared_resources.payDockerHubResource("prometheus-pushgateway-resource-dockerhub", "governmentdigitalservice/pay-prometheus-pushgateway-resource", "latest-master", "")
+  shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", "v1.7.0", "1h")
+  shared_resources.payCiGitHubResource
+  shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource", "alpha_release-(.*)", "", "")
+  shared_resources.payGithubResource("prometheus-pushgateway-pipeline", "pay-ci", "", "ci/pipelines/prometheus-pushgateway.yml", "master")
+  shared_resources.slackNotificationResource
+}
+
+resource_types = new {
+  new {
+    name = "slack-notification"
+    type = "docker-image"
+    source = new {
+      ["repository"] = "cfcommunity/slack-notification-resource"
+      ["tag"] = "latest"
+    }
+  }
+}
+
+
+jobs = new {
+  new {
+    name = "push-adot-to-deploy-ecr"
+    plan = new {
+      getStep("adot-ecr-registry-staging", true, true)
+      loadVar("application_image_tag", "adot-ecr-registry-staging/tag")
+      putStep("adot-ecr-registry-deploy", "adot-ecr-registry-staging/image.tar", "adot-ecr-registry-staging/tag", true)
+    }
+  }
+  new {
+    name = "copy-prometheus-pushgateway"
+    plan = new {
+      getStep("prometheus-pushgateway", true, true)
+      putStep("ecr-prometheus-pushgateway", "prometheus-pushgateway/image.tar", "", true)
+    }
+    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Failed copying pushgateway:v1.6.0 image from Docker Hub to ECR")
+    on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "Copied pushgateway:v1.6.0 image from Docker Hub to ECR")
+  }
+  new {
+    name = "build-and-push-prometheus-pushgateway-resource"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          getStep("prometheus-pushgateway-resource-release", true, false)
+          getStep("pay-ci", false, false)
+        }
+      }
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new TaskStep {
+            task = "parse-release-tag"
+            file = "pay-ci/ci/tasks/parse-release-tag.yml"
+            input_mapping {
+              ["git-release"] = "prometheus-pushgateway-resource-release"
+            }
+          }
+          shared_resources.generateDockerCredsConfigStep
+        }
+      }
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          loadVar("release-name", "prometheus-pushgateway-resource-release/.git/ref")
+          loadVar("release-tag", "tags/tags")
+          loadVar("release-number", "tags/release-number")
+          loadVar("release-sha", "tags/release-sha")
+          loadVar("date", "tags/date")
+        }
+      }
+      new TaskStep {
+        task = "build-prometheus-pushgateway-resource"
+        privileged = true
+        params {
+          ["CONTEXT"] = "prometheus-pushgateway-resource-release"
+          ["DOCKER_CONFIG"] = "docker_creds"
+          ["LABEL_release_number"] = "((.:release-number))"
+          ["LABEL_release_name"] = "((.:release-name))"
+          ["LABEL_release_sha"] = "((.:release-sha))"
+          ["LABEL_build_date"] = "((.:date))"
+        }
+        config {
+          platform = "linux"
+          image_resource {
+            type = "registry-image"
+            source {
+              ["repository"] = "concourse/oci-build-task"
+            }
+          }
+          inputs = new Listing {
+            new TaskConfig.Input { name = "prometheus-pushgateway-resource-release" }
+            new TaskConfig.Input { name = "docker_creds" }
+          }
+          outputs = new Listing {
+            new TaskConfig.Output { name = "image" }
+          }
+          run {
+            path = "build"
+          }
+        }
+      }
+      putStep("prometheus-pushgateway-resource-dockerhub", "image/image.tar", "tags/tags", true)
+    }
+  }
+  new {
+    name = "update-prometheus-pushgateway-pipeline"
+    plan = new {
+      getStep("prometheus-pushgateway-pipeline", true, false)
+      setPipelineStep("prometheus-pushgateway", "prometheus-pushgateway-pipeline/ci/pipelines/prometheus-pushgateway.yml")
+    }
+  }
+}
+
+
+local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+}
+
+local function setPipelineStep(name: String, fileName: String): SetPipelineStep = new SetPipelineStep {
+  set_pipeline = name
+  file = fileName
+}
+
+local function getStep(resourceName: String, shouldTrigger: Boolean, isOci: Boolean): GetStep = new GetStep {
+  get = resourceName
+  when (shouldTrigger) {
+    trigger = true
+  }
+  when (isOci) {
+    params {
+      ["format"] = "oci"
+    }
+  }
+}
+
+local function putStep(resourceName: String, imageName: String, additionalTags: String, skipDownload: Boolean): PutStep = new PutStep {
+  put = resourceName
+  params {
+    when (imageName.length > 0) {
+      ["image"] = imageName
+    }
+    when (additionalTags.length > 0) {
+      ["additional_tags"] = additionalTags
+    }
+  }
+  get_params {
+    when (skipDownload) {
+      ["skip_download"] = true
+    }
+  }
+}
