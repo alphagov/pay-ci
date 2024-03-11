@@ -1,0 +1,55 @@
+extends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
+
+import "../pipeline_self_update.pkl"
+import "../shared_resources.pkl"
+
+hidden concourseTeamName = "foo"
+
+resource_types {
+  shared_resources.pullRequestResourceType
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("\(concourseTeamName)/pkl-pipeline-changes.pkl", "master")
+  shared_resources.payCiGitHubResource
+  (shared_resources.payGithubPullRequestResource("pkl-pipeline-pr", "pay-ci")) {
+    source {
+      ["paths"] = new Listing<String> {
+        "ci/pkl-pipelines/**/*.pkl"
+      }
+    }
+  }
+}
+
+jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("\(concourseTeamName)/pkl-pipeline-changes.pkl")
+  new {
+    name = "comment-pipeline-changes-on-pr"
+    plan = new {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new GetStep {
+            get = "pkl-pipeline-pr"
+            trigger = true
+            version = "every"
+          }
+          new GetStep { get = "pay-ci" }
+        }
+      }
+      shared_resources.putPRTestPendingStatus("pkl-pipeline-pr")
+      new TaskStep {
+        task = "comment-on-pr-with-yml-and-concourse-diffs"
+        // TODO: Change to the pay-ci version of the task, not the one in this PR
+        // file = "pay-ci/ci/tasks/comment-on-pr-with-pkl-pipeline-diffs.yml"
+        file = "pkl-pipeline-pr/ci/tasks/comment-on-pr-with-pkl-pipeline-diffs.yml"
+        params = new {
+          ["GITHUB_TOKEN"] = "((github-access-token))"
+          ["CONCOURSE_TEAM"] = concourseTeamName
+          ["FLY_PASSWORD"] = "((readonly_local_user_password))"
+        }
+        on_success = shared_resources.putPRTestSuccessStatus("pkl-pipeline-pr")
+        on_failure = shared_resources.putPRTestFailedStatus("pkl-pipeline-pr")
+      }
+    }
+  }
+}
