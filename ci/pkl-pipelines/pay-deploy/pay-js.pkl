@@ -20,7 +20,7 @@ local payJsLibraries: Listing<PayJsLibraryPipeline> = new {
 }
 
 resources = new {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-js.pkl", "master")
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/pay-js.pkl", "master")
   shared_resources.payCiGitHubResource
   for (jsLibrary in payJsLibraries) {
     (shared_resources.payGithubResourceWithBranch("js-\(jsLibrary.name)-git-release", "pay-js-\(jsLibrary.name)", jsLibrary.source_branch)) {

@@ -53,7 +53,7 @@ function PayPipelineSelfUpdateJob(pkl_pipeline_file: String): Pipeline.Job = new
       }
     }
     new Pipeline.SetPipelineStep {
-      set_pipeline = "\(pipeline_name)-test"
+      set_pipeline = pipeline_name
       file = "pipeline-source/ci/pkl-pipelines/\(yml_pipeline_file)"
     }
   }
