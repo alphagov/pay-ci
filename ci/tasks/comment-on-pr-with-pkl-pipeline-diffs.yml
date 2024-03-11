@@ -89,7 +89,7 @@ run:
       done
 
       echo "Logging into concourse with fly"
-      fly -t "$CONCOURSE_TEAM" login -c "https://pay-cd.deploy.payments.service.gov.uk" -u pay-dev -p "$FLY_PASSWORD" --team-name "$CONCOURSE_TEAM"
+      fly -t "$CONCOURSE_TEAM" login -c "https://pay-cd.deploy.payments.service.gov.uk" -u "$CONCOURSE_TEAM" -p "$FLY_PASSWORD" --team-name "$CONCOURSE_TEAM"
 
       echo "Commenting on PR"
       cd diffs >>/dev/null 2>&1
