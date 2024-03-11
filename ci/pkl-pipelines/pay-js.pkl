@@ -43,7 +43,7 @@ groups = new {
     for (jsLibrary in payJsLibraries) {
         new {
             name = "js-\(jsLibrary.name)"
-            jobs = new { "version-and-push-\(name)" }
+            jobs = new { "version-and-push-\(jsLibrary.name)" }
         }
     }
 }
@@ -52,7 +52,7 @@ jobs = new {
     pipeline_self_update.PayPipelineSelfUpdateJob("pay-js.pkl")
     for (jsLibrary in payJsLibraries) {
         new {
-            name = "version-and-push-js-\(jsLibrary.name)"
+            name = "version-and-push-\(jsLibrary.name)"
             plan = new {
                 new InParallelStep {
                     in_parallel = new Listing<Step> {
