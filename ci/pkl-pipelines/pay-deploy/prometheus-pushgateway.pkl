@@ -10,8 +10,10 @@ resources = new {
   shared_resources.payDockerHubResource("prometheus-pushgateway-resource-dockerhub", "governmentdigitalservice/pay-prometheus-pushgateway-resource", "latest-master", "")
   shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", "v1.7.0", "1h")
   shared_resources.payCiGitHubResource
-  shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource", "alpha_release-(.*)", "", "")
-  shared_resources.payGithubResource("prometheus-pushgateway-pipeline", "pay-ci", "", "ci/pipelines/prometheus-pushgateway.yml", "master")
+  shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource", "alpha_release-(.*)", "")
+  (shared_resources.payGithubResource("prometheus-pushgateway-pipeline", "pay-ci", "", "master")) {
+    source { ["paths"] = new Listing<String> { "ci/pipelines/prometheus-pushgateway.yml" } }
+  }
   shared_resources.slackNotificationResource
 }
 

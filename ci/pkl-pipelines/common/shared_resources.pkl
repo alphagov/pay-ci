@@ -39,7 +39,7 @@ function payDockerHubResource(resource_name: String, repo: String, tag: String, 
   }
 }
 
-function payGithubResource(resource_name: String, repo: String, tagRegex: String, path: String, repo_branch: String): Pipeline.Resource = new {
+function payGithubResource(resource_name: String, repo: String, tagRegex: String, repo_branch: String): Pipeline.Resource = new {
   name = resource_name
   type = "git"
   icon = "github"
@@ -53,11 +53,6 @@ function payGithubResource(resource_name: String, repo: String, tagRegex: String
     }
     ["username"] = "alphagov-pay-ci-concourse"
     ["password"] = "((github-access-token))"
-    when (path.length > 0) {
-      ["paths"] = new Listing<String> {
-        path
-      }
-    }
   }
 }
 
