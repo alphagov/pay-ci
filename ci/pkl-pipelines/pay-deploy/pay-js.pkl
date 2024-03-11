@@ -23,13 +23,10 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-js.pkl", "master")
   shared_resources.payCiGitHubResource
   for (jsLibrary in payJsLibraries) {
-    new shared_resources.PayGitHubResource {
-      name = "js-\(jsLibrary.name)-git-release"
-      source = new Mapping {
-        ["uri"] = "https://github.com/alphagov/pay-js-\(jsLibrary.name)"
-        ["branch"] = jsLibrary.source_branch
-        ["commit_filter"] = new {
-          exclude = new Listing {
+    (shared_resources.payGithubResourceWithBranch("js-\(jsLibrary.name)-git-release", "pay-js-\(jsLibrary.name)", jsLibrary.source_branch)) {
+      source {
+        ["commit_filter"] = new Mapping<String, Listing<String>> {
+          ["exclude"] = new Listing {
             "\\[automated release\\]"
           }
         }
@@ -49,7 +46,7 @@ groups = new {
 }
 
 jobs = new {
-  pipeline_self_update.PayPipelineSelfUpdateJob("pay-js.pkl")
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/pay-js.pkl")
   for (jsLibrary in payJsLibraries) {
     new {
       name = "version-and-push-\(jsLibrary.name)"

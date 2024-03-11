@@ -1,11 +1,6 @@
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/TaskConfig.pkl"
 
-class PayGitHubResource extends Pipeline.Resource {
-  type = "git"
-  icon = "github"
-}
-
 anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
   type = "registry-image"
   source = new {
@@ -14,15 +9,7 @@ anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
   }
 }
 
-payCiGitHubResource: PayGitHubResource = new {
-  name = "pay-ci"
-  source = new Mapping {
-    ["uri"] = "https://github.com/alphagov/pay-ci"
-    ["branch"] = "master"
-    ["username"] = "alphagov-pay-ci-concourse"
-    ["password"] = "((github-access-token))"
-  }
-}
+payCiGitHubResource = payGithubResourceWithBranch("pay-ci", "pay-ci", "master")
 
 function payDockerHubResource(resource_name: String, repo: String, tag: String): Pipeline.Resource = new {
   name = resource_name

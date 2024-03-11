@@ -2,16 +2,13 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "./shared_resources.pkl"
 
-function PayPipelineSelfUpdateResource(pkl_pipeline_file: String, branch: String): shared_resources.PayGitHubResource = new {
-  name = "pipeline-source"
-  source = new Mapping {
-    ["uri"] = "https://github.com/alphagov/pay-ci"
-    ["branch"] = branch
-    ["paths"] = new Listing<String> {
-      "ci/pkl-pipelines/\(pkl_pipeline_file)"
-      "ci/pkl-pipelines/common/**"
+function PayPipelineSelfUpdateResource(pkl_pipeline_file: String, branch: String) = (shared_resources.payGithubResourceWithBranch("pipeline-source", "pay-ci", branch)) {
+    source {
+      ["paths"] = new Listing<String> {
+        "ci/pkl-pipelines/\(pkl_pipeline_file)"
+        "ci/pkl-pipelines/common/**"
+      }
     }
-  }
 }
 
 payPipelineSelfUpdateGroup: Pipeline.Group = new {
@@ -23,7 +20,10 @@ payPipelineSelfUpdateGroup: Pipeline.Group = new {
 
 function PayPipelineSelfUpdateJob(pkl_pipeline_file: String): Pipeline.Job = new {
   local yml_pipeline_file = pkl_pipeline_file.replaceLast(".pkl", ".yaml")
-  local pipeline_name = pkl_pipeline_file.replaceLast(".pkl", "").replaceLast("pay-deploy/", "")
+  local pipeline_name = pkl_pipeline_file.
+    replaceLast(".pkl", "").
+    replaceLast("pay-deploy/", "").
+    replaceLast("pay-dev/", "")
 
   name = "update-pipeline"
   plan = new {
