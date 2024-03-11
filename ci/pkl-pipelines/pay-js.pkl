@@ -20,7 +20,7 @@ local payJsLibraries: Listing<PayJsLibraryPipeline> = new {
 }
 
 resources = new {
-    pipeline_self_update.PayPipelineSelfUpdateResource("pay-js.pkl", "pp-12343/example-pkl-pipeline-usage")
+    pipeline_self_update.PayPipelineSelfUpdateResource("pay-js.pkl", "master")
     shared_resources.payCiGitHubResource
     for (jsLibrary in payJsLibraries) {
         new shared_resources.PayGitHubResource {
@@ -58,7 +58,7 @@ jobs = new {
                     in_parallel = new Listing<Step> {
                         new GetStep {
                             get = "js-\(jsLibrary.name)-git-release"
-                            // trigger = true
+                            trigger = true
                         }
                         new GetStep { get = "pay-ci" }
                     }
