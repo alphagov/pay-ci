@@ -36,13 +36,13 @@ resources = new {
 }
 
 groups = new {
-  pipeline_self_update.payPipelineSelfUpdateGroup
   for (jsLibrary in payJsLibraries) {
     new {
       name = "js-\(jsLibrary.name)"
       jobs = new { "version-and-push-\(jsLibrary.name)" }
     }
   }
+  pipeline_self_update.payPipelineSelfUpdateGroup
 }
 
 jobs = new {
