@@ -1,9 +1,11 @@
 amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
 
-import "../common/shared_resources.pkl"
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/TaskConfig.pkl"
+import "../common/shared_resources.pkl"
+import "../common/pipeline_self_update.pkl"
 
 resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/prometheus-pushgateway.pkl", "master")
   (shared_resources.payECRResource("ecr-prometheus-pushgateway", "pushgateway", "pay_aws_deploy_account_id")) {
     check_every = "never"
     source { ["tag"] = "v1.7.0" }
@@ -18,9 +20,6 @@ resources = new {
   (shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource")) {
     source { ["tag_regex"] = "alpha_release-(.*)" }
   }
-  (shared_resources.payGithubResourceWithBranch("prometheus-pushgateway-pipeline", "pay-ci", "master")) {
-    source { ["paths"] = new Listing<String> { "ci/pipelines/prometheus-pushgateway.yml" } }
-  }
   shared_resources.slackNotificationResource
 }
 
@@ -29,6 +28,7 @@ resource_types = new {
 }
 
 jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/prometheus-pushgateway.pkl")
   new {
     name = "push-adot-to-deploy-ecr"
     plan = new {
@@ -110,22 +110,10 @@ jobs = new {
       putStep("prometheus-pushgateway-resource-dockerhub", "image/image.tar", "tags/tags", true)
     }
   }
-  new {
-    name = "update-prometheus-pushgateway-pipeline"
-    plan = new {
-      getStep("prometheus-pushgateway-pipeline", true, false)
-      setPipelineStep("prometheus-pushgateway", "prometheus-pushgateway-pipeline/ci/pipelines/prometheus-pushgateway.yml")
-    }
-  }
 }
 
 local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
   load_var = variable
-  file = fileName
-}
-
-local function setPipelineStep(name: String, fileName: String): SetPipelineStep = new SetPipelineStep {
-  set_pipeline = name
   file = fileName
 }
 

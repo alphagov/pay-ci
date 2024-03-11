@@ -7,7 +7,7 @@ function PayPipelineSelfUpdateResource(pkl_pipeline_file: String, branch: String
     source = new Mapping {
         ["uri"] = "https://github.com/alphagov/pay-ci"
         ["branch"] = branch
-        ["paths"] = new Listing<String> { 
+        ["paths"] = new Listing<String> {
             "ci/pkl-pipelines/\(pkl_pipeline_file)"
             "ci/pkl-pipelines/common/**"
         }
@@ -23,7 +23,7 @@ payPipelineSelfUpdateGroup: Pipeline.Group = new {
 
 function PayPipelineSelfUpdateJob(pkl_pipeline_file: String): Pipeline.Job = new {
     local yml_pipeline_file = pkl_pipeline_file.replaceLast(".pkl", ".yaml")
-    local pipeline_name = pkl_pipeline_file.replaceLast(".pkl", "")
+    local pipeline_name = pkl_pipeline_file.replaceLast(".pkl", "").replaceLast("pay-deploy/","")
 
     name = "update-pipeline"
     plan = new {
