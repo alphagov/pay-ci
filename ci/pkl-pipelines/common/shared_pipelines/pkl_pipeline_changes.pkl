@@ -36,7 +36,7 @@ jobs = new {
           new GetStep { get = "pay-ci" }
         }
       }
-      shared_resources.putPRTestPendingStatus("pkl-pipeline-pr")
+      shared_resources.putPRTestPendingStatus("pkl-pipeline-pr", "pipeline-yaml-changes")
       new TaskStep {
         task = "comment-on-pr-with-yml-and-concourse-diffs"
         file = "pay-ci/ci/tasks/comment-on-pr-with-pkl-pipeline-diffs.yml"
@@ -45,8 +45,8 @@ jobs = new {
           ["CONCOURSE_TEAM"] = concourseTeamName
           ["FLY_PASSWORD"] = "((readonly_local_user_password))"
         }
-        on_success = shared_resources.putPRTestSuccessStatus("pkl-pipeline-pr")
-        on_failure = shared_resources.putPRTestFailedStatus("pkl-pipeline-pr")
+        on_success = shared_resources.putPRTestSuccessStatus("pkl-pipeline-pr", "pipeline-yaml-changes")
+        on_failure = shared_resources.putPRTestFailedStatus("pkl-pipeline-pr", "pipeline-yaml-changes")
       }
     }
   }
