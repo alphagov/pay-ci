@@ -15,4 +15,6 @@ outputs:
   - name: diffs
 run:
   path: ash
-  args: ['pay-ci/ci/scripts/comment-on-pr-with-pkl-pipeline-diffs.sh']
+  args: ['pkl-pipeline-pr/ci/scripts/comment-on-pr-with-pkl-pipeline-diffs.sh']
+  # TODO: Change to the correct path
+  # args: ['pay-ci/ci/scripts/comment-on-pr-with-pkl-pipeline-diffs.sh']
