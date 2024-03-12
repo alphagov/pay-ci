@@ -1670,12 +1670,22 @@ jobs:
   - name: deploy-egress-to-perf
     serial: true
     plan:
-      - get: egress-ecr-registry-perf
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
-      - load_var: application_image_tag
-        file: egress-ecr-registry-perf/tag
+      - in_parallel:
+          steps:
+            - get: egress-ecr-registry-perf
+              trigger: true
+            - get: pay-infra
+            - get: pay-ci
+      - task: parse-ecr-release-tag
+        file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+        input_mapping:
+          ecr-image: egress-ecr-registry-perf
+      - in_parallel:
+          steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
+          - load_var: application_image_tag
+            file: egress-ecr-registry-perf/tag
       - put: slack-notification
         params:
           channel: '#govuk-pay-activity'
@@ -1704,20 +1714,8 @@ jobs:
           APPLICATION_IMAGE_TAG: ((.:application_image_tag))
           <<: *aws_assumed_role_creds
           ENVIRONMENT: test-perf-1
-    on_success:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-activity'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":green-circle: Deployment of egress to perf success - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    on_failure:
-      put: slack-notification
-      params:
-        channel: '#govuk-pay-announce'
-        icon_emoji: ":fargate:"
-        username: pay-concourse
-        text: ":red_circle: Deployment of egress to perf failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: deploy-webhooks-egress-to-perf
     serial: true
