@@ -2597,32 +2597,42 @@ jobs:
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: publicauth-ecr-registry-staging
-        trigger: true
-      - get: nginx-proxy-ecr-registry-staging
-        trigger: true
-      - get: adot-ecr-registry-staging
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
-      - load_var: application_image_tag
-        file: publicauth-ecr-registry-staging/tag
-      - load_var: nginx_image_tag
-        file: nginx-proxy-ecr-registry-staging/tag
-      - load_var: adot_image_tag
-        file: adot-ecr-registry-staging/tag
+      - in_parallel:
+          steps:
+          - get: pay-ci
+          - get: pay-infra
+          - get: publicauth-ecr-registry-staging
+            trigger: true
+          - get: nginx-proxy-ecr-registry-staging
+            trigger: true
+          - get: adot-ecr-registry-staging
+            trigger: true
+      - in_parallel:
+          steps:
+          - load_var: application_image_tag
+            file: publicauth-ecr-registry-staging/tag
+          - load_var: nginx_image_tag
+            file: nginx-proxy-ecr-registry-staging/tag
+          - load_var: adot_image_tag
+            file: adot-ecr-registry-staging/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: publicauth
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: start_snippet
-        file: snippet/start
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
+          - load_var: start_snippet
+            file: snippet/start
       - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
@@ -2647,16 +2657,18 @@ jobs:
         params:
           APP_NAME: publicauth
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_announce
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: smoke-test-publicauth-on-staging
     serial_groups: [smoke-test]
     plan:
-      - get: publicauth-ecr-registry-staging
-        trigger: true
-        passed: [deploy-publicauth-to-staging]
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: pay-ci
+          - get: publicauth-ecr-registry-staging
+            trigger: true
+            passed: [deploy-publicauth-to-staging]
       - load_var: application_image_tag
         file: publicauth-ecr-registry-staging/tag
       - task: create-notification-snippets
@@ -2665,10 +2677,14 @@ jobs:
           APP_NAME: publicauth
           ACTION_NAME: Smoke test
           <<: *snippet_params_app_version
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
@@ -2679,27 +2695,31 @@ jobs:
         format: json
       - in_parallel:
           <<: *smoke-test-run-all-on-staging
-    <<: *put_success_slack_notification
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification
+    <<: *put_failure_slack_and_metric_notification
 
   - name: publicauth-db-migration-staging
     plan:
-      - get: pay-ci
-      - get: publicauth-ecr-registry-staging
-        params:
-          format: oci
-        trigger: false
-        passed: [deploy-publicauth-to-staging]
+      - in_parallel:
+          steps:
+          - get: pay-ci
+          - get: publicauth-ecr-registry-staging
+            params:
+              format: oci
+            trigger: false
+            passed: [deploy-publicauth-to-staging]
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
           AWS_ROLE_ARN: arn:aws:iam::((pay_aws_staging_account_id)):role/concourse
           AWS_ROLE_SESSION_NAME: terraform-staging-assume-role
-      - load_var: role
-        file: assume-role/assume-role.json
-        format: json
-      - load_var: application_image_tag
-        file: publicauth-ecr-registry-staging/tag
+      - in_parallel:
+          steps:
+          - load_var: role
+            file: assume-role/assume-role.json
+            format: json
+          - load_var: application_image_tag
+            file: publicauth-ecr-registry-staging/tag
       - <<: *put_db_migration_slack_notification
       - task: run-db-migration
         config:
@@ -2750,6 +2770,8 @@ jobs:
           - *assume_write_to_prod_ecr_role
       - in_parallel:
           steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
           - *load_copy_from_staging_ecr_role
           - *load_write_to_prod_ecr_role
       - task: copy-images-to-prod
@@ -2758,6 +2780,8 @@ jobs:
         params:
           ECR_REPO_NAME: "govukpay/publicauth"
           <<: *copy_ecr_from_staging_to_prod_params
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: deploy-cardid-to-staging
     serial: true
