@@ -24,6 +24,7 @@ function PayPipelineSelfUpdateJob(pkl_pipeline_file: String): Pipeline.Job = new
     replaceLast(".pkl", "").
     replaceLast("pay-deploy/", "").
     replaceLast("pay-dev/", "")
+  local concourse_team = pkl_pipeline_file.split("/")[0]
 
   name = "update-pipeline"
   plan = new {
@@ -47,7 +48,7 @@ function PayPipelineSelfUpdateJob(pkl_pipeline_file: String): Pipeline.Job = new
           dir = "pipeline-source/ci/pkl-pipelines/"
           args = new {
             "-c"
-            "pkl eval '\(pkl_pipeline_file)' > '\(yml_pipeline_file)'"
+            "mkdir -p '\(concourse_team)' && pkl eval '\(pkl_pipeline_file)' > '\(yml_pipeline_file)'"
           }
         }
       }
