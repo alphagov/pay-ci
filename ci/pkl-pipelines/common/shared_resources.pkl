@@ -130,16 +130,16 @@ function payGithubPullRequestResource(_name: String, alphagovRepo: String): Pipe
   }
 }
 
-function putPRTestPendingStatus(resourceName: String): Pipeline.PutStep = new {
+function putPRTestPendingStatus(resourceName: String, test_name: String): Pipeline.PutStep = new {
   put = resourceName
   params {
     ["path"] = resourceName
     ["status"] = "pending"
-    ["context"] = "test"
+    ["context"] = test_name
   }
 }
 
-function putPRTestSuccessStatus(resourceName: String): Pipeline.PutStep = new {
+function putPRTestSuccessStatus(resourceName: String, test_name: String): Pipeline.PutStep = new {
   put = resourceName
   get_params {
     ["skip_download"] = true
@@ -147,11 +147,11 @@ function putPRTestSuccessStatus(resourceName: String): Pipeline.PutStep = new {
   params {
     ["path"] = resourceName
     ["status"] = "success"
-    ["context"] = "test"
+    ["context"] = test_name
   }
 }
 
-function putPRTestFailedStatus(resourceName: String): Pipeline.PutStep = new {
+function putPRTestFailedStatus(resourceName: String, test_name: String): Pipeline.PutStep = new {
   put = resourceName
   get_params {
     ["skip_download"] = true
@@ -159,6 +159,6 @@ function putPRTestFailedStatus(resourceName: String): Pipeline.PutStep = new {
   params {
     ["path"] = resourceName
     ["status"] = "failure"
-    ["context"] = "test"
+    ["context"] = test_name
   }
 }
