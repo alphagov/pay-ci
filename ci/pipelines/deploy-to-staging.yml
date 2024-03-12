@@ -2625,6 +2625,8 @@ jobs:
           steps:
           - *load_app_name
           - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
           - load_var: success_snippet
             file: snippet/success
           - load_var: failure_snippet
@@ -2655,8 +2657,8 @@ jobs:
         params:
           APP_NAME: publicauth
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_and_metric_notification_announce
-    <<: *put_failure_slack_and_metric_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: smoke-test-publicauth-on-staging
     serial_groups: [smoke-test]
@@ -2677,6 +2679,8 @@ jobs:
           <<: *snippet_params_app_version
       - in_parallel:
           steps:
+          - *load_app_name
+          - *load_app_release_number
           - load_var: success_snippet
             file: snippet/success
           - load_var: failure_snippet

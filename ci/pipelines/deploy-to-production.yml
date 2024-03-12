@@ -2771,6 +2771,10 @@ jobs:
           <<: *snippet_params_all_versions
       - in_parallel:
           steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
           - load_var: success_snippet
             file: snippet/success
           - load_var: failure_snippet
