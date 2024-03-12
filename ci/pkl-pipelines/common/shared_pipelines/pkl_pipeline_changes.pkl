@@ -39,9 +39,7 @@ jobs = new {
       shared_resources.putPRTestPendingStatus("pkl-pipeline-pr")
       new TaskStep {
         task = "comment-on-pr-with-yml-and-concourse-diffs"
-        // TODO: Change to the pay-ci version of the task, not the one in this PR
-        // file = "pay-ci/ci/tasks/comment-on-pr-with-pkl-pipeline-diffs.yml"
-        file = "pkl-pipeline-pr/ci/tasks/comment-on-pr-with-pkl-pipeline-diffs.yml"
+        file = "pay-ci/ci/tasks/comment-on-pr-with-pkl-pipeline-diffs.yml"
         params = new {
           ["GITHUB_TOKEN"] = "((github-access-token))"
           ["CONCOURSE_TEAM"] = concourseTeamName
