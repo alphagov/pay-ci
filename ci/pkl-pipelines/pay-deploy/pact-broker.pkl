@@ -1,0 +1,170 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
+
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/TaskConfig.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+
+resource_types {
+  shared_resources.slackNotificationResourceType
+  new ResourceType {
+    name = "cf-cli"
+    type = "docker-image"
+    source = new {
+      ["repository"] = "nulldriver/cf-cli-resource"
+    }
+  }
+}
+
+resources {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/pact-broker.pkl", "master")
+  (shared_resources.payGithubResourceWithBranch("pact-broker-src", "pay-ci", "master")) {
+    source {
+      ["paths"] = new Listing<String> { "ci/docker/pact-broker/*" }
+    }
+  }
+  shared_resources.payCiGitHubResource
+  shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
+  shared_resources.payECRResource("pact-broker-ecr-registry-deploy", "govukpay/pact-broker", "pay_aws_deploy_account_id")
+  shared_resources.slackNotificationResource
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/pact-broker.pkl")
+  new {
+    name = "deploy-pact-broker"
+    plan {
+      getStep("pay-ci")
+      getStep("pay-infra")
+      (getStep("pact-broker-ecr-registry-deploy")) {
+        passed = new Listing<Identifier> { "build-and-push-pact-broker" }
+        trigger = true
+      }
+      new TaskStep {
+        task = "assume-role"
+        file = "pay-ci/ci/tasks/assume-role.yml"
+        params {
+          ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_deploy_account_id)):role/pay-concourse-pact-broker-deploy-tooling"
+          ["AWS_ROLE_SESSION_NAME"] = "terraform-deploy-assume-role"
+        }
+      }
+      (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
+      loadVar("pactbroker_image_tag", "pact-broker-ecr-registry-deploy/tag")
+      new TaskStep {
+        task = "deploy-pact-broker"
+        file = "pay-ci/ci/tasks/deploy-pact-broker.yml"
+        params {
+          ["ACCOUNT"] = "deploy"
+          ["ENVIRONMENT"] = "deploy-tooling"
+          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+          ["PACTBROKER_IMAGE_TAG"] = "((.:pactbroker_image_tag))"
+        }
+      }
+      new TaskStep {
+        task = "wait-for-deploy"
+        file = "pay-ci/ci/tasks/wait-for-deploy.yml"
+        params {
+          ["ACCOUNT"] = "deploy"
+          ["APP_NAME"] = "pactbroker"
+          ["ENVIRONMENT"] = "deploy-tooling"
+          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+        }
+      }
+    }
+    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Failed to deploy pay-pact-broker image")
+    on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "Deployed pay-pact-broker image")
+  }
+  new {
+    name = "build-and-push-pact-broker"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          (getStep("pact-broker-src")) { trigger = true }
+          getStep("pay-ci")
+        }
+      }
+      shared_resources.generateDockerCredsConfigStep
+      new TaskStep {
+        task = "get-pact-broker-image-tag"
+        config {
+          platform = "linux"
+          image_resource {
+            type = "registry-image"
+            source {
+              ["repository"] = "alpine"
+              ["tag"] = "latest"
+            }
+          }
+          inputs = new Listing {
+            new TaskConfig.Input { name = "pact-broker-src" }
+          }
+          outputs = new Listing {
+            new TaskConfig.Output { name = "tags" }
+          }
+          run {
+            path = "ash"
+            args {
+              "-ec"
+              """
+              cat pact-broker-src/ci/docker/pact-broker/Dockerfile | grep -i FROM | head -n 1 | awk '{print $2;}' | cut -f 2 -d ":" | tee tags/tag
+              """
+            }
+          }
+        }
+      }
+      new TaskStep {
+        task = "build-pact-broker-image"
+        privileged = true
+        params {
+          ["CONTEXT"] = "pact-broker-src/ci/docker/pact-broker"
+          ["DOCKER_CONFIG"] = "docker_creds"
+          ["UNPACK_ROOTFS"] = "true"
+        }
+        config {
+          platform = "linux"
+          image_resource {
+            type = "registry-image"
+            source {
+              ["repository"] = "concourse/oci-build-task"
+            }
+          }
+          inputs = new Listing {
+            new TaskConfig.Input { name = "pact-broker-src" }
+            new TaskConfig.Input { name = "docker_creds" }
+          }
+          outputs = new Listing {
+            new TaskConfig.Output { name = "image" }
+          }
+          run {
+            path = "build"
+          }
+        }
+      }
+      new PutStep {
+        put = "pact-broker-ecr-registry-deploy"
+        params {
+          ["image"] = "image/image.tar"
+          ["additional_tags"] = "tags/tag"
+        }
+        get_params {
+          ["skip_download"] = true
+        }
+      }
+    }
+    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Failed to build and push pay-pact-broker image")
+    on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "Built and pushed pay-pact-broker image")
+  }
+}
+
+local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+}
+
+local function getStep(name: String): GetStep = new GetStep {
+  get = name
+}
