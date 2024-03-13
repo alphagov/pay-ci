@@ -122,11 +122,6 @@ resource_types:
       repository: cfcommunity/slack-notification-resource
       tag: latest
 
-  - name: cf-cli
-    type: registry-image
-    source:
-      repository: nulldriver/cf-cli-resource
-
   - name: pull-request
     type: registry-image
     source:
