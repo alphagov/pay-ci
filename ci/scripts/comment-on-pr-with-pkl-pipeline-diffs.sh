@@ -34,7 +34,7 @@ for DIR in "$MASTER" "$PR"; do
 done
 
 if [ "$(wc -l < "$FAILED_EVALUATIONS_TMPFILE")" -gt 0 ]; then
-  echo "ERROR: Some pkl pipelines were not able to be evaluated. The following pipelines failed:"
+  echo "ERROR: Some pkl pipelines were not able to be evaluated in Concourse team $CONCOURSE_TEAM. The following pipelines failed:"
   echo 
   cat "$FAILED_EVALUATIONS_TMPFILE"
   echo
@@ -75,7 +75,7 @@ echo "Commenting on PR"
 cd diffs >>/dev/null 2>&1
 
 if [ "$(find . -mindepth 1 -maxdepth 1 -type f -name '*.yml' | wc -l)" -eq 0 ]; then
-  gh pr comment "$GITHUB_PR_URL" --body "**No YAML differences detected between PR and master pkl files**"
+  gh pr comment "$GITHUB_PR_URL" --body "**No YAML differences detected between PR and master pkl files in Concourse Team $CONCOURSE_TEAM**"
 
   exit 0
 fi
