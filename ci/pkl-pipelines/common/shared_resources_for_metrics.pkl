@@ -1,0 +1,104 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
+
+function paySendAppReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
+  put = "send-app-release-number-metric"
+  resource = "prometheus-pushgateway"
+  params {
+    ["metric"] = "deployment_pipeline_app_release_number"
+    ["value"] = "((.:app_release_number))"
+    when (success == true) {
+      ["job"] = "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/success"
+    } else {
+      ["job"] = "deployment_pipeline_app_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/outcome/failure"
+    }
+    ["labels"] = new Mapping {
+      ...getPushGatewayDefaultLabels(environment)
+      when (success == true) {
+        ["outcome"] = "success"
+      }
+      else {
+        ["outcome"] = "failure"
+      }
+    }
+  }
+}
+
+function paySendAdotReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
+  put = "send-adot-release-number-metric"
+  resource = "prometheus-pushgateway"
+  params {
+    ["metric"] = "deployment_pipeline_sidecar_release_number"
+    ["value"] = "((.:adot_release_number))"
+    when (success == true) {
+      ["job"] = "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/success"
+    } else {
+      ["job"] = "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/adot/outcome/failure"
+    }
+    ["labels"] = new Mapping {
+      ...getPushGatewayDefaultLabels(environment)
+      when (success == true) {
+        ["outcome"] = "success"
+      }
+      else {
+        ["outcome"] = "failure"
+      }
+      ["sidecar"] = "adot"
+    }
+  }
+}
+
+function paySendNginxReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
+  put = "send-nginx-release-number-metric"
+  resource = "prometheus-pushgateway"
+  params {
+    ["metric"] = "deployment_pipeline_sidecar_release_number"
+    ["value"] = "((.:nginx_release_number))"
+    when (success == true) {
+      ["job"] = "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/success"
+    } else {
+      ["job"] = "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx/outcome/failure"
+    }
+    ["labels"] = new Mapping {
+      ...getPushGatewayDefaultLabels(environment)
+      when (success == true) {
+        ["outcome"] = "success"
+      }
+      else {
+        ["outcome"] = "failure"
+      }
+      ["sidecar"] = "nginx"
+    }
+  }
+}
+
+function paySendNginxForwardProxyReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
+  put = "send-nginx-forward-proxy-release-number-metric"
+  resource = "prometheus-pushgateway"
+  params {
+    ["metric"] = "deployment_pipeline_sidecar_release_number"
+    ["value"] = "((.:nginx_forward_proxy_release_number))"
+    when (success == true) {
+      ["job"] = "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx-forward-proxy/outcome/success"
+    } else {
+      ["job"] = "deployment_pipeline_sidecar_release_number/pipeline/$BUILD_PIPELINE_NAME/concourse_job/$BUILD_JOB_NAME/app/((.:app_name))/sidecar/nginx-forward-proxy/outcome/failure"
+    }
+    ["labels"] = new Mapping {
+      ...getPushGatewayDefaultLabels(environment)
+      when (success == true) {
+        ["outcome"] = "success"
+      }
+      else {
+        ["outcome"] = "failure"
+      }
+      ["sidecar"] = "nginx-forward-proxy"
+    }
+  }
+}
+
+local function getPushGatewayDefaultLabels (environment: String) = new Mapping {
+  ["pipeline"] = "$BUILD_PIPELINE_NAME"
+  ["concourse_job"] = "$BUILD_JOB_NAME"
+  ["app"] = "((.:app_name))"
+  ["environment"] = environment
+  ["instance"] = "concourse"
+}
