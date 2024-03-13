@@ -896,11 +896,6 @@ resources:
       url: https://hooks.slack.com/services/((slack-notification-secret))
 
 resource_types:
-  - name: registry-image
-    type: registry-image
-    source:
-      repository: concourse/registry-image-resource
-      tag: "1.4.1"
   - name: slack-notification
     type: docker-image
     source:
