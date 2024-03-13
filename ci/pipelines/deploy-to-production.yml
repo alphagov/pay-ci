@@ -1431,32 +1431,42 @@ jobs:
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: toolbox-ecr-registry-prod
-        trigger: true
-      - get: adot-ecr-registry-prod
-        trigger: true
-      - get: nginx-proxy-ecr-registry-prod
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
-      - load_var: application_image_tag
-        file: toolbox-ecr-registry-prod/tag
-      - load_var: adot_image_tag
-        file: adot-ecr-registry-prod/tag
-      - load_var: nginx_image_tag
-        file: nginx-proxy-ecr-registry-prod/tag
+      - in_parallel:
+          steps:
+          - get: toolbox-ecr-registry-prod
+            trigger: true
+          - get: adot-ecr-registry-prod
+            trigger: true
+          - get: nginx-proxy-ecr-registry-prod
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
+      - in_parallel:
+          steps:
+          - load_var: application_image_tag
+            file: toolbox-ecr-registry-prod/tag
+          - load_var: adot_image_tag
+            file: adot-ecr-registry-prod/tag
+          - load_var: nginx_image_tag
+            file: nginx-proxy-ecr-registry-prod/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: toolbox
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: start_snippet
-        file: snippet/start
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
+          - load_var: start_snippet
+            file: snippet/start
       - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
@@ -1481,8 +1491,8 @@ jobs:
         params:
           APP_NAME: toolbox
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_announce
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: retag-toolbox-image-for-test-perf
     plan:
@@ -1507,6 +1517,8 @@ jobs:
               ecr-repo: toolbox-ecr-registry-prod
       - in_parallel:
           steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
           - load_var: release-number
             file: ecr-release-info/release-number
           - load_var: perf-tag
@@ -1539,6 +1551,8 @@ jobs:
           <<: *retag_for_perf_test
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/toolbox:((.:perf-tag))"
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/toolbox:((.:release-number))-candidate"
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: retag-nginx-proxy-image-for-test-perf
     plan:

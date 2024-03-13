@@ -1332,36 +1332,46 @@ jobs:
     serial: true
     serial_groups: [deploy-application]
     plan:
-      - get: toolbox-ecr-registry-staging
-        trigger: true
-      - get: adot-ecr-registry-staging
-        trigger: true
-      - get: nginx-proxy-ecr-registry-staging
-        trigger: true
-      - get: pay-infra
-      - get: pay-ci
+      - in_parallel:
+          steps:
+          - get: toolbox-ecr-registry-staging
+            trigger: true
+          - get: adot-ecr-registry-staging
+            trigger: true
+          - get: nginx-proxy-ecr-registry-staging
+            trigger: true
+          - get: pay-infra
+          - get: pay-ci
       - task: parse-ecr-release-tag
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
           ecr-image: toolbox-ecr-registry-staging
-      - load_var: application_image_tag
-        file: toolbox-ecr-registry-staging/tag
-      - load_var: adot_image_tag
-        file: adot-ecr-registry-staging/tag
-      - load_var: nginx_image_tag
-        file: nginx-proxy-ecr-registry-staging/tag
+      - in_parallel:
+          steps:
+          - load_var: application_image_tag
+            file: toolbox-ecr-registry-staging/tag
+          - load_var: adot_image_tag
+            file: adot-ecr-registry-staging/tag
+          - load_var: nginx_image_tag
+            file: nginx-proxy-ecr-registry-staging/tag
       - task: create-notification-snippets
         file: pay-ci/ci/tasks/create-notification-snippets.yml
         params:
           APP_NAME: toolbox
           ACTION_NAME: Deployment
           <<: *snippet_params_all_versions
-      - load_var: success_snippet
-        file: snippet/success
-      - load_var: failure_snippet
-        file: snippet/failure
-      - load_var: start_snippet
-        file: snippet/start
+      - in_parallel:
+          steps:
+          - *load_app_name
+          - *load_app_release_number
+          - *load_adot_release_number
+          - *load_nginx_release_number
+          - load_var: success_snippet
+            file: snippet/success
+          - load_var: failure_snippet
+            file: snippet/failure
+          - load_var: start_snippet
+            file: snippet/start
       - <<: *put_start_slack_notification
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
@@ -1386,8 +1396,8 @@ jobs:
         params:
           APP_NAME: toolbox
           <<: *wait_for_deploy_params
-    <<: *put_success_slack_notification_announce
-    <<: *put_failure_slack_notification
+    <<: *put_success_slack_and_metric_notification_with_nginx_and_adot_announce
+    <<: *put_failure_slack_and_metric_notification_with_nginx_and_adot
 
   - name: push-toolbox-to-production-ecr
     plan:
@@ -1404,8 +1414,12 @@ jobs:
         file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
         input_mapping:
           ecr-image: toolbox-ecr-registry-staging
-      - load_var: release_number
-        file: ecr-release-info/release-number
+      - in_parallel:
+          steps:
+          - *load_app_name_from_parse_ecr_release_tag
+          - *load_app_release_number_from_parse_ecr_release_tag
+          - load_var: release_number
+            file: ecr-release-info/release-number
       - in_parallel:
           steps:
           - *assume_copy_from_staging_ecr_role
@@ -1420,6 +1434,8 @@ jobs:
         params:
           ECR_REPO_NAME: "govukpay/toolbox"
           <<: *copy_ecr_from_staging_to_prod_params
+    <<: *put_success_metric
+    <<: *put_failure_metric
 
   - name: deploy-egress-to-staging
     serial: true
