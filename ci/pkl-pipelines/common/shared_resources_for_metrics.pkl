@@ -1,5 +1,23 @@
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
 
+prometheusPushgatewayResourceType = new Pipeline.ResourceType {
+  name = "prometheus-pushgateway"
+  type = "registry-image"
+  source = new {
+    ["repository"] = "governmentdigitalservice/pay-prometheus-pushgateway-resource"
+    ["tag"] = "latest-master"
+  }
+}
+
+prometheusPushgatewayResource = new Pipeline.Resource {
+  name = "prometheus-pushgateway"
+  type = "prometheus-pushgateway"
+  source = new {
+    ["url"] = "https://prometheus-pushgateway.deploy.payments.service.gov.uk"
+    ["job"] = "deployment_pipeline_release_number"
+  }
+}
+
 function paySendAppReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
   put = "send-app-release-number-metric"
   resource = "prometheus-pushgateway"
