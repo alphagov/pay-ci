@@ -1008,6 +1008,14 @@ jobs:
           - get: pay-ci
       - in_parallel:
           steps:
+          - task: parse-ecr-release-tag
+            file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
+            input_mapping:
+              ecr-image: toolbox-ecr-registry-perf
+          - *parse-adot-ecr-release-tag
+          - *parse-nginx-ecr-release-tag
+      - in_parallel:
+          steps:
           - *load_app_name_from_parse_ecr_release_tag
           - *load_app_release_number_from_parse_ecr_release_tag
           - *load_adot_release_number_from_parse_ecr_release_tag
