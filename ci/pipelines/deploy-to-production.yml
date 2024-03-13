@@ -1287,8 +1287,8 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
-          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:release-number))-candidate"
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:release-number))-candidate"
     <<: *put_success_metric
     <<: *put_failure_metric
 
@@ -1393,7 +1393,7 @@ jobs:
             file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
             input_mapping:
               ecr-image: connector-ecr-registry-prod
-          - task: parse-perf-release-tag
+          - task: parse-perf-db-release-tag
             file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
             input_mapping:
               ecr-repo: connector-ecr-registry-prod
@@ -1401,7 +1401,7 @@ jobs:
           steps:
           - load_var: release-number
             file: ecr-release-info/release-number
-          - load_var: perf-tag
+          - load_var: perf-db-tag
             file: parse-perf-db-release-tag/tag
           - task: assume-retag-role
             file: pay-ci/ci/tasks/assume-role.yml
@@ -1429,7 +1429,7 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
-          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:perf-tag))"
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:perf-db-tag))"
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/connector:((.:release-number))-candidate"
 
   - name: deploy-toolbox-to-prod
@@ -2022,7 +2022,7 @@ jobs:
             file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
             input_mapping:
               ecr-image: adminusers-ecr-registry-prod
-          - task: parse-perf-release-tag
+          - task: parse-perf-db-release-tag
             file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
             input_mapping:
               ecr-repo: adminusers-ecr-registry-prod
@@ -2030,7 +2030,7 @@ jobs:
           steps:
           - load_var: release-number
             file: ecr-release-info/release-number
-          - load_var: perf-tag
+          - load_var: perf-db-tag
             file: parse-perf-db-release-tag/tag
           - task: assume-retag-role
             file: pay-ci/ci/tasks/assume-role.yml
@@ -2058,8 +2058,8 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:perf-db-tag))"
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
-          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:perf-tag))"
 
   - name: smoke-test-adminusers-on-prod
     serial_groups: [smoke-test]
@@ -2154,8 +2154,8 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
-          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/adminusers:((.:release-number))-candidate"
     <<: *put_success_metric
     <<: *put_failure_metric
 
@@ -2480,7 +2480,7 @@ jobs:
             file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
             input_mapping:
               ecr-image: products-ecr-registry-prod
-          - task: parse-perf-release-tag
+          - task: parse-perf-db-release-tag
             file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
             input_mapping:
               ecr-repo: products-ecr-registry-prod
@@ -2490,7 +2490,7 @@ jobs:
           - *load_app_release_number_from_parse_ecr_release_tag
           - load_var: release-number
             file: ecr-release-info/release-number
-          - load_var: perf-tag
+          - load_var: perf-db-tag
             file: parse-perf-db-release-tag/tag
           - task: assume-retag-role
             file: pay-ci/ci/tasks/assume-role.yml
@@ -2518,7 +2518,7 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
-          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/products:((.:perf-tag))"
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/products:((.:perf-db-tag))"
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/products:((.:release-number))-candidate"
     <<: *put_success_metric
     <<: *put_failure_metric
@@ -2874,16 +2874,16 @@ jobs:
             file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
             input_mapping:
               ecr-image: publicauth-ecr-registry-prod
-          - task: parse-perf-release-tag
-            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
+          - task: parse-perf-db-release-tag
+            file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
             input_mapping:
               ecr-repo: publicauth-ecr-registry-prod
       - in_parallel:
           steps:
           - load_var: release-number
             file: ecr-release-info/release-number
-          - load_var: perf-tag
-            file: parse-perf-release-tag/tag
+          - load_var: perf-db-tag
+            file: parse-perf-db-release-tag/tag
           - task: assume-retag-role
             file: pay-ci/ci/tasks/assume-role.yml
             output_mapping:
@@ -2910,7 +2910,7 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
-          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/publicauth:((.:perf-tag))"
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/publicauth:((.:perf-db-tag))"
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/publicauth:((.:release-number))-candidate"
 
   - name: smoke-test-publicauth-on-prod
@@ -2969,7 +2969,7 @@ jobs:
             input_mapping:
               ecr-image: publicauth-ecr-registry-prod
           - task: parse-perf-release-tag
-            file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
+            file: pay-ci/ci/tasks/parse-perf-release-tag.yml
             input_mapping:
               ecr-repo: publicauth-ecr-registry-prod
       - in_parallel:
@@ -2979,7 +2979,7 @@ jobs:
           - load_var: release-number
             file: ecr-release-info/release-number
           - load_var: perf-tag
-            file: parse-perf-db-release-tag/tag
+            file: parse-perf-release-tag/tag
           - task: assume-retag-role
             file: pay-ci/ci/tasks/assume-role.yml
             output_mapping:
@@ -3183,8 +3183,8 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
-          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/cardid:((.:release-number))-candidate"
           NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/cardid:((.:perf-tag))"
+          SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/cardid:((.:release-number))-candidate"
     <<: *put_success_metric
     <<: *put_failure_metric
 
@@ -3723,7 +3723,7 @@ jobs:
             file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
             input_mapping:
               ecr-image: ledger-ecr-registry-prod
-          - task: parse-perf-release-tag
+          - task: parse-perf-db-release-tag
             file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
             input_mapping:
               ecr-repo: ledger-ecr-registry-prod
@@ -3733,7 +3733,7 @@ jobs:
           - *load_app_release_number_from_parse_ecr_release_tag
           - load_var: release-number
             file: ecr-release-info/release-number
-          - load_var: perf-tag
+          - load_var: perf-db-tag
             file: parse-perf-db-release-tag/tag
           - task: assume-retag-role
             file: pay-ci/ci/tasks/assume-role.yml
@@ -3761,7 +3761,7 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
-          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/ledger:((.:perf-tag))"
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/ledger:((.:perf-db-tag))"
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/ledger:((.:release-number))-candidate"
     <<: *put_success_metric
     <<: *put_failure_metric
@@ -4347,7 +4347,7 @@ jobs:
             file: pay-ci/ci/tasks/parse-ecr-release-tag.yml
             input_mapping:
               ecr-image: webhooks-ecr-registry-prod
-          - task: parse-perf-release-tag
+          - task: parse-perf-db-release-tag
             file: pay-ci/ci/tasks/parse-perf-db-release-tag.yml
             input_mapping:
               ecr-repo: webhooks-ecr-registry-prod
@@ -4355,7 +4355,7 @@ jobs:
           steps:
           - load_var: release-number
             file: ecr-release-info/release-number
-          - load_var: perf-tag
+          - load_var: perf-db-tag
             file: parse-perf-db-release-tag/tag
           - task: assume-retag-role
             file: pay-ci/ci/tasks/assume-role.yml
@@ -4383,7 +4383,7 @@ jobs:
         file: pay-ci/ci/tasks/manifest-retag.yml
         params:
           <<: *retag_for_perf_test
-          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/webhooks:((.:perf-tag))"
+          NEW_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/webhooks:((.:perf-db-tag))"
           SOURCE_MANIFEST: "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/webhooks:((.:release-number))-candidate"
 
   - name: deploy-webhooks-egress-to-prod
