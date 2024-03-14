@@ -1,4 +1,4 @@
-extends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
+extends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.2#/Pipeline.pkl"
 
 import "../pipeline_self_update.pkl"
 import "../shared_resources.pkl"

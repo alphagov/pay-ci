@@ -3,9 +3,9 @@
   "resolvedDependencies": {
     "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0": {
       "type": "remote",
-      "uri": "projectpackage://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1",
+      "uri": "projectpackage://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.2",
       "checksums": {
-        "sha256": "5ff95ffe52ae7bdb08818ed28c7ac725d513a525786244e3b27fafb93b7ae302"
+        "sha256": "11d5321880e5521296c3e7b71a63526454d5fcd5d560660b2aca214551c44ef0"
       }
     }
   }
