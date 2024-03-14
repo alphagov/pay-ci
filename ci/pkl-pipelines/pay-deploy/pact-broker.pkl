@@ -1,6 +1,6 @@
-amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
+amends "@concourse_pipeline/Pipeline.pkl"
 
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/TaskConfig.pkl"
+import "@concourse_pipeline/TaskConfig.pkl"
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
