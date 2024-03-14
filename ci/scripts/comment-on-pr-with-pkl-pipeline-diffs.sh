@@ -100,6 +100,11 @@ find . -maxdepth 1 -mindepth 1 -type f -name '*.yml' | while read -r DIFF_FILE; 
       echo '```'
       echo
     } >> "$TMPFILE"
+  elif [ ! -f "../$PR/ci/pkl-pipelines/$CONCOURSE_TEAM/$DIFF_FILE" ]; then
+    {
+      echo "\`$PKL_FILE\` does not exist in master, so there is no YAML diff"
+      echo
+    } >> "$TMPFILE"
   else
     {
       echo "<details><summary>Diff of YAML generated from $PKL_FILE</summary>"
@@ -147,7 +152,21 @@ find . -maxdepth 1 -mindepth 1 -type f -name '*.yml' | while read -r DIFF_FILE; 
     fi
   fi
 
-  gh pr comment "$GITHUB_PR_URL" --body-file "$TMPFILE"
+  if [ "$(wc -m <"$TMPFILE")" -gt 65536 ]; then
+    echo "The comment is too long to attach to the PR."
+    echo
+    echo "================================================================================"
+    echo "Diffs follows:"
+    echo "================================================================================"
+    cat "$TMPFILE"
+    echo "================================================================================"
+    echo "End Diffs"
+    echo "================================================================================"
+    gh pr comment "$GITHUB_PR_URL" --body "The diff for \`$CONCOURSE_TEAM/$PKL_FILE\` was too long, see concourse output"
+  else
+    gh pr comment "$GITHUB_PR_URL" --body-file "$TMPFILE"
+  fi
+
   # Sleep so we don't get rate limited by the github API
   sleep 1
 done
