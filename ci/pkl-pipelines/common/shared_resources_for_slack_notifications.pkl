@@ -1,0 +1,67 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.1#/Pipeline.pkl"
+
+slackNotificationResource = new Pipeline.Resource {
+  name = "slack-notification"
+  type = "slack-notification"
+  source = new {
+    ["url"] = "https://hooks.slack.com/services/((slack-notification-secret))"
+  }
+}
+
+slackNotificationResourceType = new Pipeline.ResourceType {
+  name = "slack-notification"
+  type = "docker-image"
+  source = new {
+    ["repository"] = "cfcommunity/slack-notification-resource"
+    ["tag"] = "latest"
+  }
+}
+
+function paySlackNotificationForFail(channel_name: String, message: String): Pipeline.PutStep = new Pipeline.PutStep {
+  put = "slack-notification"
+  attempts = 10
+  params = new Mapping {
+    ["channel"] = channel_name
+    ["silent"] = true
+    ["text"] = ":red-circle: \(message) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    ["icon_emoji"] = ":concourse:"
+    ["username"] = "pay-concourse"
+  }
+}
+
+function paySlackNotificationForSuccess(channel_name: String, message: String): Pipeline.PutStep = new Pipeline.PutStep {
+  put = "slack-notification"
+  attempts = 10
+  params = new Mapping {
+    ["channel"] = channel_name
+    ["silent"] = true
+    ["text"] = ":green-circle: \(message) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    ["icon_emoji"] = ":concourse:"
+    ["username"] = "pay-concourse"
+  }
+}
+
+function paySlackNotificationForDBMigration(channel_name: String, environment: String): Pipeline.PutStep = new Pipeline.PutStep {
+  put = "slack-notification"
+  params = new Mapping {
+    ["channel"] = channel_name
+    ["icon_emoji"] = ":postgres:"
+    ["username"] = "pay-concourse"
+    ["text"] = ":postgres: starting $BUILD_JOB_NAME on \(environment) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+  }
+}
+
+function paySlackNotificationForDBMigrationStatus(channel_name: String, is_successful: Boolean, environment: String): Pipeline.PutStep = new Pipeline.PutStep {
+  put = "slack-notification"
+  params = new Mapping {
+    ["channel"] = channel_name
+    ["icon_emoji"] = ":postgres:"
+    ["username"] = "pay-concourse"
+    when (is_successful) {
+      ["text"] = ":green-circle: $BUILD_JOB_NAME completed successfully on \(environment) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    } else {
+      ["text"] = ":red-circle: $BUILD_JOB_NAME failed on \(environment) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    }
+  }
+}
+
