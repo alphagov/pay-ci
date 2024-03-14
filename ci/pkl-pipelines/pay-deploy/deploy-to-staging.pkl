@@ -1,0 +1,117 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_metrics.pkl"
+
+local environment = "staging"
+local nextEnvironment = "production"
+
+local class PayApplication {
+  name: Identifier
+  pact_tag: Boolean = true
+  db_migration: Boolean = false
+  smoke_test: Boolean = true
+}
+
+open local class PaySupportingService {
+  name: Identifier
+  ecr_repo_name: String = "govukpay/\(name)"
+  deploy_job: Identifier?
+  smoke_test_job: Identifier?
+}
+
+local applications: Listing<PayApplication> = new {
+  new { name = "adminusers"; db_migration = true }
+  new { name = "cardid" }
+  new { name = "connector"; db_migration = true }
+  new { name = "egress"; pact_tag = false }
+  new { name = "frontend" }
+  new { name = "ledger"; db_migration = true }
+  new { name = "notifications"; db_migration = false; pact_tag = false }
+  new { name = "products"; db_migration = true }
+  new { name = "products-ui" }
+  new { name = "publicapi" }
+  new { name = "publicauth"; db_migration = true; pact_tag = false }
+  new { name = "selfservice" }
+  new { name = "toolbox"; pact_tag = false; smoke_test = false }
+  new { name = "webhooks"; db_migration = true }
+  new { name = "webhooks-egress"; db_migration = false; pact_tag = false}
+}
+
+local sidecars: Mapping<Identifier, PaySupportingService> = new {
+  ["adot"] = new { name = "adot"}
+  ["nginx-forward-proxy"] = new {
+    name = "nginx-forward-proxy"
+    deploy_job = "deploy-frontend-to-\(environment)"
+    smoke_test_job = "smoke-test-frontend-on-\(environment)"
+  }
+  ["nginx-proxy"] = new {
+    name = "nginx-proxy"
+    deploy_job = "deploy-toolbox-to-staging"
+    ecr_repo_name = "govukpay/docker-nginx-proxy"
+  }
+}
+
+local supportingServices: Listing<PaySupportingService> = new {
+  new { name = "alpine"; deploy_job = "deploy-scheduled-tasks" }
+  new { name = "stream-s3-sqs"; deploy_job = "deploy-scheduled-tasks"  }
+}
+
+local sidecarsAndSupportingServices: Mapping<String, PaySupportingService> = new {
+  ...sidecars
+  ...supportingServices.toList().toMap((service) -> service.name, (service) -> service)
+}
+
+resource_types = new {
+  shared_resources.slackNotificationResourceType
+  shared_resources_for_metrics.prometheusPushgatewayResourceType
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/deploy-to-\(environment).pkl", "master")
+  shared_resources_for_metrics.prometheusPushgatewayResource
+  shared_resources.payCiGitHubResource
+  shared_resources.payInfraGitHubResource
+  for (application in applications) {
+    shared_resources.payECRResourceWithVariant("\(application.name)-ecr-registry-\(environment)", application.name, "pay_aws_\(environment)", "release")
+  }
+  for (sidecar in sidecars) {
+    shared_resources.payECRResourceWithVariant("\(sidecar.name)-ecr-registry-\(environment)", sidecar.ecr_repo_name, "pay_aws_\(environment)", "release")
+  }
+  for (supportingService in supportingServices) {
+    shared_resources.payECRResourceWithVariant("\(supportingService.name)-ecr-registry-\(environment)", supportingService.name, "pay_aws_\(environment)", "release")
+  }
+  shared_resources.slackNotificationResource
+}
+
+groups = new {
+  for (application in applications) {
+    new {
+      name = application.name
+      jobs = new {
+        "deploy-\(application.name)-to-\(environment)"
+        when (application.smoke_test) { "smoke-test-\(application.name)-on-\(environment)" }
+        when (application.pact_tag) { "\(application.name)-pact-tag" }
+        "push-\(application.name)-to-production-ecr"
+        when (application.db_migration) { "\(application.name)-db-migration-\(environment)"}
+      }
+    }
+  }
+  for (containerName in sidecarsAndSupportingServices.keys.sort()) {
+    new {
+      local container = sidecarsAndSupportingServices[containerName]
+      name = containerName
+      jobs = new {
+        when (container.deploy_job != null) { container.deploy_job as Identifier }
+        when (container.smoke_test_job != null) { container.smoke_test_job as Identifier }
+        "push-\(containerName)-to-production-ecr"
+      }
+    }
+  }
+  pipeline_self_update.payPipelineSelfUpdateGroup
+}
+
+jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/deploy-to-\(environment).pkl")
+}
