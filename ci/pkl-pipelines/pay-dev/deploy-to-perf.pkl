@@ -267,10 +267,13 @@ local function deployToPerf(app: PayApp) = new TaskStep {
       ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
     }
     ...getAWSAssumeRoleCreds()
+    when (app.name == "notifications") {
+      ["AWS_REGION"] = "eu-west-1"
+    }
   }
 
   when (app.name == "notifications") {
-    config = getAdditionalConfigForNotifications(app)
+    config = getAdditionalConfigForNotifications()
   }
 }
 
@@ -384,10 +387,11 @@ local function assumeRole(awsRoleSessionName: String) = new TaskStep {
   }
 }
 
-local function getAdditionalConfigForNotifications(app: PayApp) = new TaskConfig {
+local function getAdditionalConfigForNotifications() = new TaskConfig {
   platform = "linux"
   inputs {
     new TaskConfig.Input { name = "pay-infra" }
+    new TaskConfig.Input { name = "pay-ci" }
   }
   image_resource {
     type = "registry-image"
@@ -397,9 +401,9 @@ local function getAdditionalConfigForNotifications(app: PayApp) = new TaskConfig
     }
   }
   run = new TaskConfig.Run {
-    path = "/bin/bash"
+    path = "/bin/sh"
     args {
-      "pay-ci/ci/scripts/deploy-notifications"
+      "pay-ci/ci/scripts/deploy-notifications.sh"
     }
   }
 }
