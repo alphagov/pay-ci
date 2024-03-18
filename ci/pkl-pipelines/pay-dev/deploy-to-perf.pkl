@@ -58,9 +58,6 @@ resource_types {
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-to-perf.pkl", "master")
   shared_resources_for_metrics.prometheusPushgatewayResource
-  (shared_resources.payGithubResourceWithBranch("deploy-to-perf-pipeline-definition", "pay-ci", "master")) {
-    source { ["paths"] = new Listing<String> { "ci/pipelines/deploy-to-perf.yml" } }
-  }
   shared_resources.payCiGitHubResource
   shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
 
@@ -247,7 +244,9 @@ local function deployToPerf(app: PayApp) = new TaskStep {
       file = "pay-ci/ci/tasks/deploy-\(app.name).yml"
     }
   } else {
-    file = "pay-ci/ci/tasks/deploy-app-with-adot.yml"
+    when (app.name != "notifications") {
+      file = "pay-ci/ci/tasks/deploy-app-with-adot.yml"
+    }
   }
 
   params {
