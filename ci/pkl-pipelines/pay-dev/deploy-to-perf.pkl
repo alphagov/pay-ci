@@ -43,6 +43,8 @@ local payHelpers: Listing<PayApp> = new Listing<PayApp> {
   new { name = "stream-s3-sqs"; override_app_to_deploy = "scheduled-tasks";  include_nginx_and_adot_sidecar = false }
 }.toList().sortBy((app) -> app.name).toListing()
 
+local payScheduledTask = new PayApp { name = "scheduled-tasks"; use_app_specific_deploy_task = true; include_nginx_and_adot_sidecar = false }
+
 local allPayApps: Listing<PayApp> = new {
   ...payApps
   ...payHelpers
@@ -128,11 +130,12 @@ jobs {
     new {
       name = "\(app.name)-db-migration-perf"
       plan {
-        new InParallelStep { in_parallel = getResourcesAndAssumeRoleToRunDbMigrations(app) }
+        new InParallelStep { in_parallel = getResourcesToRunDbMigrations(app) }
+        assumeRole("db-migration-perf-test-assume-role")
         new InParallelStep {
           in_parallel = new Listing {
             (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
-            loadVar("application_image_tag", "publicauth-db-ecr-registry-perf/tag")
+            loadVar("application_image_tag", "\(app.name)-db-ecr-registry-perf/tag")
           }
         }
         startDatabase(app)
@@ -163,7 +166,7 @@ jobs {
         }
       }
       (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
-      deployToPerf(new PayApp { name = "scheduled-tasks"; use_app_specific_deploy_task = true })
+      deployToPerf(payScheduledTask)
     }
     on_failure = shared_resources_for_slack_notifications.paySlackNotificationForFail("#govuk-pay-announce", "Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag))")
     on_success = shared_resources_for_slack_notifications.paySlackNotificationForSuccess("#govuk-pay-activity", "Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully")
@@ -204,6 +207,7 @@ local function loadVariablesToDeployApp(app: PayApp): Listing<Step> = new Listin
 
   when (app.name == "frontend") {
     loadVar("nginx_forward_proxy_release_number", "nginx-forward-proxy-release-info/release-number")
+    loadVar("nginx_forward_proxy_image_tag", "nginx-forward-proxy-ecr-registry-perf/tag")
   }
 }
 
@@ -365,7 +369,7 @@ local function sendSlackNoticationAndPutMetrics(app: PayApp, isASuccess: Boolean
   }
 }
 
-local function getResourcesAndAssumeRoleToRunDbMigrations(app: PayApp): Listing<Step> = new Listing<Step> {
+local function getResourcesToRunDbMigrations(app: PayApp): Listing<Step> = new Listing<Step> {
   getStep("pay-ci", false)
   (getStep("\(app.name)-db-ecr-registry-perf", true)) {
     passed = new Listing<Identifier> {
@@ -375,7 +379,6 @@ local function getResourcesAndAssumeRoleToRunDbMigrations(app: PayApp): Listing<
       ["format"] = "oci"
     }
   }
-  assumeRole("db-migration-perf-test-assume-role")
 }
 
 local function assumeRole(awsRoleSessionName: String) = new TaskStep {
