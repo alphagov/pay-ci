@@ -17,6 +17,20 @@ slackNotificationResourceType = new Pipeline.ResourceType {
   }
 }
 
+function paySlackNotificationForAppDeployment(channelName: String, isASuccess: Boolean, message: String): Pipeline.PutStep = new Pipeline.PutStep {
+  put = "slack-notification"
+  params = new Mapping {
+    ["channel"] = channelName
+    when (isASuccess) {
+      ["text"] = ":green-circle: \(message) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    } else {
+      ["text"] = ":red_circle: \(message) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    }
+    ["icon_emoji"] = ":fargate:"
+    ["username"] = "pay-concourse"
+  }
+}
+
 function paySlackNotificationForFail(channel_name: String, message: String): Pipeline.PutStep = new Pipeline.PutStep {
   put = "slack-notification"
   attempts = 10
