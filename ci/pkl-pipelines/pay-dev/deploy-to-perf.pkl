@@ -94,6 +94,7 @@ groups {
       }
     }
   }
+  pipeline_self_update.payPipelineSelfUpdateGroup
 }
 
 jobs {
