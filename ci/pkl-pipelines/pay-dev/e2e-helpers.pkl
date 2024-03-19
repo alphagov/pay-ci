@@ -5,6 +5,8 @@ import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 
 resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/e2e-helpers.pkl", "master")
+
   shared_resources.payCiGitHubResource
 
   (shared_resources.payGithubResourceWithBranch("e2e-helpers-pipeline", "pay-ci", "master")) {
@@ -49,7 +51,10 @@ resources = new {
     "pay_aws_test_account_id", 
     "candidate")) 
 
-  shared_resources.payDockerHubResource("endtoend-dockerhub", "govukpay/endtoend", "latest-master")
+  shared_resources.payDockerHubResource(
+    "endtoend-dockerhub", 
+    "governmentdigitalservice/pay-endtoend", 
+    "latest-master")
 
   (shared_resources.payDockerHubResource("postgres-15-alpine", "postgres", "15-alpine")) {
     check_every = "1h" 
@@ -62,12 +67,17 @@ resources = new {
     source { ["tag"] = "15-alpine" }
   }
 
-  (shared_resources.payDockerHubResource("localstack-localstack-3", "localstack/localstack", "3")) {
+  (shared_resources.payDockerHubResource(
+    "localstack-localstack-3", 
+    "localstack/localstack", "3")
+  ) {
     check_every = "1h"
   }
 
   (shared_resources.payECRResource(
-    "localstack-localstack-3", "localstack/localstack", "pay_aws_test_account_id")
+    "ecr-localstack-localstack-3", 
+    "localstack/localstack", 
+    "pay_aws_test_account_id")
   ) {
     check_every = "never"
     source { ["tag"] = "3" }
@@ -81,7 +91,7 @@ resources = new {
   }
 
   (shared_resources.payECRResource(
-    "selenium-standalone-chrome-3-141-59",
+    "ecr-selenium-standalone-chrome-3-141-59",
     "selenium/standalone-chrome",
     "pay_aws_test_account_id")
   ) {
@@ -90,8 +100,6 @@ resources = new {
   }
 
   shared_resources.slackNotificationResource
-
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/e2e-helpers.pkl", "master")
 }
 
 resource_types = new {
@@ -99,13 +107,15 @@ resource_types = new {
 }
 
 jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/e2e-helpers.pkl")
+
   new {
     name = "build-and-push-endtoend-candidate"
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new GetStep { get = "pay-ci" }
           new GetStep { get = "endtoend-git-release" trigger = true }
+          new GetStep { get = "pay-ci" }
         }
       }
 
@@ -125,8 +135,8 @@ jobs = new {
       "#govuk-pay-starling",
       "Failed to build and push pay-endtoend candidate image"
     )
-    on_success = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
       "Built and pushed pay-endtoend candidate image"
     )
   }
@@ -136,19 +146,24 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing {
-          new GetStep { get = "pay-ci" }
           new GetStep { 
             get = "endtoend-candidate-ecr-registry-test"
             trigger = true
             passed = new Listing { "build-and-push-endtoend-candidate" }
             params { ["format"] = "oci" }
           }
+          new GetStep { get = "pay-ci" }
         }
       }
 
       shared_resources.parseCandidateTag("endtoend-candidate-ecr-registry-test")
-      new LoadVarStep { load_var = "candidate_number_tag" file = "tags/release-number" }
-      assumeCodeBuildRole("e2e-test-assume-role")
+
+      new LoadVarStep { 
+        load_var = "candidate_number_tag" 
+        file = "parse-candidate-tag/release-number" 
+      }
+
+      assumeCodeBuildRole("executor", "e2e-test-assume-role")
 
       new InParallelStep {
         in_parallel = new Listing {
@@ -173,13 +188,16 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing {
           shared_resources.runCodeBuild(
-            "run-codebuild-card", "../../../../run-codebuild-configuration/card.json"
+            "run-codebuild-card", "../../../../run-codebuild-configuration/card.json",
+            3
           )
           shared_resources.runCodeBuild(
-            "run-codebuild-products", "../../../../run-codebuild-configuration/products.json"
+            "run-codebuild-products", "../../../../run-codebuild-configuration/products.json",
+            1
           )
           shared_resources.runCodeBuild(
-            "run-codebuild-zap", "../../../../run-codebuild-configuration/zap.json"
+            "run-codebuild-zap", "../../../../run-codebuild-configuration/zap.json",
+            1
           )
         }
       }
@@ -205,14 +223,14 @@ jobs = new {
       "#govuk-pay-starling",
       "pay-endtoend failed post-merge e2e tests"
     )
-    on_success = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
       "pay-endtoend passed post-merge e2e tests and was pushed as a final release"
     )
   }
 
   new {
-    name = "build-and-push-reverse-proxy-candidate" // sub
+    name = "build-and-push-reverse-proxy-candidate"
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
@@ -221,34 +239,35 @@ jobs = new {
         }
       }
 
+      shared_resources.parseReleaseTag("reverse-proxy-git-release")
+
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new LoadVarStep { load_var = "release_number_tag" file = "tags/release-number" }
-          new LoadVarStep { load_var = "release-name" file = "tags/release-name" }
+          new LoadVarStep { load_var = "release-number" file = "tags/release-number" }
+          new LoadVarStep { load_var = "release-name" file = "reverse-proxy-git-release/.git/ref" }
           new LoadVarStep { load_var = "release-sha" file = "tags/release-sha" }
           new LoadVarStep { load_var = "candidate-image-tag" file = "tags/candidate-tag" }
           new LoadVarStep { load_var = "date" file = "tags/date" }
-          assumeCodeBuildRole("codebuild-assume-role")
+          assumeCodeBuildRole("builder", "codebuild-assume-role")
         }
       }
 
       new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" format = "json" }
       shared_resources.prepareCodeBuildMultiarch("reverse-proxy")
       shared_resources.generateDockerCredsConfigStep
-      shared_resources.runCodeBuildMultiarch("reverse-proxy")
-
-      // TODO : abstract this away with the above. Can't work out how to do it right now.
+      shared_resources.runCodeBuildMultiarch("reverse-proxy", 3)
       shared_resources.runCodeBuild(
         "run-codebuild-reverse-proxy-manifest",
-        "../../../../run-codebuild-configuration/reverse-proxy-manifest.json"
+        "../../../../run-codebuild-configuration/reverse-proxy-manifest.json",
+        3
       )
     }
     on_failure = shared_resources.paySlackNotificationForFail(
       "#govuk-pay-starling",
       "Failed to build and push e2e helper reverse-proxy"
     )
-    on_success = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
       "Built and pushed e2e helper reverse-proxy"
     )
   }
@@ -258,24 +277,29 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing {
-          new GetStep { get = "pay-ci" }
           new GetStep { 
             get = "reverse-proxy-candidate-ecr-registry-test"
             trigger = true
             params { ["format"] = "oci" }
           }
+          new GetStep { get = "pay-ci" }
         }
       }
 
       shared_resources.parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
-      new LoadVarStep { load_var = "candidate_number_tag" file = "tags/release-number" }
-      assumeCodeBuildRole("e2e-test-assume-role")
+
+      new LoadVarStep { 
+        load_var = "candidate_number_tag"
+        file = "parse-candidate-tag/release-number" 
+      }
+
+      assumeCodeBuildRole("executor", "e2e-test-assume-role")
 
       new InParallelStep {
         in_parallel = new Listing {
           new LoadVarStep { 
             load_var = "candidate_image_tag" 
-            file = "endtoend-candidate-ecr-registry-test/tag" 
+            file = "reverse-proxy-candidate-ecr-registry-test/tag" 
           }
           new LoadVarStep { 
             load_var = "role" 
@@ -294,13 +318,16 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing {
           shared_resources.runCodeBuild(
-            "run-codebuild-card", "../../../../run-codebuild-configuration/card.json"
+            "run-codebuild-card", "../../../../run-codebuild-configuration/card.json",
+            3
           )
           shared_resources.runCodeBuild(
-            "run-codebuild-products", "../../../../run-codebuild-configuration/products.json"
+            "run-codebuild-products", "../../../../run-codebuild-configuration/products.json",
+            1
           )
           shared_resources.runCodeBuild(
-            "run-codebuild-zap", "../../../../run-codebuild-configuration/zap.json"
+            "run-codebuild-zap", "../../../../run-codebuild-configuration/zap.json",
+            1
           )
         }
       }
@@ -308,24 +335,30 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing {
           shared_resources.generateDockerCredsConfigStep
-
-          // TODO: remove. These are already done, but the original has it twice, so we will, for now.
           shared_resources.parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
-          assumeCodeBuildRole("e2e-test-assume-role")
+          assumeCodeBuildRole("executor", "e2e-test-assume-role")
+          assumeRetagRole
          }
       }
 
       new InParallelStep {
         in_parallel = new Listing {
-          new LoadVarStep { load_var = "retag-role" file = "assume-retag-role/assume-role.json" }
-          new LoadVarStep { load_var = "release_image_tag" file = "parse-candidate-tag/release-tag" }
+          new LoadVarStep { 
+            load_var = "retag-role" 
+            file = "assume-retag-role/assume-role.json" 
+            format = "json"
+          }
+          new LoadVarStep { 
+            load_var = "release_image_tag" 
+            file = "parse-candidate-tag/release-tag" 
+          }
         }
       }
 
       new InParallelStep {
         in_parallel = new Listing {
-          retagCandidateInEcr("reverse-proxy", "((.:candidate_image_tag))")
-          retagCandidateInEcr("reverse-proxy", "latest")
+          retagCandidateInEcr("reverse-proxy", "((.:release_image_tag))", "release")
+          retagCandidateInEcr("reverse-proxy", "latest", "latest")
           retagCandidateInDockerHub(
             "governmentdigitalservice/pay-reverse-proxy",
             "((.:candidate_image_tag))",
@@ -338,8 +371,8 @@ jobs = new {
       "#govuk-pay-starling",
       "e2e helper reverse-proxy failed post-merge e2e tests"
     )
-    on_success = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
       "e2e helper reverse-proxy passed post-merge e2e tests and was pushed as a final release"
     )
   }
@@ -349,40 +382,45 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new GetStep { get = "pay-ci" }
           new GetStep { get = "stubs-git-release" trigger = true } 
+          new GetStep { get = "pay-ci" }
         }
       }
 
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new LoadVarStep { load_var = "release_number_tag" file = "tags/release-number" }
-          new LoadVarStep { load_var = "release-name" file = "tags/release-name" }
-          new LoadVarStep { load_var = "release-sha" file = "tags/release-sha" }
-          new LoadVarStep { load_var = "candidate-image-tag" file = "tags/candidate-tag" }
-          new LoadVarStep { load_var = "date" file = "tags/date" }
-          assumeCodeBuildRole("codebuild-assume-role")
+          shared_resources.generateDockerCredsConfigStep
+          assumeCodeBuildRole("builder", "codebuild-assume-role")
         }
       }
 
-      new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" format = "json" }
-      shared_resources.prepareCodeBuildMultiarch("stubs")
-      shared_resources.generateDockerCredsConfigStep
-      shared_resources.runCodeBuildMultiarch("stubs")
+      shared_resources.parseReleaseTag("stubs-git-release")
 
-      // TODO : abstract this away with the above. Can't work out how to do it right now.
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new LoadVarStep { load_var = "release-number"; file = "tags/release-number" }
+          new LoadVarStep { load_var = "release-name"; file = "stubs-git-release/.git/ref" }
+          new LoadVarStep { load_var = "release-sha"; file = "tags/release-sha" }
+          new LoadVarStep { load_var = "date" file = "tags/date" }
+          new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" format = "json" }
+        }
+      }
+
+      shared_resources.prepareCodeBuildMultiarch("stubs")
+      shared_resources.runCodeBuildMultiarch("stubs", 1)
       shared_resources.runCodeBuild(
         "run-codebuild-stubs-manifest",
-        "../../../../run-codebuild-configuration/stubs-manifest.json"
+        "../../../../run-codebuild-configuration/stubs-manifest.json",
+        1
       )
     }
     on_failure = shared_resources.paySlackNotificationForFail(
       "#govuk-pay-starling",
-      "Failed to build and push e2e helper stubs"
+      "Failed to build and push pay-stubs candidate image"
     )
-    on_success = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
-      "Built and pushed e2e helper stubs"
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
+      "Built and pushed pay-stubs candidate image"
     )
   }
 
@@ -391,29 +429,53 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing {
-          new GetStep { get = "pay-ci" }
           new GetStep { 
             get = "stubs-candidate-ecr-registry-test"
             trigger = true
             params { ["format"] = "oci" }
           }
+          new GetStep { get = "pay-ci" }
         }
       }
 
-      shared_resources.parseCandidateTag("stubs-candidate-ecr-registry-test")
-      new LoadVarStep { load_var = "candidate_number_tag" file = "tags/release-number" }
-      assumeCodeBuildRole("e2e-test-assume-role")
+      new InParallelStep {
+        in_parallel = new Listing {
+          shared_resources.generateDockerCredsConfigStep
+          shared_resources.parseCandidateTag("stubs-candidate-ecr-registry-test")
+          assumeCodeBuildRole("executor", "e2e-test-assume-role")
+          assumeRetagRole
+          assumeWriteToDeployRole
+        }
+      }
 
       new InParallelStep {
         in_parallel = new Listing {
           new LoadVarStep { 
             load_var = "candidate_image_tag" 
-            file = "endtoend-candidate-ecr-registry-test/tag" 
+            file = "stubs-candidate-ecr-registry-test/tag" 
           }
           new LoadVarStep { 
             load_var = "role" 
             file = "assume-role/assume-role.json"
             format = "json"
+          }
+          new LoadVarStep { 
+            load_var = "retag-role" 
+            file = "assume-retag-role/assume-role.json"
+            format = "json"
+          }
+          new LoadVarStep { 
+            load_var = "write-to-deploy-role" 
+            file = "assume-write-to-deploy-role/assume-role.json"
+            format = "json"
+          }
+          new LoadVarStep { 
+            load_var = "release_image_tag" 
+            file = "parse-candidate-tag/release-tag"
+          }
+          new LoadVarStep { 
+            load_var = "release_number" 
+            file = "parse-candidate-tag/release-number"
           }
         }
       }
@@ -427,43 +489,26 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing {
           shared_resources.runCodeBuild(
-            "run-codebuild-card", "../../../../run-codebuild-configuration/card.json"
+            "run-codebuild-card", "../../../../run-codebuild-configuration/card.json",
+            3
           )
           shared_resources.runCodeBuild(
-            "run-codebuild-products", "../../../../run-codebuild-configuration/products.json"
-          )
-          shared_resources.runCodeBuild(
-            "run-codebuild-zap", "../../../../run-codebuild-configuration/zap.json"
+            "run-codebuild-products", "../../../../run-codebuild-configuration/products.json",
+            1
           )
         }
       }
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_resources.generateDockerCredsConfigStep
-
-          // TODO: remove. These are already done, but the original has it twice, so we will, for now.
-          shared_resources.parseCandidateTag("stubs-candidate-ecr-registry-test")
-          assumeCodeBuildRole("e2e-test-assume-role")
-         }
-      }
-
-      new InParallelStep {
-        in_parallel = new Listing {
-          new LoadVarStep { load_var = "retag-role" file = "assume-retag-role/assume-role.json" }
-          new LoadVarStep { load_var = "release_image_tag" file = "parse-candidate-tag/release-tag" }
-        }
-      }
-
-      new InParallelStep {
-        in_parallel = new Listing {
-          retagCandidateInEcr("stubs", "((.:candidate_image_tag))")
-          retagCandidateInEcr("stubs", "latest")
+          retagCandidateInEcr("stubs", "((.:release_image_tag))", "release")
+          retagCandidateInEcr("stubs", "latest", "latest")
           retagCandidateInDockerHub(
             "governmentdigitalservice/pay-stubs",
             "((.:candidate_image_tag))",
             "release"
           )
+          copyMultiarchImageToAccount("stubs")
         }
       }
     }
@@ -471,15 +516,18 @@ jobs = new {
       "#govuk-pay-starling",
       "pay-stubs failed post-merge e2e tests"
     )
-    on_success = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
       "pay-stubs passed post-merge e2e tests and was pushed as a final release"
     )
   }
 
-  copyImageToEcr("postgres-15")
-  copyImageToEcr("localstack-localstack-3")
-  copyImageToEcr("selenium-standalone-chrome-3-141-59")
+  copyImageToEcr("postgres-15-alpine", "postgres:15-alpine")
+  copyImageToEcr("localstack-localstack-3", "localstack/localstack:2.0")
+  copyImageToEcr(
+    "selenium-standalone-chrome-3-141-59",
+    "selenium/standalone-chrome:3-141-59"
+  )
 }
 
 // THINGS BELOW HERE MAY BE USEFUL IN SHARED_RESOURCES
@@ -517,11 +565,11 @@ local function putCandidateImage(putName: String): PutStep = new {
   get_params = new { ["skip_download"] = true }
 }
 
-local function assumeCodeBuildRole(sessionName: String): TaskStep = new {
+local function assumeCodeBuildRole(codeBuildRole: String, sessionName: String): TaskStep = new {
   task = "assume-role"
   file = "pay-ci/ci/tasks/assume-role.yml"
   params = new {
-    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12"
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-\(codeBuildRole)-test-12"
     ["AWS_ROLE_SESSION_NAME"] = sessionName
   }
 }
@@ -538,6 +586,18 @@ local assumeRetagRole: TaskStep = new {
   }
 }
 
+local assumeWriteToDeployRole: TaskStep = new {
+  task = "assume-write-to-deploy-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping = new {
+    ["assume-role"] = "assume-write-to-deploy-role"
+  }
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_dev_worker_ecr_access"
+    ["AWS_ROLE_SESSION_NAME"] = "write-ecr-to-deploy"
+  }
+}
+
 local function retagCandidateInDockerHub(repo: String, tag: String, taskTag: String): TaskStep = new {
   task = "retag-candidate-as-\(taskTag)-in-dockerhub"
   file = "pay-ci/ci/tasks/manifest-retag.yml"
@@ -547,17 +607,35 @@ local function retagCandidateInDockerHub(repo: String, tag: String, taskTag: Str
   }
 }
 
-local function retagCandidateInEcr(tag: String, repo: String): TaskStep = new {
-  task = "retag-candidate-as-\(tag)-in-ecr"
+local function retagCandidateInEcr(repo: String, tag: String, taskTag: String): TaskStep = new {
+  task = "retag-candidate-as-\(taskTag)-in-ecr"
   file = "pay-ci/ci/tasks/manifest-retag.yml"
   params = new {
     ["DOCKER_LOGIN_ECR"] = "1"
     ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
-    ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo)/((.:candidate_image_tag))"
-    ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo)/((.:release_image_tag))"
+    ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo):((.:candidate_image_tag))"
+    ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo):\(tag)"
     ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
     ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
     ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function copyMultiarchImageToAccount(repo: String): TaskStep = new {
+  task = "copy-images-to-\(repo)-ecr-registry-deploy"
+  file = "pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml"
+  privileged = true
+  params = new {
+    ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:write-to-deploy-role.AWS_ACCESS_KEY_ID))"
+    ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:write-to-deploy-role.AWS_SECRET_ACCESS_KEY))"
+    ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-deploy-role.AWS_SESSION_TOKEN))"
+    ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_deploy_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    ["ECR_REPO_NAME"] = "govukpay/\(repo)"
+    ["RELEASE_NUMBER"] = "((.:release_number))"
+    ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+    ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+    ["SOURCE_AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+    ["SOURCE_ECR_REGISTRY"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
   }
 }
 
@@ -580,11 +658,11 @@ local function putStep(resourceName: String, imageName: String, additionalTags: 
   }
 }
 
-local function copyImageToEcr(image: String): Job = new {
+local function copyImageToEcr(image: String, displayName: String): Job = new {
   name = "copy-\(image)"
   plan {
     new GetStep { 
-      get = "reverse-proxy-candidate-ecr-registry-test"
+      get = image
       trigger = true
       params { ["format"] = "oci" }
     }
@@ -598,10 +676,11 @@ local function copyImageToEcr(image: String): Job = new {
 
   on_failure = shared_resources.paySlackNotificationForFail(
     "#govuk-pay-starling",
-    "Copied \(image) from Docker Hub to ECR"
+    "Failed copying \(displayName) image from Docker Hub to ECR"
   )
-  on_success = shared_resources.paySlackNotificationForFail(
-    "#govuk-pay-starling",
-    "Failed copying \(image) image from Docker Hub to ECR"
+
+  on_success = shared_resources.paySlackNotificationForSuccess(
+    "#govuk-pay-activity",
+    "Copied \(displayName) image from Docker Hub to ECR"
   )
 }
