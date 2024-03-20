@@ -4,6 +4,8 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 
+local components = new Listing<String> { "endtoend" "reverse-proxy" "stubs" }
+
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/e2e-helpers.pkl", "master")
 
@@ -33,23 +35,26 @@ resources = new {
     source { ["tag"] = "latest" }
   }
 
-  (shared_resources.payECRResourceWithVariant(
-    "endtoend-candidate-ecr-registry-test", 
-    "govukpay/endtoend", 
-    "pay_aws_test_account_id", 
-    "candidate")) 
+  for (component in components) {
+    (shared_resources.payECRResourceWithVariant(
+      "\(component)-candidate-ecr-registry-test", 
+      "govukpay/\(component)", 
+      "pay_aws_test_account_id", 
+      "candidate")) 
+  }
 
-  (shared_resources.payECRResourceWithVariant(
-    "reverse-proxy-candidate-ecr-registry-test",
-    "govukpay/reverse-proxy",
-    "pay_aws_test_account_id", 
-    "candidate")) 
 
-  (shared_resources.payECRResourceWithVariant(
-    "stubs-candidate-ecr-registry-test",
-    "govukpay/stubs",
-    "pay_aws_test_account_id", 
-    "candidate")) 
+  // (shared_resources.payECRResourceWithVariant(
+  //   "reverse-proxy-candidate-ecr-registry-test",
+  //   "govukpay/reverse-proxy",
+  //   "pay_aws_test_account_id", 
+  //   "candidate")) 
+
+  // (shared_resources.payECRResourceWithVariant(
+  //   "stubs-candidate-ecr-registry-test",
+  //   "govukpay/stubs",
+  //   "pay_aws_test_account_id", 
+  //   "candidate")) 
 
   shared_resources.payDockerHubResource(
     "endtoend-dockerhub", 
@@ -183,18 +188,9 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          runCodeBuild(
-            "run-codebuild-card", "../../../../run-codebuild-configuration/card.json",
-            3
-          )
-          runCodeBuild(
-            "run-codebuild-products", "../../../../run-codebuild-configuration/products.json",
-            1
-          )
-          runCodeBuild(
-            "run-codebuild-zap", "../../../../run-codebuild-configuration/zap.json",
-            1
-          )
+          runCodeBuild("run-codebuild-card", "card.json", 3)
+          runCodeBuild("run-codebuild-products", "products.json", 1)
+          runCodeBuild("run-codebuild-zap", "zap.json", 1)
         }
       }
 
@@ -254,7 +250,7 @@ jobs = new {
       runCodeBuildMultiarch("reverse-proxy", 3)
       runCodeBuild(
         "run-codebuild-reverse-proxy-manifest",
-        "../../../../run-codebuild-configuration/reverse-proxy-manifest.json",
+        "reverse-proxy-manifest.json",
         3
       )
     }
@@ -313,18 +309,9 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          runCodeBuild(
-            "run-codebuild-card", "../../../../run-codebuild-configuration/card.json",
-            3
-          )
-          runCodeBuild(
-            "run-codebuild-products", "../../../../run-codebuild-configuration/products.json",
-            1
-          )
-          runCodeBuild(
-            "run-codebuild-zap", "../../../../run-codebuild-configuration/zap.json",
-            1
-          )
+          runCodeBuild("run-codebuild-card", "card.json", 3)
+          runCodeBuild("run-codebuild-products", "products.json", 1)
+          runCodeBuild("run-codebuild-zap", "zap.json", 1)
         }
       }
 
@@ -406,7 +393,7 @@ jobs = new {
       runCodeBuildMultiarch("stubs", 1)
       runCodeBuild(
         "run-codebuild-stubs-manifest",
-        "../../../../run-codebuild-configuration/stubs-manifest.json",
+        "stubs-manifest.json",
         1
       )
     }
@@ -480,14 +467,8 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          runCodeBuild(
-            "run-codebuild-card", "../../../../run-codebuild-configuration/card.json",
-            3
-          )
-          runCodeBuild(
-            "run-codebuild-products", "../../../../run-codebuild-configuration/products.json",
-            1
-          )
+          runCodeBuild("run-codebuild-card", "card.json", 3)
+          runCodeBuild("run-codebuild-products", "products.json", 1)
         }
       }
 
@@ -720,14 +701,14 @@ local function prepareCodeBuildMultiarch(project: String): TaskStep = new {
   }
 }
 
-local function runCodeBuild(taskName: String, pathToConfig: String, attemptCount: Int): TaskStep = new {
+local function runCodeBuild(taskName: String, config: String, attemptCount: Int): TaskStep = new {
   task = taskName
   file = "pay-ci/ci/tasks/run-codebuild.yml"
   when (attemptCount != 1) {
     attempts = attemptCount
   }
   params = new {
-    ["PATH_TO_CONFIG"] = pathToConfig
+    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(config)"
     ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
     ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
     ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
@@ -736,15 +717,7 @@ local function runCodeBuild(taskName: String, pathToConfig: String, attemptCount
 
 local function runCodeBuildMultiarch(project: String, attempts: Int): InParallelStep= new {
   in_parallel = new Listing {
-    runCodeBuild(
-      "run-codebuild-\(project)-amd64",
-      "../../../../run-codebuild-configuration/\(project)-amd64.json",
-      attempts
-    )
-    runCodeBuild(
-      "run-codebuild-\(project)-armv8",
-      "../../../../run-codebuild-configuration/\(project)-armv8.json",
-      attempts
-    )
+    runCodeBuild("run-codebuild-\(project)-amd64", "\(project)-amd64.json", attempts)
+    runCodeBuild("run-codebuild-\(project)-armv8", "\(project)-armv8.json", attempts)
   }
 }
