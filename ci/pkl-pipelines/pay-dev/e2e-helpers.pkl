@@ -120,7 +120,7 @@ jobs = new {
       }
 
       shared_resources.generateDockerCredsConfigStep
-      shared_resources.parseReleaseTag("endtoend-git-release")
+      parseReleaseTag("endtoend-git-release")
       new LoadVarStep { load_var = "release_number_tag" file = "tags/release-number" }
 
       new InParallelStep {  // One step in parallel, but that's what the original does
@@ -156,7 +156,7 @@ jobs = new {
         }
       }
 
-      shared_resources.parseCandidateTag("endtoend-candidate-ecr-registry-test")
+      parseCandidateTag("endtoend-candidate-ecr-registry-test")
 
       new LoadVarStep { 
         load_var = "candidate_number_tag" 
@@ -179,23 +179,19 @@ jobs = new {
         }
       }
 
-      shared_resources.prepareCodeBuild(
-        "endtoend", 
-        "prepare-e2e-codebuild.yml", 
-        "((.:candidate_image_tag))"
-      )
+      prepareCodeBuild("endtoend", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_resources.runCodeBuild(
+          runCodeBuild(
             "run-codebuild-card", "../../../../run-codebuild-configuration/card.json",
             3
           )
-          shared_resources.runCodeBuild(
+          runCodeBuild(
             "run-codebuild-products", "../../../../run-codebuild-configuration/products.json",
             1
           )
-          shared_resources.runCodeBuild(
+          runCodeBuild(
             "run-codebuild-zap", "../../../../run-codebuild-configuration/zap.json",
             1
           )
@@ -239,7 +235,7 @@ jobs = new {
         }
       }
 
-      shared_resources.parseReleaseTag("reverse-proxy-git-release")
+      parseReleaseTag("reverse-proxy-git-release")
 
       new InParallelStep {
         in_parallel = new Listing<Step> {
@@ -253,10 +249,10 @@ jobs = new {
       }
 
       new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" format = "json" }
-      shared_resources.prepareCodeBuildMultiarch("reverse-proxy")
+      prepareCodeBuildMultiarch("reverse-proxy")
       shared_resources.generateDockerCredsConfigStep
-      shared_resources.runCodeBuildMultiarch("reverse-proxy", 3)
-      shared_resources.runCodeBuild(
+      runCodeBuildMultiarch("reverse-proxy", 3)
+      runCodeBuild(
         "run-codebuild-reverse-proxy-manifest",
         "../../../../run-codebuild-configuration/reverse-proxy-manifest.json",
         3
@@ -286,7 +282,7 @@ jobs = new {
         }
       }
 
-      shared_resources.parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
+      parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
 
       new LoadVarStep { 
         load_var = "candidate_number_tag"
@@ -309,7 +305,7 @@ jobs = new {
         }
       }
 
-      shared_resources.prepareCodeBuild(
+      prepareCodeBuild(
         "reverse-proxy", 
         "prepare-e2e-codebuild.yml", 
         "((.:candidate_image_tag))"
@@ -317,15 +313,15 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_resources.runCodeBuild(
+          runCodeBuild(
             "run-codebuild-card", "../../../../run-codebuild-configuration/card.json",
             3
           )
-          shared_resources.runCodeBuild(
+          runCodeBuild(
             "run-codebuild-products", "../../../../run-codebuild-configuration/products.json",
             1
           )
-          shared_resources.runCodeBuild(
+          runCodeBuild(
             "run-codebuild-zap", "../../../../run-codebuild-configuration/zap.json",
             1
           )
@@ -335,7 +331,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing {
           shared_resources.generateDockerCredsConfigStep
-          shared_resources.parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
+          parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
           assumeCodeBuildRole("executor", "e2e-test-assume-role")
           assumeRetagRole
          }
@@ -394,7 +390,7 @@ jobs = new {
         }
       }
 
-      shared_resources.parseReleaseTag("stubs-git-release")
+      parseReleaseTag("stubs-git-release")
 
       new InParallelStep {
         in_parallel = new Listing<Step> {
@@ -406,9 +402,9 @@ jobs = new {
         }
       }
 
-      shared_resources.prepareCodeBuildMultiarch("stubs")
-      shared_resources.runCodeBuildMultiarch("stubs", 1)
-      shared_resources.runCodeBuild(
+      prepareCodeBuildMultiarch("stubs")
+      runCodeBuildMultiarch("stubs", 1)
+      runCodeBuild(
         "run-codebuild-stubs-manifest",
         "../../../../run-codebuild-configuration/stubs-manifest.json",
         1
@@ -441,7 +437,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing {
           shared_resources.generateDockerCredsConfigStep
-          shared_resources.parseCandidateTag("stubs-candidate-ecr-registry-test")
+          parseCandidateTag("stubs-candidate-ecr-registry-test")
           assumeCodeBuildRole("executor", "e2e-test-assume-role")
           assumeRetagRole
           assumeWriteToDeployRole
@@ -480,19 +476,15 @@ jobs = new {
         }
       }
 
-      shared_resources.prepareCodeBuild(
-        "stubs", 
-        "prepare-e2e-codebuild.yml", 
-        "((.:candidate_image_tag))"
-      )
+      prepareCodeBuild("stubs", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_resources.runCodeBuild(
+          runCodeBuild(
             "run-codebuild-card", "../../../../run-codebuild-configuration/card.json",
             3
           )
-          shared_resources.runCodeBuild(
+          runCodeBuild(
             "run-codebuild-products", "../../../../run-codebuild-configuration/products.json",
             1
           )
@@ -683,4 +675,76 @@ local function copyImageToEcr(image: String, displayName: String): Job = new {
     "#govuk-pay-activity",
     "Copied \(displayName) image from Docker Hub to ECR"
   )
+}
+
+local function parseReleaseTag(gitRelease: String): TaskStep = new {
+  task = "parse-release-tag"
+  file = "pay-ci/ci/tasks/parse-release-tag.yml"
+  input_mapping {
+    ["git-release"] = gitRelease
+  }
+}
+
+local function parseCandidateTag(ecrRepo: String): TaskStep = new {
+  task = "parse-candidate-tag"
+  file = "pay-ci/ci/tasks/parse-candidate-tag.yml"
+  input_mapping {
+    ["ecr-repo"] = ecrRepo
+  }
+}
+
+local function prepareCodeBuild(project: String, taskFile: String, tag: String): TaskStep = new {
+  task = "prepare-codebuild"
+  file = "pay-ci/ci/tasks/\(taskFile)"
+  params = new {
+    ["PROJECT_UNDER_TEST"] = project
+    ["RELEASE_TAG_UNDER_TEST"] = tag
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function prepareCodeBuildMultiarch(project: String): TaskStep = new {
+  task = "prepare-codebuild"
+  file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
+  params = new {
+    ["PROJECT_TO_BUILD"] = project
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+    ["RELEASE_NUMBER"] = "((.:release-number))"
+    ["RELEASE_NAME"] = "((.:release-name))"
+    ["RELEASE_SHA"] = "((.:release-sha))"
+    ["BUILD_DATE"] = "((.:date))"
+  }
+}
+
+local function runCodeBuild(taskName: String, pathToConfig: String, attemptCount: Int): TaskStep = new {
+  task = taskName
+  file = "pay-ci/ci/tasks/run-codebuild.yml"
+  when (attemptCount != 1) {
+    attempts = attemptCount
+  }
+  params = new {
+    ["PATH_TO_CONFIG"] = pathToConfig
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function runCodeBuildMultiarch(project: String, attempts: Int): InParallelStep= new {
+  in_parallel = new Listing {
+    runCodeBuild(
+      "run-codebuild-\(project)-amd64",
+      "../../../../run-codebuild-configuration/\(project)-amd64.json",
+      attempts
+    )
+    runCodeBuild(
+      "run-codebuild-\(project)-armv8",
+      "../../../../run-codebuild-configuration/\(project)-armv8.json",
+      attempts
+    )
+  }
 }
