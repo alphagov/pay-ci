@@ -4,8 +4,6 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 
-local components = new Listing<String> { "endtoend" "reverse-proxy" "stubs" }
-
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/e2e-helpers.pkl", "master")
 
@@ -35,26 +33,23 @@ resources = new {
     source { ["tag"] = "latest" }
   }
 
-  for (component in components) {
-    (shared_resources.payECRResourceWithVariant(
-      "\(component)-candidate-ecr-registry-test", 
-      "govukpay/\(component)", 
-      "pay_aws_test_account_id", 
-      "candidate")) 
-  }
+  (shared_resources.payECRResourceWithVariant(
+    "endtoend-candidate-ecr-registry-test",
+    "govukpay/endtoend",
+    "pay_aws_test_account_id",
+    "candidate"))
 
+  (shared_resources.payECRResourceWithVariant(
+    "reverse-proxy-candidate-ecr-registry-test",
+    "govukpay/reverse-proxy",
+    "pay_aws_test_account_id",
+    "candidate"))
 
-  // (shared_resources.payECRResourceWithVariant(
-  //   "reverse-proxy-candidate-ecr-registry-test",
-  //   "govukpay/reverse-proxy",
-  //   "pay_aws_test_account_id", 
-  //   "candidate")) 
-
-  // (shared_resources.payECRResourceWithVariant(
-  //   "stubs-candidate-ecr-registry-test",
-  //   "govukpay/stubs",
-  //   "pay_aws_test_account_id", 
-  //   "candidate")) 
+  (shared_resources.payECRResourceWithVariant(
+    "stubs-candidate-ecr-registry-test",
+    "govukpay/stubs",
+    "pay_aws_test_account_id",
+    "candidate"))
 
   shared_resources.payDockerHubResource(
     "endtoend-dockerhub", 
@@ -227,7 +222,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing<Step> {
           new GetStep { get = "pay-ci" }
-          new GetStep { get = "reverse-proxy-git-release" trigger = true } //sub
+          new GetStep { get = "reverse-proxy-git-release" trigger = true }
         }
       }
 
@@ -301,11 +296,7 @@ jobs = new {
         }
       }
 
-      prepareCodeBuild(
-        "reverse-proxy", 
-        "prepare-e2e-codebuild.yml", 
-        "((.:candidate_image_tag))"
-      )
+      prepareCodeBuild("reverse-proxy", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
@@ -381,9 +372,9 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new LoadVarStep { load_var = "release-number"; file = "tags/release-number" }
-          new LoadVarStep { load_var = "release-name"; file = "stubs-git-release/.git/ref" }
-          new LoadVarStep { load_var = "release-sha"; file = "tags/release-sha" }
+          new LoadVarStep { load_var = "release-number" file = "tags/release-number" }
+          new LoadVarStep { load_var = "release-name" file = "stubs-git-release/.git/ref" }
+          new LoadVarStep { load_var = "release-sha" file = "tags/release-sha" }
           new LoadVarStep { load_var = "date" file = "tags/date" }
           new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" format = "json" }
         }
@@ -391,11 +382,7 @@ jobs = new {
 
       prepareCodeBuildMultiarch("stubs")
       runCodeBuildMultiarch("stubs", 1)
-      runCodeBuild(
-        "run-codebuild-stubs-manifest",
-        "stubs-manifest.json",
-        1
-      )
+      runCodeBuild("run-codebuild-stubs-manifest", "stubs-manifest.json", 1)
     }
     on_failure = shared_resources.paySlackNotificationForFail(
       "#govuk-pay-starling",
@@ -497,10 +484,7 @@ jobs = new {
 
   copyImageToEcr("postgres-15-alpine", "postgres:15-alpine")
   copyImageToEcr("localstack-localstack-3", "localstack/localstack:2.0")
-  copyImageToEcr(
-    "selenium-standalone-chrome-3-141-59",
-    "selenium/standalone-chrome:3-141-59"
-  )
+  copyImageToEcr("selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome:3-141-59")
 }
 
 // THINGS BELOW HERE MAY BE USEFUL IN SHARED_RESOURCES
