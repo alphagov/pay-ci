@@ -6,98 +6,65 @@ import "../common/shared_resources.pkl"
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/e2e-helpers.pkl", "master")
-
   shared_resources.payCiGitHubResource
 
   (shared_resources.payGithubResourceWithBranch("e2e-helpers-pipeline", "pay-ci", "master")) {
     source { ["paths"] = new Listing<String> { "ci/pipelines/e2e-helpers.yml" } }
   }
 
-  (shared_resources.payGithubResourceWithBranch("endtoend-git-release", "pay-endtoend", "master")) {
-    source { ["tag_regex"] = "alpha_release-(.*)" }
-  }
+  shared_resources.payGithubResourceWithBranch("endtoend-git-release", "pay-endtoend", "master")
+    |>withTagRegex("alpha_release-(.*)")
+  
+  shared_resources.payGithubResourceWithBranch("stubs-git-release", "pay-stubs", "master") 
+    |>withTagRegex("alpha_release-(.*)")
 
-  (shared_resources.payGithubResourceWithBranch("stubs-git-release", "pay-stubs", "master")) {
-    source { ["tag_regex"] = "alpha_release-(.*)" }
-  }
+  shared_resources.payGithubResourceWithBranch("reverse-proxy-git-release", "pay-scripts", "master")
+    |>withTagRegex("reverse_proxy_alpha_release-(.*)")
 
-  (shared_resources.payGithubResourceWithBranch(
-    "reverse-proxy-git-release", "pay-scripts", "master")
-  ) {
-    source { ["tag_regex"] = "reverse_proxy_alpha_release-(.*)" }
-  }
+  shared_resources.payECRResource(
+    "endtoend-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id"
+  ) |>withTag("latest")
 
-  (shared_resources.payECRResource(
-    "endtoend-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id")
-  ) {
-    source { ["tag"] = "latest" }
-  }
+  shared_resources.payECRResourceWithVariant(
+    "endtoend-candidate-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id", "candidate"
+  )
 
-  (shared_resources.payECRResourceWithVariant(
-    "endtoend-candidate-ecr-registry-test",
-    "govukpay/endtoend",
-    "pay_aws_test_account_id",
-    "candidate"))
-
-  (shared_resources.payECRResourceWithVariant(
+  shared_resources.payECRResourceWithVariant(
     "reverse-proxy-candidate-ecr-registry-test",
     "govukpay/reverse-proxy",
     "pay_aws_test_account_id",
-    "candidate"))
+    "candidate")
 
-  (shared_resources.payECRResourceWithVariant(
+  shared_resources.payECRResourceWithVariant(
     "stubs-candidate-ecr-registry-test",
     "govukpay/stubs",
     "pay_aws_test_account_id",
-    "candidate"))
+    "candidate")
 
   shared_resources.payDockerHubResource(
-    "endtoend-dockerhub", 
-    "governmentdigitalservice/pay-endtoend", 
-    "latest-master")
+    "endtoend-dockerhub", "governmentdigitalservice/pay-endtoend", "latest-master"
+  )
 
-  (shared_resources.payDockerHubResource("postgres-15-alpine", "postgres", "15-alpine")) {
-    check_every = "1h" 
-  }
+  shared_resources.payDockerHubResource("postgres-15-alpine", "postgres", "15-alpine") 
+    |>withCheckInterval("1h")
 
-  (shared_resources.payECRResource(
-    "ecr-postgres-15-alpine", "postgres", "pay_aws_test_account_id")
-  ) {
-    check_every = "never"
-    source { ["tag"] = "15-alpine" }
-  }
+  shared_resources.payECRResource("ecr-postgres-15-alpine", "postgres", "pay_aws_test_account_id")
+    |>withTag("15-alpine") |>withCheckInterval("never")
 
-  (shared_resources.payDockerHubResource(
-    "localstack-localstack-3", 
-    "localstack/localstack", "3")
-  ) {
-    check_every = "1h"
-  }
+  shared_resources.payDockerHubResource("localstack-localstack-3", "localstack/localstack", "3")
+    |>withCheckInterval("1h")
 
-  (shared_resources.payECRResource(
-    "ecr-localstack-localstack-3", 
-    "localstack/localstack", 
-    "pay_aws_test_account_id")
-  ) {
-    check_every = "never"
-    source { ["tag"] = "3" }
-  }
+  shared_resources.payECRResource(
+    "ecr-localstack-localstack-3", "localstack/localstack", "pay_aws_test_account_id"
+  ) |>withTag("3") |>withCheckInterval("never")
 
-  (shared_resources.payDockerHubResource(
-    "selenium-standalone-chrome-3-141-59",
-    "selenium/standalone-chrome",
-     "3.141.59")) {
-    check_every = "1h"
-  }
+  shared_resources.payDockerHubResource(
+    "selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome", "3.141.59"
+  ) |>withCheckInterval("1h")
 
-  (shared_resources.payECRResource(
-    "ecr-selenium-standalone-chrome-3-141-59",
-    "selenium/standalone-chrome",
-    "pay_aws_test_account_id")
-  ) {
-    check_every = "never"
-    source { ["tag"] = "3.141.59" }
-  }
+  shared_resources.payECRResource(
+    "ecr-selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome", "pay_aws_test_account_id"
+  ) |>withTag("3.141.59") |>withCheckInterval("never")
 
   shared_resources.slackNotificationResource
 }
@@ -114,21 +81,15 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new GetStep { get = "endtoend-git-release" trigger = true }
-          new GetStep { get = "pay-ci" }
+          getStep("endtoend-git-release", true, false)
+          getPayCi
         }
       }
 
       shared_resources.generateDockerCredsConfigStep
       parseReleaseTag("endtoend-git-release")
-      new LoadVarStep { load_var = "release_number_tag" file = "tags/release-number" }
-
-      new InParallelStep {  // One step in parallel, but that's what the original does
-        in_parallel = new Listing<Step> {
-          buildImage("build-endtoend-image", "endtoend-git-release")
-        }
-      }
-
+      loadVar("release_number_tag", "tags/release-number")
+      buildImage("build-endtoend-image", "endtoend-git-release")
       putCandidateImage("endtoend-candidate-ecr-registry-test")
     }
     on_failure = shared_resources.paySlackNotificationForFail(
@@ -152,30 +113,18 @@ jobs = new {
             passed = new Listing { "build-and-push-endtoend-candidate" }
             params { ["format"] = "oci" }
           }
-          new GetStep { get = "pay-ci" }
+          getPayCi
         }
       }
 
       parseCandidateTag("endtoend-candidate-ecr-registry-test")
-
-      new LoadVarStep { 
-        load_var = "candidate_number_tag" 
-        file = "parse-candidate-tag/release-number" 
-      }
-
+      loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
       assumeCodeBuildRole("executor", "e2e-test-assume-role")
 
       new InParallelStep {
         in_parallel = new Listing {
-          new LoadVarStep { 
-            load_var = "candidate_image_tag" 
-            file = "endtoend-candidate-ecr-registry-test/tag" 
-          }
-          new LoadVarStep { 
-            load_var = "role" 
-            file = "assume-role/assume-role.json"
-            format = "json"
-          }
+          loadVar("candidate_image_tag", "endtoend-candidate-ecr-registry-test/tag" )
+          loadAssumeRoleVar
         }
       }
 
@@ -221,8 +170,8 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new GetStep { get = "pay-ci" }
-          new GetStep { get = "reverse-proxy-git-release" trigger = true }
+          getPayCi
+          getStep("reverse-proxy-git-release", true, false)
         }
       }
 
@@ -230,16 +179,16 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new LoadVarStep { load_var = "release-number" file = "tags/release-number" }
-          new LoadVarStep { load_var = "release-name" file = "reverse-proxy-git-release/.git/ref" }
-          new LoadVarStep { load_var = "release-sha" file = "tags/release-sha" }
-          new LoadVarStep { load_var = "candidate-image-tag" file = "tags/candidate-tag" }
-          new LoadVarStep { load_var = "date" file = "tags/date" }
+          loadVar("release-number", "tags/release-number") 
+          loadVar("release-name", "reverse-proxy-git-release/.git/ref") 
+          loadVar("release-sha", "tags/release-sha") 
+          loadVar("candidate-image-tag", "tags/candidate-tag") 
+          loadVar("date", "tags/date") 
           assumeCodeBuildRole("builder", "codebuild-assume-role")
         }
       }
 
-      new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" format = "json" }
+      loadAssumeRoleVar
       prepareCodeBuildMultiarch("reverse-proxy")
       shared_resources.generateDockerCredsConfigStep
       runCodeBuildMultiarch("reverse-proxy", 3)
@@ -264,35 +213,19 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing {
-          new GetStep { 
-            get = "reverse-proxy-candidate-ecr-registry-test"
-            trigger = true
-            params { ["format"] = "oci" }
-          }
-          new GetStep { get = "pay-ci" }
+          getStep("reverse-proxy-candidate-ecr-registry-test", true, true)
+          getPayCi
         }
       }
 
       parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
-
-      new LoadVarStep { 
-        load_var = "candidate_number_tag"
-        file = "parse-candidate-tag/release-number" 
-      }
-
+      loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
       assumeCodeBuildRole("executor", "e2e-test-assume-role")
 
       new InParallelStep {
         in_parallel = new Listing {
-          new LoadVarStep { 
-            load_var = "candidate_image_tag" 
-            file = "reverse-proxy-candidate-ecr-registry-test/tag" 
-          }
-          new LoadVarStep { 
-            load_var = "role" 
-            file = "assume-role/assume-role.json"
-            format = "json"
-          }
+          loadVar("candidate_image_tag", "reverse-proxy-candidate-ecr-registry-test/tag")
+          loadAssumeRoleVar
         }
       }
 
@@ -317,15 +250,8 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          new LoadVarStep { 
-            load_var = "retag-role" 
-            file = "assume-retag-role/assume-role.json" 
-            format = "json"
-          }
-          new LoadVarStep { 
-            load_var = "release_image_tag" 
-            file = "parse-candidate-tag/release-tag" 
-          }
+          loadVarJson("retag-role", "assume-retag-role/assume-role.json")
+          loadVar("release_image_tag", "parse-candidate-tag/release-tag")
         }
       }
 
@@ -356,8 +282,8 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new GetStep { get = "stubs-git-release" trigger = true } 
-          new GetStep { get = "pay-ci" }
+          getStep("stubs-git-release", true, false) 
+          getPayCi
         }
       }
 
@@ -372,11 +298,11 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new LoadVarStep { load_var = "release-number" file = "tags/release-number" }
-          new LoadVarStep { load_var = "release-name" file = "stubs-git-release/.git/ref" }
-          new LoadVarStep { load_var = "release-sha" file = "tags/release-sha" }
-          new LoadVarStep { load_var = "date" file = "tags/date" }
-          new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" format = "json" }
+          loadVar("release-number", "tags/release-number")
+          loadVar("release-name", "stubs-git-release/.git/ref")
+          loadVar("release-sha", "tags/release-sha")
+          loadVar("date", "tags/date")
+          loadAssumeRoleVar
         }
       }
 
@@ -399,12 +325,8 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing {
-          new GetStep { 
-            get = "stubs-candidate-ecr-registry-test"
-            trigger = true
-            params { ["format"] = "oci" }
-          }
-          new GetStep { get = "pay-ci" }
+          getStep("stubs-candidate-ecr-registry-test", true, true)
+          getPayCi
         }
       }
 
@@ -420,33 +342,12 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          new LoadVarStep { 
-            load_var = "candidate_image_tag" 
-            file = "stubs-candidate-ecr-registry-test/tag" 
-          }
-          new LoadVarStep { 
-            load_var = "role" 
-            file = "assume-role/assume-role.json"
-            format = "json"
-          }
-          new LoadVarStep { 
-            load_var = "retag-role" 
-            file = "assume-retag-role/assume-role.json"
-            format = "json"
-          }
-          new LoadVarStep { 
-            load_var = "write-to-deploy-role" 
-            file = "assume-write-to-deploy-role/assume-role.json"
-            format = "json"
-          }
-          new LoadVarStep { 
-            load_var = "release_image_tag" 
-            file = "parse-candidate-tag/release-tag"
-          }
-          new LoadVarStep { 
-            load_var = "release_number" 
-            file = "parse-candidate-tag/release-number"
-          }
+          loadVar("candidate_image_tag", "stubs-candidate-ecr-registry-test/tag")
+          loadAssumeRoleVar
+          loadVarJson("retag-role", "assume-retag-role/assume-role.json")
+          loadVarJson("write-to-deploy-role", "assume-write-to-deploy-role/assume-role.json")
+          loadVar("release_image_tag", "parse-candidate-tag/release-tag")
+          loadVar("release_number", "parse-candidate-tag/release-number")
         }
       }
 
@@ -513,14 +414,8 @@ local function buildImage(taskName: String, context: String): TaskStep = new {
   }
 }
 
-local function putCandidateImage(putName: String): PutStep = new {
-  put = putName
-  params = new {
-    ["image"] = "image/image.tar"
-    ["additional_tags"] = "tags/candidate-tag"
-  }
-  get_params = new { ["skip_download"] = true }
-}
+local function putCandidateImage(putName: String): PutStep = 
+  putStep(putName, "image/image.tar", "tags/candidate-tag", true)
 
 local function assumeCodeBuildRole(codeBuildRole: String, sessionName: String): TaskStep = new {
   task = "assume-role"
@@ -596,46 +491,16 @@ local function copyMultiarchImageToAccount(repo: String): TaskStep = new {
   }
 }
 
-// COPIED FROM prometheus-pushgateway.pkl -- MOVE TO SHARED_RESOURCES?
-
-local function putStep(resourceName: String, imageName: String, additionalTags: String, skipDownload: Boolean): PutStep = new PutStep {
-  put = resourceName
-  params {
-    when (imageName.length > 0) {
-      ["image"] = imageName
-    }
-    when (additionalTags.length > 0) {
-      ["additional_tags"] = additionalTags
-    }
-  }
-  get_params {
-    when (skipDownload) {
-      ["skip_download"] = true
-    }
-  }
-}
-
 local function copyImageToEcr(image: String, displayName: String): Job = new {
   name = "copy-\(image)"
   plan {
-    new GetStep { 
-      get = image
-      trigger = true
-      params { ["format"] = "oci" }
-    }
-
-    new PutStep {
-      put = "ecr-\(image)"
-      params { ["image"] = "\(image)/image.tar" }
-      get_params { ["skip_download"] = true }
-    }
+    getStep(image, true, true)
+    putStep("ecr-\(image)", "\(image)/image.tar", "", true)
   }
-
   on_failure = shared_resources.paySlackNotificationForFail(
     "#govuk-pay-starling",
     "Failed copying \(displayName) image from Docker Hub to ECR"
   )
-
   on_success = shared_resources.paySlackNotificationForSuccess(
     "#govuk-pay-activity",
     "Copied \(displayName) image from Docker Hub to ECR"
@@ -705,3 +570,66 @@ local function runCodeBuildMultiarch(project: String, attempts: Int): InParallel
     runCodeBuild("run-codebuild-\(project)-armv8", "\(project)-armv8.json", attempts)
   }
 }
+
+local getPayCi = new GetStep { get = "pay-ci" }
+
+local loadAssumeRoleVar = new LoadVarStep { 
+  load_var = "role" 
+  file = "assume-role/assume-role.json" 
+  format = "json"
+}
+
+local function withTagRegex(tag: String) = new Mixin {
+  source { ["tag_regex"] = tag  }
+}
+
+local function withTag(tag: String) = new Mixin {
+  source { ["tag"] = tag  }
+}
+
+local function withCheckInterval(interval: String) = new Mixin {
+  check_every = interval
+}
+
+// FUNCTIONS BELOW HERE COPIED FROM prometheus-pushgateway.pkl -- MOVE TO SHARED_RESOURCES?
+
+local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+}
+
+local function loadVarJson(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+  format = "json"
+}
+
+local function getStep(resourceName: String, shouldTrigger: Boolean, isOci: Boolean): GetStep = new GetStep {
+  get = resourceName
+  when (shouldTrigger) {
+    trigger = true
+  }
+  when (isOci) {
+    params {
+      ["format"] = "oci"
+    }
+  }
+}
+
+local function putStep(resourceName: String, imageName: String, additionalTags: String, skipDownload: Boolean): PutStep = new PutStep {
+  put = resourceName
+  params {
+    when (imageName.length > 0) {
+      ["image"] = imageName
+    }
+    when (additionalTags.length > 0) {
+      ["additional_tags"] = additionalTags
+    }
+  }
+  get_params {
+    when (skipDownload) {
+      ["skip_download"] = true
+    }
+  }
+}
+
