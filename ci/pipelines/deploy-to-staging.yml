@@ -163,7 +163,7 @@ definitions:
 
   pushgateway_default_labels: &pushgateway_default_labels
     pipeline: "$BUILD_PIPELINE_NAME"
-    conocurse_job: "$BUILD_JOB_NAME"
+    concourse_job: "$BUILD_JOB_NAME"
     app: "((.:app_name))"
     environment: staging-2
     instance: "concourse"
