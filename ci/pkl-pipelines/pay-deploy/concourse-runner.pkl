@@ -177,13 +177,16 @@ local function testConcourseRunnerTask(imageName: String, appRepo: String): Pipe
     platform = "linux"
     inputs{
       new {
+        name = "pay-ci"
+      }
+      new {
         name = "app-repo"
       }
     }
     run {
       path = "/bin/bash"
       args {
-        "pay-ci/ci/scripts/test-concourse-runner"
+        "pay-ci/ci/scripts/test-concourse-runner.sh"
       }
     }
   }
