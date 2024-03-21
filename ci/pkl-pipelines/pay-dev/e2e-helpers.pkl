@@ -1,0 +1,635 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/TaskConfig.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/e2e-helpers.pkl", "master")
+  shared_resources.payCiGitHubResource
+
+  (shared_resources.payGithubResourceWithBranch("e2e-helpers-pipeline", "pay-ci", "master")) {
+    source { ["paths"] = new Listing<String> { "ci/pipelines/e2e-helpers.yml" } }
+  }
+
+  shared_resources.payGithubResourceWithBranch("endtoend-git-release", "pay-endtoend", "master")
+    |>withTagRegex("alpha_release-(.*)")
+  
+  shared_resources.payGithubResourceWithBranch("stubs-git-release", "pay-stubs", "master") 
+    |>withTagRegex("alpha_release-(.*)")
+
+  shared_resources.payGithubResourceWithBranch("reverse-proxy-git-release", "pay-scripts", "master")
+    |>withTagRegex("reverse_proxy_alpha_release-(.*)")
+
+  shared_resources.payECRResource(
+    "endtoend-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id"
+  ) |>withTag("latest")
+
+  shared_resources.payECRResourceWithVariant(
+    "endtoend-candidate-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id", "candidate"
+  )
+
+  shared_resources.payECRResourceWithVariant(
+    "reverse-proxy-candidate-ecr-registry-test",
+    "govukpay/reverse-proxy",
+    "pay_aws_test_account_id",
+    "candidate")
+
+  shared_resources.payECRResourceWithVariant(
+    "stubs-candidate-ecr-registry-test",
+    "govukpay/stubs",
+    "pay_aws_test_account_id",
+    "candidate")
+
+  shared_resources.payDockerHubResource(
+    "endtoend-dockerhub", "governmentdigitalservice/pay-endtoend", "latest-master"
+  )
+
+  shared_resources.payDockerHubResource("postgres-15-alpine", "postgres", "15-alpine") 
+    |>withCheckInterval("1h")
+
+  shared_resources.payECRResource("ecr-postgres-15-alpine", "postgres", "pay_aws_test_account_id")
+    |>withTag("15-alpine") |>withCheckInterval("never")
+
+  shared_resources.payDockerHubResource("localstack-localstack-3", "localstack/localstack", "3")
+    |>withCheckInterval("1h")
+
+  shared_resources.payECRResource(
+    "ecr-localstack-localstack-3", "localstack/localstack", "pay_aws_test_account_id"
+  ) |>withTag("3") |>withCheckInterval("never")
+
+  shared_resources.payDockerHubResource(
+    "selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome", "3.141.59"
+  ) |>withCheckInterval("1h")
+
+  shared_resources.payECRResource(
+    "ecr-selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome", "pay_aws_test_account_id"
+  ) |>withTag("3.141.59") |>withCheckInterval("never")
+
+  shared_resources.slackNotificationResource
+}
+
+resource_types = new {
+  shared_resources.slackNotificationResourceType
+}
+
+jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/e2e-helpers.pkl")
+
+  new {
+    name = "build-and-push-endtoend-candidate"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          getStep("endtoend-git-release", true, false)
+          getPayCi
+        }
+      }
+
+      shared_resources.generateDockerCredsConfigStep
+      parseReleaseTag("endtoend-git-release")
+      loadVar("release_number_tag", "tags/release-number")
+      buildImage("build-endtoend-image", "endtoend-git-release")
+      putCandidateImage("endtoend-candidate-ecr-registry-test")
+    }
+    on_failure = shared_resources.paySlackNotificationForFail(
+      "#govuk-pay-starling",
+      "Failed to build and push pay-endtoend candidate image"
+    )
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
+      "Built and pushed pay-endtoend candidate image"
+    )
+  }
+
+  new {
+    name = "endtoend-e2e"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing {
+          new GetStep { 
+            get = "endtoend-candidate-ecr-registry-test"
+            trigger = true
+            passed = new Listing { "build-and-push-endtoend-candidate" }
+            params { ["format"] = "oci" }
+          }
+          getPayCi
+        }
+      }
+
+      parseCandidateTag("endtoend-candidate-ecr-registry-test")
+      loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
+      assumeCodeBuildRole("executor", "e2e-test-assume-role")
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          loadVar("candidate_image_tag", "endtoend-candidate-ecr-registry-test/tag" )
+          loadAssumeRoleVar
+        }
+      }
+
+      prepareCodeBuild("endtoend", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          runCodeBuild("run-codebuild-card", "card.json", 3)
+          runCodeBuild("run-codebuild-products", "products.json", 1)
+          runCodeBuild("run-codebuild-zap", "zap.json", 1)
+        }
+      }
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          putStep(
+            "endtoend-ecr-registry-test",
+            "endtoend-candidate-ecr-registry-test/image.tar",
+            "parse-candidate-tag/release-tag",
+            true
+          )
+          putStep(
+            "endtoend-dockerhub",
+            "endtoend-candidate-ecr-registry-test/image.tar",
+            "",
+            true
+          )
+        }
+      }
+    }
+    on_failure = shared_resources.paySlackNotificationForFail(
+      "#govuk-pay-starling",
+      "pay-endtoend failed post-merge e2e tests"
+    )
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
+      "pay-endtoend passed post-merge e2e tests and was pushed as a final release"
+    )
+  }
+
+  new {
+    name = "build-and-push-reverse-proxy-candidate"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          getPayCi
+          getStep("reverse-proxy-git-release", true, false)
+        }
+      }
+
+      parseReleaseTag("reverse-proxy-git-release")
+
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          loadVar("release-number", "tags/release-number") 
+          loadVar("release-name", "reverse-proxy-git-release/.git/ref") 
+          loadVar("release-sha", "tags/release-sha") 
+          loadVar("candidate-image-tag", "tags/candidate-tag") 
+          loadVar("date", "tags/date") 
+          assumeCodeBuildRole("builder", "codebuild-assume-role")
+        }
+      }
+
+      loadAssumeRoleVar
+      prepareCodeBuildMultiarch("reverse-proxy")
+      shared_resources.generateDockerCredsConfigStep
+      runCodeBuildMultiarch("reverse-proxy", 3)
+      runCodeBuild(
+        "run-codebuild-reverse-proxy-manifest",
+        "reverse-proxy-manifest.json",
+        3
+      )
+    }
+    on_failure = shared_resources.paySlackNotificationForFail(
+      "#govuk-pay-starling",
+      "Failed to build and push e2e helper reverse-proxy"
+    )
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
+      "Built and pushed e2e helper reverse-proxy"
+    )
+  }
+
+  new {
+    name = "reverse-proxy-e2e"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing {
+          getStep("reverse-proxy-candidate-ecr-registry-test", true, true)
+          getPayCi
+        }
+      }
+
+      parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
+      loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
+      assumeCodeBuildRole("executor", "e2e-test-assume-role")
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          loadVar("candidate_image_tag", "reverse-proxy-candidate-ecr-registry-test/tag")
+          loadAssumeRoleVar
+        }
+      }
+
+      prepareCodeBuild("reverse-proxy", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          runCodeBuild("run-codebuild-card", "card.json", 3)
+          runCodeBuild("run-codebuild-products", "products.json", 1)
+          runCodeBuild("run-codebuild-zap", "zap.json", 1)
+        }
+      }
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          shared_resources.generateDockerCredsConfigStep
+          parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
+          assumeCodeBuildRole("executor", "e2e-test-assume-role")
+          assumeRetagRole
+         }
+      }
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          loadVarJson("retag-role", "assume-retag-role/assume-role.json")
+          loadVar("release_image_tag", "parse-candidate-tag/release-tag")
+        }
+      }
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          retagCandidateInEcr("reverse-proxy", "((.:release_image_tag))", "release")
+          retagCandidateInEcr("reverse-proxy", "latest", "latest")
+          retagCandidateInDockerHub(
+            "governmentdigitalservice/pay-reverse-proxy",
+            "((.:candidate_image_tag))",
+            "release"
+          )
+        }
+      }
+    }
+    on_failure = shared_resources.paySlackNotificationForFail(
+      "#govuk-pay-starling",
+      "e2e helper reverse-proxy failed post-merge e2e tests"
+    )
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
+      "e2e helper reverse-proxy passed post-merge e2e tests and was pushed as a final release"
+    )
+  }
+
+  new {
+    name = "build-and-push-stubs-candidate" 
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          getStep("stubs-git-release", true, false) 
+          getPayCi
+        }
+      }
+
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          shared_resources.generateDockerCredsConfigStep
+          assumeCodeBuildRole("builder", "codebuild-assume-role")
+        }
+      }
+
+      parseReleaseTag("stubs-git-release")
+
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          loadVar("release-number", "tags/release-number")
+          loadVar("release-name", "stubs-git-release/.git/ref")
+          loadVar("release-sha", "tags/release-sha")
+          loadVar("date", "tags/date")
+          loadAssumeRoleVar
+        }
+      }
+
+      prepareCodeBuildMultiarch("stubs")
+      runCodeBuildMultiarch("stubs", 1)
+      runCodeBuild("run-codebuild-stubs-manifest", "stubs-manifest.json", 1)
+    }
+    on_failure = shared_resources.paySlackNotificationForFail(
+      "#govuk-pay-starling",
+      "Failed to build and push pay-stubs candidate image"
+    )
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
+      "Built and pushed pay-stubs candidate image"
+    )
+  }
+
+  new {
+    name = "stubs-e2e"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing {
+          getStep("stubs-candidate-ecr-registry-test", true, true)
+          getPayCi
+        }
+      }
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          shared_resources.generateDockerCredsConfigStep
+          parseCandidateTag("stubs-candidate-ecr-registry-test")
+          assumeCodeBuildRole("executor", "e2e-test-assume-role")
+          assumeRetagRole
+          assumeWriteToDeployRole
+        }
+      }
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          loadVar("candidate_image_tag", "stubs-candidate-ecr-registry-test/tag")
+          loadAssumeRoleVar
+          loadVarJson("retag-role", "assume-retag-role/assume-role.json")
+          loadVarJson("write-to-deploy-role", "assume-write-to-deploy-role/assume-role.json")
+          loadVar("release_image_tag", "parse-candidate-tag/release-tag")
+          loadVar("release_number", "parse-candidate-tag/release-number")
+        }
+      }
+
+      prepareCodeBuild("stubs", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          runCodeBuild("run-codebuild-card", "card.json", 3)
+          runCodeBuild("run-codebuild-products", "products.json", 1)
+        }
+      }
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          retagCandidateInEcr("stubs", "((.:release_image_tag))", "release")
+          retagCandidateInEcr("stubs", "latest", "latest")
+          retagCandidateInDockerHub(
+            "governmentdigitalservice/pay-stubs",
+            "((.:candidate_image_tag))",
+            "release"
+          )
+          copyMultiarchImageToAccount("stubs")
+        }
+      }
+    }
+    on_failure = shared_resources.paySlackNotificationForFail(
+      "#govuk-pay-starling",
+      "pay-stubs failed post-merge e2e tests"
+    )
+    on_success = shared_resources.paySlackNotificationForSuccess(
+      "#govuk-pay-activity",
+      "pay-stubs passed post-merge e2e tests and was pushed as a final release"
+    )
+  }
+
+  copyImageToEcr("postgres-15-alpine", "postgres:15-alpine")
+  copyImageToEcr("localstack-localstack-3", "localstack/localstack:2.0")
+  copyImageToEcr("selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome:3-141-59")
+}
+
+// THINGS BELOW HERE MAY BE USEFUL IN SHARED_RESOURCES
+
+local function buildImage(taskName: String, context: String): TaskStep = new {
+  task = taskName
+  privileged = true
+  params {
+    ["CONTEXT"] = context
+    ["DOCKER_CONFIG"] = "docker_creds"
+  }
+  config {
+    platform = "linux"
+    image_resource {
+      type = "registry-image"
+      source { ["repository"] = "concourse/oci-build-task" }
+    }
+    inputs = new Listing {
+      new TaskConfig.Input { name = context }
+      new TaskConfig.Input { name = "docker_creds" }
+    }
+    outputs = new Listing {
+      new TaskConfig.Output { name = "image" }
+    }
+    run { path = "build" }
+  }
+}
+
+local function putCandidateImage(putName: String): PutStep = 
+  putStep(putName, "image/image.tar", "tags/candidate-tag", true)
+
+local function assumeCodeBuildRole(codeBuildRole: String, sessionName: String): TaskStep = new {
+  task = "assume-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-\(codeBuildRole)-test-12"
+    ["AWS_ROLE_SESSION_NAME"] = sessionName
+  }
+}
+
+local assumeRetagRole: TaskStep = new {
+  task = "assume-retag-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping = new {
+    ["assume-role"] = "assume-retag-role"
+  }
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "retag-ecr-image-as-release"
+  }
+}
+
+local assumeWriteToDeployRole: TaskStep = new {
+  task = "assume-write-to-deploy-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping = new {
+    ["assume-role"] = "assume-write-to-deploy-role"
+  }
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_dev_worker_ecr_access"
+    ["AWS_ROLE_SESSION_NAME"] = "write-ecr-to-deploy"
+  }
+}
+
+local function retagCandidateInDockerHub(repo: String, tag: String, taskTag: String): TaskStep = new {
+  task = "retag-candidate-as-\(taskTag)-in-dockerhub"
+  file = "pay-ci/ci/tasks/manifest-retag.yml"
+  params = new {
+    ["SOURCE_MANIFEST"] = "\(repo):\(tag)"
+    ["NEW_MANIFEST"] = "\(repo):latest-master"
+  }
+}
+
+local function retagCandidateInEcr(repo: String, tag: String, taskTag: String): TaskStep = new {
+  task = "retag-candidate-as-\(taskTag)-in-ecr"
+  file = "pay-ci/ci/tasks/manifest-retag.yml"
+  params = new {
+    ["DOCKER_LOGIN_ECR"] = "1"
+    ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
+    ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo):((.:candidate_image_tag))"
+    ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo):\(tag)"
+    ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function copyMultiarchImageToAccount(repo: String): TaskStep = new {
+  task = "copy-images-to-\(repo)-ecr-registry-deploy"
+  file = "pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml"
+  privileged = true
+  params = new {
+    ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:write-to-deploy-role.AWS_ACCESS_KEY_ID))"
+    ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:write-to-deploy-role.AWS_SECRET_ACCESS_KEY))"
+    ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-deploy-role.AWS_SESSION_TOKEN))"
+    ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_deploy_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    ["ECR_REPO_NAME"] = "govukpay/\(repo)"
+    ["RELEASE_NUMBER"] = "((.:release_number))"
+    ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+    ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+    ["SOURCE_AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+    ["SOURCE_ECR_REGISTRY"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+  }
+}
+
+local function copyImageToEcr(image: String, displayName: String): Job = new {
+  name = "copy-\(image)"
+  plan {
+    getStep(image, true, true)
+    putStep("ecr-\(image)", "\(image)/image.tar", "", true)
+  }
+  on_failure = shared_resources.paySlackNotificationForFail(
+    "#govuk-pay-starling",
+    "Failed copying \(displayName) image from Docker Hub to ECR"
+  )
+  on_success = shared_resources.paySlackNotificationForSuccess(
+    "#govuk-pay-activity",
+    "Copied \(displayName) image from Docker Hub to ECR"
+  )
+}
+
+local function parseReleaseTag(gitRelease: String): TaskStep = new {
+  task = "parse-release-tag"
+  file = "pay-ci/ci/tasks/parse-release-tag.yml"
+  input_mapping {
+    ["git-release"] = gitRelease
+  }
+}
+
+local function parseCandidateTag(ecrRepo: String): TaskStep = new {
+  task = "parse-candidate-tag"
+  file = "pay-ci/ci/tasks/parse-candidate-tag.yml"
+  input_mapping {
+    ["ecr-repo"] = ecrRepo
+  }
+}
+
+local function prepareCodeBuild(project: String, taskFile: String, tag: String): TaskStep = new {
+  task = "prepare-codebuild"
+  file = "pay-ci/ci/tasks/\(taskFile)"
+  params = new {
+    ["PROJECT_UNDER_TEST"] = project
+    ["RELEASE_TAG_UNDER_TEST"] = tag
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function prepareCodeBuildMultiarch(project: String): TaskStep = new {
+  task = "prepare-codebuild"
+  file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
+  params = new {
+    ["PROJECT_TO_BUILD"] = project
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+    ["RELEASE_NUMBER"] = "((.:release-number))"
+    ["RELEASE_NAME"] = "((.:release-name))"
+    ["RELEASE_SHA"] = "((.:release-sha))"
+    ["BUILD_DATE"] = "((.:date))"
+  }
+}
+
+local function runCodeBuild(taskName: String, config: String, attemptCount: Int): TaskStep = new {
+  task = taskName
+  file = "pay-ci/ci/tasks/run-codebuild.yml"
+  when (attemptCount != 1) {
+    attempts = attemptCount
+  }
+  params = new {
+    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(config)"
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function runCodeBuildMultiarch(project: String, attempts: Int): InParallelStep= new {
+  in_parallel = new Listing {
+    runCodeBuild("run-codebuild-\(project)-amd64", "\(project)-amd64.json", attempts)
+    runCodeBuild("run-codebuild-\(project)-armv8", "\(project)-armv8.json", attempts)
+  }
+}
+
+local getPayCi = new GetStep { get = "pay-ci" }
+
+local loadAssumeRoleVar = new LoadVarStep { 
+  load_var = "role" 
+  file = "assume-role/assume-role.json" 
+  format = "json"
+}
+
+local function withTagRegex(tag: String) = new Mixin {
+  source { ["tag_regex"] = tag  }
+}
+
+local function withTag(tag: String) = new Mixin {
+  source { ["tag"] = tag  }
+}
+
+local function withCheckInterval(interval: String) = new Mixin {
+  check_every = interval
+}
+
+// FUNCTIONS BELOW HERE COPIED FROM prometheus-pushgateway.pkl -- MOVE TO SHARED_RESOURCES?
+
+local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+}
+
+local function loadVarJson(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+  format = "json"
+}
+
+local function getStep(resourceName: String, shouldTrigger: Boolean, isOci: Boolean): GetStep = new GetStep {
+  get = resourceName
+  when (shouldTrigger) {
+    trigger = true
+  }
+  when (isOci) {
+    params {
+      ["format"] = "oci"
+    }
+  }
+}
+
+local function putStep(resourceName: String, imageName: String, additionalTags: String, skipDownload: Boolean): PutStep = new PutStep {
+  put = resourceName
+  params {
+    when (imageName.length > 0) {
+      ["image"] = imageName
+    }
+    when (additionalTags.length > 0) {
+      ["additional_tags"] = additionalTags
+    }
+  }
+  get_params {
+    when (skipDownload) {
+      ["skip_download"] = true
+    }
+  }
+}
+
