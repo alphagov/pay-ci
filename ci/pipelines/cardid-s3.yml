@@ -24,7 +24,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-cardid
-      branch: pp-12111/s3_bin_ranges
+      branch: master
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
@@ -45,8 +45,8 @@ resources:
 groups:
   - name: cardid
     jobs:
+      - trigger-cardid-release
       - build-and-push-cardid-s3-candidate
-
   - name: update-cardid-s3-pipeline
     jobs:
       - update-cardid-s3-pipeline
@@ -58,6 +58,20 @@ jobs:
         trigger: true
       - set_pipeline: cardid-s3
         file: cardid-s3-pipeline-definition/ci/pipelines/cardid-s3.yml
+  - name: trigger-cardid-release
+    plan:
+      - in_parallel:
+        - get: pay-ci
+        - get: worldpay-bin-ranges
+        - get: cardid-git-release
+      - task: trigger-cardid-release
+        file: pay-ci/ci/tasks/github-trigger-workflow.yml
+        input_mapping:
+          src: cardid-git-release
+        params:
+          REPO: alphagov/pay-cardid
+          WORKFLOW: ci-trigger-release.yml
+          GITHUB_TOKEN: ((github-access-token))
   - name: build-and-push-cardid-s3-candidate
     plan:
       - in_parallel:
@@ -83,9 +97,9 @@ jobs:
           AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
           AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
           AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-          RELEASE_NUMBER: S3-1
+          RELEASE_NUMBER: S3-2
           RELEASE_NAME: S3-TEST
-          RELEASE_SHA: abfa0f01d7a57340afdcac783ab075282201b450
+          RELEASE_SHA: 492f9be
           BUILD_DATE: 2024-03-18
       - task: generate-docker-creds-config
         file: pay-ci/ci/tasks/generate-docker-config-file.yml
