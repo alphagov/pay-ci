@@ -10,6 +10,7 @@ anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
 }
 
 payCiGitHubResource = payGithubResourceWithBranch("pay-ci", "pay-ci", "master")
+payInfraGitHubResource = payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
 
 function payDockerHubResource(resource_name: String, repo: String, tag: String): Pipeline.Resource = new {
   name = resource_name
