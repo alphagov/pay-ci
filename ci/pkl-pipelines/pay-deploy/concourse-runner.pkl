@@ -12,19 +12,59 @@ resource_types {
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/concourse-runner.pkl", "master")
   shared_resources.payCiGitHubResource
-  shared_resources.payGithubPullRequestResource("concourse-runner-pr", "pay-ci")
-    |> withPaths(new Listing<String>{
-        "ci/docker/concourse-runner/**";
-        "ci/docker/concourse-runner-with-java-17/**";
-        "ci/pipelines/concourse-runner.yml" })
-  shared_resources.payGithubResourceWithBranch("adminusers-master", "pay-adminusers", "master")
-  shared_resources.payGithubResourceWithBranch("webhooks-main", "pay-webhooks", "main")
-  shared_resources.payGithubResourceWithBranch("concourse-runner-src", "pay-ci", "master")
-    |> withPath("ci/docker/concourse-runner/*")
-  shared_resources.payGithubResourceWithBranch("concourse-runner-with-java-17-src", "pay-ci", "master")
-    |> withPath("ci/docker/concourse-runner-with-java-17/*")
-  shared_resources.payDockerHubResource("concourse-runner", "governmentdigitalservice/pay-concourse-runner", "latest")
-  shared_resources.payDockerHubResource("concourse-runner-with-java-17", "governmentdigitalservice/pay-concourse-runner-with-java-17", "latest")
+  new shared_resources.PayGitHubPullRequestResource {
+    name = "concourse-runner-pr"
+    repo = "pay-ci"
+    paths {
+      "ci/docker/concourse-runner/**"
+      "ci/docker/concourse-runner-with-java-17/**";
+      "ci/pipelines/concourse-runner.yml"
+    }
+  }
+  new shared_resources.PayGitHubResource {
+    name = "adminusers-master"
+    repoName = "pay-adminusers"
+    source {
+      branch = "master"
+    }
+  }
+  new shared_resources.PayGitHubResource {
+    name = "webhooks-main"
+    repoName = "pay-webhooks"
+    source {
+      branch = "main"
+    }
+  }
+  new shared_resources.PayGitHubResource {
+    name = "concourse-runner-src"
+    repoName = "pay-ci"
+    source {
+      branch = "master"
+      paths { "ci/docker/concourse-runner/*" }
+    }
+  }
+  new shared_resources.PayGitHubResource {
+    name = "concourse-runner-with-java-17-src"
+    repoName = "pay-ci"
+    source {
+      branch = "master"
+      paths { "ci/docker/concourse-runner-with-java-17/*" }
+    }
+  }
+  new shared_resources.PayDockerHubResource {
+    name = "concourse-runner"
+    source {
+      repository = "governmentdigitalservice/pay-concourse-runner"
+      tag = "latest"
+    }
+  }
+  new shared_resources.PayDockerHubResource {
+    name = "concourse-runner-with-java-17"
+    source {
+      repository = "governmentdigitalservice/pay-concourse-runner-with-java-17"
+      tag = "latest"
+    }
+  }
 }
 
 jobs = new{
@@ -118,9 +158,18 @@ jobs = new{
       }
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          testConcourseRunnerTask("concourse-runner-image", "adminusers-master")
-          (testConcourseRunnerTask("concourse-runner-with-java-17-image", "webhooks-main")){
+          (testConcourseRunnerTaskX){
+            image = "concourse-runner-image"
+            input_mapping {
+              ["app-repo"] = "adminusers-master"
+            }
+          }
+          (testConcourseRunnerTaskX){
+            image = "concourse-runner-with-java-17-image"
             task = "test-concourse-runner-with-java-17"
+            input_mapping {
+              ["app-repo"] = "webhooks-main"
+            }
           }
         }
       }
@@ -166,6 +215,31 @@ local function putPRTestStatus(resourceName: String, testName: String, status: S
     ["path"] = resourceName
     ["status"] = status
     ["context"] = testName
+  }
+}
+
+local testConcourseRunnerTaskX: Pipeline.TaskStep = new {
+  task = "test-concourse-runner"
+  privileged = true
+  config {
+    platform = "linux"
+    inputs{
+      new {
+        name = "pay-ci"
+      }
+      new {
+        name = "app-repo"
+      }
+    }
+    run {
+      path = "/bin/bash"
+      args {
+        "pay-ci/ci/scripts/test-concourse-runner.sh"
+      }
+    }
+  }
+  input_mapping = new {
+    ["app-repo"] = "sdfsdf"
   }
 }
 
