@@ -31,6 +31,34 @@ function paySlackNotificationForAppDeployment(channelName: String, isASuccess: B
   }
 }
 
+function paySlackNotificationForStartOfDeploymentInProd(): Pipeline.PutStep = new Pipeline.PutStep {
+  put = "slack-notification"
+  params = new Mapping {
+    ["channel"] = "#govuk-pay-announce"
+    ["text"] = "((.:start_snippet)) \n\n <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    ["icon_emoji"] = ":fargate:"
+    ["username"] = "pay-concourse"
+  }
+}
+
+function paySlackNotificationForAppDeploymentInProd(channelName: String, isASuccess: Boolean, message: String): Pipeline.PutStep = new Pipeline.PutStep {
+  put = "slack-notification"
+  params = new Mapping {
+    ["channel"] = channelName
+    when (isASuccess) {
+      ["text"] = """
+        ((.:success_snippet)) \n\n <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>
+        """
+    } else {
+      ["text"] = """
+        ((.:failure_snippet)) \n - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>
+        """
+    }
+    ["icon_emoji"] = ":fargate:"
+    ["username"] = "pay-concourse"
+  }
+}
+
 function paySlackNotificationForFail(channel_name: String, message: String): Pipeline.PutStep = new Pipeline.PutStep {
   put = "slack-notification"
   attempts = 10
