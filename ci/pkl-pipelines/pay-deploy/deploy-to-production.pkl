@@ -363,6 +363,8 @@ local function getJobToRetagImageForDBMigrations(app): Job = new {
     new InParallelStep {
       in_parallel = new InParallelConfig {
         steps {
+          loadVar("app_name", "ecr-release-info/app_name")
+          loadVar("app_release_number", "ecr-release-info/release-number")
           loadVar("release-number", "ecr-release-info/release-number")
           loadVar("perf-db-tag", "parse-perf-db-release-tag/tag")
           assumeRetagRole()
@@ -375,8 +377,8 @@ local function getJobToRetagImageForDBMigrations(app): Job = new {
     copyImagesToEUWest(app)
     retagCandidateAsPerfInECR(app, true)
   }
-  on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-activity", false)
-  on_failure = sendSlackNoticationAndPutMetrics(app, false, "#govuk-pay-announce", false)
+  on_success = shared_resources_for_metrics.paySendAppReleaseMetric(true, "production-2")
+  on_failure = shared_resources_for_metrics.paySendAppReleaseMetric(false, "production-2")
 }
 
 local function getJobToDeployScheduledTasks(): Job = new {
