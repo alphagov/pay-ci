@@ -143,9 +143,10 @@ local function getJobToDeployApp(app): Job = new {
   }
   plan = new {
     getResourcesToDeployApp(app)
-    createNotificationSnippets(app, "Deployment")
     parseReleaseTagsToDeployApp(app)
     loadVariablesToDeployApp(app)
+    createNotificationSnippets(app, "Deployment")
+    loadNotificationSnippetVariables(app, true)
 
     shared_resources_for_slack_notifications.paySlackNotificationForStartOfDeploymentInProd()
 
@@ -185,7 +186,7 @@ local function getJobToSmokeTestApp(app): Job = new {
 
     loadVar("application_image_tag", "\(app.name)-ecr-registry-prod/tag")
     createNotificationSnippets(app, "Smoke test")
-    loadNotificationSnippetVariables()
+    loadNotificationSnippetVariables(app, false)
 
     assumeRoleWithAccount("trigger-canary-deploy-assume-role", "pay_aws_deploy_account_id")
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
@@ -202,14 +203,14 @@ local function getJobToPactTagApp(app): Job = new {
       in_parallel = new InParallelConfig {
         steps = new Listing<Step> {
           getStepWithTriggerAndPassed("\(app.name)-ecr-registry-prod", "smoke-test-\(app.name)-on-prod")
-          loadVar("application_image_tag", "\(app.name)-ecr-registry-prod/tag")
           getStep("pay-ci", false)
         }
       }
     }
+    loadVar("application_image_tag", "\(app.name)-ecr-registry-prod/tag")
 
     createNotificationSnippets(app, "Pact tag")
-    loadNotificationSnippetVariables()
+    loadNotificationSnippetVariables(app, false)
 
     getGitShaForReleaseTag(app)
     loadVar("git-sha", "git-sha/git-sha")
@@ -374,6 +375,8 @@ local function getJobToRetagImageForDBMigrations(app): Job = new {
     copyImagesToEUWest(app)
     retagCandidateAsPerfInECR(app, true)
   }
+  on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-activity", false)
+  on_failure = sendSlackNoticationAndPutMetrics(app, false, "#govuk-pay-announce", false)
 }
 
 local function getJobToDeployScheduledTasks(): Job = new {
@@ -441,29 +444,30 @@ local function createNotificationSnippets(app: PayApp, action: String) = new Tas
   }
 }
 
-local function loadNotificationSnippetVariables(): InParallelStep = new InParallelStep {
-  in_parallel = new Listing<Step> {
-    loadVar("app_name", "snippet/app_name")
-    loadVar("app_release_number", "snippet/app_release_number")
-    loadVar("success_snippet", "snippet/success")
-    loadVar("failure_snippet", "snippet/failure")
-  }
-}
-
 local function loadVariablesToDeployApp(app: PayApp): InParallelStep = new InParallelStep {
   in_parallel = new Listing<Step> {
-    loadVar("app_name", "snippet/app_name")
-    loadVar("app_release_number", "snippet/app_release_number")
     loadVar("application_image_tag", "\(app.name)-ecr-registry-prod/tag")
 
     when (app.is_a_java_or_node_app == true) {
-      loadVar("adot_release_number", "snippet/adot_release_number")
       loadVar("adot_image_tag", "adot-ecr-registry-prod/tag")
-      loadVar("nginx_release_number", "snippet/nginx_release_number")
       loadVar("nginx_image_tag", "nginx-proxy-ecr-registry-prod/tag")
       when (app.name == "frontend") {
-        loadVar("nginx_forward_proxy_release_number", "snippet/nginx_forward_proxy_release_number")
         loadVar("nginx_forward_proxy_image_tag", "nginx-forward-proxy-ecr-registry-prod/tag")
+      }
+    }
+  }
+}
+
+local function loadNotificationSnippetVariables(app: PayApp, isDeployJob: Boolean): InParallelStep = new InParallelStep {
+  in_parallel = new Listing<Step> {
+    loadVar("app_name", "snippet/app_name")
+    loadVar("app_release_number", "snippet/app_release_number")
+
+    when (app.is_a_java_or_node_app == true && isDeployJob) {
+      loadVar("adot_release_number", "snippet/adot_release_number")
+      loadVar("nginx_release_number", "snippet/nginx_release_number")
+      when (app.name == "frontend") {
+        loadVar("nginx_forward_proxy_release_number", "snippet/nginx_forward_proxy_release_number")
       }
     }
     loadVar("success_snippet", "snippet/success")
