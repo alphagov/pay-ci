@@ -6,57 +6,13 @@ import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_metrics.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/shared_resources_for_deploy_pipelines.pkl"
 
-local class PayApp {
-  name: String
-  is_a_java_or_node_app: Boolean = false
-  has_db: Boolean = false
-  rds_identifier_suffix: Int = 0
-  override_app_to_deploy: String?
-  override_ecr_repo: String?
-  use_app_specific_deploy_task: Boolean = false
-  smoke_test: Boolean = true
-  pact_tag: Boolean = false
+local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
 
-  function getECRRepo(): String = "govukpay/\(override_ecr_repo ?? name)"
-}
-
-local payApps: Listing<PayApp> = new Listing<PayApp> {
-  new { name = "adminusers"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
-  new { name = "cardid"; pact_tag = true; is_a_java_or_node_app = true }
-  new { name = "connector"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
-  new { name = "egress"; use_app_specific_deploy_task = true }
-  new { name = "frontend"; use_app_specific_deploy_task = true; pact_tag = true;is_a_java_or_node_app = true }
-  new { name = "ledger"; has_db = true; pact_tag = true ; is_a_java_or_node_app = true }
-  new { name = "notifications" }
-  new { name = "products"; has_db = true; pact_tag = true ; is_a_java_or_node_app = true }
-  new { name = "products-ui"; pact_tag = true ; is_a_java_or_node_app = true }
-  new { name = "publicapi"; pact_tag = true ; is_a_java_or_node_app = true }
-  new { name = "publicauth"; has_db = true;  rds_identifier_suffix = 1; is_a_java_or_node_app = true }
-  new { name = "selfservice"; pact_tag = true; is_a_java_or_node_app = true }
-  new { name = "toolbox"; smoke_test = false; is_a_java_or_node_app = true }
-  new { name = "webhooks"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
-  new { name = "webhooks-egress"; use_app_specific_deploy_task = true }
-}.toList().sortBy((app) -> app.name).toListing()
-
-// sidecars or other helpers
-local payHelpers: Listing<PayApp> = new Listing<PayApp> {
-  new { name = "adot"; smoke_test = false; }
-  new { name = "alpine"; smoke_test = false; override_app_to_deploy = "scheduled-tasks" }
-  new { name = "nginx-forward-proxy"; smoke_test = false; override_app_to_deploy = "frontend" }
-  new { name = "nginx-proxy"; smoke_test = false; override_ecr_repo = "docker-nginx-proxy"
-    override_app_to_deploy = "toolbox" }
-  new { name = "stream-s3-sqs"; smoke_test = false; override_app_to_deploy = "scheduled-tasks" }
-}.toList().sortBy((app) -> app.name).toListing()
-
-local payScheduledTask = new PayApp { name = "scheduled-tasks"; use_app_specific_deploy_task = true }
-
-local allPayApps: Listing<PayApp> = new {
-  ...payApps
-  ...payHelpers
-}
-
-local payApplicationsWithDB = payApps.toList().filter((app) -> app.has_db).toListing()
+local payScheduledTask = shared_resources_for_deploy_pipelines.payScheduledTask
+local allPayApplications = shared_resources_for_deploy_pipelines.allPayApplications
+local payApplicationsWithDB = shared_resources_for_deploy_pipelines.payApplicationsWithDB
 
 resource_types {
   shared_resources_for_slack_notifications.slackNotificationResourceType
@@ -69,7 +25,7 @@ resources = new {
   shared_resources.payCiGitHubResource
   shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
 
-  for (app in allPayApps) {
+  for (app in allPayApplications) {
     shared_resources.payECRResourceWithVariant("\(app.name)-ecr-registry-prod",
       app.getECRRepo(), "pay_aws_prod_account_id", "release")
   }
@@ -77,7 +33,7 @@ resources = new {
 }
 
 groups {
-  for (app in allPayApps) {
+  for (app in allPayApplications) {
     new {
       name = app.name
       jobs = new Listing {
@@ -114,7 +70,7 @@ groups {
 jobs {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/deploy-to-production.pkl")
 
-  for (app in allPayApps) {
+  for (app in allPayApplications) {
     when (app.override_app_to_deploy == null && app.name != "adot") {
       getJobToDeployApp(app)
     }

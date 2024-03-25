@@ -1,0 +1,51 @@
+
+class PayApplication {
+  name: String
+  is_a_java_or_node_app: Boolean = false
+  has_db: Boolean = false
+  rds_identifier_suffix: Int = 0
+  override_app_to_deploy: String?
+  override_ecr_repo: String?
+  use_app_specific_deploy_task: Boolean = false
+  smoke_test: Boolean = true
+  pact_tag: Boolean = false
+
+  function getECRRepo(): String = "govukpay/\(override_ecr_repo ?? name)"
+}
+
+local payApps: Listing<PayApplication> = new Listing<PayApplication> {
+  new { name = "adminusers"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
+  new { name = "cardid"; pact_tag = true; is_a_java_or_node_app = true }
+  new { name = "connector"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
+  new { name = "egress"; use_app_specific_deploy_task = true }
+  new { name = "frontend"; use_app_specific_deploy_task = true; pact_tag = true;is_a_java_or_node_app = true }
+  new { name = "ledger"; has_db = true; pact_tag = true ; is_a_java_or_node_app = true }
+  new { name = "notifications" }
+  new { name = "products"; has_db = true; pact_tag = true ; is_a_java_or_node_app = true }
+  new { name = "products-ui"; pact_tag = true ; is_a_java_or_node_app = true }
+  new { name = "publicapi"; pact_tag = true ; is_a_java_or_node_app = true }
+  new { name = "publicauth"; has_db = true;  rds_identifier_suffix = 1; is_a_java_or_node_app = true }
+  new { name = "selfservice"; pact_tag = true; is_a_java_or_node_app = true }
+  new { name = "toolbox"; smoke_test = false; is_a_java_or_node_app = true }
+  new { name = "webhooks"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
+  new { name = "webhooks-egress"; use_app_specific_deploy_task = true }
+}.toList().sortBy((app) -> app.name).toListing()
+
+// sidecars or other helpers
+local payHelpers: Listing<PayApplication> = new Listing<PayApplication> {
+  new { name = "adot"; smoke_test = false; }
+  new { name = "alpine"; smoke_test = false; override_app_to_deploy = "scheduled-tasks" }
+  new { name = "nginx-forward-proxy"; smoke_test = false; override_app_to_deploy = "frontend" }
+  new { name = "nginx-proxy"; smoke_test = false; override_ecr_repo = "docker-nginx-proxy"
+    override_app_to_deploy = "toolbox" }
+  new { name = "stream-s3-sqs"; smoke_test = false; override_app_to_deploy = "scheduled-tasks" }
+}.toList().sortBy((app) -> app.name).toListing()
+
+payScheduledTask = new PayApplication { name = "scheduled-tasks"; use_app_specific_deploy_task = true }
+
+allPayApplications: Listing<PayApplication> = new {
+  ...payApps
+  ...payHelpers
+}
+
+payApplicationsWithDB = payApps.toList().filter((app) -> app.has_db).toListing()
