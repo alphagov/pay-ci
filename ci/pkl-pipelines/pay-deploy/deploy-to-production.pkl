@@ -1,7 +1,5 @@
 amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
 
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/TaskConfig.pkl"
-
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_metrics.pkl"
@@ -116,7 +114,7 @@ local function getJobToDeployApp(app): Job = new {
     checkReleaseVersions(app)
 
     deployToProd(app)
-    waitForDeploy(app)
+    shared_resources_for_deploy_pipelines.waitForDeployTask(app, "production-2")
   }
   on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-announce", true)
   on_failure = sendSlackNoticationAndPutMetrics(app, false, "#govuk-pay-announce", true)
@@ -277,7 +275,7 @@ local function getJobForDBMigrations(app): Job = new {
       }
     }
     shared_resources_for_slack_notifications.paySlackNotificationForDBMigration("#govuk-pay-announce", "production-2")
-    runDBMigrations(app)
+    shared_resources_for_deploy_pipelines.runDBMigrationsTask(app, "production-2-fargate")
   }
   on_success = shared_resources_for_slack_notifications.paySlackNotificationForDBMigrationStatus(
     "#govuk-pay-activity", true, "production-2")
@@ -502,58 +500,10 @@ local function deployToProd(app: PayApp) = new TaskStep {
   }
 
   when (app.name == "notifications") {
-    config = getAdditionalConfigForNotifications()
+    config = shared_resources_for_deploy_pipelines.getAdditionalConfigForNotifications()
   }
 }
 
-local function waitForDeploy(app: PayApp) = new TaskStep {
-  task = "wait-for-deploy"
-  file = "pay-ci/ci/tasks/wait-for-deploy.yml"
-  params {
-    ["APP_NAME"] = app.name
-    ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
-    ["ENVIRONMENT"] = "production-2"
-    when (app.is_a_java_or_node_app == true) {
-      ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
-      ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
-    }
-    when (app.name == "frontend") {
-      ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
-    }
-    ...getAWSAssumeRoleCreds()
-  }
-}
-
-local function runDBMigrations(app: PayApp) = new TaskStep {
-  task = "run-db-migration"
-  config {
-    platform = "linux"
-    image_resource {
-      type = "registry-image"
-      source {
-        ["repository"] = "governmentdigitalservice/pay-node-runner"
-        ["tag"] = "node16"
-      }
-    }
-    inputs = new Listing<TaskConfig.Input> {
-      new TaskConfig.Input { name = "pay-ci" }
-    }
-    params = new {
-      ...getAWSAssumeRoleCreds()
-      ["AWS_PAGER"] = ""
-      ["AWS_REGION"] = "eu-west-1"
-      ["CLUSTER_NAME"] = "production-2-fargate"
-      ["APP_NAME"] = app.name
-      ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
-    }
-    run {
-      path = "node"
-      args {
-        "pay-ci/ci/scripts/run-ecs-db-migration.js"
-      }
-    }
-  }
-}
 
 local function getGitShaForReleaseTag (app): TaskStep = new TaskStep {
   task = "get-git-sha-for-release-tag"
@@ -739,27 +689,6 @@ local function retagCandidateAsPerfInECR(app: PayApp, dbMigration: Boolean): Tas
       ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:perf-tag))"
     }
     ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:release-number))-candidate"
-  }
-}
-
-local function getAdditionalConfigForNotifications() = new TaskConfig {
-  platform = "linux"
-  inputs {
-    new TaskConfig.Input { name = "pay-infra" }
-    new TaskConfig.Input { name = "pay-ci" }
-  }
-  image_resource {
-    type = "registry-image"
-    source {
-      ["repository"] = "hashicorp/terraform"
-      ["tag"] = "1.3.7"
-    }
-  }
-  run = new TaskConfig.Run {
-    path = "/bin/sh"
-    args {
-      "pay-ci/ci/scripts/deploy-notifications.sh"
-    }
   }
 }
 
