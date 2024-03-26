@@ -1,7 +1,5 @@
 amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
 
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/TaskConfig.pkl"
-
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_metrics.pkl"
@@ -13,6 +11,9 @@ local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
 local payScheduledTask = shared_resources_for_deploy_pipelines.payScheduledTask
 local allPayApplications = shared_resources_for_deploy_pipelines.allPayApplications
 local payApplicationsWithDB = shared_resources_for_deploy_pipelines.payApplicationsWithDB
+
+local awsEnvVars = Map("account", "test",
+  "environment", "test-perf-1")
 
 resource_types {
   shared_resources_for_slack_notifications.slackNotificationResourceType
@@ -84,7 +85,8 @@ jobs {
           }
           assumeRole("terraform-test-assume-role")
           (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
-          deployToPerf(app)
+          shared_resources_for_deploy_pipelines.deployApplicationTask(app,
+            awsEnvVars, "deploy-to-perf")
           shared_resources_for_deploy_pipelines.waitForDeployTask(app, "test-perf-1")
         }
         on_success = sendSlackNoticationAndPutMetrics(app, true)
@@ -132,7 +134,8 @@ jobs {
         }
       }
       (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
-      deployToPerf(payScheduledTask)
+      shared_resources_for_deploy_pipelines.deployApplicationTask(payScheduledTask,
+        awsEnvVars, "deploy-to-perf")
     }
     on_failure = shared_resources_for_slack_notifications.paySlackNotificationForFail("#govuk-pay-announce", "Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag))")
     on_success = shared_resources_for_slack_notifications.paySlackNotificationForSuccess("#govuk-pay-activity", "Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully")
@@ -201,49 +204,6 @@ local function parseReleaseTagsToDeployApp(app: PayApp): Listing<Step> = new Lis
 
   when (app.name == "frontend") {
     parseReleaseTag("nginx-forward-proxy", true)
-  }
-}
-
-local function deployToPerf(app: PayApp) = new TaskStep {
-  task = "deploy-to-perf"
-
-  when (app.use_app_specific_deploy_task) {
-    when (app.name == "frontend") {
-      file = "pay-ci/ci/tasks/deploy-\(app.name)-with-adot.yml"
-    } else {
-      file = "pay-ci/ci/tasks/deploy-\(app.name).yml"
-    }
-  } else {
-    when (app.name != "notifications") {
-      file = "pay-ci/ci/tasks/deploy-app-with-adot.yml"
-    }
-  }
-
-  params {
-    ["APP_NAME"] = app.name
-    when (app.name == "scheduled-tasks") {
-      ["ALPINE_IMAGE_TAG"] = "((.:alpine_image_tag))"
-      ["STREAM_S3_SQS_IMAGE_TAG"] = "((.:stream_s3_sqs_image_tag))"
-    } else {
-      ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
-    }
-    ["ACCOUNT"] = "test"
-    ["ENVIRONMENT"] = "test-perf-1"
-    when (app.name == "frontend") {
-      ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
-    }
-    when (app.is_a_java_or_node_app == true) {
-      ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
-      ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
-    }
-    ...getAWSAssumeRoleCreds()
-    when (app.name == "notifications") {
-      ["AWS_REGION"] = "eu-west-1"
-    }
-  }
-
-  when (app.name == "notifications") {
-    config = shared_resources_for_deploy_pipelines.getAdditionalConfigForNotifications()
   }
 }
 

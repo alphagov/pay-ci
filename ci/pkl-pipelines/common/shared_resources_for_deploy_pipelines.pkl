@@ -122,6 +122,51 @@ function getAdditionalConfigForNotifications() = new TaskConfig {
   }
 }
 
+function deployApplicationTask(app: PayApplication, awsEnvVars: Map,
+  taskName: String) = new Pipeline.TaskStep {
+
+  task = taskName
+
+  when (app.use_app_specific_deploy_task) {
+    when (app.name == "frontend") {
+      file = "pay-ci/ci/tasks/deploy-\(app.name)-with-adot.yml"
+    } else {
+      file = "pay-ci/ci/tasks/deploy-\(app.name).yml"
+    }
+  } else {
+    when (app.name != "notifications") {
+      file = "pay-ci/ci/tasks/deploy-app-with-adot.yml"
+    }
+  }
+
+  params {
+    ["APP_NAME"] = app.name
+    when (app.name == "scheduled-tasks") {
+      ["ALPINE_IMAGE_TAG"] = "((.:alpine_image_tag))"
+      ["STREAM_S3_SQS_IMAGE_TAG"] = "((.:stream_s3_sqs_image_tag))"
+    } else {
+      ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
+    }
+    ["ACCOUNT"] = awsEnvVars["account"]
+    ["ENVIRONMENT"] = awsEnvVars["environment"]
+    when (app.name == "frontend") {
+      ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
+    }
+    when (app.is_a_java_or_node_app == true) {
+      ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
+      ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
+    }
+    ...getAWSAssumeRoleCreds()
+    when (app.name == "notifications") {
+      ["AWS_REGION"] = "eu-west-1"
+    }
+  }
+
+  when (app.name == "notifications") {
+    config = getAdditionalConfigForNotifications()
+  }
+}
+
 local function getAWSAssumeRoleCreds() = new Mapping<String, String> {
   ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
   ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
