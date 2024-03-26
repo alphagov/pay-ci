@@ -1,0 +1,26 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: node
+    tag: current-alpine
+params:
+  REPO:
+  WORKFLOW:
+  GITHUB_TOKEN:
+inputs:
+  - name: src
+run:
+  path: sh
+  dir: src
+  args:
+    - -c
+    - |
+      apk add --no-progress --no-cache git github-cli
+      
+      git remote remove origin
+      git remote add origin "https://$GITHUB_TOKEN@github.com/$REPO"
+      git config --local user.email "github-pay-ci+concourse@digital.cabinet-office.gov.uk"
+      git config --local user.name "alphagov-pay-ci-concourse"
+      
+      gh workflow run "$WORKFLOW"
