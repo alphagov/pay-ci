@@ -1,5 +1,9 @@
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/TaskConfig.pkl"
+// import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/TaskConfig/Pipeline.pkl"
+// import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/TaskConfig.pkl"
+
+import ".../pkl-concourse-pipeline/src/Pipeline.pkl"
+import ".../pkl-concourse-pipeline/src/TaskConfig.pkl"
+import ".../pkl-concourse-pipeline/src/Resources.pkl"
 
 anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
   type = "registry-image"
@@ -9,7 +13,7 @@ anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
   }
 }
 
-payCiGitHubResource: GitResource = new PayGitHubResource {
+payCiGitHubResource: Resources.GitResource = new PayGitHubResource {
   name = "pay-ci"
   repoName = "pay-ci"
   source {
@@ -31,20 +35,7 @@ function payDockerHubResource(resource_name: String, repo: String, tag: String):
 
 function payGithubResource(resource_name: String, repo: String) = payGithubResourceWithBranch(resource_name, repo, "")
 
-open class DockerImageResource extends Pipeline.Resource {
-  type = "registry-image"
-  icon = "docker"
-  source: DockerImageResourceConfig?
-}
-
-class DockerImageResourceConfig{
-  repository: String
-  tag: String?
-  username: String?
-  password: String?
-}
-
-class PayDockerHubResource extends DockerImageResource {
+class PayDockerHubResource extends Resources.DockerImageResource {
   type = "registry-image"
   icon = "docker"
   source = new {
@@ -54,30 +45,7 @@ class PayDockerHubResource extends DockerImageResource {
   }
 }
 
-open class GitResource extends Pipeline.Resource{
-  type = "git"
-  icon = "github"
-  source: GitResourceConfig?
-}
-
-class GitResourceConfig{
-  uri: String
-  branch: String?
-  private_key: String?
-  private_key_user: String?
-  private_key_passphrase: String?
-  forward_agent: Boolean?
-  username: String?
-  password: String?
-  paths: Listing<String>?
-  ignore_paths: Listing<String>?
-  skip_ssl_verification: Boolean?
-  tag_filter: String?
-  tag_regex: String?
-  fetch_tags: Boolean?
-}
-
-class PayGitHubResource extends GitResource {
+class PayGitHubResource extends Resources.GitResource {
   hidden repoName: String
   source = new {
     uri = "https://github.com/alphagov/\(repoName)"

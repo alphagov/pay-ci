@@ -1,6 +1,6 @@
-amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
+amends ".../pkl-concourse-pipeline/src/Pipeline.pkl"
 
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
+import ".../pkl-concourse-pipeline/src/Pipeline.pkl"
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
@@ -323,5 +323,3 @@ local function buildAnPushConcourseJob(java17: Boolean, sampleRepo: String): Pip
     }
   }
 }
-
-

@@ -1,5 +1,5 @@
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/TaskConfig.pkl"
+import ".../pkl-concourse-pipeline/src/Pipeline.pkl"
+import ".../pkl-concourse-pipeline/src/TaskConfig.pkl"
 
 class PayApplication {
   name: String

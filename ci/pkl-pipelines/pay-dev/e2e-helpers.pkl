@@ -1,5 +1,5 @@
-amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/TaskConfig.pkl"
+amends ".../pkl-concourse-pipeline/src/Pipeline.pkl"
+import ".../pkl-concourse-pipeline/src/TaskConfig.pkl"
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
@@ -14,8 +14,8 @@ resources = new {
 
   shared_resources.payGithubResourceWithBranch("endtoend-git-release", "pay-endtoend", "master")
     |>withTagRegex("alpha_release-(.*)")
-  
-  shared_resources.payGithubResourceWithBranch("stubs-git-release", "pay-stubs", "master") 
+
+  shared_resources.payGithubResourceWithBranch("stubs-git-release", "pay-stubs", "master")
     |>withTagRegex("alpha_release-(.*)")
 
   shared_resources.payGithubResourceWithBranch("reverse-proxy-git-release", "pay-scripts", "master")
@@ -45,7 +45,7 @@ resources = new {
     "endtoend-dockerhub", "governmentdigitalservice/pay-endtoend", "latest-master"
   )
 
-  shared_resources.payDockerHubResource("postgres-15-alpine", "postgres", "15-alpine") 
+  shared_resources.payDockerHubResource("postgres-15-alpine", "postgres", "15-alpine")
     |>withCheckInterval("1h")
 
   shared_resources.payECRResource("ecr-postgres-15-alpine", "postgres", "pay_aws_test_account_id")
@@ -107,7 +107,7 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing {
-          new GetStep { 
+          new GetStep {
             get = "endtoend-candidate-ecr-registry-test"
             trigger = true
             passed = new Listing { "build-and-push-endtoend-candidate" }
@@ -179,11 +179,11 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          loadVar("release-number", "tags/release-number") 
-          loadVar("release-name", "reverse-proxy-git-release/.git/ref") 
-          loadVar("release-sha", "tags/release-sha") 
-          loadVar("candidate-image-tag", "tags/candidate-tag") 
-          loadVar("date", "tags/date") 
+          loadVar("release-number", "tags/release-number")
+          loadVar("release-name", "reverse-proxy-git-release/.git/ref")
+          loadVar("release-sha", "tags/release-sha")
+          loadVar("candidate-image-tag", "tags/candidate-tag")
+          loadVar("date", "tags/date")
           assumeCodeBuildRole("builder", "codebuild-assume-role")
         }
       }
@@ -278,11 +278,11 @@ jobs = new {
   }
 
   new {
-    name = "build-and-push-stubs-candidate" 
+    name = "build-and-push-stubs-candidate"
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          getStep("stubs-git-release", true, false) 
+          getStep("stubs-git-release", true, false)
           getPayCi
         }
       }
@@ -414,7 +414,7 @@ local function buildImage(taskName: String, context: String): TaskStep = new {
   }
 }
 
-local function putCandidateImage(putName: String): PutStep = 
+local function putCandidateImage(putName: String): PutStep =
   putStep(putName, "image/image.tar", "tags/candidate-tag", true)
 
 local function assumeCodeBuildRole(codeBuildRole: String, sessionName: String): TaskStep = new {
@@ -573,9 +573,9 @@ local function runCodeBuildMultiarch(project: String, attempts: Int): InParallel
 
 local getPayCi = new GetStep { get = "pay-ci" }
 
-local loadAssumeRoleVar = new LoadVarStep { 
-  load_var = "role" 
-  file = "assume-role/assume-role.json" 
+local loadAssumeRoleVar = new LoadVarStep {
+  load_var = "role"
+  file = "assume-role/assume-role.json"
   format = "json"
 }
 
