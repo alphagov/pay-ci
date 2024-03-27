@@ -9,7 +9,9 @@ resources = new {
   shared_resources.payCiGitHubResource
 
   (shared_resources.payGithubResourceWithBranch("e2e-helpers-pipeline", "pay-ci", "master")) {
-    source { ["paths"] = new Listing<String> { "ci/pipelines/e2e-helpers.yml" } }
+    source {
+      paths = new { "ci/pipelines/e2e-helpers.yml" }
+    }
   }
 
   shared_resources.payGithubResourceWithBranch("endtoend-git-release", "pay-endtoend", "master")

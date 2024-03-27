@@ -25,8 +25,8 @@ resources = new {
   for (jsLibrary in payJsLibraries) {
     (shared_resources.payGithubResourceWithBranch("js-\(jsLibrary.name)-git-release", "pay-js-\(jsLibrary.name)", jsLibrary.source_branch)) {
       source {
-        ["commit_filter"] = new Mapping<String, Listing<String>> {
-          ["exclude"] = new Listing {
+        commit_filter = new {
+          exclude = new {
             "\\[automated release\\]"
           }
         }

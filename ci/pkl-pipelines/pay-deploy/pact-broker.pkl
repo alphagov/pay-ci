@@ -20,7 +20,7 @@ resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/pact-broker.pkl", "master")
   (shared_resources.payGithubResourceWithBranch("pact-broker-src", "pay-ci", "master")) {
     source {
-      ["paths"] = new Listing<String> { "ci/docker/pact-broker/*" }
+      paths = new Listing<String> { "ci/docker/pact-broker/*" }
     }
   }
   shared_resources.payCiGitHubResource

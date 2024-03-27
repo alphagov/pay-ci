@@ -21,15 +21,11 @@ payCiGitHubResource: Resources.GitResource = new PayGitHubResource {
   }
 }
 
-function payDockerHubResource(resource_name: String, repo: String, tag: String): Pipeline.Resource = new {
+function payDockerHubResource(resource_name: String, repo: String, _tag: String): PayDockerHubResource = new {
   name = resource_name
-  type = "registry-image"
-  icon = "docker"
-  source = new {
-    ["repository"] = repo
-    ["tag"] = tag
-    ["username"] = "((docker-username))"
-    ["password"] = "((docker-access-token))"
+  source {
+    repository = repo
+    tag = _tag
   }
 }
 

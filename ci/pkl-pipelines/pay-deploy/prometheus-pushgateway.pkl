@@ -18,7 +18,7 @@ resources = new {
   }
   shared_resources.payCiGitHubResource
   (shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource")) {
-    source { ["tag_regex"] = "alpha_release-(.*)" }
+    source { tag_regex = "alpha_release-(.*)" }
   }
   shared_resources.slackNotificationResource
 }
