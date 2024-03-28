@@ -1,6 +1,8 @@
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
 
+import ".../common/PayResources.pkl"
+
 anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
   type = "registry-image"
   source = new {
@@ -9,7 +11,13 @@ anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
   }
 }
 
-payCiGitHubResource = payGithubResourceWithBranch("pay-ci", "pay-ci", "master")
+payCiGitHubResource: PayResources.PayGitHubResource = new  {
+  name = "pay-ci"
+  repoName = "pay-ci"
+  source {
+    branch = "master"
+  }
+}
 
 function payDockerHubResource(resource_name: String, repo: String, tag: String): Pipeline.Resource = new {
   name = resource_name
@@ -20,6 +28,24 @@ function payDockerHubResource(resource_name: String, repo: String, tag: String):
     ["tag"] = tag
     ["username"] = "((docker-username))"
     ["password"] = "((docker-access-token))"
+  }
+}
+
+function payDockerHubResourceAsPayResource(resource_name: String, repo: String, _tag: String): PayResources.PayDockerHubResource = new {
+  name = resource_name
+  source {
+    repository = repo
+    tag = _tag
+  }
+}
+
+function payGithubResourceAsPayResource(resource_name: String, repo: String, repo_branch: String): PayResources.PayGitHubResource = new {
+  name = resource_name
+  repoName = repo
+  source {
+    when (repo_branch.length > 0) {
+      branch = repo_branch
+    }
   }
 }
 
