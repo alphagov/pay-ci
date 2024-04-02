@@ -89,13 +89,13 @@ resources:
     source:
       url: https://hooks.slack.com/services/((slack-notification-secret))
 
-  - name: every-night-at-11pm
-    icon: alarm
-    source:
-      start: "23:00"
-      stop: "23:30"
-      location: Europe/London
-    type: time
+  # - name: every-night-at-11pm
+  #   icon: alarm
+  #   source:
+  #     start: "23:00"
+  #     stop: "23:30"
+  #     location: Europe/London
+  #   type: time
 
   - name: every-sunday-at-0315
     type: time
@@ -537,8 +537,8 @@ jobs:
         - get: perf-tests-ecr-release
         - get: perf-tests-git-release
         - get: pay-ci
-        - get: every-night-at-11pm
-          trigger: true
+        # - get: every-night-at-11pm
+        #   trigger: true
       - task: assume-role
         file: pay-ci/ci/tasks/assume-role.yml
         params:
