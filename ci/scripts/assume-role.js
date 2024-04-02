@@ -8,7 +8,8 @@ const sts = new AWS.STS()
 const run = async function run () {
   const assumeRoleResponse = await sts.assumeRole({
     RoleArn: process.env.AWS_ROLE_ARN,
-    RoleSessionName: process.env.AWS_ROLE_SESSION_NAME
+    RoleSessionName: process.env.AWS_ROLE_SESSION_NAME,
+    DurationSeconds: 10800, // 3 hours
   }).promise()
   const tempCreds = assumeRoleResponse.Credentials
 
