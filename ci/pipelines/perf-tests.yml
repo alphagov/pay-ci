@@ -40,6 +40,15 @@ resources:
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
+  - name: perf-tests-extended-test-settings
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-perftests
+      branch: pp-12484/extended-performance-test
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
   - name: pay-ci
     type: git
     icon: github
@@ -152,6 +161,14 @@ groups:
   - name: update-perf-tests-pipeline
     jobs:
       - update-perf-tests-pipeline
+  - name: graviton-tests
+    jobs:
+      - run-graviton-payment-simulation-perf-test
+      - run-graviton-extended-payment-simulation-perf-test
+      - run-graviton-search-payment-simulation-perf-test
+      - run-graviton-extended-search-payment-simulation-perf-test
+      - run-graviton-self-service-simulation-perf-test
+      - run-graviton-extended-self-service-simulation-perf-test
   - name: all-jobs
     jobs:
       - scale-and-run-all-simulations
@@ -167,6 +184,12 @@ groups:
       - build-and-push-perf-tests
       - build-and-run-perftests-from-pr
       - update-perf-tests-pipeline
+      - run-graviton-payment-simulation-perf-test
+      - run-graviton-extended-payment-simulation-perf-test
+      - run-graviton-search-payment-simulation-perf-test
+      - run-graviton-extended-search-payment-simulation-perf-test
+      - run-graviton-self-service-simulation-perf-test
+      - run-graviton-extended-self-service-simulation-perf-test
 
 definitions:
   - &scale-down-services
@@ -713,6 +736,125 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse
 
+  - name: run-graviton-search-payment-simulation-perf-test
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: perf-tests-git-release
+        - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-git-release/ci/gatling-simulation-settings.json
+          format: json
+      - <<: *prepare-codebuild
+      - try:
+          task: search-payments-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          on_failure:
+            put: slack-notification
+            attempts: 10
+            params:
+              channel: '#govuk-pay-graviton-performance-testing'
+              silent: true
+              text: ':red-circle: Performance test SearchPaymentsSimulation failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+              icon_emoji: ":concourse:"
+              username: pay-concourse
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':red-circle: Failed to execute individual performance test SearchPaymentsSimulation - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':green-circle: Individual performance test execution of SearchPaymentsSimulation completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: run-graviton-extended-search-payment-simulation-perf-test
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: perf-tests-extended-test-settings
+        - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-extended-test-settings/ci/gatling-extended-simulation-settings.json
+          format: json
+      - <<: *prepare-codebuild
+      - try:
+          task: search-payments-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          on_failure:
+            put: slack-notification
+            attempts: 10
+            params:
+              channel: '#govuk-pay-graviton-performance-testing'
+              silent: true
+              text: ':red-circle: Extended Performance test SearchPaymentsSimulation failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+              icon_emoji: ":concourse:"
+              username: pay-concourse
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':red-circle: Failed to execute extended individual performance test SearchPaymentsSimulation - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':green-circle: Extended Individual performance test execution of SearchPaymentsSimulation completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+
 
   - name: run-payment-simulation-perf-test
     serial: true
@@ -770,6 +912,124 @@ jobs:
         channel: '#govuk-pay-activity'
         silent: true
         text: ':green-circle: Individual performance test execution of PaymentSimulation completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: run-graviton-payment-simulation-perf-test
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: perf-tests-git-release
+        - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-git-release/ci/gatling-simulation-settings.json
+          format: json
+      - <<: *prepare-codebuild
+      - try:
+          task: payment-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          on_failure:
+            put: slack-notification
+            attempts: 10
+            params:
+              channel: '#govuk-pay-graviton-performance-testing'
+              silent: true
+              text: ':red-circle: Performance test PaymentSimulation failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+              icon_emoji: ":concourse:"
+              username: pay-concourse
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':red-circle: Failed to execute individual performance test PaymentSimulation - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':green-circle: Individual performance test execution of PaymentSimulation completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: run-graviton-extended-payment-simulation-perf-test
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: perf-tests-extended-test-settings
+        - get: pay-ci
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-extended-test-settings/ci/gatling-extended-simulation-settings.json
+          format: json
+      - <<: *prepare-codebuild
+      - try:
+          task: payment-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          on_failure:
+            put: slack-notification
+            attempts: 10
+            params:
+              channel: '#govuk-pay-graviton-performance-testing'
+              silent: true
+              text: ':red-circle: Extended Performance test PaymentSimulation failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+              icon_emoji: ":concourse:"
+              username: pay-concourse
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':red-circle: Failed to execute extended individual performance test PaymentSimulation - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':green-circle: Extended Individual performance test execution of PaymentSimulation completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
         icon_emoji: ":concourse:"
         username: pay-concourse
 
@@ -832,6 +1092,123 @@ jobs:
         icon_emoji: ":concourse:"
         username: pay-concourse
 
+  - name: run-graviton-self-service-simulation-perf-test
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: pay-ci
+        - get: perf-tests-git-release
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-git-release/ci/gatling-simulation-settings.json
+          format: json
+      - <<: *prepare-codebuild
+      - try:
+          task: self-service-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          on_failure:
+            put: slack-notification
+            attempts: 10
+            params:
+              channel: '#govuk-pay-graviton-performance-testing'
+              silent: true
+              text: ':red-circle: Performance test SelfServiceSimulation failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+              icon_emoji: ":concourse:"
+              username: pay-concourse
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':red-circle: Failed to execute individual performance test SelfServiceSimulation - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':green-circle: Individual performance test execution of SelfServiceSimulation completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+
+  - name: run-graviton-extended-self-service-simulation-perf-test
+    serial: true
+    serial_groups: [perf-tests]
+    plan:
+      - in_parallel:
+        - get: perf-tests-ecr-release
+        - get: pay-ci
+        - get: perf-tests-extended-test-settings
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
+          AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+      - in_parallel:
+        - load_var: role
+          file: assume-role/assume-role.json
+          format: json
+        - load_var: release-tag
+          file: perf-tests-ecr-release/tag
+        - load_var: gatling-simulation-settings
+          file: perf-tests-extended-test-settings/ci/gatling-extended-simulation-settings.json
+          format: json
+      - <<: *prepare-codebuild
+      - try:
+          task: self-service-simulation-perf-test
+          file: pay-ci/ci/tasks/run-codebuild.yml
+          params:
+            PATH_TO_CONFIG: "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
+            AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+          on_failure:
+            put: slack-notification
+            attempts: 10
+            params:
+              channel: '#govuk-pay-graviton-performance-testing'
+              silent: true
+              text: ':red-circle: Extended Performance test SelfServiceSimulation failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+              icon_emoji: ":concourse:"
+              username: pay-concourse
+    on_failure:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':red-circle: Failed to execute extended individual performance test SelfServiceSimulation - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
+    on_success:
+      put: slack-notification
+      attempts: 10
+      params:
+        channel: '#govuk-pay-graviton-performance-testing'
+        silent: true
+        text: ':green-circle: Extended individual performance test execution of SelfServiceSimulation completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>'
+        icon_emoji: ":concourse:"
+        username: pay-concourse
 
   - name: scale-up-databases
     serial: true
