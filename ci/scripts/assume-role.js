@@ -6,11 +6,16 @@ const AWS = require('aws-sdk')
 const sts = new AWS.STS()
 
 const run = async function run () {
-  const assumeRoleResponse = await sts.assumeRole({
+  const roleParams = {
     RoleArn: process.env.AWS_ROLE_ARN,
     RoleSessionName: process.env.AWS_ROLE_SESSION_NAME,
-    DurationSeconds: 10800, // 3 hours
-  }).promise()
+  }
+
+  if (process.env.AWS_ROLE_DURATION) {
+    roleParams['DurationSeconds'] = process.env.AWS_ROLE_DURATION
+  }
+
+  const assumeRoleResponse = await sts.assumeRole(roleParams).promise()
   const tempCreds = assumeRoleResponse.Credentials
 
   fs.writeFileSync('assume-role/assume-role.json', JSON.stringify({
