@@ -16,6 +16,7 @@ resources = new {
     |> withPaths(new Listing<String>{
         "ci/docker/concourse-runner/**";
         "ci/docker/concourse-runner-with-java-17/**";
+        "ci/docker/concourse-runner-with-java-21/**";
         "ci/pipelines/concourse-runner.yml" })
   shared_resources.payGithubResourceWithBranch("adminusers-master", "pay-adminusers", "master")
   shared_resources.payGithubResourceWithBranch("webhooks-main", "pay-webhooks", "main")
@@ -23,8 +24,11 @@ resources = new {
     |> withPath("ci/docker/concourse-runner/*")
   shared_resources.payGithubResourceWithBranch("concourse-runner-with-java-17-src", "pay-ci", "master")
     |> withPath("ci/docker/concourse-runner-with-java-17/*")
+  shared_resources.payGithubResourceWithBranch("concourse-runner-with-java-21-src", "pay-ci", "master")
+  |> withPath("ci/docker/concourse-runner-with-java-21/*")
   shared_resources.payDockerHubResource("concourse-runner", "governmentdigitalservice/pay-concourse-runner", "latest")
   shared_resources.payDockerHubResource("concourse-runner-with-java-17", "governmentdigitalservice/pay-concourse-runner-with-java-17", "latest")
+  shared_resources.payDockerHubResource("concourse-runner-with-java-21", "governmentdigitalservice/pay-concourse-runner-with-java-21", "latest")
 }
 
 jobs = new{
