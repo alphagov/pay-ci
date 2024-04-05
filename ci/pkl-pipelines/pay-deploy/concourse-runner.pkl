@@ -118,6 +118,40 @@ jobs = new{
               }
             }
           }
+          new TaskStep {
+            task = "build-concourse-runner-with-java-21"
+            privileged = true
+            output_mapping {
+              ["image"] = "concourse-runner-with-java-21-image"
+            }
+            params = new {
+              ["CONTEXT"] = "concourse-runner-pr/ci/docker/concourse-runner-with-java-21"
+              ["UNPACK_ROOTFS"] = "true"
+              ["DOCKER_CONFIG"] = "docker_creds"
+            }
+            config {
+              platform = "linux"
+              image_resource = new {
+                type = "registry-image"
+                source = new {
+                  ["repository"] = "concourse/oci-build-task"
+                }
+              }
+              inputs {
+                new {
+                  name = "concourse-runner-pr"
+                }
+              }
+              outputs {
+                new {
+                  name = "image"
+                }
+              }
+              run {
+                path = "build"
+              }
+            }
+          }
         }
       }
       new InParallelStep {
