@@ -33,8 +33,9 @@ resources = new {
 
 jobs = new{
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/concourse-runner.pkl")
-  buildAndPushConcourseJob(false, "adminusers-master")
-  buildAndPushConcourseJob(true, "webhooks-main")
+  buildAndPushConcourseJob("", "adminusers-master")
+  buildAndPushConcourseJob("-with-java-17", "webhooks-main")
+
   new {
     name = "concourse-runner-pr"
     plan {
@@ -233,9 +234,8 @@ local function testConcourseRunnerTask(imageName: String, appRepo: String): Pipe
   }
 }
 
-local function buildAndPushConcourseJob(java17: Boolean, sampleRepo: String): Pipeline.Job = new {
-  local versionModifier = if (java17) "-with-java-17" else ""
-  local baseName = "concourse-runner\(versionModifier)"
+local function buildAndPushConcourseJob(javaVersionSuffix: String, sampleRepo: String): Pipeline.Job = new {
+  local baseName = "concourse-runner\(javaVersionSuffix)"
 
   name = "build-and-push-\(baseName)"
   plan {
