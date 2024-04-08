@@ -5,6 +5,7 @@ import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_metrics.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
+import "../common/shared_resources_for_annotations.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
 
@@ -18,6 +19,7 @@ local awsEnvVars = Map("account", "production",
 resource_types {
   shared_resources_for_slack_notifications.slackNotificationResourceType
   shared_resources_for_metrics.prometheusPushgatewayResourceType
+  shared_resources_for_annotations.grafanaAnnotationResourceType 
 }
 
 resources = new {
@@ -31,6 +33,9 @@ resources = new {
       app.getECRRepo(), "pay_aws_prod_account_id", "release")
   }
   shared_resources_for_slack_notifications.slackNotificationResource
+  (shared_resources_for_annotations.grafanaAnnotationResource) {
+    source { ["tags"] = new Listing<String> { "release" "production-2" } }
+  }
 }
 
 groups {
@@ -117,6 +122,7 @@ local function getJobToDeployApp(app): Job = new {
     checkReleaseVersions(app)
 
     shared_resources_for_deploy_pipelines.deployApplicationTask(app, awsEnvVars, "deploy-to-prod")
+    shared_resources_for_annotations.paySendAppReleaseAnnotation("deploy-to-production")
     shared_resources_for_deploy_pipelines.waitForDeployTask(app, "production-2")
   }
   on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-announce", true)
