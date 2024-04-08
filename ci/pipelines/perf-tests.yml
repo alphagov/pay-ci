@@ -40,12 +40,21 @@ resources:
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
+  - name: perf-tests-standard-test-settings
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-perftests
+      branch: pp-12484/60rps-tests
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
   - name: perf-tests-extended-test-settings
     type: git
     icon: github
     source:
       uri: https://github.com/alphagov/pay-perftests
-      branch: pp-12484/extended-performance-test
+      branch: pp-12484/60rps-tests
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
@@ -921,6 +930,7 @@ jobs:
     plan:
       - in_parallel:
         - get: perf-tests-ecr-release
+        - get: perf-tests-standard-test-settings
         - get: perf-tests-git-release
         - get: pay-ci
       - task: assume-role
@@ -935,7 +945,7 @@ jobs:
         - load_var: release-tag
           file: perf-tests-ecr-release/tag
         - load_var: gatling-simulation-settings
-          file: perf-tests-git-release/ci/gatling-simulation-settings.json
+          file: perf-tests-standard-test-settings/ci/gatling-simulation-settings.json
           format: json
       - <<: *prepare-codebuild
       - try:
@@ -1346,23 +1356,23 @@ jobs:
         - load_var: service-volumes
           file: perf-tests-git-release/ci/scale-service-volumes.yml
           format: yml
-      - task: pause-deploy-to-perf-pipeline
-        file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
-        params:
-          ACTION: pause
-          PIPELINE: deploy-to-perf
-          FLY_USERNAME: pay-dev
-          FLY_PASSWORD: ((readonly_local_user_password))
+      # - task: pause-deploy-to-perf-pipeline
+      #   file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+      #   params:
+      #     ACTION: pause
+      #     PIPELINE: deploy-to-perf
+      #     FLY_USERNAME: pay-dev
+      #     FLY_PASSWORD: ((readonly_local_user_password))
       - <<: *scale-down-services
       - <<: *scale-down-databases
-    ensure:
-      task: unpause-deploy-to-perf-pipeline
-      file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
-      params:
-        ACTION: unpause
-        PIPELINE: deploy-to-perf
-        FLY_USERNAME: pay-dev
-        FLY_PASSWORD: ((readonly_local_user_password))
+    # ensure:
+    #   task: unpause-deploy-to-perf-pipeline
+    #   file: pay-ci/ci/tasks/pause-unpause-pipeline.yml
+    #   params:
+    #     ACTION: unpause
+    #     PIPELINE: deploy-to-perf
+    #     FLY_USERNAME: pay-dev
+    #     FLY_PASSWORD: ((readonly_local_user_password))
 
   - name: build-and-push-perf-tests
     plan:
