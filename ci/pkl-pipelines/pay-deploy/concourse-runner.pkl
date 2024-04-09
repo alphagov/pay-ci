@@ -16,6 +16,7 @@ resources = new {
     |> withPaths(new Listing<String>{
         "ci/docker/concourse-runner/**";
         "ci/docker/concourse-runner-with-java-17/**";
+        "ci/docker/concourse-runner-with-java-21/**";
         "ci/pipelines/concourse-runner.yml" })
   shared_resources.payGithubResourceWithBranch("adminusers-master", "pay-adminusers", "master")
   shared_resources.payGithubResourceWithBranch("webhooks-main", "pay-webhooks", "main")
@@ -23,14 +24,19 @@ resources = new {
     |> withPath("ci/docker/concourse-runner/*")
   shared_resources.payGithubResourceWithBranch("concourse-runner-with-java-17-src", "pay-ci", "master")
     |> withPath("ci/docker/concourse-runner-with-java-17/*")
+  shared_resources.payGithubResourceWithBranch("concourse-runner-with-java-21-src", "pay-ci", "master")
+  |> withPath("ci/docker/concourse-runner-with-java-21/*")
   shared_resources.payDockerHubResource("concourse-runner", "governmentdigitalservice/pay-concourse-runner", "latest")
   shared_resources.payDockerHubResource("concourse-runner-with-java-17", "governmentdigitalservice/pay-concourse-runner-with-java-17", "latest")
+  shared_resources.payDockerHubResource("concourse-runner-with-java-21", "governmentdigitalservice/pay-concourse-runner-with-java-21", "latest")
 }
 
 jobs = new{
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/concourse-runner.pkl")
-  buildAnPushConcourseJob(false, "adminusers-master")
-  buildAnPushConcourseJob(true, "webhooks-main")
+  buildAndPushConcourseJob("", "adminusers-master")
+  buildAndPushConcourseJob("-with-java-17", "webhooks-main")
+  buildAndPushConcourseJobWithoutTest("-with-java-21")
+
   new {
     name = "concourse-runner-pr"
     plan {
@@ -88,6 +94,40 @@ jobs = new{
             }
             params = new {
               ["CONTEXT"] = "concourse-runner-pr/ci/docker/concourse-runner-with-java-17"
+              ["UNPACK_ROOTFS"] = "true"
+              ["DOCKER_CONFIG"] = "docker_creds"
+            }
+            config {
+              platform = "linux"
+              image_resource = new {
+                type = "registry-image"
+                source = new {
+                  ["repository"] = "concourse/oci-build-task"
+                }
+              }
+              inputs {
+                new {
+                  name = "concourse-runner-pr"
+                }
+              }
+              outputs {
+                new {
+                  name = "image"
+                }
+              }
+              run {
+                path = "build"
+              }
+            }
+          }
+          new TaskStep {
+            task = "build-concourse-runner-with-java-21"
+            privileged = true
+            output_mapping {
+              ["image"] = "concourse-runner-with-java-21-image"
+            }
+            params = new {
+              ["CONTEXT"] = "concourse-runner-pr/ci/docker/concourse-runner-with-java-21"
               ["UNPACK_ROOTFS"] = "true"
               ["DOCKER_CONFIG"] = "docker_creds"
             }
@@ -195,9 +235,8 @@ local function testConcourseRunnerTask(imageName: String, appRepo: String): Pipe
   }
 }
 
-local function buildAnPushConcourseJob(java17: Boolean, sampleRepo: String): Pipeline.Job = new {
-  local versionModifier = if (java17) "-with-java-17" else ""
-  local baseName = "concourse-runner\(versionModifier)"
+local function buildAndPushConcourseJob(javaVersionSuffix: String, sampleRepo: String): Pipeline.Job = new {
+  local baseName = "concourse-runner\(javaVersionSuffix)"
 
   name = "build-and-push-\(baseName)"
   plan {
@@ -251,3 +290,54 @@ local function buildAnPushConcourseJob(java17: Boolean, sampleRepo: String): Pip
 }
 
 
+local function buildAndPushConcourseJobWithoutTest(javaVersionSuffix: String): Pipeline.Job = new {
+  local baseName = "concourse-runner\(javaVersionSuffix)"
+
+  name = "build-and-push-\(baseName)"
+  plan {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        getStepWithTrigger("\(baseName)-src", true)
+        getStep("pay-ci")
+      }
+    }
+    shared_resources.generateDockerCredsConfigStep
+    new TaskStep {
+      task = "build"
+      privileged = true
+      params = new {
+        ["CONTEXT"] = "\(baseName)-src/ci/docker/\(baseName)"
+        ["DOCKER_CONFIG"] = "docker_creds"
+        ["UNPACK_ROOTFS"] = "true"
+      }
+      config {
+        platform = "linux"
+        image_resource = new {
+          type = "registry-image"
+          source = new {
+            ["repository"] = "concourse/oci-build-task"
+          }
+        }
+        inputs {
+          new {
+            name = "\(baseName)-src"
+          }
+        }
+        outputs {
+          new {
+            name = "image"
+          }
+        }
+        run {
+          path = "build"
+        }
+      }
+    }
+    new PutStep{
+      put = baseName
+      params = new {
+        ["image"] = "image/image.tar"
+      }
+    }
+  }
+}
