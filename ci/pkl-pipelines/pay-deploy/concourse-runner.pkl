@@ -1,9 +1,10 @@
-amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
-import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.3#/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
+import "../common/PayResources.pkl"
 
 resource_types {
   shared_resources.pullRequestResourceType
@@ -12,26 +13,78 @@ resource_types {
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/concourse-runner.pkl", "master")
   shared_resources.payCiGitHubResource
-  shared_resources.payGithubPullRequestResource("concourse-runner-pr", "pay-ci")
-    |> withPaths(new Listing<String>{
-        "ci/docker/concourse-runner/**";
-        "ci/docker/concourse-runner-with-java-17/**";
-        "ci/docker/concourse-runner-with-java-21/**";
-        "ci/pipelines/concourse-runner.yml" })
-  shared_resources.payGithubResourceWithBranch("adminusers-master", "pay-adminusers", "master")
-  shared_resources.payGithubResourceWithBranch("webhooks-main", "pay-webhooks", "main")
-  shared_resources.payGithubResourceWithBranch("concourse-runner-src", "pay-ci", "master")
-    |> withPath("ci/docker/concourse-runner/*")
-  shared_resources.payGithubResourceWithBranch("concourse-runner-with-java-17-src", "pay-ci", "master")
-    |> withPath("ci/docker/concourse-runner-with-java-17/*")
-  shared_resources.payGithubResourceWithBranch("concourse-runner-with-java-21-src", "pay-ci", "master")
-  |> withPath("ci/docker/concourse-runner-with-java-21/*")
-  shared_resources.payDockerHubResource("concourse-runner", "governmentdigitalservice/pay-concourse-runner", "latest")
-  shared_resources.payDockerHubResource("concourse-runner-with-java-17", "governmentdigitalservice/pay-concourse-runner-with-java-17", "latest")
-  shared_resources.payDockerHubResource("concourse-runner-with-java-21", "governmentdigitalservice/pay-concourse-runner-with-java-21", "latest")
+  new PayResources.PayGitHubPullRequestResource {
+    name = "concourse-runner-pr"
+    repo = "pay-ci"
+    paths {
+      "ci/docker/concourse-runner/**"
+      "ci/docker/concourse-runner-with-java-17/**"
+      "ci/docker/concourse-runner-with-java-21/**"
+      "ci/pipelines/concourse-runner.yml"
+    }
+  }
+  new PayResources.PayGitHubResource {
+    name = "adminusers-master"
+    repoName = "pay-adminusers"
+    source {
+      branch = "master"
+    }
+  }
+  new PayResources.PayGitHubResource {
+    name = "webhooks-main"
+    repoName = "pay-webhooks"
+    source {
+      branch = "main"
+    }
+  }
+  new PayResources.PayGitHubResource {
+    name = "concourse-runner-src"
+    repoName = "pay-ci"
+    source {
+      branch = "master"
+      paths { "ci/docker/concourse-runner/*" }
+    }
+  }
+  new PayResources.PayGitHubResource {
+    name = "concourse-runner-with-java-17-src"
+    repoName = "pay-ci"
+    source {
+      branch = "master"
+      paths { "ci/docker/concourse-runner-with-java-17/*" }
+    }
+  }
+  new PayResources.PayGitHubResource {
+    name = "concourse-runner-with-java-21-src"
+    repoName = "pay-ci"
+    source {
+      branch = "master"
+      paths { "ci/docker/concourse-runner-with-java-21/*" }
+    }
+  }
+  new PayResources.PayDockerHubResource {
+    name = "concourse-runner"
+    source {
+      repository = "governmentdigitalservice/pay-concourse-runner"
+      tag = "latest"
+    }
+  }
+  new PayResources.PayDockerHubResource {
+    name = "concourse-runner-with-java-17"
+    source {
+      repository = "governmentdigitalservice/pay-concourse-runner-with-java-17"
+      tag = "latest"
+    }
+  }
+  new PayResources.PayDockerHubResource {
+    name = "concourse-runner-with-java-21"
+    source {
+      repository = "governmentdigitalservice/pay-concourse-runner-with-java-21"
+      tag = "latest"
+    }
+  }
 }
 
-jobs = new{
+jobs = new {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/concourse-runner.pkl")
   buildAndPushConcourseJob("", "adminusers-master")
   buildAndPushConcourseJob("-with-java-17", "webhooks-main")
@@ -158,9 +211,15 @@ jobs = new{
       }
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          testConcourseRunnerTask("concourse-runner-image", "adminusers-master")
-          (testConcourseRunnerTask("concourse-runner-with-java-17-image", "webhooks-main")){
+          new TestConcourseRunnerTask {
+            image = "concourse-runner-image"
+            task = "test-concourse-runner"
+            repo = "adminusers-master"
+          }
+          new TestConcourseRunnerTask{
+            image = "concourse-runner-with-java-17-image"
             task = "test-concourse-runner-with-java-17"
+            repo = "webhooks-main"
           }
         }
       }
@@ -209,10 +268,10 @@ local function putPRTestStatus(resourceName: String, testName: String, status: S
   }
 }
 
-local function testConcourseRunnerTask(imageName: String, appRepo: String): Pipeline.TaskStep = new {
+local class TestConcourseRunnerTask extends Pipeline.TaskStep {
   task = "test-concourse-runner"
   privileged = true
-  image = imageName
+  hidden repo: String
   config {
     platform = "linux"
     inputs{
@@ -231,7 +290,7 @@ local function testConcourseRunnerTask(imageName: String, appRepo: String): Pipe
     }
   }
   input_mapping = new {
-    ["app-repo"] = appRepo
+    ["app-repo"] = repo
   }
 }
 
@@ -279,7 +338,10 @@ local function buildAndPushConcourseJob(javaVersionSuffix: String, sampleRepo: S
         }
       }
     }
-    testConcourseRunnerTask("image", sampleRepo)
+    new TestConcourseRunnerTask {
+      image = "image"
+      repo = sampleRepo
+    }
     new PutStep{
       put = baseName
       params = new {
@@ -288,7 +350,6 @@ local function buildAndPushConcourseJob(javaVersionSuffix: String, sampleRepo: S
     }
   }
 }
-
 
 local function buildAndPushConcourseJobWithoutTest(javaVersionSuffix: String): Pipeline.Job = new {
   local baseName = "concourse-runner\(javaVersionSuffix)"

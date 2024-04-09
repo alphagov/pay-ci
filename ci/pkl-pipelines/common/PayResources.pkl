@@ -1,0 +1,36 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Resources.pkl"
+
+class PayGitHubResource extends Resources.GitResource {
+  hidden repoName: String
+  source = new {
+    uri = "https://github.com/alphagov/\(repoName)"
+    username = "alphagov-pay-ci-concourse"
+    password = "((github-access-token))"
+  }
+}
+
+class PayGitHubPullRequestResource extends Pipeline.Resource {
+  type = "pull-request"
+  icon = "github"
+  hidden repo: String
+  hidden paths: Listing<String>?
+  source = new {
+    ["disable_forks"] = true
+    ["repository"] = "alphagov/\(repo)"
+    ["access_token"] = "((github-access-token))"
+    when (paths != null) {
+      ["paths"] = paths
+    }
+  }
+}
+
+class PayDockerHubResource extends Resources.DockerImageResource {
+  type = "registry-image"
+  icon = "docker"
+  source = new {
+    tag = "latest"
+    username = "((docker-username))"
+    password = "((docker-access-token))"
+  }
+}
