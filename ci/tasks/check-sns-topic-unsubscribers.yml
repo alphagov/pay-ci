@@ -3,6 +3,8 @@ image_resource:
    type: registry-image
    source:
     repository: governmentdigitalservice/pay-concourse-runner
+inputs:
+  - name: pay-ci
 params:
   REGIONS: eu-west-1
 run:
