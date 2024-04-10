@@ -6,5 +6,5 @@ image_resource:
 params:
   REGIONS: eu-west-1
 run:
-  path: ash
-  args: ['pay-ci/ci/scripts/check-sns-topic-subscriptions.sh']
+  path: bash
+  args: ['pay-ci/ci/scripts/check-sns-subscriptions.sh']
