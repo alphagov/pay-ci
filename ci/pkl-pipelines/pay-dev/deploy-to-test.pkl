@@ -1,0 +1,1206 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_metrics.pkl"
+import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/shared_resources_for_deploy_pipelines.pkl"
+
+local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
+
+local payScheduledTask = shared_resources_for_deploy_pipelines.payScheduledTask
+local allPayApplications = shared_resources_for_deploy_pipelines.allPayApplications
+local payApplicationsWithDB = shared_resources_for_deploy_pipelines.payApplicationsWithDB
+
+local awsEnvVars = Map("account", "test",
+  "environment", "test-12")
+
+local class AdditionalAppConfigForTestEnv {
+  run_e2e_tests: Boolean = false
+  run_integration_tests: Boolean = false
+
+  build_job_name_to_override: String = ""
+  smoke_test: Boolean = false
+
+  github_branch: String = "master"
+
+  retag_candidate_in_dockerhub: Boolean = false
+}
+
+local class SlackNotificationsAndMetricsConfig {
+  is_a_success: Boolean
+  put_metrics: Boolean = false
+  put_sidecar_metrics: Boolean = false
+  put_grafana_annotation: Boolean = false
+  message: String = ""
+  slack_channel_for_success: String
+}
+
+local function getTestEnvConfig(appName: String): AdditionalAppConfigForTestEnv? =
+  if (testEnvConfigForApps.containsKey(appName)) testEnvConfigForApps.getOrNull(appName)
+  else new AdditionalAppConfigForTestEnv {}
+
+local testEnvConfigForApps: Mapping<Identifier, AdditionalAppConfigForTestEnv> = new {
+  ["adminusers"] = new { run_e2e_tests = true }
+  ["adot"] = new { run_integration_tests = true; github_branch = "main" ; build_job_name_to_override = "build-and-push-adot-candidate" }
+  ["alpine"] = new { build_job_name_to_override = "build-and-push-alpine-to-ecr" }
+  ["cardid"] = new { run_e2e_tests = true }
+  ["connector"] = new { run_e2e_tests = true }
+  ["egress"] = new { github_branch = "main"; build_job_name_to_override = "build-and-push-egress-candidate" }
+  ["frontend"] = new { run_e2e_tests = true }
+  ["ledger"] = new { run_e2e_tests = true }
+  ["nginx-forward-proxy"] = new { smoke_test = true; github_branch = "main" }
+  ["nginx-proxy"] = new { smoke_test = true }
+  ["notifications"] = new {}
+  ["products"] = new { run_e2e_tests = true }
+  ["products-ui"] = new { run_e2e_tests = true }
+  ["publicapi"] = new { run_e2e_tests = true }
+  ["publicauth"] = new { run_e2e_tests = true }
+  ["selfservice"] = new { run_e2e_tests = true }
+  ["stream-s3-sqs"] = new {}
+  ["toolbox"] = new {}
+  ["webhooks"] = new { build_job_name_to_override = "build-webhooks"; github_branch = "main" }
+  ["webhooks-egress"] = new { github_branch = "main" }
+}
+
+resource_types {
+  shared_resources_for_slack_notifications.slackNotificationResourceType
+  shared_resources_for_metrics.prometheusPushgatewayResourceType
+
+  new ResourceType {
+    name = "grafana-annotation"
+    source {
+      ["repository"] = "governmentdigitalservice/pay-grafana-annotation-resource"
+      ["tag"] = "latest"
+    }
+    type = "docker-image"
+  }
+}
+
+local function withTagRegex(regex: String) = new Mixin {
+  source { ["tag_regex"] = regex }
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/deploy-to-test.pkl", "master")
+  shared_resources_for_metrics.prometheusPushgatewayResource
+  shared_resources.payCiGitHubResource
+  shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
+
+  for (app in allPayApplications) {
+    when (app.name == "alpine") {
+      shared_resources.payGithubResourceWithBranch("alpine-git-release", "pay-infra",
+        getTestEnvConfig(app.name).github_branch) |> withTagRegex("alpine_alpha_release-(.*)")
+    } else {
+      shared_resources.payGithubResourceWithBranch("\(app.name)-git-release", "pay-\(app.name)",
+        getTestEnvConfig(app.name).github_branch) |> withTagRegex("alpha_release-(.*)")
+    }
+  }
+
+  for (app in allPayApplications) {
+    shared_resources.payECRResourceWithVariant("\(app.name)-ecr-registry-test",
+      app.getECRRepo(), "pay_aws_test_account_id", "release")
+
+    when (getTestEnvConfig(app.name).run_e2e_tests || getTestEnvConfig(app.name).run_integration_tests) {
+      shared_resources.payECRResourceWithVariant("\(app.name)-candidate",
+        app.getECRRepo(), "pay_aws_test_account_id", "candidate")
+    }
+  }
+
+  shared_resources.payDockerHubResource("adot-dockerhub", "governmentdigitalservice/pay-adot", "latest-master")
+  (shared_resources.payECRResource("adot-latest", "govukpay/adot",
+    "pay_aws_test_account_id")) { source { ["tag"] = "latest" } }
+
+  shared_resources_for_slack_notifications.slackNotificationResource
+
+  new {
+    name = "grafana-annotation"
+    source {
+      ["password"] = "((grafana-annotations-password))"
+      ["tags"] = new Listing {
+        "test-12"
+        "release"
+      }
+      ["url"] = "https://grafana.monitoring.pay-cd.deploy.payments.service.gov.uk"
+      ["username"] = "pay_cd"
+    }
+    type = "grafana-annotation"
+  }
+}
+
+groups {
+  for (app in allPayApplications) {
+    new {
+      name = app.name
+      jobs = new Listing {
+
+        when (getTestEnvConfig(app.name).run_e2e_tests) {
+          "build-and-push-\(app.name)-candidate"
+        } else {
+          when (getTestEnvConfig(app.name).build_job_name_to_override != "") {
+            getTestEnvConfig(app.name).build_job_name_to_override
+          } else {
+            "build-and-push-\(app.name)-to-test-ecr"
+          }
+        }
+
+        when (getTestEnvConfig(app.name).run_e2e_tests) {
+          "run-\(app.name)-e2e"
+        }
+        when (getTestEnvConfig(app.name).run_integration_tests) {
+          "run-\(app.name)-integration-test"
+        }
+
+        when (app.override_app_to_deploy != null) {
+          when (app.name == "nginx-proxy") {
+            "deploy-frontend"
+            "deploy-products-ui"
+          } else {
+            "deploy-\(app.override_app_to_deploy)"
+          }
+        } else {
+          when (app.name == "adot") {
+            "deploy-toolbox"
+          } else {
+            "deploy-\(app.name)"
+          }
+        }
+
+        when (app.smoke_test || getTestEnvConfig(app.name).smoke_test) {
+          when (app.name == "nginx-forward-proxy" || app.name == "nginx-proxy") {
+            "smoke-test-frontend"
+
+            when (app.name == "nginx-proxy") {
+              "smoke-test-products-ui"
+            }
+          } else {
+            "smoke-test-\(app.name)"
+          }
+        }
+        when (app.pact_tag) { "\(app.name)-pact-tag" }
+
+        "push-\(app.name)-to-staging-ecr"
+
+        when (app.has_db) {
+          "\(app.name)-db-migration"
+        }
+      }
+    }
+  }
+  pipeline_self_update.payPipelineSelfUpdateGroup
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/deploy-to-test.pkl")
+
+  for (app in allPayApplications) {
+    getBuildAndPushCandidateJob(app)
+
+    when (getTestEnvConfig(app.name).run_e2e_tests) {
+      getRunE2ETestsJob(app)
+    }
+    when (app.name == "adot") {
+      getAdotIntegrationTest(app)
+    }
+    when (app.override_app_to_deploy == null && app.name != "adot") {
+      getJobToDeployApp(app)
+    }
+    when (app.smoke_test) {
+      getJobToSmokeTestApp(app)
+    }
+    when (app.pact_tag) {
+      getJobToPactTagApp(app)
+    }
+    getJobToPushImageToStaging(app)
+  }
+
+  for (app in payApplicationsWithDB) {
+    getJobForDBMigrations(app)
+  }
+
+  getJobToDeployScheduledTasks()
+}
+
+local function getBuildAndPushCandidateJob(app): Job = new {
+  when (getTestEnvConfig(app.name).run_e2e_tests) {
+    name = "build-and-push-\(app.name)-candidate"
+  } else {
+    when (getTestEnvConfig(app.name).build_job_name_to_override != "") {
+      name = getTestEnvConfig(app.name).build_job_name_to_override
+    } else {
+      name = "build-and-push-\(app.name)-to-test-ecr"
+    }
+  }
+
+  plan {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          getStep("pay-ci", false)
+          getStep("\(app.name)-git-release", true)
+        }
+      }
+    }
+    new TaskStep {
+      task = "parse-release-tag"
+      file = "pay-ci/ci/tasks/parse-release-tag.yml"
+      input_mapping = new {
+        ["git-release"] = "\(app.name)-git-release"
+      }
+      when (app.name == "egress") {
+        params {
+          ["APP_NAME"] = app.name
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          loadVar("app_name", "tags/app_name")
+          loadVar("app_release_number", "tags/release-number")
+          loadVar("release-number", "tags/release-number")
+          loadVar("release-name", "\(app.name)-git-release/.git/ref")
+          loadVar("release-sha", "tags/release-sha")
+          loadVar("candidate-image-tag", "tags/candidate-tag")
+          loadVar("date", "tags/date")
+          assumeRole("codebuild-assume-role")
+          when (getTestEnvConfig(app.name).run_e2e_tests == false) {
+            loadVar("release-tag", "tags/tags")
+            assumeRetagRole()
+          }
+          shared_resources.generateDockerCredsConfigStep
+        }
+      }
+    }
+    loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+    when (getTestEnvConfig(app.name).run_e2e_tests == false) {
+      loadVarWithJsonFormat("retag-role", "assume-retag-role/assume-role.json")
+    }
+
+    new TaskStep {
+      task = "prepare-codebuild"
+      file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
+      params {
+        ["PROJECT_TO_BUILD"] = app.name
+        ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+        ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+        ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+        ["RELEASE_NUMBER"] = "((.:release-number))"
+        ["RELEASE_NAME"] = "((.:release-name))"
+        ["RELEASE_SHA"] = "((.:release-sha))"
+        ["BUILD_DATE"] = "((.:date))"
+      }
+    }
+
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          getTaskToRunCodeBuild(app, "amd64")
+          getTaskToRunCodeBuild(app, "armv8")
+        }
+      }
+    }
+    getTaskToRunCodeBuild(app, "manifest")
+
+    when (getTestEnvConfig(app.name).run_e2e_tests == false || app.name == "adot") {
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps = new Listing<Step> {
+            new TaskStep {
+              task = "retag-candidate-as-release-in-ecr"
+              file = "pay-ci/ci/tasks/manifest-retag.yml"
+              params {
+                ["DOCKER_LOGIN_ECR"] = "1"
+                ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
+                ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
+                ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:release-tag))"
+                ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+                ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+                ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+              }
+            }
+            new TaskStep {
+              task = "retag-candidate-as-latest-in-ecr"
+              file = "pay-ci/ci/tasks/manifest-retag.yml"
+              params {
+                ["DOCKER_LOGIN_ECR"] = "1"
+                ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
+                ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
+                ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):latest"
+                ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+                ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+                ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+              }
+            }
+            when (app.is_a_java_or_node_app == true || app.name == "adot" || app.name == "nginx-proxy") {
+              new TaskStep {
+                task = "retag-candidate-as-release-in-dockerhub"
+                file = "pay-ci/ci/tasks/manifest-retag.yml"
+                params {
+                  ["SOURCE_MANIFEST"] = "\(app.getDockerRepo()):((.:candidate-image-tag))"
+                  ["NEW_MANIFEST"] = "\(app.getDockerRepo()):latest-master"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  when (getTestEnvConfig(app.name).run_e2e_tests) {
+    on_success = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = true
+      slack_channel_for_success = "#govuk-pay-activity"; put_metrics = true;
+      message = "\(app.name) candidate image ((.:candidate-image-tag)) built successfully" })
+    on_failure = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = false
+      put_metrics = true; message = "\(app.name) candidate image ((.:candidate-image-tag)) failed to build" })
+  } else {
+    on_success = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = true
+      slack_channel_for_success = "#govuk-pay-activity"; put_metrics = true;
+      message = "\(app.name) image ((.:release-tag)) built successfully" })
+    on_failure = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = false
+      put_metrics = true; message = "\(app.name) image ((.:release-tag)) failed to build" })
+  }
+}
+
+local function getRunE2ETestsJob(app): Job = new {
+  name = "run-\(app.name)-e2e"
+
+  plan {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          (getStep("\(app.name)-candidate", true)) { params {
+            ["format"] = "oci"
+          } }
+          getStep("pay-ci", false)
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          shared_resources.generateDockerCredsConfigStep
+          new TaskStep {
+            task = "parse-candidate-tag"
+            file = "pay-ci/ci/tasks/parse-candidate-tag.yml"
+            input_mapping = new {
+              ["ecr-repo"] = "\(app.name)-candidate"
+            }
+          }
+          loadVar("candidate-image-tag", "\(app.name)-candidate/tag")
+          assumeRole("e2e-test-assume-role")
+          assumeRetagRole()
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+          loadVarWithJsonFormat("retag-role", "assume-retag-role/assume-role.json")
+          loadVar("release_image_tag", "parse-candidate-tag/release-tag")
+          loadVar("app_name", "parse-candidate-tag/app_name")
+          loadVar("app_release_number", "parse-candidate-tag/release-number")
+        }
+      }
+    }
+
+    new TaskStep {
+      task = "prepare-codebuild"
+      file = "pay-ci/ci/tasks/prepare-e2e-codebuild.yml"
+      params {
+        ["PROJECT_UNDER_TEST"] = app.name
+        ["RELEASE_TAG_UNDER_TEST"] = "((.:candidate-image-tag))"
+        ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+        ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+        ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+      }
+    }
+
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          when (app.name == "frontend" || app.name == "selfservice" || app.name == "products" || app.name == "products-ui" || app.name == "publicapi") {
+            new TaskStep {
+              task = "run-codebuild-product"
+              file = "pay-ci/ci/tasks/run-codebuild.yml"
+              params {
+                ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/products.json"
+                ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+                ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+                ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+              }
+            }
+          }
+          when (!(app.name == "products-ui" || app.name == "products")) {
+            new TaskStep {
+              task = "run-codebuild-card"
+              attempts = 3
+              file = "pay-ci/ci/tasks/run-codebuild.yml"
+              params {
+                ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/card.json"
+                ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+                ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+                ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+              }
+            }
+          }
+          when (app.name == "cardid" || app.name == "frontend" || app.name == "publicauth" || app.name == "publicapi") {
+            new TaskStep {
+              task = "run-codebuild-zap"
+              file = "pay-ci/ci/tasks/run-codebuild.yml"
+              params {
+                ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/zap.json"
+                ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+                ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+                ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+              }
+            }
+          }
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          new TaskStep {
+            task = "retag-candidate-as-release-in-ecr"
+            file = "pay-ci/ci/tasks/manifest-retag.yml"
+            params {
+              ["DOCKER_LOGIN_ECR"] = "1"
+              ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
+              ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
+              ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:release_image_tag))"
+              ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+              ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+              ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+            }
+          }
+          new TaskStep {
+            task = "retag-candidate-as-latest-in-ecr"
+            file = "pay-ci/ci/tasks/manifest-retag.yml"
+            params {
+              ["DOCKER_LOGIN_ECR"] = "1"
+              ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
+              ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
+              ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):latest"
+              ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+              ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+              ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+            }
+          }
+          when (app.is_a_java_or_node_app == true || app.name == "adot" || app.name == "nginx-proxy") {
+            new TaskStep {
+              task = "retag-candidate-as-release-in-dockerhub"
+              file = "pay-ci/ci/tasks/manifest-retag.yml"
+              params {
+                ["SOURCE_MANIFEST"] = "\(app.getDockerRepo()):((.:candidate-image-tag))"
+                ["NEW_MANIFEST"] = "\(app.getDockerRepo()):latest-master"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  on_success = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = true
+    slack_channel_for_success = "#govuk-pay-activity"; put_metrics = true
+    message = "\(app.name) candidate image ((.:candidate-image-tag)) passed post-merge end to end tests" })
+  on_failure = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = false
+    put_metrics = true message = "\(app.name) candidate image ((.:candidate-image-tag)) failed post-merge end to end tests" })
+}
+
+local function getAdotIntegrationTest(app): Job = new {
+  name = "run-adot-integration-test"
+
+  plan {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          (getStepWithTriggerAndPassed("adot-candidate", "deploy-toolbox")) { params {
+            ["format"] = "oci"
+          } }
+          getStep("pay-ci", false)
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          shared_resources.generateDockerCredsConfigStep
+          new TaskStep {
+            task = "parse-candidate-tag"
+            file = "pay-ci/ci/tasks/parse-candidate-tag.yml"
+            input_mapping = new {
+              ["ecr-repo"] = "adot-candidate"
+            }
+          }
+          loadVar("candidate-image-tag", "adot-candidate/tag")
+        }
+      }
+    }
+    new TaskStep {
+      task = "run-toolbox-metric-tests"
+      config {
+        platform = "linux"
+        image_resource {
+          type = "registry-image"
+          source {
+            ["repository"] = "governmentdigitalservice/pay-node-runner"
+            ["tag"] = "node16"
+          }
+        }
+        inputs = new Listing {
+          new TaskConfig.Input { name = "pay-ci" }
+        }
+        params {
+          // Need to create the role for the concourse user to assume in the test account
+          ["aws_role_arn"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+          // Hardcode the test account registry ID for now. Needs to be a string, not a number
+          ["aws_ecr_registry_id"] = "((pay_aws_test_account_id))"
+          ["aws_region"] = "eu-west-1"
+          ["AWS_ACCESS_KEY_ID"] = "((readonly_access_key_id))"
+          ["AWS_SECRET_ACCESS_KEY"] = "((readonly_secret_access_key))"
+          ["AWS_SESSION_TOKEN"] = "((readonly_session_token))"
+          ["TEST_METRIC_ECS_SERVICE"] = "toolbox"
+        }
+        run = new TaskConfig.Run {
+          path = "node"
+          args {
+            "pay-ci/ci/scripts/test-metrics.js"
+          }
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          new DoStep {
+            do = new Listing {
+              new PutStep {
+                put = "adot-ecr-registry-test"
+                params {
+                  ["image"] = "adot-candidate/image.tar"
+                  ["additional_tags"] = "parse-candidate-tag/release-tag"
+                }
+                get_params {
+                  ["skip_download"] = true
+                }
+              }
+              new PutStep {
+                put = "adot-latest"
+                params {
+                  ["image"] = "adot-candidate/image.tar"
+                }
+                get_params {
+                  ["skip_download"] = true
+                }
+              }
+            }
+          }
+          new PutStep {
+            put = "adot-dockerhub"
+            params {
+              ["image"] = "adot-candidate/image.tar"
+            }
+            get_params {
+              ["skip_download"] = true
+            }
+          }
+        }
+      }
+    }
+  }
+
+  on_success = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = true
+    slack_channel_for_success = "#govuk-pay-activity"; put_metrics = false
+    message = "\(app.name) candidate image ((.:candidate-image-tag)) passed post-merge end to end tests" })
+  on_failure = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = false
+    put_metrics = false; message = "\(app.name) candidate image ((.:candidate-image-tag)) failed post-merge end to end tests" })
+}
+
+local function getTaskToRunCodeBuild(app: PayApp, architecture: String) = new TaskStep {
+  task = "run-codebuild-\(app.name)-\(architecture)"
+  attempts = 3
+  file = "pay-ci/ci/tasks/run-codebuild.yml"
+  params {
+    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(app.name)-\(architecture).json"
+    ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+  }
+}
+
+local function getJobToDeployApp(app): Job = new {
+  name = "deploy-\(app.name)"
+  serial = true
+  serial_groups {
+    "deploy-application"
+  }
+  plan = new {
+    getResourcesToDeployApp(app)
+    loadVariablesToDeployApp(app)
+    createNotificationSnippets(app, "Deployment")
+    loadNotificationSnippetVariables(app, true)
+
+    when (app.pact_tag) {
+      ...checkPactCompatibility(app)
+    }
+
+    assumeRole("terraform-test-assume-role")
+    loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+
+    checkReleaseVersions(app)
+
+    shared_resources_for_deploy_pipelines.deployApplicationTask(app, awsEnvVars, "deploy-to-test")
+    shared_resources_for_deploy_pipelines.waitForDeployTask(app, "test-12")
+  }
+
+  on_success = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = true
+    slack_channel_for_success = "#govuk-pay-activity"; put_metrics = true; put_sidecar_metrics = true; put_grafana_annotation = app.is_a_java_or_node_app })
+  on_failure = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = false
+    put_metrics = true; put_sidecar_metrics = true })
+}
+
+local function getJobToSmokeTestApp(app): Job = new {
+  name = "smoke-test-\(app.name)"
+  serial_groups {
+    "smoke-test"
+  }
+  plan = new {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          getStepWithTriggerAndPassed("\(app.name)-ecr-registry-test", "deploy-\(app.name)")
+          when (app.name == "frontend") {
+            getStepWithTriggerAndPassed("nginx-forward-proxy-ecr-registry-test", "deploy-\(app.name)")
+          }
+          when (app.name == "frontend" || app.name == "products-ui") {
+            getStepWithTriggerAndPassed("nginx-proxy-ecr-registry-test", "deploy-\(app.name)")
+          }
+          getStep("pay-ci", false)
+        }
+      }
+    }
+
+    loadVar("application_image_tag", "\(app.name)-ecr-registry-test/tag")
+    createNotificationSnippets(app, "Smoke test")
+    loadNotificationSnippetVariables(app, false)
+
+    assumeRoleWithAccount("trigger-canary-deploy-assume-role", "pay_aws_deploy_account_id")
+    loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+    runSmokeTestsForApp()
+  }
+
+  on_success = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = true
+    slack_channel_for_success = "#govuk-pay-activity"; put_metrics = true; })
+  on_failure = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = false
+    put_metrics = true; })
+}
+
+local function getJobToPactTagApp(app): Job = new {
+  name = "\(app.name)-pact-tag"
+  plan = new {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          getStepWithTriggerAndPassed("\(app.name)-ecr-registry-test", "smoke-test-\(app.name)")
+          getStep("pay-ci", false)
+        }
+      }
+    }
+    loadVar("application_image_tag", "\(app.name)-ecr-registry-test/tag")
+
+    createNotificationSnippets(app, "Pact tag")
+    loadNotificationSnippetVariables(app, false)
+
+    getGitShaForReleaseTag(app)
+    loadVar("git-sha", "git-sha/git-sha")
+    new TaskStep {
+      task = "tag-pact"
+      file = "pay-ci/ci/tasks/pact-tag.yml"
+      params {
+        ["GIT_SHA"] = "((.:git-sha))"
+        ["APP_NAME"] = app.name
+        ["PACT_TAG"] = "test-fargate"
+      }
+    }
+  }
+  on_success = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = true
+    slack_channel_for_success = "#govuk-pay-activity"; put_metrics = true; })
+  on_failure = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = false
+    put_metrics = true; })
+}
+
+local function getJobToPushImageToStaging(app): Job = new {
+  name = "push-\(app.name)-to-staging-ecr"
+
+  plan = new {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          new GetStep {
+            get = "\(app.name)-ecr-registry-test"
+            params {
+              ["skip_download"] = true
+              ["format"] = "oci"
+            }
+            trigger = true
+            passed {
+              when (app.name == "adot") {
+                "run-adot-integration-test"
+              }
+              when (app.name == "nginx-forward-proxy") {
+                "smoke-test-frontend"
+              }
+              when (app.name == "nginx-proxy") {
+                "smoke-test-frontend"
+                "smoke-test-products-ui"
+              }
+              when (!(app.name == "adot" || app.name == "nginx-forward-proxy" || app.name == "nginx-proxy")) {
+                when (app.pact_tag) {
+                  "\(app.name)-pact-tag"
+                } else {
+                  when (app.smoke_test) {
+                    "smoke-test-\(app.name)"
+                  } else {
+                    when (app.override_app_to_deploy != null) {
+                      when (app.override_app_to_deploy == "scheduled-tasks") {
+                        "deploy-\(app.override_app_to_deploy)"
+                      } else {
+                        "deploy-\(app.override_app_to_deploy)"
+                      }
+                    } else {
+                      "deploy-\(app.name)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+          getStep("pay-ci", false)
+        }
+      }
+    }
+    parseReleaseTag(app.name, false)
+
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          loadVar("app_name", "ecr-release-info/app_name")
+          loadVar("app_release_number", "ecr-release-info/release-number")
+          loadVar("release_number", "ecr-release-info/release-number")
+
+          assumeCopyFromTestEcrRole()
+          assumeWriteToStagingEcrRole()
+        }
+      }
+    }
+
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          loadVarWithJsonFormat("copy-from-test-ecr-role", "assume-copy-from-ecr-test-role/assume-role.json")
+          loadVarWithJsonFormat("write-to-staging-ecr-role", "assume-write-to-ecr-staging-role/assume-role.json")
+        }
+      }
+    }
+
+    copyImagesToStaging(app)
+  }
+  on_success = shared_resources_for_metrics.paySendAppReleaseMetric(true, "test-12")
+  on_failure = shared_resources_for_metrics.paySendAppReleaseMetric(false, "test-12")
+}
+
+local function getJobForDBMigrations(app): Job = new {
+  name = "\(app.name)-db-migration"
+  plan {
+    new InParallelStep { in_parallel = getResourcesToRunDbMigrations(app) }
+    assumeRole("terraform-test-assume-role")
+    new InParallelStep {
+      in_parallel = new Listing {
+        loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+        loadVar("application_image_tag", "\(app.name)-ecr-registry-test/tag")
+      }
+    }
+    shared_resources_for_slack_notifications.paySlackNotificationForDBMigration("#govuk-pay-announce", "test-12")
+    shared_resources_for_deploy_pipelines.runDBMigrationsTask(app, "test-12-fargate")
+  }
+  on_success = shared_resources_for_slack_notifications.paySlackNotificationForDBMigrationStatus(
+    "#govuk-pay-activity", true, "test-12")
+  on_failure = shared_resources_for_slack_notifications.paySlackNotificationForDBMigrationStatus(
+    "#govuk-pay-announce", false, "test-12")
+}
+
+local function getJobToDeployScheduledTasks(): Job = new {
+  name = "deploy-scheduled-tasks"
+  plan {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        getStep("alpine-ecr-registry-test", true)
+        getStep("stream-s3-sqs-ecr-registry-test", true)
+        getStep("pay-ci", false)
+        getStep("pay-infra", false)
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing {
+        loadVar("alpine_image_tag", "alpine-ecr-registry-test/tag")
+        loadVar("stream_s3_sqs_image_tag", "stream-s3-sqs-ecr-registry-test/tag")
+        assumeRole("terraform-test-assume-role")
+      }
+    }
+    loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+    shared_resources_for_deploy_pipelines.deployApplicationTask(payScheduledTask,
+      awsEnvVars, "deploy-to-test")
+  }
+  on_failure = shared_resources_for_slack_notifications.paySlackNotificationForFail("#govuk-pay-announce", "Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag))")
+  on_success = shared_resources_for_slack_notifications.paySlackNotificationForSuccess("#govuk-pay-activity", "Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully")
+}
+
+local function getResourcesToDeployApp(app: PayApp): InParallelStep = new InParallelStep {
+  in_parallel = new Listing<Step> {
+    getStep("\(app.name)-ecr-registry-test", true)
+
+    when (app.is_a_java_or_node_app) {
+      getStep("adot-ecr-registry-test", true)
+      getStep("nginx-proxy-ecr-registry-test", true)
+      when (app.name == "frontend") {
+        getStep("nginx-forward-proxy-ecr-registry-test", true)
+      }
+    }
+
+    getStep("pay-infra", false)
+    getStep("pay-ci", false)
+  }
+}
+
+local function createNotificationSnippets(app: PayApp, action: String) = new TaskStep {
+  task = "create-notification-snippets"
+  when (app.name == "egress" || app.name == "webhooks-egress") {
+    file = "pay-ci/ci/tasks/create-egress-notification-snippets.yml"
+  } else {
+    file = "pay-ci/ci/tasks/create-notification-snippets.yml"
+  }
+
+  params {
+    ["APP_NAME"] = app.name
+    ["ACTION_NAME"] = action
+    ["ENV"] = "test-12"
+    ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
+    when (app.is_a_java_or_node_app && action == "Deployment") {
+      ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
+      ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
+      when (app.name == "frontend") {
+        ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
+      }
+    }
+  }
+}
+
+local function loadVariablesToDeployApp(app: PayApp): InParallelStep = new InParallelStep {
+  in_parallel = new Listing<Step> {
+    loadVar("application_image_tag", "\(app.name)-ecr-registry-test/tag")
+
+    when (app.is_a_java_or_node_app == true) {
+      loadVar("adot_image_tag", "adot-ecr-registry-test/tag")
+      loadVar("nginx_image_tag", "nginx-proxy-ecr-registry-test/tag")
+      when (app.name == "frontend") {
+        loadVar("nginx_forward_proxy_image_tag", "nginx-forward-proxy-ecr-registry-test/tag")
+      }
+    }
+  }
+}
+
+local function loadNotificationSnippetVariables(app: PayApp, isDeployJob: Boolean): InParallelStep = new InParallelStep {
+  in_parallel = new Listing<Step> {
+    loadVar("app_name", "snippet/app_name")
+    loadVar("app_release_number", "snippet/app_release_number")
+
+    when (app.is_a_java_or_node_app == true && isDeployJob) {
+      loadVar("adot_release_number", "snippet/adot_release_number")
+      loadVar("nginx_release_number", "snippet/nginx_release_number")
+      when (app.name == "frontend") {
+        loadVar("nginx_forward_proxy_release_number", "snippet/nginx_forward_proxy_release_number")
+      }
+    }
+    loadVar("success_snippet", "snippet/success")
+    loadVar("failure_snippet", "snippet/failure")
+  }
+}
+
+local function parseReleaseTag(appName: String, includeOutputMapping: Boolean) = new TaskStep {
+  task = "parse-ecr-release-tag"
+  file = "pay-ci/ci/tasks/parse-ecr-release-tag.yml"
+  input_mapping = new {
+    ["ecr-image"] = "\(appName)-ecr-registry-test"
+  }
+  when (includeOutputMapping) {
+    local releaseInfoPrefix = if (appName == "nginx-proxy") "nginx" else appName
+    output_mapping = new {
+      ["ecr-release-info"] = "\(releaseInfoPrefix)-release-info"
+    }
+  }
+}
+
+local function getGitShaForReleaseTag (app): TaskStep = new TaskStep {
+  task = "get-git-sha-for-release-tag"
+  file = "pay-ci/ci/tasks/get-git-sha-for-release-tag.yml"
+  params {
+    ["APP_NAME"] = app.name
+    ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
+    ["GITHUB_TOKEN"] = "((github-access-token))"
+  }
+}
+
+local function checkPactCompatibility(app) = new {
+  getGitShaForReleaseTag(app)
+  loadVar("git-sha", "git-sha/git-sha")
+  new TaskStep {
+    task = "check-pact-compatibility"
+    file = "pay-ci/ci/tasks/check-pact-compatibility.yml"
+    params {
+      ["GIT_SHA"] = "((.:git-sha))"
+      ["APP_NAME"] = app.name
+      ["PACT_TAG"] = "test-fargate"
+    }
+  }
+}
+
+local function checkReleaseVersions(app): TaskStep = new TaskStep {
+  task = "check-release-versions"
+  file = "pay-ci/ci/tasks/check-release-versions.yml"
+  params {
+    ...getAWSAssumeRoleCreds()
+    ["AWS_REGION"] = "eu-west-1"
+    ["CLUSTER_NAME"] = "test-12-fargate"
+    ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
+    when (app.is_a_java_or_node_app) {
+      ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
+      ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
+    }
+    when (app.name == "frontend") {
+      ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
+    }
+    ["APP_NAME"] = app.name
+  }
+}
+
+local function runSmokeTestsForApp(): InParallelStep = new InParallelStep {
+  in_parallel = new InParallelConfig {
+    limit = 8
+    steps = new Listing<Step> {
+      runSmokeTest("run_create_card_payment_sandbox-test", "card_sandbox_test", false)
+      runSmokeTest("run_recurring_card_payment_sandbox-test", "rec_card_sandbox_test", false)
+      runSmokeTest("run_create_card_payment_worldpay_with_3ds2-test",
+        "card_wpay_3ds2_test", true)
+      runSmokeTest("run_create_card_payment_worldpay_with_3ds2_exemption-test",
+        "card_wpay_3ds2ex_test", true)
+      runSmokeTest("run_create_card_payment_worldpay_without_3ds-test", "card_wpay_test", true)
+      runSmokeTest("run_recurring_card_payment_worldpay-test", "reccard_worldpay_test", true)
+      runSmokeTest("run_cancel_card_payment_sandbox-test", "cancel_sandbox_test", false)
+      runSmokeTest("run_use_payment_link_sandbox-test", "pymntlnk_sandbox_test", false)
+      runSmokeTest("run_create_card_payment_stripe-test", "card_stripe_test", false)
+      runSmokeTest("run_create_card_payment_stripe_3ds-test", "card_stripe_3ds_test", false)
+      runSmokeTest("run_recurring_card_payment_stripe-test", "rec_card_stripe_test", false)
+      runSmokeTest("run_notifications_sandbox-test", "notifcatns_sndbx_test", false)
+    }
+  }
+}
+
+local function runSmokeTest(taskName: String, smokeTestName: String,
+  shouldRetry: Boolean): TaskStep = new TaskStep {
+  task = taskName
+  when (shouldRetry) {
+    attempts = 10
+  }
+  file = "pay-ci/ci/tasks/run-smoke-test.yml"
+  params {
+    ...getAWSAssumeRoleCreds()
+    ["AWS_REGION"] = "eu-west-1"
+    ["SMOKE_TEST_NAME"] = smokeTestName
+  }
+}
+
+local function sendNotificationAndMetrics (app: PayApp, config: SlackNotificationsAndMetricsConfig) = new InParallelStep {
+  in_parallel = new InParallelConfig {
+    steps = new Listing<Step> {
+      ...sendSlackNotification(config)
+
+      when (config.put_metrics) {
+        ...sendMetrics(app, config.is_a_success, config.put_sidecar_metrics)
+      }
+      when (config.put_grafana_annotation && config.is_a_success) {
+        putGrafanaAnnotation()
+      }
+    }
+  }
+}
+
+local function sendSlackNotification(config: SlackNotificationsAndMetricsConfig) = new {
+  when (config.message.length > 0) {
+    when (config.is_a_success) {
+      shared_resources_for_slack_notifications.paySlackNotificationForSuccess(config.slack_channel_for_success, config.message)
+    }
+    else {
+      shared_resources_for_slack_notifications.paySlackNotificationForFail("#govuk-pay-announce", config.message)
+    }
+  } else {
+    when (config.is_a_success) {
+      shared_resources_for_slack_notifications.paySlackNotificationForAppDeploymentInProd(
+        config.slack_channel_for_success, true, "((.:success_snippet))")
+    }
+    else {
+      shared_resources_for_slack_notifications.paySlackNotificationForAppDeploymentInProd(
+        "#govuk-pay-announce", false, "((.:failure_snippet))")
+    }
+  }
+}
+
+local function putGrafanaAnnotation() = new PutStep {
+  put = "grafana-annotation"
+  params {
+    ["tags"] = new Listing {
+      "((.:app_name))"
+      "deploy-to-test"
+    }
+    ["template"] = "released ${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME} release ((.:app_release_number)) (build ${BUILD_ID})"
+  }
+}
+
+local function sendMetrics(app: PayApp, isASuccess: Boolean, sendSideCarMetrics: Boolean) = new {
+  shared_resources_for_metrics.paySendAppReleaseMetric(isASuccess, "test-12")
+  when (app.is_a_java_or_node_app == true && sendSideCarMetrics) {
+    shared_resources_for_metrics.paySendNginxReleaseMetric(isASuccess, "test-12")
+    when (app.name == "frontend") {
+      shared_resources_for_metrics.paySendNginxForwardProxyReleaseMetric(isASuccess, "test-12")
+    }
+    shared_resources_for_metrics.paySendAdotReleaseMetric(isASuccess, "test-12")
+  }
+}
+
+local function getResourcesToRunDbMigrations(app: PayApp): Listing<Step> = new Listing<Step> {
+  getStep("pay-ci", false)
+  (getStep("\(app.name)-ecr-registry-test", true)) {
+    passed = new Listing<Identifier> {
+      "deploy-\(app.name)"
+    }
+    trigger = false
+    params {
+      ["format"] = "oci"
+    }
+  }
+}
+
+local function assumeRole(awsRoleSessionName: String) =
+  assumeRoleWithAccount(awsRoleSessionName, "pay_aws_test_account_id")
+
+local function assumeRoleWithAccount(awsRoleSessionName: String, account: String) = new TaskStep {
+  task = "assume-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  params {
+    when (account == "pay_aws_deploy_account_id") {
+      ["AWS_ROLE_ARN"] = "arn:aws:iam::((\(account))):role/concourse_trigger_canary"
+    }
+    else {
+      when (awsRoleSessionName == "codebuild-assume-role") {
+        ["AWS_ROLE_ARN"] = "arn:aws:iam::((\(account))):role/pay-cd-pay-dev-codebuild-builder-test-12"
+      } else {
+        when (awsRoleSessionName == "e2e-test-assume-role") {
+          ["AWS_ROLE_ARN"] = "arn:aws:iam::((\(account))):role/pay-cd-pay-dev-codebuild-executor-test-12"
+        } else {
+          ["AWS_ROLE_ARN"] = "arn:aws:iam::((\(account))):role/concourse"
+        }
+      }
+    }
+    ["AWS_ROLE_SESSION_NAME"] = awsRoleSessionName
+  }
+}
+
+local function assumeRetagRole(): TaskStep = new TaskStep {
+  task = "assume-retag-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping {
+    ["assume-role"] = "assume-retag-role"
+  }
+  params {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "retag-ecr-image-as-release"
+  }
+}
+
+local function assumeCopyFromTestEcrRole(): TaskStep = new TaskStep {
+  task = "assume-copy-from-ecr-test-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping {
+    ["assume-role"] = "assume-copy-from-ecr-test-role"
+  }
+  params {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "copy-from-ecr-in-test"
+  }
+}
+
+local function assumeWriteToStagingEcrRole(): TaskStep = new TaskStep {
+  task = "assume-write-to-ecr-staging-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping {
+    ["assume-role"] = "assume-write-to-ecr-staging-role"
+  }
+  params {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_staging_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "copy-to-ecr-in-staging"
+  }
+}
+
+local function copyImagesToStaging(app: PayApp): TaskStep = new TaskStep {
+  task = "copy-images-to-staging"
+  file = "pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml"
+  privileged = true
+  params {
+    ["ECR_REPO_NAME"] = app.getECRRepo()
+    ["RELEASE_NUMBER"] = "((.:release_number))"
+    ["SOURCE_ECR_REGISTRY"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_staging_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:copy-from-test-ecr-role.AWS_ACCESS_KEY_ID))"
+    ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:copy-from-test-ecr-role.AWS_SECRET_ACCESS_KEY))"
+    ["SOURCE_AWS_SESSION_TOKEN"] = "((.:copy-from-test-ecr-role.AWS_SESSION_TOKEN))"
+    ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:write-to-staging-ecr-role.AWS_ACCESS_KEY_ID))"
+    ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:write-to-staging-ecr-role.AWS_SECRET_ACCESS_KEY))"
+    ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-staging-ecr-role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function getAWSAssumeRoleCreds() = new Mapping<String, String> {
+  ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+  ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+  ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+}
+
+local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+}
+
+local function loadVarWithJsonFormat(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+  format = "json"
+}
+
+local function getStep(name: String, shouldTrigger: Boolean): GetStep = new GetStep {
+  get = name
+  when (shouldTrigger == true) {
+    trigger = shouldTrigger
+  }
+}
+
+local function getStepWithTriggerAndPassed(name: String, passedJob: String): GetStep = new GetStep {
+  get = name
+  trigger = true
+  passed {
+    passedJob
+  }
+}

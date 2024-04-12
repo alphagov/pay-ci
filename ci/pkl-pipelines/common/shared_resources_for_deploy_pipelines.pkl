@@ -13,6 +13,7 @@ class PayApplication {
   pact_tag: Boolean = false
 
   function getECRRepo(): String = "govukpay/\(override_ecr_repo ?? name)"
+  function getDockerRepo(): String = "governmentdigitalservice/pay-\(override_ecr_repo ?? name)"
 }
 
 local payApps: Listing<PayApplication> = new Listing<PayApplication> {
@@ -167,7 +168,7 @@ function deployApplicationTask(app: PayApplication, awsEnvVars: Map,
   }
 }
 
-local function getAWSAssumeRoleCreds() = new Mapping<String, String> {
+function getAWSAssumeRoleCreds() = new Mapping<String, String> {
   ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
   ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
   ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
