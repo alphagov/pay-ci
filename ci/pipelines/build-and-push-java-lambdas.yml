@@ -1,0 +1,32 @@
+resources:
+  - name: pay-java-lambdas
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-java-lambdas
+      branch: PP-12537
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+  - name: ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: PP-12537
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+jobs:
+  - name: build
+    plan:
+      - get: src
+        resource: pay-java-lambdas
+        trigger: true
+      - get: ci
+        trigger: false
+      - task: build-java-lambdas
+        file: ci/ci/tasks/build-java-lambdas.yml
+        params:
+          app_name: pay-java-lambdas
+#        TODO on_failure
+#        TODO on_success
