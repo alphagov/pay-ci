@@ -84,7 +84,7 @@ local function withTagRegex(regex: String) = new Mixin {
 }
 
 resources = new {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/deploy-to-test.pkl", "master")
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-to-test.pkl", "master")
   shared_resources_for_metrics.prometheusPushgatewayResource
   shared_resources.payCiGitHubResource
   shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
@@ -193,7 +193,7 @@ groups {
 }
 
 jobs {
-  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/deploy-to-test.pkl")
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/deploy-to-test.pkl")
 
   for (app in allPayApplications) {
     getBuildAndPushCandidateJob(app)
@@ -249,10 +249,8 @@ local function getBuildAndPushCandidateJob(app): Job = new {
       input_mapping = new {
         ["git-release"] = "\(app.name)-git-release"
       }
-      when (app.name == "egress") {
-        params {
-          ["APP_NAME"] = app.name
-        }
+      params {
+        ["APP_NAME"] = app.name
       }
     }
     new InParallelStep {
