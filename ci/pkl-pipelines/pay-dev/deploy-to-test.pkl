@@ -865,7 +865,11 @@ local function getResourcesToDeployApp(app: PayApp): InParallelStep = new InPara
     getStep("\(app.name)-ecr-registry-test", true)
 
     when (app.is_a_java_or_node_app) {
-      getStep("adot-ecr-registry-test", true)
+      when(app.name == "toolbox"){
+        getStep("adot-candidate", true)
+      } else {
+        getStep("adot-ecr-registry-test", true)
+      }
       getStep("nginx-proxy-ecr-registry-test", true)
       when (app.name == "frontend") {
         getStep("nginx-forward-proxy-ecr-registry-test", true)
@@ -905,7 +909,11 @@ local function loadVariablesToDeployApp(app: PayApp): InParallelStep = new InPar
     loadVar("application_image_tag", "\(app.name)-ecr-registry-test/tag")
 
     when (app.is_a_java_or_node_app == true) {
-      loadVar("adot_image_tag", "adot-ecr-registry-test/tag")
+      when(app.name == "toolbox") {
+        loadVar("adot_image_tag", "adot-candidate/tag")
+      } else {
+        loadVar("adot_image_tag", "adot-ecr-registry-test/tag")
+      }
       loadVar("nginx_image_tag", "nginx-proxy-ecr-registry-test/tag")
       when (app.name == "frontend") {
         loadVar("nginx_forward_proxy_image_tag", "nginx-forward-proxy-ecr-registry-test/tag")
