@@ -114,7 +114,9 @@ local function getJobToDeployApp(app): Job = new {
     assumeRole("terraform-prod-assume-role")
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
 
-    checkReleaseVersions(app)
+    when(app.name != "connector") {
+      checkReleaseVersions(app)
+    }
 
     shared_resources_for_deploy_pipelines.deployApplicationTask(app, awsEnvVars, "deploy-to-prod")
     shared_resources_for_deploy_pipelines.waitForDeployTask(app, "production-2")
