@@ -4,7 +4,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-java-lambdas
-      branch: PP-12537
+      branch: main
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
   - name: ci
@@ -12,7 +12,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: PP-12537
+      branch: main
       username: alphagov-pay-ci-concourse
       password: ((github-access-token))
 
