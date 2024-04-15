@@ -48,7 +48,14 @@ run:
     done < submodules.txt
     
     cd ..
-    cp -R src/* build
+    
+    while read line; do
+      mkdir build
+      mkdir build/$line
+      cp src/$line/target/$line-*.jar build/$line
+    done < submodules.txt
+    
+#    cp -R src/* build
     ls -al build/bin-ranges-diff/target
     ls -al build/bin-ranges-integrity/target
     ls -al build/bin-ranges-promotion/target
