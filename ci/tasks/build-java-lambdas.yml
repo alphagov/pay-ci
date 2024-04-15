@@ -47,15 +47,14 @@ run:
       mvn --global-settings settings.xml clean install --projects $line --also-make
     done < submodules.txt
     
-    cd ..
-    
     while read line; do
-      mkdir build
-      mkdir build/$line
-      cp src/$line/target/$line-*.jar build/$line
+      mkdir ../build/$line
+      cp $line/target/$line-*.jar ../build/$line
     done < submodules.txt
     
-    ls -al build/bin-ranges-diff/target
-    ls -al build/bin-ranges-integrity/target
-    ls -al build/bin-ranges-promotion/target
-    ls -al build/bin-ranges-transfer/target
+    cd ..
+    
+    ls -al build/bin-ranges-diff
+    ls -al build/bin-ranges-integrity
+    ls -al build/bin-ranges-promotion
+    ls -al build/bin-ranges-transfer
