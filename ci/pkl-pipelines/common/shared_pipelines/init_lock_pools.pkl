@@ -18,11 +18,7 @@ resources {
       ["private_key"] = "((readonly_codecommit_private_key))"
     }
   }
-  (shared_resources.payCiGitHubResource) {
-    source {
-      branch = "pp-12494/add-init-pool-pipeline"
-    }
-  }
+  shared_resources.payCiGitHubResource
   pipeline_self_update.PayPipelineSelfUpdateResource("\(concourseTeamName)/init-lock-pools.pkl", "master")
 }
 
