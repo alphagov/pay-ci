@@ -20,7 +20,7 @@ resources {
     }
   }
   new {
-    name = "every-morning-at-s"
+    name = "every-morning-at-six"
     type = "time"
     icon = "alarm"
     source {
