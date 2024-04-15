@@ -48,13 +48,18 @@ run:
     done < submodules.txt
     
     while read line; do
+      echo "target output for $line:"
+      ls -alh $line/target
       mkdir ../build/$line
       cp $line/target/$line-*.jar ../build/$line
     done < submodules.txt
     
     cd ..
     
-    ls -al build/bin-ranges-diff
-    ls -al build/bin-ranges-integrity
-    ls -al build/bin-ranges-promotion
-    ls -al build/bin-ranges-transfer
+    echo "FINAL BUILD OUTPUT:"
+    echo "ls -alh build/bin-ranges-diff"
+    ls -alh build/bin-ranges-diff
+    echo "ls -alh build/bin-ranges-promotion"
+    ls -alh build/bin-ranges-promotion
+    echo "ls -alh build/bin-ranges-transfer"
+    ls -alh build/bin-ranges-transfer
