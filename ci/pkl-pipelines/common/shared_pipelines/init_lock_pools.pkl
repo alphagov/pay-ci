@@ -1,0 +1,51 @@
+extends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../pipeline_self_update.pkl"
+import "../shared_resources.pkl"
+
+hidden pools_to_init = new Listing<String> {}
+
+hidden concourseTeamName = "UPDATE_ME"
+
+resources {
+  new {
+    name = "lock-pool-repo"
+    type = "git"
+    icon = "git"
+    source {
+      ["branch"] = "pool"
+      ["uri"] = "((readonly_codecommit_pool_uri))"
+      ["private_key"] = "((readonly_codecommit_private_key))"
+    }
+  }
+  (shared_resources.payCiGitHubResource) {
+    source {
+      branch = "pp-12494/add-init-pool-pipeline"
+    }
+  }
+  pipeline_self_update.PayPipelineSelfUpdateResource("\(concourseTeamName)/init-lock-pools.pkl", "master")
+}
+
+jobs {
+  new Job {
+    name = "initialise-pools"
+    plan {
+      new GetStep { get = "pay-ci" }
+      new TaskStep {
+        task = "init-pools"
+        file = "pay-ci/ci/tasks/init-lock-pools.yml"
+        params {
+          ["POOLS_TO_INIT"] = pools_to_init.toList().join(",")
+        }
+      }
+      new PutStep {
+        put = "lock-pool-repo"
+        params {
+          ["repository"] = "lock-pool-repo"
+          ["force"] = "true"
+        }
+      }
+    }
+  }
+  pipeline_self_update.PayPipelineSelfUpdateJob("\(concourseTeamName)/init-lock-pools.pkl")
+}
