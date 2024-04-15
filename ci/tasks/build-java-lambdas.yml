@@ -44,7 +44,12 @@ run:
     mvn versions:set -DnewVersion="$PACKAGE_VERSION"
     
     while read line; do
-      mvn --global-settings settings.xml clean compile --projects $line --also-make
+      mvn --global-settings settings.xml clean install --projects $line --also-make
     done < submodules.txt
-#    cd ..
-#    cp -R src/* build
+    
+    cd ..
+    cp -R src/* build
+    ls -al build/bin-ranges-diff/target
+    ls -al build/bin-ranges-integrity/target
+    ls -al build/bin-ranges-promotion/target
+    ls -al build/bin-ranges-transfer/target
