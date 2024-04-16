@@ -1,0 +1,32 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+class LockPoolResource extends Pipeline.Resource {
+  hidden pool: String
+  name = "lock-pool-\(pool)"
+  type = "pool"
+  icon = "pool"
+  source {
+    ["branch"] = "pool"
+    ["uri"] = "((readonly_codecommit_pool_uri))"
+    ["private_key"] = "((readonly_codecommit_private_key))"
+    ["pool"] = pool
+  }
+}
+
+class AcquireLockStep extends Pipeline.PutStep {
+  hidden pool: String
+  put = "claim-\(pool)-lock"
+  resource = "lock-pool-\(pool)"
+  params {
+    ["claim"] = "\(pool)-lock"
+  }
+}
+
+class ReleaseLockStep extends Pipeline.PutStep {
+  hidden pool: String
+  put = "release-\(pool)-lock"
+  resource = "lock-pool-\(pool)"
+  params {
+    ["release"] = "claim-\(pool)-lock"
+  }
+}
