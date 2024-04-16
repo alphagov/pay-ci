@@ -31,7 +31,9 @@ resources = new {
     shared_resources.payECRResourceWithVariant("\(app.name)-ecr-registry-prod",
       app.getECRRepo(), "pay_aws_prod_account_id", "release")
   }
+
   new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test" }
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application" }
   shared_resources_for_slack_notifications.slackNotificationResource
 }
 
@@ -97,11 +99,10 @@ jobs {
 local function getJobToDeployApp(app): Job = new {
   name = "deploy-\(app.name)-to-prod"
   serial = true
-  serial_groups {
-    "deploy-application"
-  }
+
   plan = new {
     getResourcesToDeployApp(app)
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "deploy-application" }
     parseReleaseTagsToDeployApp(app)
     loadVariablesToDeployApp(app)
     createNotificationSnippets(app, "Deployment")
@@ -123,6 +124,7 @@ local function getJobToDeployApp(app): Job = new {
   }
   on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-announce", true)
   on_failure = sendSlackNoticationAndPutMetrics(app, false, "#govuk-pay-announce", true)
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application" }
 }
 
 local function getJobToSmokeTestApp(app): Job = new {
