@@ -7,6 +7,7 @@ caches:
   - path: src/.m2
 inputs:
   - name: ci
+  - name: src
 outputs:
   - name: build
 params:
