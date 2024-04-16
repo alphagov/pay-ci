@@ -26,7 +26,5 @@ jobs:
         trigger: false
       - task: build-java-lambdas
         file: ci/ci/tasks/build-java-lambdas.yml
-        params:
-          app_name: pay-java-lambdas
 #        TODO on_failure
 #        TODO on_success

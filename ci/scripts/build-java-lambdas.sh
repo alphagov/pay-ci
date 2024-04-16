@@ -37,5 +37,5 @@ while read -r line; do
 done < submodules.txt
 
 cd ..
-echo "Folders written to:"
-ls -alh
+echo "Folders written to in build directory:"
+ls -alh build
