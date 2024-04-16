@@ -2,7 +2,7 @@
 # shellcheck shell=dash
 set -euo pipefail
 
-cd src || exit
+cd src
 
 git fetch origin main:main
 git diff --name-only --diff-filter=d main~ main | xargs -n 1 dirname | grep '^bin-ranges-' | cut -f 1 -d "/" |  uniq > submodules.txt
