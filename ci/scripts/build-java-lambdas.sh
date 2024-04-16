@@ -1,9 +1,10 @@
 #!/bin/ash
 # shellcheck shell=dash
-set -o pipefail
+set -euo pipefail
 
 cd src || exit
 
+git fetch origin main:main
 git diff --name-only --diff-filter=d main~ main | xargs -n 1 dirname | grep '^bin-ranges-' | cut -f 1 -d "/" |  uniq > submodules.txt
 echo "Submodules to build:"
 cat submodules.txt
