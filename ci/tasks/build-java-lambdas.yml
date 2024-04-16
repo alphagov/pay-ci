@@ -6,7 +6,7 @@ image_resource:
 caches:
   - path: src/.m2
 inputs:
-  - name: ci
+  - name: pay-ci
   - name: src
 outputs:
   - name: build
@@ -15,4 +15,4 @@ params:
 platform: linux
 run:
   path: "/bin/ash"
-  args: ['ci/ci/scripts/build-java-lambdas.sh']
+  args: ['pay-ci/ci/scripts/build-java-lambdas.sh']
