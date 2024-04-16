@@ -1,0 +1,18 @@
+container_limits: {}
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner-with-java-21
+caches:
+  - path: src/.m2
+inputs:
+  - name: pay-ci
+  - name: src
+outputs:
+  - name: build
+params:
+  app_name:
+platform: linux
+run:
+  path: "/bin/ash"
+  args: ['pay-ci/ci/scripts/build-java-lambdas.sh']
