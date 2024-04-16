@@ -1,0 +1,12 @@
+amends "../common/shared_pipelines/init_lock_pools.pkl"
+
+pools_to_init {
+  "deploy-application"
+  "integration-test"
+  "node-test"
+  "unit-test"
+  "perf-tests"
+  "smoke-test"
+}
+
+concourseTeamName = "pay-dev"
