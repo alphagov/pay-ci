@@ -2,6 +2,7 @@ extends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/p
 
 import "../pipeline_self_update.pkl"
 import "../shared_resources.pkl"
+import "../shared_resources_for_lock_pools.pkl"
 
 hidden pools_to_init = new Listing<String> {}
 
@@ -16,6 +17,19 @@ resources {
       ["branch"] = "pool"
       ["uri"] = "((readonly_codecommit_pool_uri))"
       ["private_key"] = "((readonly_codecommit_private_key))"
+    }
+  }
+  for (pool_name in pools_to_init) {
+    (shared_resources_for_lock_pools.LockPoolResource) { pool = pool_name }
+    new {
+      name = "\(pool_name)-lock-config"
+      type = "mock"
+      source {
+        ["create_files"] = new Mapping<String, String> {
+          ["name"] = "\(pool_name)-lock"
+          ["metadata"] = ""
+        }
+      }
     }
   }
   shared_resources.payCiGitHubResource
@@ -39,6 +53,22 @@ jobs {
         params {
           ["repository"] = "lock-pool-repo"
           ["force"] = "true"
+        }
+      }
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          for (pool in pools_to_init) {
+            new GetStep {get = "\(pool)-lock-config" }
+          }
+        }
+      }
+      for (pool in pools_to_init) {
+        new PutStep {
+          put = "add-\(pool)-lock"
+          resource = "lock-pool-\(pool)"
+          params {
+            ["add"] = "\(pool)-lock-config"
+          }
         }
       }
     }
