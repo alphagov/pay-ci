@@ -78,7 +78,12 @@ jobs {
       name = "force-release-\(pool_name)-lock"
       plan {
         new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
-        new shared_resources_for_lock_pools.ReleaseLockStep { pool = pool_name }
+        new shared_resources_for_lock_pools.ReleaseLockStep {
+          pool = pool_name
+          params {
+            ["release"] = "get-already-claimed-\(pool_name)-lock"
+          }
+        }
       }
     }
   }
