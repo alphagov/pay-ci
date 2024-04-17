@@ -5,6 +5,7 @@ import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_metrics.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
+import "../common/shared_resources_for_lock_pools.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
 
@@ -30,6 +31,9 @@ resources = new {
     shared_resources.payECRResourceWithVariant("\(app.name)-ecr-registry-prod",
       app.getECRRepo(), "pay_aws_prod_account_id", "release")
   }
+
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test" }
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application" }
   shared_resources_for_slack_notifications.slackNotificationResource
 }
 
@@ -95,11 +99,10 @@ jobs {
 local function getJobToDeployApp(app): Job = new {
   name = "deploy-\(app.name)-to-prod"
   serial = true
-  serial_groups {
-    "deploy-application"
-  }
+
   plan = new {
     getResourcesToDeployApp(app)
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "deploy-application" }
     parseReleaseTagsToDeployApp(app)
     loadVariablesToDeployApp(app)
     createNotificationSnippets(app, "Deployment")
@@ -121,13 +124,11 @@ local function getJobToDeployApp(app): Job = new {
   }
   on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-announce", true)
   on_failure = sendSlackNoticationAndPutMetrics(app, false, "#govuk-pay-announce", true)
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application" }
 }
 
 local function getJobToSmokeTestApp(app): Job = new {
   name = "smoke-test-\(app.name)-on-prod"
-  serial_groups {
-    "smoke-test"
-  }
   plan = new {
     new InParallelStep {
       in_parallel = new InParallelConfig {
@@ -140,7 +141,7 @@ local function getJobToSmokeTestApp(app): Job = new {
         }
       }
     }
-
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "smoke-test" }
     loadVar("application_image_tag", "\(app.name)-ecr-registry-prod/tag")
     createNotificationSnippets(app, "Smoke test")
     loadNotificationSnippetVariables(app, false)
@@ -151,6 +152,7 @@ local function getJobToSmokeTestApp(app): Job = new {
   }
   on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-activity", false)
   on_failure = sendSlackNoticationAndPutMetrics(app, false, "#govuk-pay-announce", false)
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test" }
 }
 
 local function getJobToPactTagApp(app): Job = new {
