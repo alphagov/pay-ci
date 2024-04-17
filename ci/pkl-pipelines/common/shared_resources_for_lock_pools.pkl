@@ -31,3 +31,9 @@ class ReleaseLockStep extends Pipeline.PutStep {
     ["release"] = "claim-\(pool)-lock"
   }
 }
+
+class GetLockStep extends Pipeline.GetStep {
+  hidden pool: String
+  get = "get-already-claimed-\(pool)-lock"
+  resource = "lock-pool-\(pool)"
+}
