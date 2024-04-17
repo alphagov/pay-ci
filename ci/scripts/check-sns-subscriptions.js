@@ -6,7 +6,7 @@ require('aws-sdk/lib/maintenance_mode_message').suppress = true
 
 // The TRUTH_FILE pairs topic ARNs with their expected subscription ARNs. It is
 // "semi-sensitive", so it lives in pay-infra, which is a private repo.
-const TRUTH_FILE = '../../../pay-infra/provisioning/config/sns_topic_truth.json'
+const TRUTH_FILE = 'pay-infra/provisioning/config/sns_topic_truth.json'
 
 var regions = process.env.REGIONS
 var errors = 0
