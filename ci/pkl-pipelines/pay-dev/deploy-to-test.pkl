@@ -7,6 +7,7 @@ import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_metrics.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
+import "../common/shared_resources_for_lock_pools.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
 
@@ -88,6 +89,8 @@ resources = new {
   shared_resources_for_metrics.prometheusPushgatewayResource
   shared_resources.payCiGitHubResource
   shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application" }
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test" }
 
   for (app in allPayApplications) {
     when (app.name == "alpine") {
@@ -634,11 +637,9 @@ local function getTaskToRunCodeBuild(app: PayApp, architecture: String) = new Ta
 local function getJobToDeployApp(app): Job = new {
   name = "deploy-\(app.name)"
   serial = true
-  serial_groups {
-    "deploy-application"
-  }
   plan = new {
     getResourcesToDeployApp(app)
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "deploy-application" }
     loadVariablesToDeployApp(app)
     createNotificationSnippets(app, "Deployment")
     loadNotificationSnippetVariables(app, true)
@@ -660,13 +661,11 @@ local function getJobToDeployApp(app): Job = new {
     slack_channel_for_success = "#govuk-pay-activity"; put_metrics = true; put_sidecar_metrics = true; put_grafana_annotation = app.is_a_java_or_node_app })
   on_failure = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = false
     put_metrics = true; put_sidecar_metrics = true })
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application" }
 }
 
 local function getJobToSmokeTestApp(app): Job = new {
   name = "smoke-test-\(app.name)"
-  serial_groups {
-    "smoke-test"
-  }
   plan = new {
     new InParallelStep {
       in_parallel = new InParallelConfig {
@@ -682,6 +681,7 @@ local function getJobToSmokeTestApp(app): Job = new {
         }
       }
     }
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "smoke-test" }
 
     loadVar("application_image_tag", "\(app.name)-ecr-registry-test/tag")
     createNotificationSnippets(app, "Smoke test")
@@ -696,6 +696,7 @@ local function getJobToSmokeTestApp(app): Job = new {
     slack_channel_for_success = "#govuk-pay-activity"; put_metrics = true; })
   on_failure = sendNotificationAndMetrics(app, new SlackNotificationsAndMetricsConfig { is_a_success = false
     put_metrics = true; })
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test" }
 }
 
 local function getJobToPactTagApp(app): Job = new {
