@@ -73,5 +73,14 @@ jobs {
       }
     }
   }
+  for (pool_name in pools_to_init) {
+    new Job {
+      name = "force-release-\(pool_name)-lock"
+      plan {
+        new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
+        new shared_resources_for_lock_pools.ReleaseLockStep { pool = pool_name }
+      }
+    }
+  }
   pipeline_self_update.PayPipelineSelfUpdateJob("\(concourseTeamName)/init-lock-pools.pkl")
 }
