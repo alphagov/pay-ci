@@ -1,12 +1,35 @@
 #!/usr/bin/env node
 
+/**
+ * Check SNS topics are correctly subscribed.
+ *
+ * Gets a list of SNS topics in the regions specified by a space-separated REGIONS environment
+ * variable, and looks up each topic's ARN in a source-of-truth file stored in pay-infra, where
+ * said ARN is paired with whatever subscribes to it. This could be an e-mail address, which is
+ * not considered a secret, but is deemed sufficiently sensitive to not be in a public repo; or
+ * it may be a second ARN. If this is the case, that ARN is presumed to point to an encrypted
+ * value in Parameter Store, from where it is retrieved, and its plaintext value compared to the
+ * thing which subscribes to the original topic. These encrypted values are probably Pagerduty 
+ * URIs.
+ *
+ * If a subscriber does not match its expected value, the topic ARN is printed to the console. As
+ * subscriber values can be secrets, no more information is logged.
+ *
+ * In the test environment, it is okay for a topic to have no subscribers, but this is not 
+ * acceptable elsewhere. If you want to ignore empty subscriptions, set OK_TO_BE_UNSUBSCRIBED in the
+ * script's execution environment.
+ *
+ */
+
 const fs = require('fs')
 const AWS = require('aws-sdk')
 require('aws-sdk/lib/maintenance_mode_message').suppress = true
 
-// The TRUTH_FILE pairs topic ARNs with their expected subscription ARNs. It is
-// "semi-sensitive", so it lives in pay-infra, which is a private repo.
-const TRUTH_FILE = 'pay-infra/provisioning/config/sns_topic_truth.json'
+var TRUTH_FILE = 'pay-infra/provisioning/config/sns_topic_truth.json'
+
+if (process.env.TRUTH_FILE) {
+  TRUTH_FILE = process.env.TRUTH_FILE
+}
 
 var regions = process.env.REGIONS
 var errors = 0
@@ -42,16 +65,16 @@ function compare(topicArn, expected, actual) {
 
 function getParam(paramArn) {
   try {
-    const region = paramArn.split(':')[3];
-    const client = new AWS.SSM({ region: region });
+    const region = paramArn.split(':')[3]
+    const client = new AWS.SSM({ region: region })
     return client.getParameter({ Name: paramArn, WithDecryption: true }).promise()
       .then(param => param.Parameter.Value)
       .catch(err => {
         logError(err.code)
-        throw err 
-      });
+        throw err
+      })
   } catch (err) {
-    logError(err.code);
+    logError(err.code)
   }
 }
 
@@ -65,8 +88,8 @@ async function validateSubscriptionHttps(topicArn, endpoint) {
         compare(topicArn, endpoint, secret)
       })
       .catch(err => {
-        logError(err);
-      });
+        logError(err)
+      })
   }
 }
 
@@ -94,8 +117,7 @@ async function processTopics(client, data) {
     try {
       const subs = await client.listSubscriptionsByTopic(topic).promise()
       subsToValidate = subsToValidate.concat(subs.Subscriptions)
-      // I'm not 100% sure whether this should be an error
-      if (subs.Subscriptions.length == 0) {
+      if (process.env.OK_TO_BE_UNSUBSCRIBED && subs.Subscriptions.length == 0) {
         logError(`${topic.TopicArn} has no subscriptions`)
       }
     } catch (err) {
