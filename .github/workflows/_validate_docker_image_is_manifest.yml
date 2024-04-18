@@ -83,7 +83,15 @@ jobs:
               exit 1
             }
 
+
             TMPFILE=$(mktemp)
+
+            function cleanup() {
+              echo "Removing $TMPFILE"
+              rm "$TMPFILE"
+            }
+
+            trap cleanup EXIT
 
             docker buildx imagetools inspect "$BASE_CONTAINER_DEFINITION" --raw > "$TMPFILE" 2>&1
 
