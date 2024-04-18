@@ -50,6 +50,7 @@ jobs:
             DIGEST=$(cut -f 2 -d "@" <<<"$BASE_CONTAINER_DEFINITION")
 
             if [ -z "$DIGEST" ]; then
+              echo
               echo "Error There was no image digest in '$BASE_CONTAINER_DEFINITION'"
               echo "The FROM lines must have a digest pin in order to use this workflow"
               exit 1
@@ -58,11 +59,10 @@ jobs:
             IMAGE_NAME=$(cut -f 1 -d ":" <<<"$IMAGE")
             IMAGE_TAG=$(cut -f 2 -d ":" <<<"$IMAGE")
 
-            MEDIATYPE=$(docker buildx imagetools inspect "$BASE_CONTAINER_DEFINITION" --raw 2>&1 | jq --raw-output .mediaType)
-            if [[ "$MEDIATYPE" != "application/vnd.docker.distribution.manifest.list.v2+json" ]] && [[ "$MEDIATYPE" != "application/vnd.oci.image.index.v1+json" ]]; then
-              echo "ERROR! The image specified by '$BASE_CONTAINER_DEFINITION' does not refer to a manifest"
+            function bad_manifest_error {
               echo
               echo "All image sha pins must point to the image manifest, not to one of the architecture specific images"
+              echo "This manifest must include a linux/amd64 image and a linux/arm64 image."
               echo "This is required so our multi-architecture builds can succeed"
               echo
               if [ -z "$IMAGE_TAG" ]; then
@@ -81,6 +81,30 @@ jobs:
               echo "See the guide to updating base images in the pay team manual: https://manual.payments.service.gov.uk/manual/reference/docker.html#updating-docker-base-images"
               echo
               exit 1
+            }
+
+            TMPFILE=$(mktemp)
+
+            docker buildx imagetools inspect "$BASE_CONTAINER_DEFINITION" --raw > "$TMPFILE" 2>&1
+
+            MEDIATYPE=$(jq --raw-output .mediaType < "$TMPFILE")
+            if [[ "$MEDIATYPE" != "application/vnd.docker.distribution.manifest.list.v2+json" ]] && [[ "$MEDIATYPE" != "application/vnd.oci.image.index.v1+json" ]]; then
+              echo
+              echo "ERROR! The image specified by '$BASE_CONTAINER_DEFINITION' does not refer to a manifest"
+              bad_manifest_error
+            fi
+
+            AMD64_IMAGE_COUNT=$(jq < "$TMPFILE" '(.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64") | [.]) // [] | length')
+            ARM64_IMAGE_COUNT=$(jq < "$TMPFILE" '(.manifests[] | select(.platform.os == "linux" and .platform.architecture == "arm64") | [.]) // [] | length')
+
+            if [ "$AMD64_IMAGE_COUNT" -lt 1 ]; then
+              echo "ERROR! The image specified by '$BASE_CONTAINER_DEFINITION' is a manifest but does not include a linux/amd64 container image"
+              bad_manifest_error
+            fi
+
+            if [ "$ARM64_IMAGE_COUNT" -lt 1 ]; then
+              echo "ERROR! The image specified by '$BASE_CONTAINER_DEFINITION' is a manifest but does not include a linux/arm64 container image"
+              bad_manifest_error
             fi
 
             echo "Valid manifest for $BASE_CONTAINER_DEFINITION"
