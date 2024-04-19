@@ -8,6 +8,8 @@ import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/shared_resources_for_lock_pools.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
+local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
+local typealias MetricsConfig = shared_resources_for_deploy_pipelines.MetricsConfig
 
 local payScheduledTask = shared_resources_for_deploy_pipelines.payScheduledTask
 local allPayApplications = shared_resources_for_deploy_pipelines.allPayApplications
@@ -122,8 +124,12 @@ local function getJobToDeployApp(app): Job = new {
     shared_resources_for_deploy_pipelines.deployApplicationTask(app, awsEnvVars, "deploy-to-prod")
     shared_resources_for_deploy_pipelines.waitForDeployTask(app, "production-2")
   }
-  on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-announce", true)
-  on_failure = sendSlackNoticationAndPutMetrics(app, false, "#govuk-pay-announce", true)
+  on_success = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = true; slack_channel_for_success = "#govuk-pay-announce" },
+    new MetricsConfig { is_a_success = true; put_sidecar_metrics = true })
+  on_failure = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = false },
+    new MetricsConfig { is_a_success = false; put_sidecar_metrics = true })
   ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application" }
 }
 
@@ -150,8 +156,12 @@ local function getJobToSmokeTestApp(app): Job = new {
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
     runSmokeTestsForApp()
   }
-  on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-activity", false)
-  on_failure = sendSlackNoticationAndPutMetrics(app, false, "#govuk-pay-announce", false)
+  on_success = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = true; },
+    new MetricsConfig { is_a_success = true; put_sidecar_metrics = false })
+  on_failure = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = false },
+    new MetricsConfig { is_a_success = false; put_sidecar_metrics = false })
   ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test" }
 }
 
@@ -183,8 +193,12 @@ local function getJobToPactTagApp(app): Job = new {
       }
     }
   }
-  on_success = sendSlackNoticationAndPutMetrics(app, true, "#govuk-pay-activity", false)
-  on_failure = sendSlackNoticationAndPutMetrics(app, false, "#govuk-pay-announce", false)
+  on_success = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = true; },
+    new MetricsConfig { is_a_success = true; put_sidecar_metrics = false })
+  on_failure = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = false },
+    new MetricsConfig { is_a_success = false; put_sidecar_metrics = false })
 }
 
 local function getJobToRetagImageForNextEnv(app): Job = new {
@@ -360,10 +374,11 @@ local function getJobToDeployScheduledTasks(): Job = new {
     }
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
     shared_resources_for_deploy_pipelines.deployApplicationTask(payScheduledTask,
-     awsEnvVars, "deploy-to-prod")
+      awsEnvVars, "deploy-to-prod")
   }
-  on_failure = shared_resources_for_slack_notifications.paySlackNotificationForFail("#govuk-pay-announce", "Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag))")
-  on_success = shared_resources_for_slack_notifications.paySlackNotificationForSuccess("#govuk-pay-activity", "Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully")
+  on_failure = shared_resources_for_slack_notifications.paySlackNotification(new SlackNotificationConfig { message = "Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag))" })
+  on_success = shared_resources_for_slack_notifications.paySlackNotification(new SlackNotificationConfig { is_a_success = true
+    message = "Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully" })
 }
 
 local function getResourcesToDeployApp(app: PayApp): InParallelStep = new InParallelStep {
@@ -546,31 +561,24 @@ local function runSmokeTest(taskName: String, smokeTestName: String,
   }
 }
 
-local function sendSlackNoticationAndPutMetrics(app: PayApp, isASuccess: Boolean,
-  slackChannel: String, sendSideCarMetrics: Boolean) = new InParallelStep {
+local function sendSlackNoticationAndPutMetrics(app: PayApp, slackConfig: SlackNotificationConfig,
+  metricsConfig: MetricsConfig) = new InParallelStep {
   in_parallel = new InParallelConfig {
     steps = new Listing<Step> {
-      when (isASuccess == true) {
-        shared_resources_for_slack_notifications.paySlackNotificationForAppDeploymentInProd(
-          slackChannel, true, "((.:success_snippet))")
-      }
-      else {
-        shared_resources_for_slack_notifications.paySlackNotificationForAppDeploymentInProd(
-          "#govuk-pay-announce", false, "((.:failure_snippet))")
-      }
-      ...sendMetrics(app, isASuccess, sendSideCarMetrics)
+      shared_resources_for_slack_notifications.paySlackNotificationForAppDeployment(slackConfig)
+      ...sendMetrics(app, metricsConfig)
     }
   }
 }
 
-local function sendMetrics(app: PayApp, isASuccess: Boolean, sendSideCarMetrics: Boolean) = new {
-  shared_resources_for_metrics.paySendAppReleaseMetric(isASuccess, "production-2")
-  when (app.is_a_java_or_node_app == true && sendSideCarMetrics) {
-    shared_resources_for_metrics.paySendNginxReleaseMetric(isASuccess, "production-2")
+local function sendMetrics(app: PayApp, metricsConfig: MetricsConfig) = new {
+  shared_resources_for_metrics.paySendAppReleaseMetric(metricsConfig.is_a_success, "production-2")
+  when (app.is_a_java_or_node_app == true && metricsConfig.put_sidecar_metrics) {
+    shared_resources_for_metrics.paySendNginxReleaseMetric(metricsConfig.is_a_success, "production-2")
     when (app.name == "frontend") {
-      shared_resources_for_metrics.paySendNginxForwardProxyReleaseMetric(isASuccess, "production-2")
+      shared_resources_for_metrics.paySendNginxForwardProxyReleaseMetric(metricsConfig.is_a_success, "production-2")
     }
-    shared_resources_for_metrics.paySendAdotReleaseMetric(isASuccess, "production-2")
+    shared_resources_for_metrics.paySendAdotReleaseMetric(metricsConfig.is_a_success, "production-2")
   }
 }
 

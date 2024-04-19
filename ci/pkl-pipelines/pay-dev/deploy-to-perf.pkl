@@ -7,6 +7,7 @@ import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
+local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
 
 local payScheduledTask = shared_resources_for_deploy_pipelines.payScheduledTask
 local allPayApplications = shared_resources_for_deploy_pipelines.allPayApplications
@@ -41,24 +42,24 @@ resources = new {
 groups {
   for (app in allPayApplications) {
     when (app.name != "adot") {
-        new {
-          name = app.name
-          jobs = new Listing {
-            when (app.override_app_to_deploy != null) {
-              when (app.override_app_to_deploy == "scheduled-tasks") {
-                "deploy-\(app.override_app_to_deploy)"
-              } else {
-                "deploy-\(app.override_app_to_deploy)-to-perf"
-              }
+      new {
+        name = app.name
+        jobs = new Listing {
+          when (app.override_app_to_deploy != null) {
+            when (app.override_app_to_deploy == "scheduled-tasks") {
+              "deploy-\(app.override_app_to_deploy)"
             } else {
-              "deploy-\(app.name)-to-perf"
+              "deploy-\(app.override_app_to_deploy)-to-perf"
             }
-            when (app.has_db) {
-              "\(app.name)-db-migration-perf"
-            }
+          } else {
+            "deploy-\(app.name)-to-perf"
+          }
+          when (app.has_db) {
+            "\(app.name)-db-migration-perf"
           }
         }
       }
+    }
   }
   pipeline_self_update.payPipelineSelfUpdateGroup
 }
@@ -137,8 +138,13 @@ jobs {
       shared_resources_for_deploy_pipelines.deployApplicationTask(payScheduledTask,
         awsEnvVars, "deploy-to-perf")
     }
-    on_failure = shared_resources_for_slack_notifications.paySlackNotificationForFail("#govuk-pay-announce", "Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag))")
-    on_success = shared_resources_for_slack_notifications.paySlackNotificationForSuccess("#govuk-pay-activity", "Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully")
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        message = "Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag))" })
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        is_a_success = true
+        message = "Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully" })
   }
 }
 
@@ -229,10 +235,14 @@ local function sendSlackNoticationAndPutMetrics(app: PayApp, isASuccess: Boolean
   in_parallel = new InParallelConfig {
     steps = new Listing<Step> {
       when (isASuccess == true) {
-        shared_resources_for_slack_notifications.paySlackNotificationForAppDeployment("#govuk-pay-activity", true, "Deployment of ((.:app_name)) to perf success")
+        shared_resources_for_slack_notifications.paySlackNotification(new SlackNotificationConfig {
+          is_a_success = true; message = "Deployment of ((.:app_name)) to perf success"; is_app_deploy_notification = true
+        })
       }
       else {
-        shared_resources_for_slack_notifications.paySlackNotificationForAppDeployment("#govuk-pay-announce", false, "Deployment of ((.:app_name)) to perf failed")
+        shared_resources_for_slack_notifications.paySlackNotification(new SlackNotificationConfig {
+          message = "Deployment of ((.:app_name)) to perf failed"; is_app_deploy_notification = true
+        })
       }
       shared_resources_for_metrics.paySendAppReleaseMetric(isASuccess, "test-perf-1")
       when (app.is_a_java_or_node_app == true) {
