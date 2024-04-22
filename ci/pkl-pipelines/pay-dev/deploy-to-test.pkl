@@ -8,6 +8,7 @@ import "../common/shared_resources_for_metrics.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/shared_resources_for_lock_pools.pkl"
+import "../common/shared_resources_for_annotations.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
@@ -63,15 +64,7 @@ local testEnvConfigForApps: Mapping<Identifier, AdditionalAppConfigForTestEnv> =
 resource_types {
   shared_resources_for_slack_notifications.slackNotificationResourceType
   shared_resources_for_metrics.prometheusPushgatewayResourceType
-
-  new ResourceType {
-    name = "grafana-annotation"
-    source {
-      ["repository"] = "governmentdigitalservice/pay-grafana-annotation-resource"
-      ["tag"] = "latest"
-    }
-    type = "docker-image"
-  }
+  shared_resources_for_annotations.grafanaAnnotationResourceType 
 }
 
 local function withTagRegex(regex: String) = new Mixin {
@@ -104,19 +97,8 @@ resources = new {
     "pay_aws_test_account_id")) { source { ["tag"] = "latest" } }
 
   shared_resources_for_slack_notifications.slackNotificationResource
-
-  new {
-    name = "grafana-annotation"
-    source {
-      ["password"] = "((grafana-annotations-password))"
-      ["tags"] = new Listing {
-        "test-12"
-        "release"
-      }
-      ["url"] = "https://grafana.monitoring.pay-cd.deploy.payments.service.gov.uk"
-      ["username"] = "pay_cd"
-    }
-    type = "grafana-annotation"
+  (shared_resources_for_annotations.grafanaAnnotationResource) {
+    source { ["tags"] = new Listing<String> { "release" "test-12" } }
   }
 }
 
@@ -1025,8 +1007,8 @@ local function sendNotificationAndMetrics (app: PayApp, slackConfig: SlackNotifi
       when (metricsConfig.put_metrics) {
         ...sendMetrics(app, metricsConfig)
       }
-      when (metricsConfig.put_grafana_annotation && metricsConfig.is_a_success) {
-        putGrafanaAnnotation()
+      when (config.put_grafana_annotation && config.is_a_success) {
+        shared_resources_for_annotations.paySendAppReleaseAnnotation("deploy-to-test")
       }
     }
   }
@@ -1051,10 +1033,10 @@ local function putGrafanaAnnotation() = new PutStep {
   }
 }
 
-local function sendMetrics(app: PayApp, metricsConfig: MetricsConfig) = new {
-  shared_resources_for_metrics.paySendAppReleaseMetric(metricsConfig.is_a_success, "test-12")
-  when (app.is_a_java_or_node_app == true && metricsConfig.put_sidecar_metrics) {
-    shared_resources_for_metrics.paySendNginxReleaseMetric(metricsConfig.is_a_success, "test-12")
+local function sendMetrics(app: PayApp, isASuccess: Boolean, sendSideCarMetrics: Boolean) = new {
+  shared_resources_for_metrics.paySendAppReleaseMetric(isASuccess, "test-12")
+  when (app.is_a_java_or_node_app == true && sendSideCarMetrics) {
+    shared_resources_for_metrics.paySendNginxReleaseMetric(isASuccess, "test-12")
     when (app.name == "frontend") {
       shared_resources_for_metrics.paySendNginxForwardProxyReleaseMetric(metricsConfig.is_a_success, "test-12")
     }
