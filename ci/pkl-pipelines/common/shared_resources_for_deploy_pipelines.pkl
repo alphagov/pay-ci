@@ -8,12 +8,21 @@ class PayApplication {
   rds_identifier_suffix: Int = 0
   override_app_to_deploy: String?
   override_ecr_repo: String?
+  override_github_repo: String?
   use_app_specific_deploy_task: Boolean = false
   smoke_test: Boolean = true
   pact_tag: Boolean = false
 
   function getECRRepo(): String = "govukpay/\(override_ecr_repo ?? name)"
   function getDockerRepo(): String = "governmentdigitalservice/pay-\(override_ecr_repo ?? name)"
+  function getGithubRepo(): String = (override_github_repo ?? "pay-" + name)
+}
+
+class MetricsConfig {
+  is_a_success: Boolean = false
+  put_metrics: Boolean = false
+  put_sidecar_metrics: Boolean = false
+  put_grafana_annotation: Boolean = false
 }
 
 local payApps: Listing<PayApplication> = new Listing<PayApplication> {
@@ -37,7 +46,7 @@ local payApps: Listing<PayApplication> = new Listing<PayApplication> {
 // sidecars or other helpers
 local payHelpers: Listing<PayApplication> = new Listing<PayApplication> {
   new { name = "adot"; smoke_test = false; }
-  new { name = "alpine"; smoke_test = false; override_app_to_deploy = "scheduled-tasks" }
+  new { name = "alpine"; smoke_test = false; override_app_to_deploy = "scheduled-tasks"; override_github_repo = "pay-infra" }
   new { name = "nginx-forward-proxy"; smoke_test = false; override_app_to_deploy = "frontend" }
   new { name = "nginx-proxy"; smoke_test = false; override_ecr_repo = "docker-nginx-proxy"
     override_app_to_deploy = "toolbox" }
