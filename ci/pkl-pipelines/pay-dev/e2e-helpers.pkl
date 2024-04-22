@@ -3,23 +3,26 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_slack_notifications.pkl"
+
+local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/e2e-helpers.pkl", "master")
   shared_resources.payCiGitHubResource
 
   shared_resources.payGithubResourceWithBranch("endtoend-git-release", "pay-endtoend", "master")
-    |>withTagRegex("alpha_release-(.*)")
+  |> withTagRegex("alpha_release-(.*)")
 
   shared_resources.payGithubResourceWithBranch("stubs-git-release", "pay-stubs", "master")
-    |>withTagRegex("alpha_release-(.*)")
+  |> withTagRegex("alpha_release-(.*)")
 
   shared_resources.payGithubResourceWithBranch("reverse-proxy-git-release", "pay-scripts", "master")
-    |>withTagRegex("reverse_proxy_alpha_release-(.*)")
+  |> withTagRegex("reverse_proxy_alpha_release-(.*)")
 
   shared_resources.payECRResource(
     "endtoend-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id"
-  ) |>withTag("latest")
+  ) |> withTag("latest")
 
   shared_resources.payECRResourceWithVariant(
     "endtoend-candidate-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id", "candidate"
@@ -42,25 +45,25 @@ resources = new {
   )
 
   shared_resources.payDockerHubResource("postgres-15-alpine", "postgres", "15-alpine")
-    |>withCheckInterval("1h")
+  |> withCheckInterval("1h")
 
   shared_resources.payECRResource("ecr-postgres-15-alpine", "postgres", "pay_aws_test_account_id")
-    |>withTag("15-alpine") |>withCheckInterval("never")
+  |> withTag("15-alpine") |> withCheckInterval("never")
 
   shared_resources.payDockerHubResource("localstack-localstack-3", "localstack/localstack", "3")
-    |>withCheckInterval("1h")
+  |> withCheckInterval("1h")
 
   shared_resources.payECRResource(
     "ecr-localstack-localstack-3", "localstack/localstack", "pay_aws_test_account_id"
-  ) |>withTag("3") |>withCheckInterval("never")
+  ) |> withTag("3") |> withCheckInterval("never")
 
   shared_resources.payDockerHubResource(
     "selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome", "3.141.59"
-  ) |>withCheckInterval("1h")
+  ) |> withCheckInterval("1h")
 
   shared_resources.payECRResource(
     "ecr-selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome", "pay_aws_test_account_id"
-  ) |>withTag("3.141.59") |>withCheckInterval("never")
+  ) |> withTag("3.141.59") |> withCheckInterval("never")
 
   shared_resources.slackNotificationResource
 }
@@ -88,13 +91,13 @@ jobs = new {
       buildImage("build-endtoend-image", "endtoend-git-release")
       putCandidateImage("endtoend-candidate-ecr-registry-test")
     }
-    on_failure = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
-      "Failed to build and push pay-endtoend candidate image"
+
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "Failed to build and push pay-endtoend candidate image"
+        slack_channel_for_failure = "#govuk-pay-starling" }
     )
-    on_success = shared_resources.paySlackNotificationForSuccess(
-      "#govuk-pay-activity",
-      "Built and pushed pay-endtoend candidate image"
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "Built and pushed pay-endtoend candidate image" }
     )
   }
 
@@ -119,7 +122,7 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          loadVar("candidate_image_tag", "endtoend-candidate-ecr-registry-test/tag" )
+          loadVar("candidate_image_tag", "endtoend-candidate-ecr-registry-test/tag")
           loadAssumeRoleVar
         }
       }
@@ -151,13 +154,12 @@ jobs = new {
         }
       }
     }
-    on_failure = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
-      "pay-endtoend failed post-merge e2e tests"
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "pay-endtoend failed post-merge e2e tests"
+        slack_channel_for_failure = "#govuk-pay-starling" }
     )
-    on_success = shared_resources.paySlackNotificationForSuccess(
-      "#govuk-pay-activity",
-      "pay-endtoend passed post-merge e2e tests and was pushed as a final release"
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "pay-endtoend passed post-merge e2e tests and was pushed as a final release" }
     )
   }
 
@@ -194,13 +196,12 @@ jobs = new {
         3
       )
     }
-    on_failure = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
-      "Failed to build and push e2e helper reverse-proxy"
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "Failed to build and push e2e helper reverse-proxy"
+        slack_channel_for_failure = "#govuk-pay-starling" }
     )
-    on_success = shared_resources.paySlackNotificationForSuccess(
-      "#govuk-pay-activity",
-      "Built and pushed e2e helper reverse-proxy"
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "Built and pushed e2e helper reverse-proxy" }
     )
   }
 
@@ -241,7 +242,7 @@ jobs = new {
           parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
           assumeCodeBuildRole("executor", "e2e-test-assume-role")
           assumeRetagRole
-         }
+        }
       }
 
       new InParallelStep {
@@ -263,13 +264,12 @@ jobs = new {
         }
       }
     }
-    on_failure = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
-      "e2e helper reverse-proxy failed post-merge e2e tests"
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "e2e helper reverse-proxy failed post-merge e2e tests"
+        slack_channel_for_failure = "#govuk-pay-starling" }
     )
-    on_success = shared_resources.paySlackNotificationForSuccess(
-      "#govuk-pay-activity",
-      "e2e helper reverse-proxy passed post-merge e2e tests and was pushed as a final release"
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "e2e helper reverse-proxy passed post-merge e2e tests and was pushed as a final release" }
     )
   }
 
@@ -306,13 +306,13 @@ jobs = new {
       runCodeBuildMultiarch("stubs", 1)
       runCodeBuild("run-codebuild-stubs-manifest", "stubs-manifest.json", 1)
     }
-    on_failure = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
-      "Failed to build and push pay-stubs candidate image"
+
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "Failed to build and push pay-stubs candidate image"
+        slack_channel_for_failure = "#govuk-pay-starling" }
     )
-    on_success = shared_resources.paySlackNotificationForSuccess(
-      "#govuk-pay-activity",
-      "Built and pushed pay-stubs candidate image"
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "Built and pushed pay-stubs candidate image" }
     )
   }
 
@@ -369,13 +369,12 @@ jobs = new {
         }
       }
     }
-    on_failure = shared_resources.paySlackNotificationForFail(
-      "#govuk-pay-starling",
-      "pay-stubs failed post-merge e2e tests"
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "pay-stubs failed post-merge e2e tests"
+        slack_channel_for_failure = "#govuk-pay-starling" }
     )
-    on_success = shared_resources.paySlackNotificationForSuccess(
-      "#govuk-pay-activity",
-      "pay-stubs passed post-merge e2e tests and was pushed as a final release"
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "pay-stubs passed post-merge e2e tests and was pushed as a final release" }
     )
   }
 
@@ -493,13 +492,12 @@ local function copyImageToEcr(image: String, displayName: String): Job = new {
     getStep(image, true, true)
     putStep("ecr-\(image)", "\(image)/image.tar", "", true)
   }
-  on_failure = shared_resources.paySlackNotificationForFail(
-    "#govuk-pay-starling",
-    "Failed copying \(displayName) image from Docker Hub to ECR"
+  on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+    new SlackNotificationConfig { message = "Failed copying \(displayName) image from Docker Hub to ECR"
+      slack_channel_for_failure = "#govuk-pay-starling" }
   )
-  on_success = shared_resources.paySlackNotificationForSuccess(
-    "#govuk-pay-activity",
-    "Copied \(displayName) image from Docker Hub to ECR"
+  on_success = shared_resources_for_slack_notifications.paySlackNotification(
+    new SlackNotificationConfig { is_a_success = true; message = "Copied \(displayName) image from Docker Hub to ECR" }
   )
 }
 
@@ -560,7 +558,7 @@ local function runCodeBuild(taskName: String, config: String, attemptCount: Int)
   }
 }
 
-local function runCodeBuildMultiarch(project: String, attempts: Int): InParallelStep= new {
+local function runCodeBuildMultiarch(project: String, attempts: Int): InParallelStep = new {
   in_parallel = new Listing {
     runCodeBuild("run-codebuild-\(project)-amd64", "\(project)-amd64.json", attempts)
     runCodeBuild("run-codebuild-\(project)-armv8", "\(project)-armv8.json", attempts)
@@ -576,11 +574,11 @@ local loadAssumeRoleVar = new LoadVarStep {
 }
 
 local function withTagRegex(tag: String) = new Mixin {
-  source { ["tag_regex"] = tag  }
+  source { ["tag_regex"] = tag }
 }
 
 local function withTag(tag: String) = new Mixin {
-  source { ["tag"] = tag  }
+  source { ["tag"] = tag }
 }
 
 local function withCheckInterval(interval: String) = new Mixin {

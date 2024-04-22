@@ -65,30 +65,6 @@ function payGithubResourceWithBranch(resource_name: String, repo: String, repo_b
   }
 }
 
-function paySlackNotificationForFail(channel_name: String, message: String): Pipeline.PutStep = new Pipeline.PutStep {
-  put = "slack-notification"
-  attempts = 10
-  params = new Mapping {
-    ["channel"] = channel_name
-    ["silent"] = true
-    ["text"] = ":red-circle: \(message) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    ["icon_emoji"] = ":concourse:"
-    ["username"] = "pay-concourse"
-  }
-}
-
-function paySlackNotificationForSuccess(channel_name: String, message: String): Pipeline.PutStep = new Pipeline.PutStep {
-  put = "slack-notification"
-  attempts = 10
-  params = new Mapping {
-    ["channel"] = channel_name
-    ["silent"] = true
-    ["text"] = ":green-circle: \(message) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
-    ["icon_emoji"] = ":concourse:"
-    ["username"] = "pay-concourse"
-  }
-}
-
 function payECRResource(resource_name: String, repo: String, aws_account_id: String): Pipeline.Resource = payECRResourceWithVariant(resource_name, repo, aws_account_id, "")
 
 function payECRResourceWithVariant(resource_name: String, repo: String, aws_account_id: String, variant: String): Pipeline.Resource = new {
