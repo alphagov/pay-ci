@@ -3,6 +3,9 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
 import "../common/shared_resources.pkl"
 import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources_for_slack_notifications.pkl"
+
+local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/prometheus-pushgateway.pkl", "master")
@@ -43,8 +46,13 @@ jobs = new {
       getStep("prometheus-pushgateway", true, true)
       putStep("ecr-prometheus-pushgateway", "prometheus-pushgateway/image.tar", "", true)
     }
-    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Failed copying pushgateway:v1.6.0 image from Docker Hub to ECR")
-    on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "Copied pushgateway:v1.6.0 image from Docker Hub to ECR")
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "Failed copying pushgateway:v1.6.0 image from Docker Hub to ECR"
+        slack_channel_for_failure = "#govuk-pay-starling" }
+    )
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "Copied pushgateway:v1.6.0 image from Docker Hub to ECR" }
+    )
   }
   new {
     name = "build-and-push-prometheus-pushgateway-resource"
