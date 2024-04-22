@@ -19,6 +19,14 @@ payCiGitHubResource: PayResources.PayGitHubResource = new  {
   }
 }
 
+payInfraGitHubResource: PayResources.PayGitHubResource = new  {
+  name = "pay-infra"
+  repoName = "pay-infra"
+  source {
+    branch = "master"
+  }
+}
+
 function payDockerHubResource(resource_name: String, repo: String, tag: String): Pipeline.Resource = new {
   name = resource_name
   type = "registry-image"

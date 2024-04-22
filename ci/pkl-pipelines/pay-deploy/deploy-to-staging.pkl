@@ -1,0 +1,785 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_metrics.pkl"
+import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/shared_resources_for_deploy_pipelines.pkl"
+
+local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
+local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
+local typealias MetricsConfig = shared_resources_for_deploy_pipelines.MetricsConfig
+
+local payScheduledTask = shared_resources_for_deploy_pipelines.payScheduledTask
+local allPayApplications = shared_resources_for_deploy_pipelines.allPayApplications
+local payApplicationsWithDB = shared_resources_for_deploy_pipelines.payApplicationsWithDB
+
+local awsEnvVars = Map("account", "staging",
+  "environment", "staging-2")
+
+resource_types {
+  shared_resources_for_slack_notifications.slackNotificationResourceType
+  shared_resources_for_metrics.prometheusPushgatewayResourceType
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/deploy-to-staging.pkl", "master")
+  shared_resources_for_metrics.prometheusPushgatewayResource
+  shared_resources.payCiGitHubResource
+  shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
+
+  for (app in allPayApplications) {
+    shared_resources.payECRResourceWithVariant("\(app.name)-ecr-registry-staging",
+      app.getECRRepo(), "pay_aws_staging_account_id", "release")
+  }
+  shared_resources_for_slack_notifications.slackNotificationResource
+}
+
+groups {
+  for (app in allPayApplications) {
+    new {
+      name = app.name
+      jobs = new Listing {
+
+        when (app.override_app_to_deploy != null) {
+          when (app.override_app_to_deploy == "scheduled-tasks") {
+            "deploy-\(app.override_app_to_deploy)"
+          } else {
+            "deploy-\(app.override_app_to_deploy)-to-staging"
+          }
+        } else {
+          when (app.name != "adot") { "deploy-\(app.name)-to-staging" }
+        }
+
+        when (app.smoke_test) { "smoke-test-\(app.name)-on-staging" }
+        when (app.pact_tag) { "\(app.name)-pact-tag" }
+
+        "push-\(app.name)-to-production-ecr"
+
+        when (app.has_db) {
+          "\(app.name)-db-migration-staging"
+        }
+      }
+    }
+  }
+  pipeline_self_update.payPipelineSelfUpdateGroup
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/deploy-to-staging.pkl")
+
+  for (app in allPayApplications) {
+    when (app.override_app_to_deploy == null && app.name != "adot") {
+      getJobToDeployApp(app)
+    }
+    when (app.has_db) {
+      getJobForDBMigrations(app)
+    }
+    when (app.smoke_test) {
+      getJobToSmokeTestApp(app)
+    }
+    when (app.pact_tag) {
+      getJobToPactTagApp(app)
+    }
+    getJobToPushToNextEnv(app)
+  }
+  getJobToDeployScheduledTasks()
+}
+
+
+local function getJobToDeployApp(app): Job = new {
+  name = "deploy-\(app.name)-to-staging"
+  serial = true
+  serial_groups {
+    "deploy-application"
+  }
+  plan = new {
+    getResourcesToDeployApp(app)
+    parseReleaseTagsToDeployApp(app)
+    loadVariablesToDeployApp(app)
+    createNotificationSnippets(app, "Deployment")
+    loadNotificationSnippetVariables(app, true)
+
+    shared_resources_for_slack_notifications.paySlackNotificationForStartOfDeploymentInProd()
+
+    when (app.pact_tag) {
+      ...checkPactCompatibility(app)
+    }
+
+    assumeRole("terraform-staging-assume-role")
+    loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+
+    checkReleaseVersions(app)
+
+    shared_resources_for_deploy_pipelines.deployApplicationTask(app, awsEnvVars, "deploy-to-staging")
+    shared_resources_for_deploy_pipelines.waitForDeployTask(app, "staging-2")
+  }
+  on_success = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = true; slack_channel_for_success = "#govuk-pay-announce" },
+    new MetricsConfig { is_a_success = true; put_sidecar_metrics = true })
+  on_failure = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = false },
+    new MetricsConfig { is_a_success = false; put_sidecar_metrics = true })
+}
+
+local function getJobToSmokeTestApp(app): Job = new {
+  name = "smoke-test-\(app.name)-on-staging"
+  serial_groups {
+    "smoke-test"
+  }
+  plan = new {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          getStepWithTriggerAndPassed("\(app.name)-ecr-registry-staging", "deploy-\(app.name)-to-staging")
+          when (app.name == "frontend") {
+            getStepWithTriggerAndPassed("nginx-forward-proxy-ecr-registry-staging", "deploy-\(app.name)-to-staging")
+          }
+          getStep("pay-ci", false)
+        }
+      }
+    }
+
+    new TaskStep {
+      task = "parse-ecr-release-tag"
+      file = "pay-ci/ci/tasks/parse-ecr-release-tag.yml"
+      input_mapping {
+        ["ecr-image"] = "\(app.name)-ecr-registry-staging"
+      }
+    }
+
+    loadVar("application_image_tag", "\(app.name)-ecr-registry-staging/tag")
+    createNotificationSnippets(app, "Smoke test")
+    loadNotificationSnippetVariables(app, false)
+
+    assumeRoleWithAccount("trigger-canary-deploy-assume-role", "deploy")
+    loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+    runSmokeTestsForApp()
+  }
+  on_success = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = true; },
+    new MetricsConfig { is_a_success = true; put_sidecar_metrics = false })
+  on_failure = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = false },
+    new MetricsConfig { is_a_success = false; put_sidecar_metrics = false })
+}
+
+local function getJobToPactTagApp(app): Job = new {
+  name = "\(app.name)-pact-tag"
+  plan = new {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          getStepWithTriggerAndPassed("\(app.name)-ecr-registry-staging", "smoke-test-\(app.name)-on-staging")
+          getStep("pay-ci", false)
+        }
+      }
+    }
+    loadVar("application_image_tag", "\(app.name)-ecr-registry-staging/tag")
+
+    new TaskStep {
+      task = "parse-ecr-release-tag"
+      file = "pay-ci/ci/tasks/parse-ecr-release-tag.yml"
+      input_mapping {
+        ["ecr-image"] = "\(app.name)-ecr-registry-staging"
+      }
+    }
+
+    createNotificationSnippets(app, "Pact tag")
+    loadNotificationSnippetVariables(app, false)
+
+    getGitShaForReleaseTag(app)
+    loadVar("git-sha", "git-sha/git-sha")
+    new TaskStep {
+      task = "tag-pact"
+      file = "pay-ci/ci/tasks/pact-tag.yml"
+      params {
+        ["GIT_SHA"] = "((.:git-sha))"
+        ["APP_NAME"] = app.name
+        ["PACT_TAG"] = "staging-fargate"
+      }
+    }
+  }
+  on_success = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = true; },
+    new MetricsConfig { is_a_success = true; put_sidecar_metrics = false })
+  on_failure = sendSlackNoticationAndPutMetrics(app,
+    new SlackNotificationConfig { is_a_success = false },
+    new MetricsConfig { is_a_success = false; put_sidecar_metrics = false })
+}
+
+local function getJobToPushToNextEnv(app): Job = new {
+  name = "push-\(app.name)-to-production-ecr"
+
+  plan = new {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          new GetStep {
+            get = "\(app.name)-ecr-registry-staging"
+            params {
+              ["skip_download"] = true
+              ["format"] = "oci"
+            }
+            trigger = true
+            when (app.name != "adot") {
+              passed {
+                when (app.pact_tag) {
+                  "\(app.name)-pact-tag"
+                } else {
+                  when (app.smoke_test) {
+                    "smoke-test-\(app.name)-on-staging"
+                  } else {
+                    when (app.override_app_to_deploy != null) {
+                      when (app.override_app_to_deploy == "scheduled-tasks") {
+                        "deploy-\(app.override_app_to_deploy)"
+                      } else {
+                        "deploy-\(app.override_app_to_deploy)-to-staging"
+                      }
+                    } else {
+                      "deploy-\(app.name)-to-staging"
+                    }
+                  }
+                }
+              }
+            }
+          }
+          getStep("pay-ci", false)
+        }
+      }
+    }
+    parseReleaseTag(app.name, false)
+
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          loadVar("app_name", "ecr-release-info/app_name")
+          loadVar("app_release_number", "ecr-release-info/release-number")
+          loadVar("release_number", "ecr-release-info/release-number")
+        }
+      }
+    }
+
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          new AssumeRoleTask {
+            task = "assume-copy-from-ecr-staging-role"
+            session_name = "copy-from-ecr-in-staging"
+            aws_account = "staging"
+          }
+          new AssumeRoleTask {
+            task = "assume-write-to-ecr-prod-role"
+            session_name = "copy-to-ecr-in-prod"
+            aws_account = "prod"
+          }
+          shared_resources.generateDockerCredsConfigStep
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          loadVarWithJsonFormat("copy-from-staging-ecr-role", "assume-copy-from-ecr-staging-role/assume-role.json")
+          loadVarWithJsonFormat("write-to-prod-ecr-role", "assume-write-to-ecr-prod-role/assume-role.json")
+        }
+      }
+    }
+    copyImagesToProd(app)
+  }
+  on_success = shared_resources_for_metrics.paySendAppReleaseMetric(true, "staging-2")
+  on_failure = shared_resources_for_metrics.paySendAppReleaseMetric(false, "staging-2")
+}
+
+local function getJobToRetagImageForNextEnv(app): Job = new {
+  when (app.name == "notifications") {
+    name = "retag-\(app.name)-for-test-perf"
+  } else {
+    name = "retag-\(app.name)-image-for-test-perf"
+  }
+
+  plan = new {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          new GetStep {
+            get = "\(app.name)-ecr-registry-staging"
+            params {
+              ["skip_download"] = true
+              ["format"] = "oci"
+            }
+            trigger = true
+            when (app.name != "adot") {
+              passed {
+                when (app.pact_tag) {
+                  "\(app.name)-pact-tag"
+                } else {
+                  when (app.smoke_test) {
+                    "smoke-test-\(app.name)-on-staging"
+                  } else {
+                    when (app.override_app_to_deploy != null) {
+                      when (app.override_app_to_deploy == "scheduled-tasks") {
+                        "deploy-\(app.override_app_to_deploy)"
+                      } else {
+                        "deploy-\(app.override_app_to_deploy)-to-staging"
+                      }
+                    } else {
+                      "deploy-\(app.name)-to-staging"
+                    }
+                  }
+                }
+              }
+            }
+          }
+          getStep("pay-ci", false)
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          parseReleaseTag(app.name, false)
+          new TaskStep {
+            task = "parse-perf-release-tag"
+            file = "pay-ci/ci/tasks/parse-perf-release-tag.yml"
+            input_mapping {
+              ["ecr-repo"] = "\(app.name)-ecr-registry-staging"
+            }
+          }
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          loadVar("app_name", "ecr-release-info/app_name")
+          loadVar("app_release_number", "ecr-release-info/release-number")
+          loadVar("release-number", "ecr-release-info/release-number")
+          loadVar("perf-tag", "parse-perf-release-tag/tag")
+
+          assumeRetagRole()
+          shared_resources.generateDockerCredsConfigStep
+        }
+      }
+    }
+
+    loadVarWithJsonFormat("retag-role", "assume-retag-role/assume-role.json")
+    copyImagesToProd(app)
+
+    retagCandidateAsPerfInECR(app, false)
+  }
+  on_success = shared_resources_for_metrics.paySendAppReleaseMetric(true, "staging-2")
+  on_failure = shared_resources_for_metrics.paySendAppReleaseMetric(false, "staging-2")
+}
+
+local function getJobForDBMigrations(app): Job = new {
+  name = "\(app.name)-db-migration-staging"
+  plan {
+    new InParallelStep { in_parallel = getResourcesToRunDbMigrations(app) }
+    assumeRole("terraform-staging-assume-role")
+    new InParallelStep {
+      in_parallel = new Listing {
+        loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+        loadVar("application_image_tag", "\(app.name)-ecr-registry-staging/tag")
+      }
+    }
+    shared_resources_for_slack_notifications.paySlackNotificationForDBMigration("#govuk-pay-announce", "staging-2")
+    shared_resources_for_deploy_pipelines.runDBMigrationsTask(app, "staging-2-fargate")
+  }
+  on_success = shared_resources_for_slack_notifications.paySlackNotificationForDBMigrationStatus(
+    "#govuk-pay-activity", true, "staging-2")
+  on_failure = shared_resources_for_slack_notifications.paySlackNotificationForDBMigrationStatus(
+    "#govuk-pay-announce", false, "staging-2")
+}
+
+local function getJobToRetagImageForDBMigrations(app): Job = new {
+  name = "retag-\(app.name)-image-for-test-perf-db"
+  plan {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          (getStepWithTriggerAndPassed("\(app.name)-ecr-registry-staging", "\(app.name)-db-migration-staging")) {
+            params {
+              ["skip_download"] = true
+              ["format"] = "oci"
+            }
+          }
+          getStep("pay-ci", false)
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          parseReleaseTag(app.name, false)
+
+          new TaskStep {
+            task = "parse-perf-db-release-tag"
+            file = "pay-ci/ci/tasks/parse-perf-db-release-tag.yml"
+            input_mapping {
+              ["ecr-repo"] = "\(app.name)-ecr-registry-staging"
+            }
+          }
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          loadVar("app_name", "ecr-release-info/app_name")
+          loadVar("app_release_number", "ecr-release-info/release-number")
+          loadVar("release-number", "ecr-release-info/release-number")
+          loadVar("perf-db-tag", "parse-perf-db-release-tag/tag")
+          assumeRetagRole()
+
+          shared_resources.generateDockerCredsConfigStep
+        }
+      }
+    }
+    loadVarWithJsonFormat("retag-role", "assume-retag-role/assume-role.json")
+    copyImagesToProd(app)
+    retagCandidateAsPerfInECR(app, true)
+  }
+  on_success = shared_resources_for_metrics.paySendAppReleaseMetric(true, "staging-2")
+  on_failure = shared_resources_for_metrics.paySendAppReleaseMetric(false, "staging-2")
+}
+
+local function getJobToDeployScheduledTasks(): Job = new {
+  name = "deploy-scheduled-tasks"
+  plan {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        getStep("alpine-ecr-registry-staging", true)
+        getStep("stream-s3-sqs-ecr-registry-staging", true)
+        getStep("pay-ci", false)
+        getStep("pay-infra", false)
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing {
+        loadVar("alpine_image_tag", "alpine-ecr-registry-staging/tag")
+        loadVar("stream_s3_sqs_image_tag", "stream-s3-sqs-ecr-registry-staging/tag")
+        assumeRole("terraform-staging-assume-role")
+      }
+    }
+    loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+    shared_resources_for_deploy_pipelines.deployApplicationTask(payScheduledTask,
+      awsEnvVars, "deploy-to-staging")
+  }
+
+  on_failure = shared_resources_for_slack_notifications.paySlackNotification(new SlackNotificationConfig { message = "Scheduled tasks failed to deploy alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag))" })
+  on_success = shared_resources_for_slack_notifications.paySlackNotification(new SlackNotificationConfig { is_a_success = true
+    message = "Scheduled tasks deployed alpine image ((.:alpine_image_tag)) and stream-s3-sqs image ((.:stream_s3_sqs_image_tag)) successfully" })
+}
+
+local function getResourcesToDeployApp(app: PayApp): InParallelStep = new InParallelStep {
+  in_parallel = new Listing<Step> {
+    getStep("\(app.name)-ecr-registry-staging", true)
+
+    when (app.is_a_java_or_node_app) {
+      getStep("adot-ecr-registry-staging", true)
+      getStep("nginx-proxy-ecr-registry-staging", true)
+      when (app.name == "frontend") {
+        getStep("nginx-forward-proxy-ecr-registry-staging", true)
+      }
+    }
+
+    getStep("pay-infra", false)
+    getStep("pay-ci", false)
+  }
+}
+
+local function createNotificationSnippets(app: PayApp, action: String) = new TaskStep {
+  task = "create-notification-snippets"
+  when (app.name == "egress" || app.name == "webhooks-egress") {
+    file = "pay-ci/ci/tasks/create-egress-notification-snippets.yml"
+  } else {
+    file = "pay-ci/ci/tasks/create-notification-snippets.yml"
+  }
+
+  params {
+    ["APP_NAME"] = app.name
+    ["ACTION_NAME"] = action
+    ["ENV"] = "staging-2"
+    ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
+    when (app.is_a_java_or_node_app && action == "Deployment") {
+      ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
+      ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
+      when (app.name == "frontend") {
+        ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
+      }
+    }
+  }
+}
+
+local function loadVariablesToDeployApp(app: PayApp): InParallelStep = new InParallelStep {
+  in_parallel = new Listing<Step> {
+    loadVar("application_image_tag", "\(app.name)-ecr-registry-staging/tag")
+
+    when (app.is_a_java_or_node_app == true) {
+      loadVar("adot_image_tag", "adot-ecr-registry-staging/tag")
+      loadVar("nginx_image_tag", "nginx-proxy-ecr-registry-staging/tag")
+      when (app.name == "frontend") {
+        loadVar("nginx_forward_proxy_image_tag", "nginx-forward-proxy-ecr-registry-staging/tag")
+      }
+    }
+  }
+}
+
+local function loadNotificationSnippetVariables(app: PayApp, isDeployJob: Boolean): InParallelStep = new InParallelStep {
+  in_parallel = new Listing<Step> {
+    loadVar("app_name", "snippet/app_name")
+    loadVar("app_release_number", "snippet/app_release_number")
+
+    when (app.is_a_java_or_node_app == true && isDeployJob) {
+      loadVar("adot_release_number", "snippet/adot_release_number")
+      loadVar("nginx_release_number", "snippet/nginx_release_number")
+      when (app.name == "frontend") {
+        loadVar("nginx_forward_proxy_release_number", "snippet/nginx_forward_proxy_release_number")
+      }
+    }
+    loadVar("success_snippet", "snippet/success")
+    loadVar("failure_snippet", "snippet/failure")
+    loadVar("start_snippet", "snippet/start")
+  }
+}
+
+local function parseReleaseTag(appName: String, includeOutputMapping: Boolean) = new TaskStep {
+  task = "parse-\(appName)-ecr-release-tag"
+  file = "pay-ci/ci/tasks/parse-ecr-release-tag.yml"
+  input_mapping = new {
+    ["ecr-image"] = "\(appName)-ecr-registry-staging"
+  }
+  when (includeOutputMapping) {
+    local releaseInfoPrefix = if (appName == "nginx-proxy") "nginx" else appName
+    output_mapping = new {
+      ["ecr-release-info"] = "\(releaseInfoPrefix)-release-info"
+    }
+  }
+}
+
+local function parseReleaseTagsToDeployApp(app: PayApp): InParallelStep = new InParallelStep {
+  in_parallel = new Listing<Step> {
+    parseReleaseTag(app.name, false)
+    when (app.name == "frontend") {
+      parseReleaseTag("nginx-forward-proxy", true)
+    }
+  }
+}
+
+local function getGitShaForReleaseTag (app): TaskStep = new TaskStep {
+  task = "get-git-sha-for-release-tag"
+  file = "pay-ci/ci/tasks/get-git-sha-for-release-tag.yml"
+  params {
+    ["APP_NAME"] = app.name
+    ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
+    ["GITHUB_TOKEN"] = "((github-access-token))"
+  }
+}
+
+local function checkPactCompatibility(app) = new {
+  getGitShaForReleaseTag(app)
+  loadVar("git-sha", "git-sha/git-sha")
+  new TaskStep {
+    task = "check-pact-compatibility"
+    file = "pay-ci/ci/tasks/check-pact-compatibility.yml"
+    params {
+      ["GIT_SHA"] = "((.:git-sha))"
+      ["APP_NAME"] = app.name
+      ["PACT_TAG"] = "staging-fargate"
+    }
+  }
+}
+
+local function checkReleaseVersions(app): TaskStep = new TaskStep {
+  task = "check-release-versions"
+  file = "pay-ci/ci/tasks/check-release-versions.yml"
+  params {
+    ...getAWSAssumeRoleCreds()
+    ["AWS_REGION"] = "eu-west-1"
+    ["CLUSTER_NAME"] = "staging-2-fargate"
+    ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
+    when (app.is_a_java_or_node_app) {
+      ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
+      ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
+    }
+    when (app.name == "frontend") {
+      ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
+    }
+    ["APP_NAME"] = app.name
+  }
+}
+
+local function runSmokeTestsForApp(): InParallelStep = new InParallelStep {
+  in_parallel = new InParallelConfig {
+    limit = 8
+    steps = new Listing<Step> {
+      runSmokeTest("run_create_card_payment_sandbox-staging", "card_sandbox_stag", false)
+      runSmokeTest("run_recurring_card_payment_sandbox-staging", "rec_card_sandbox_stag", false)
+      runSmokeTest("run_create_card_payment_worldpay_with_3ds2-staging",
+        "card_wpay_3ds2_stag", true)
+      runSmokeTest("run_create_card_payment_worldpay_with_3ds2_exemption-staging",
+        "card_wpay_3ds2ex_stag", true)
+      runSmokeTest("run_create_card_payment_worldpay_without_3ds-staging", "card_wpay_stag", true)
+      runSmokeTest("run_recurring_card_payment_worldpay-staging", "reccard_worldpay_stag", true)
+      runSmokeTest("run_cancel_card_payment_sandbox-staging", "cancel_sandbox_stag", false)
+      runSmokeTest("run_use_payment_link_sandbox-staging", "pymntlnk_sandbox_stag", false)
+      runSmokeTest("run_create_card_payment_stripe-staging", "card_stripe_stag", false)
+      runSmokeTest("run_create_card_payment_stripe_3ds-staging", "card_stripe_3ds_stag", false)
+      runSmokeTest("run_recurring_card_payment_stripe-staging", "rec_card_stripe_stag", false)
+      runSmokeTest("run_notifications_sandbox-staging", "notifcatns_sndbx_stag", false)
+    }
+  }
+}
+
+local function runSmokeTest(taskName: String, smokeTestName: String,
+  shouldRetry: Boolean): TaskStep = new TaskStep {
+  task = taskName
+  when (shouldRetry) {
+    attempts = 10
+  }
+  file = "pay-ci/ci/tasks/run-smoke-test.yml"
+  params {
+    ...getAWSAssumeRoleCreds()
+    ["AWS_REGION"] = "eu-west-1"
+    ["SMOKE_TEST_NAME"] = smokeTestName
+  }
+}
+
+local function sendSlackNoticationAndPutMetrics(app: PayApp, slackConfig: SlackNotificationConfig,
+  metricsConfig: MetricsConfig) = new InParallelStep {
+  in_parallel = new InParallelConfig {
+    steps = new Listing<Step> {
+      shared_resources_for_slack_notifications.paySlackNotificationForAppDeployment(slackConfig)
+      ...sendMetrics(app, metricsConfig)
+    }
+  }
+}
+
+local function sendMetrics(app: PayApp, metricsConfig: MetricsConfig) = new {
+  shared_resources_for_metrics.paySendAppReleaseMetric(metricsConfig.is_a_success, "staging-2")
+  when (app.is_a_java_or_node_app == true && metricsConfig.put_sidecar_metrics) {
+    shared_resources_for_metrics.paySendNginxReleaseMetric(metricsConfig.is_a_success, "staging-2")
+    when (app.name == "frontend") {
+      shared_resources_for_metrics.paySendNginxForwardProxyReleaseMetric(metricsConfig.is_a_success, "staging-2")
+    }
+    shared_resources_for_metrics.paySendAdotReleaseMetric(metricsConfig.is_a_success, "staging-2")
+  }
+}
+
+local function getResourcesToRunDbMigrations(app: PayApp): Listing<Step> = new Listing<Step> {
+  getStep("pay-ci", false)
+  (getStep("\(app.name)-ecr-registry-staging", true)) {
+    passed = new Listing<Identifier> {
+      "deploy-\(app.name)-to-staging"
+    }
+    trigger = false
+    params {
+      ["format"] = "oci"
+    }
+  }
+}
+
+local function assumeRole(awsRoleSessionName: String) =
+  assumeRoleWithAccount(awsRoleSessionName, "staging")
+
+local function assumeRoleWithAccount(awsRoleSessionName: String, account: String) = new AssumeRoleTask {
+  task = "assume-role"
+  aws_account = account
+  session_name = awsRoleSessionName
+}
+
+local class AssumeRoleTask extends TaskStep {
+  task = super.task
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  hidden aws_account: Identifier
+  hidden session_name: Identifier
+  local arn_suffix = if (aws_account ==  "deploy") "_trigger_canary" else ""
+  output_mapping {
+    ["assume-role"] = task
+  }
+  params {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_\(aws_account)_account_id)):role/concourse\(arn_suffix)"
+    ["AWS_ROLE_SESSION_NAME"] = session_name
+  }
+}
+
+local function assumeRetagRole(): TaskStep = new TaskStep {
+  task = "assume-retag-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping {
+    ["assume-role"] = "assume-retag-role"
+  }
+  params {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "retag-ecr-image-as-perf"
+  }
+}
+
+local function copyImagesToProd(app: PayApp): TaskStep = new TaskStep {
+  task = "copy-images-to-prod"
+  file = "pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml"
+  privileged = true
+  params {
+    ["ECR_REPO_NAME"] = app.getECRRepo()
+    ["RELEASE_NUMBER"] = "((.:release_number))"
+    ["SOURCE_ECR_REGISTRY"] = "((pay_aws_staging_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_prod_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:copy-from-staging-ecr-role.AWS_ACCESS_KEY_ID))"
+    ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:copy-from-staging-ecr-role.AWS_SECRET_ACCESS_KEY))"
+    ["SOURCE_AWS_SESSION_TOKEN"] = "((.:copy-from-staging-ecr-role.AWS_SESSION_TOKEN))"
+    ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:write-to-prod-ecr-role.AWS_ACCESS_KEY_ID))"
+    ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:write-to-prod-ecr-role.AWS_SECRET_ACCESS_KEY))"
+    ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-prod-ecr-role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function retagCandidateAsPerfInECR(app: PayApp, dbMigration: Boolean): TaskStep = new TaskStep {
+  task = "retag-candidate-as-perf-in-ecr"
+  file = "pay-ci/ci/tasks/manifest-retag.yml"
+  params {
+    ["DOCKER_LOGIN_ECR"] = "1"
+    ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
+    ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+    when (dbMigration) {
+      ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:perf-db-tag))"
+    } else {
+      ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:perf-tag))"
+    }
+    ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:release-number))-candidate"
+  }
+}
+
+local function getAWSAssumeRoleCreds() = new Mapping<String, String> {
+  ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+  ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+  ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+}
+
+local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+}
+
+local function loadVarWithJsonFormat(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+  format = "json"
+}
+
+local function getStep(name: String, shouldTrigger: Boolean): GetStep = new GetStep {
+  get = name
+  when (shouldTrigger == true) {
+    trigger = shouldTrigger
+  }
+}
+
+local function getStepWithTriggerAndPassed(name: String, passedJob: String): GetStep = new GetStep {
+  get = name
+  trigger = true
+  passed {
+    passedJob
+  }
+}
