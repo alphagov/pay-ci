@@ -2,6 +2,7 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_slack_notifications.pkl"
 
 resource_types {
   shared_resources.slackNotificationResourceType
