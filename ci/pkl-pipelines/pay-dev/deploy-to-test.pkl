@@ -1007,7 +1007,7 @@ local function sendNotificationAndMetrics (app: PayApp, slackConfig: SlackNotifi
       when (metricsConfig.put_metrics) {
         ...sendMetrics(app, metricsConfig)
       }
-      when (config.put_grafana_annotation && config.is_a_success) {
+      when (metricsConfig.put_grafana_annotation && metricsConfig.is_a_success) {
         shared_resources_for_annotations.paySendAppReleaseAnnotation("deploy-to-test")
       }
     }
@@ -1033,10 +1033,10 @@ local function putGrafanaAnnotation() = new PutStep {
   }
 }
 
-local function sendMetrics(app: PayApp, isASuccess: Boolean, sendSideCarMetrics: Boolean) = new {
-  shared_resources_for_metrics.paySendAppReleaseMetric(isASuccess, "test-12")
-  when (app.is_a_java_or_node_app == true && sendSideCarMetrics) {
-    shared_resources_for_metrics.paySendNginxReleaseMetric(isASuccess, "test-12")
+local function sendMetrics(app: PayApp, metricsConfig: MetricsConfig) = new {
+  shared_resources_for_metrics.paySendAppReleaseMetric(metricsConfig.is_a_success, "test-12")
+  when (app.is_a_java_or_node_app == true && metricsConfig.put_sidecar_metrics) {
+    shared_resources_for_metrics.paySendNginxReleaseMetric(metricsConfig.is_a_success, "test-12")
     when (app.name == "frontend") {
       shared_resources_for_metrics.paySendNginxForwardProxyReleaseMetric(metricsConfig.is_a_success, "test-12")
     }
