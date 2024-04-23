@@ -1,0 +1,28 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+grafanaAnnotationResourceType = new Pipeline.ResourceType {
+	name = "grafana-annotation"
+	type = "docker-image"
+	source = new {
+		["repository"] = "governmentdigitalservice/pay-grafana-annotation-resource"
+		["tag"] = "latest"
+	}
+}
+
+grafanaAnnotationResource = new Pipeline.Resource {
+	name = "grafana-annotation"
+	type = "grafana-annotation"
+	source = new {
+		["url"] = "https://grafana.monitoring.pay-cd.deploy.payments.service.gov.uk"
+		["username"] = "pay_cd"
+		["password"] = "((grafana-annotations-password))"
+	}
+}
+
+function paySendAppReleaseAnnotation(pipeline: String) = new Pipeline.PutStep {
+	put = "grafana-annotation"
+	params = new {
+		["tags"] = new Listing<String> { pipeline "((.:app_name))" }
+		["template"] = "released ${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME} release ((.:app_release_number)) (build ${BUILD_ID})"
+	}
+}
