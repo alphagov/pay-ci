@@ -76,7 +76,7 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
         }
       }
     }
-    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Drift detected for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
+    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Terraform drift detected for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
     on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "Terraform state consistent for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
   }
 }
@@ -115,8 +115,8 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
           }
         }
       }
-    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "An SNS topic subscriber is unsubscribed - $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
-    on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "SNS topic subscribers consistent - $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
+    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Zendesk unsubscriber check: SNS topic subscribers consistent in \(env) - $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
+    on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "Zendesk unsubscriber check: SNS topic subscribers consistent in \(env) - $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
     }
   }
 }
