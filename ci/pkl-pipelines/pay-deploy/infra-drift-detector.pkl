@@ -91,6 +91,7 @@ for (env, time in Map("staging-2", "every-morning-at-six", "production-2", "ever
       }
     }
     on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Terraform drift detected for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
+    on_error = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Pipeline to detect Terraform drift for $BUILD_JOB_NAME failed to run <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
     on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "Terraform state consistent for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
   }
 }
