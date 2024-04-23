@@ -1,0 +1,155 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_slack_notifications.pkl"
+
+local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
+
+resource_types {
+  shared_resources.slackNotificationResourceType
+}
+resources {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/infra-drift-detector.pkl", "master")
+  shared_resources.payCiGitHubResource
+  shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
+  shared_resources.slackNotificationResource
+  new {
+    name = "every-15-minutes"
+    type = "time"
+    icon = "alarm"
+    source {
+      ["interval"] = "15m"
+    }
+  }
+  new {
+    name = "every-morning-at-five"
+    type = "time"
+    icon = "alarm"
+    source {
+      ["start"] = "05:00"
+      ["stop"] = "05:30"
+      ["location"] = "Europe/London"
+    }
+  }
+  new {
+    name = "every-morning-at-five-thirty"
+    type = "time"
+    icon = "alarm"
+    source {
+      ["start"] = "05:30"
+      ["stop"] = "06:00"
+      ["location"] = "Europe/London"
+    }
+  }
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/infra-drift-detector.pkl")
+
+for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-morning-at-five-thirty" )) {
+  new {
+    name = "\(env)-bastion"
+    serial = true
+     plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step>{
+          getStep("pay-ci")
+          getStep("pay-infra")
+          (getStep("\(time)")) { trigger = true }
+        }
+      }
+      new TaskStep {
+        task = "assume-role"
+        file = "pay-ci/ci/tasks/assume-role.yml"
+        params {
+          ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-concourse-bastion-read-only-\(env)"
+          ["AWS_ROLE_SESSION_NAME"] = "pay-concourse-bastion-drift-detection-\(env)"
+        }
+      }
+      (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
+      new TaskStep {
+        task = "check-for-drift"
+        file = "pay-ci/ci/tasks/check-for-tf-drift.yml"
+        params {
+          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+          ["DEPLOYMENT_PATH"] = "test/\(env)/environment/bastion"
+        }
+      }
+    }
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        message = "Terraform drift detected for $BUILD_JOB_NAME."
+        slack_channel_for_failure = "#govuk-pay-starling"
+      })
+    on_error = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        message = "Pipeline to detect Terraform drift for $BUILD_JOB_NAME failed to run."
+        slack_channel_for_failure = "#govuk-pay-starling"
+      })
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig{
+        is_a_success = true
+        message = "Terraform state consistent for $BUILD_JOB_NAME."
+      })
+  }
+}
+
+  for (env in List("test", "ci", "dev")) {
+    new {
+      name = "\(env)-check-for-zendesk-unsubscribers"
+      plan {
+        new InParallelStep {
+          in_parallel = new Listing<Step>{
+            (getStep("every-15-minutes")) { trigger = true }
+            getStep("pay-ci")
+          }
+        }
+        new TaskStep {
+          task = "assume-role"
+          file = "pay-ci/ci/tasks/assume-role.yml"
+          params {
+            ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_\(env)_account_id)):role/concourse"
+            ["AWS_ROLE_SESSION_NAME"] = "zendesk-unsubscriber-assume-role"
+          }
+        }
+        (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
+        new TaskStep {
+          task = "check-if-unsubscribed"
+          file = "pay-ci/ci/tasks/check-sns-topic-unsubscribers.yml"
+          params {
+            ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+            ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+            ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+            ["AWS_REGION"] = "eu-west-1"
+            ["AWS_DEFAULT_REGION"] = "eu-west-1"
+            when (env == "test") {
+              ["REGIONS"] = "eu-west-1 us-east-1"
+            }
+          }
+        }
+      }
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        message = "Zendesk unsubscriber check: An SNS topic subscriber is unsubscribed in \(env) - $BUILD_JOB_NAME."
+        slack_channel_for_failure = "#govuk-pay-starling"
+      })
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        is_a_success = true
+        message = "Zendesk unsubscriber check: SNS topic subscribers consistent in \(env) - $BUILD_JOB_NAME."
+      })
+    }
+  }
+}
+
+local function getStep(name: String): GetStep = new GetStep {
+  get = name
+}
+
+local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+}
