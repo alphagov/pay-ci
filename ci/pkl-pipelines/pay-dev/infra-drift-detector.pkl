@@ -117,8 +117,8 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
         }
         (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
         new TaskStep {
-          task = "check-if-unsubscribed"
-          file = "pay-ci/ci/tasks/check-sns-topic-unsubscribers.yml"
+          task = "check-sns-subscriptions"
+          file = "pay-ci/ci/tasks/check-sns-subscriptions.yml"
           params {
             ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
             ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
@@ -127,6 +127,7 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
             ["AWS_DEFAULT_REGION"] = "eu-west-1"
             when (env == "test") {
               ["REGIONS"] = "eu-west-1 us-east-1"
+              ["OK_TO_BE_UNSUBSCRIBED"] = "true"
             }
           }
         }
