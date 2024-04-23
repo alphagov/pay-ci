@@ -2,6 +2,9 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_slack_notifications.pkl"
+
+local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
 
 resource_types {
   shared_resources.slackNotificationResourceType
@@ -76,8 +79,21 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
         }
       }
     }
-    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "Drift detected for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
-    on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "Terraform state consistent for $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        message = "Terraform drift detected for $BUILD_JOB_NAME."
+        slack_channel_for_failure = "#govuk-pay-starling"
+      })
+    on_error = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        message = "Pipeline to detect Terraform drift for $BUILD_JOB_NAME failed to run."
+        slack_channel_for_failure = "#govuk-pay-starling"
+      })
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig{
+        is_a_success = true
+        message = "Terraform state consistent for $BUILD_JOB_NAME."
+      })
   }
 }
 
@@ -115,8 +131,16 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
           }
         }
       }
-    on_failure = shared_resources.paySlackNotificationForFail("#govuk-pay-starling", "An SNS topic subscriber is unsubscribed - $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
-    on_success = shared_resources.paySlackNotificationForSuccess("#govuk-pay-activity", "SNS topic subscribers consistent - $BUILD_JOB_NAME <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>")
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        message = "Zendesk unsubscriber check: An SNS topic subscriber is unsubscribed in \(env) - $BUILD_JOB_NAME."
+        slack_channel_for_failure = "#govuk-pay-starling"
+      })
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig {
+        is_a_success = true
+        message = "Zendesk unsubscriber check: SNS topic subscribers consistent in \(env) - $BUILD_JOB_NAME."
+      })
     }
   }
 }
