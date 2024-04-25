@@ -168,7 +168,7 @@ local function getJobToSmokeTestApp(app): Job = new {
   on_failure = sendSlackNoticationAndPutMetrics(app,
     new SlackNotificationConfig { is_a_success = false },
     new MetricsConfig { is_a_success = false; put_sidecar_metrics = false })
-  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application" }
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test" }
 
 }
 
