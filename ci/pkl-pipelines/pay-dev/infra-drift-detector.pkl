@@ -133,13 +133,13 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
       }
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {
-        message = "Zendesk unsubscriber check: An SNS topic subscriber is unsubscribed in \(env) - $BUILD_JOB_NAME."
+        message = "An SNS topic subscriber is unsubscribed - $BUILD_JOB_NAME."
         slack_channel_for_failure = "#govuk-pay-starling"
       })
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {
         is_a_success = true
-        message = "Zendesk unsubscriber check: SNS topic subscribers consistent in \(env) - $BUILD_JOB_NAME."
+        message = "SNS topic subscribers consistent - $BUILD_JOB_NAME."
       })
     }
   }
