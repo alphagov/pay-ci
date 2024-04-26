@@ -1,0 +1,60 @@
+# This workflow is meant to be run on a pact provider build. It will run
+# all the consumers that depend on it against itself.
+#
+name: Provider Contract Tests
+
+on:
+  workflow_call:
+    secrets:
+      pact_broker_username:
+        required: true
+      pact_broker_password:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  provider-contract-tests:
+    name: Contract tests
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - name: Set up JDK 11
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Cache Maven packages
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Pull docker image dependencies
+        run: |
+          docker pull postgres:15.2
+      - name: Set Pact Provider Version
+        id: set-pact-provider-version
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Github actually creates a phantom merge commit on PR actions, but we want to record
+            # in the pact broker something we can actually trace back to a PR, using the _actual_
+            # phantom merge commit sha (github.sha) would make this essentially impossible for us
+            PROVIDER_VERSION=${{ github.event.pull_request.head.sha }}
+          elif [[ "${{ github.ref }}" == "refs/heads/master" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            PROVIDER_VERSION=${{ github.sha }}
+          else
+            echo "Unknown type to get provider tag from, failing on purpose"
+            exit 1
+          fi
+          echo "Setting Provider version to ${PROVIDER_VERSION}"
+          echo "pact-provider-version=${PROVIDER_VERSION}" >> $GITHUB_OUTPUT
+      - name: Run provider contract tests
+        run: |
+          mvn test -DrunContractTests -DPACT_CONSUMER_TAG=master \
+          -DPACT_BROKER_USERNAME=${{ secrets.pact_broker_username }} \
+          -DPACT_BROKER_PASSWORD=${{ secrets.pact_broker_password }} \
+          -Dpact.provider.version=${{ steps.set-pact-provider-version.outputs.pact-provider-version }} \
+          -Dpact.verifier.publishResults=true
