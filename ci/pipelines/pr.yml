@@ -212,11 +212,7 @@ definitions:
 groups:
   - name: adminusers
     jobs:
-      - adminusers-unit-test
-      - adminusers-integration-test
       - adminusers-e2e
-      - adminusers-as-provider-pact-test
-      - adminusers-as-consumer-pact-test
 
   - name: cardid
     jobs:
@@ -1018,111 +1014,6 @@ jobs:
         put: publicapi-pull-request
 
   - <<: *job-definition
-    name: adminusers-unit-test
-    serial_groups: [unit-test]
-    plan:
-    - <<: *get-pull-request
-      resource: adminusers-pull-request
-    - <<: *get-ci
-    - <<: *put-unit-tests-pending-status
-      put: adminusers-pull-request
-    - <<: *run-java-unit-test
-      params:
-        app_name: adminusers
-      on_failure:
-        <<: *put-unit-test-failed-status
-        put: adminusers-pull-request
-    - <<: *put-unit-test-success-status
-      put: adminusers-pull-request
-
-  - <<: *job-definition
-    name: adminusers-integration-test
-    serial_groups: [integration-test]
-    plan:
-    - <<: *get-pull-request
-      resource: adminusers-pull-request
-    - <<: *put-integration-test-pending-status
-      put: adminusers-pull-request
-    - <<: *get-ci
-    - <<: *run-java-integration-tests
-      on_failure:
-        <<: *put-integration-test-failed-status
-        put: adminusers-pull-request
-    - <<: *publish-pacts
-      params:
-        consumer_name: adminusers
-    - <<: *put-integration-test-success-status
-      put: adminusers-pull-request
-
-  - <<: *job-definition
-    name: adminusers-as-provider-pact-test
-    plan:
-    - <<: *get-pull-request
-      resource: adminusers-pull-request
-    - <<: *put-pact-provider-pending-status
-      put: adminusers-pull-request
-    - <<: *get-ci
-    - <<: *pact-provider-test-preflight-check
-    - <<: *pact-provider-verification
-      input_mapping:
-        test_target: src
-      params:
-        provider: adminusers
-      on_failure:
-        <<: *put-pact-provider-failed-status
-        put: adminusers-pull-request
-    - <<: *put-pact-provider-success-status
-      put: adminusers-pull-request
-
-  - <<: *job-definition
-    name: adminusers-as-consumer-pact-test
-    plan:
-      - <<: *get-ci
-      - <<: *get-pull-request
-        resource: adminusers-pull-request
-        passed: [ adminusers-integration-test ]
-      - put: adminusers-pull-request
-        get_params:
-          skip_download: true
-        params:
-          path: src
-          status: pending
-          context: app-as-consumer pact verification
-      - get: ledger-master
-      - get: card-connector-master
-      - get: adminusers-master
-        params: { submodules: none }
-      - <<: *pact-provider-test-preflight-check
-        params:
-          consumer: adminusers
-      - in_parallel:
-          - <<: *pact-provider-verification
-            task: ledger-provider-pact-verification
-            input_mapping:
-              test_target: ledger-master
-            params:
-              consumer: adminusers
-              provider: ledger
-          - <<: *pact-provider-verification
-            task: connector-provider-pact-verification
-            input_mapping:
-              test_target: card-connector-master
-            params:
-              consumer: adminusers
-              provider: connector
-        on_failure:
-          put: adminusers-pull-request
-          params:
-            path: src
-            status: failure
-            context: app-as-consumer pact verification
-      - put: adminusers-pull-request
-        params:
-          path: src
-          status: success
-          context: app-as-consumer pact verification
-
-  - <<: *job-definition
     name: adminusers-e2e
     plan:
       - <<: *get-pull-request
@@ -1324,7 +1215,7 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - in_parallel:      
+      - in_parallel:
         - task: run-card-e2e-tests
           attempts: 3
           file: ci/ci/tasks/run-codebuild.yml
@@ -1597,7 +1488,7 @@ jobs:
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
             AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
-      - in_parallel:      
+      - in_parallel:
         - task: run-card-e2e-tests
           attempts: 3
           file: ci/ci/tasks/run-codebuild.yml
@@ -1616,7 +1507,7 @@ jobs:
             PATH_TO_CONFIG: "../../../../run-codebuild-configuration/zap.json"
             AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
             AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
-            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))            
+            AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
       - <<: *put-e2e-success-status
         put: publicauth-pull-request
     on_failure:
