@@ -1,0 +1,85 @@
+name: Github Actions - Provider tests for consumer
+
+on:
+  workflow_call:
+    inputs:
+      consumer:
+        description: Name of the consumer app, e.g. frontend
+        required: true
+        type: string
+      provider:
+        type: string
+        required: true
+        description: Name of the provider. Example -  connector
+      java_version:
+        type: string
+        required: false
+        default: 11
+    secrets:
+      pact_broker_username:
+        required: true
+      pact_broker_password:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  provider-contract-tests-for-consumer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+        with:
+          repository: alphagov/pay-${{ inputs.provider }}
+          path: pay-${{ inputs.provider }}
+      - name: Get Provider SHA
+        id: get-provider-sha
+        run: |
+          cd pay-${{ inputs.provider }}
+          echo "provider-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo $provider-sha
+      - name: Set up JDK ${{ inputs.java_version }}
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: 'adopt'
+      - name: Cache Maven packages
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Pull docker image dependencies
+        run: |
+          docker pull postgres:15.2
+      - name: Set Pact Consumer variables
+        id: set-pact-consumer-variables
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Github actually creates a phantom merge commit on PR actions, but we want to record
+            # in the pact broker something we can actually trace back to a PR, using the _actual_
+            # phantom merge commit sha (github.sha) would make this essentially impossible for us
+            CONSUMER_TAG=${{ github.event.pull_request.number }}
+          elif [[ "${{ github.ref }}" == "refs/heads/master" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            CONSUMER_TAG=master
+          else
+            echo "Unknown type to get consumer tag from, failing on purpose"
+            exit 1
+          fi
+          echo "Setting Consumer Tag to ${CONSUMER_TAG}"
+          echo "pact-consumer-tag=${CONSUMER_TAG}" >> $GITHUB_OUTPUT
+      - name: Run provider pact tests
+        run: |
+          export MAVEN_REPO="$HOME/.m2"
+          cd pay-${{ inputs.provider }}
+
+          mvn test --no-transfer-progress \
+          --batch-mode \
+          -DrunContractTests \
+          -DCONSUMER="${{ inputs.consumer }}" \
+          -DPACT_CONSUMER_TAG="${{ steps.set-pact-consumer-variables.outputs.pact-consumer-tag }}" \
+          -DPACT_BROKER_USERNAME="${{ secrets.pact_broker_username }}" \
+          -DPACT_BROKER_PASSWORD="${{ secrets.pact_broker_password }}" \
+          -DPACT_BROKER_HOST=pact-broker.deploy.payments.service.gov.uk \
+          -Dpact.provider.version="${{ steps.get-provider-sha.outputs.provider-sha }}" \
+          -Dpact.verifier.publishResults=true
