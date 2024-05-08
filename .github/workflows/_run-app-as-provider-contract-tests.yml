@@ -1,4 +1,4 @@
-# This workflow is meant to be run on a pact provider build. It will check pacts
+# This workflow is meant to be run on a pact provider build. It will check pacts for
 # all the consumers that depend on it against itself (the provider).
 #
 name: Provider Contract Tests
@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   provider-contract-tests:
-    name: App as provider contract tests
+    name: Contract tests
     runs-on: ubuntu-20.04
 
     steps:
