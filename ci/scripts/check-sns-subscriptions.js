@@ -100,7 +100,7 @@ function validateSubscriptionGeneric(topicArn, endpoint) {
 function validateSubscriptions(subscriptions) {
   for (const subscription of subscriptions) {
     const endpoint = subscription.Endpoint.trim()
-    if (subscription.Protocol === 'email' || subscription.Protocol == 'sqs') {
+    if (subscription.Protocol === 'email' || subscription.Protocol === 'sqs') {
       validateSubscriptionGeneric(subscription.TopicArn, endpoint)
     } else if (subscription.Protocol === 'https') {
       validateSubscriptionHttps(subscription.TopicArn, endpoint)
@@ -117,7 +117,7 @@ async function processTopics(client, data) {
     try {
       const subs = await client.listSubscriptionsByTopic(topic).promise()
       subsToValidate = subsToValidate.concat(subs.Subscriptions)
-      if (process.env.OK_TO_BE_UNSUBSCRIBED && subs.Subscriptions.length == 0) {
+      if (!process.env.OK_TO_BE_UNSUBSCRIBED && subs.Subscriptions.length === 0) {
         logError(`${topic.TopicArn} has no subscriptions`)
       }
     } catch (err) {
