@@ -269,9 +269,7 @@ groups:
 
   - name: selfservice
     jobs:
-      - selfservice-test
       - selfservice-e2e
-      - selfservice-as-consumer-pact-test
 
   - name: toolbox
     jobs:
@@ -1610,25 +1608,6 @@ jobs:
       put: card-frontend-pull-request
 
   - <<: *job-definition
-    name: selfservice-test
-    serial_groups: [node-test]
-    plan:
-    - <<: *get-pull-request
-      resource: selfservice-pull-request
-    - <<: *get-ci
-    - <<: *put-test-pending-status
-      put: selfservice-pull-request
-    - <<: *node-test
-      on_failure:
-        <<: *put-test-failed-status
-        put: selfservice-pull-request
-    - <<: *publish-pacts
-      params:
-        consumer_name: selfservice
-    - <<: *put-test-success-status
-      put: selfservice-pull-request
-
-  - <<: *job-definition
     name: selfservice-e2e
     plan:
     - <<: *get-pull-request
@@ -1693,58 +1672,6 @@ jobs:
       put: selfservice-pull-request
     on_failure:
       <<: *put-e2e-failed-status
-      put: selfservice-pull-request
-
-
-  - <<: *job-definition
-    name: selfservice-as-consumer-pact-test
-    plan:
-    - <<: *get-pull-request
-      resource: selfservice-pull-request
-      passed: [selfservice-test]
-    - <<: *put-pact-provider-pending-status
-      put: selfservice-pull-request
-    - get: card-connector-master
-    - get: ledger-master
-    - get: adminusers-master
-    - get: products-master
-    - <<: *get-ci
-    - <<: *pact-provider-test-preflight-check
-      params:
-        consumer: selfservice
-    - in_parallel:
-      - <<: *pact-provider-verification
-        task: connector-provider-pact-verification
-        input_mapping:
-          test_target: card-connector-master
-        params:
-          consumer: selfservice
-          provider: connector
-      - <<: *pact-provider-verification
-        task: adminusers-provider-pact-verification
-        input_mapping:
-          test_target: adminusers-master
-        params:
-          consumer: selfservice
-          provider: adminusers
-      - <<: *pact-provider-verification
-        task: ledger-provider-pact-verification
-        input_mapping:
-          test_target: ledger-master
-        params:
-          consumer: selfservice
-          provider: ledger
-      - <<: *pact-provider-verification
-        task: products-provider-pact-verification
-        input_mapping:
-          test_target: products-master
-        params:
-          consumer: selfservice
-          provider: products
-      on_failure:
-        <<: *put-pact-provider-failed-status
-        put: selfservice-pull-request
-    - <<: *put-pact-provider-success-status
       put: selfservice-pull-request
 
   - <<: *job-definition
