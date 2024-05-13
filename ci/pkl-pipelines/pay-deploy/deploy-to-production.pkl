@@ -36,8 +36,8 @@ resources = new {
       app.getECRRepo(), "pay_aws_prod_account_id", "release")
   }
 
-  new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test" }
-  new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application" }
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test-production" }
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application-production" }
   shared_resources_for_slack_notifications.slackNotificationResource
   (shared_resources_for_annotations.grafanaAnnotationResource) {
     source { ["tags"] = new Listing<String> { "release" "production-2" } }
@@ -109,7 +109,7 @@ local function getJobToDeployApp(app): Job = new {
 
   plan = new {
     getResourcesToDeployApp(app)
-    new shared_resources_for_lock_pools.AcquireLockStep { pool = "deploy-application" }
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "deploy-application-production" }
     parseReleaseTagsToDeployApp(app)
     loadVariablesToDeployApp(app)
     createNotificationSnippets(app, "Deployment")
@@ -136,7 +136,7 @@ local function getJobToDeployApp(app): Job = new {
   on_failure = sendSlackNoticationAndPutMetrics(app,
     new SlackNotificationConfig { is_a_success = false },
     new MetricsConfig { is_a_success = false; put_sidecar_metrics = true })
-  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application" }
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application-production" }
 }
 
 local function getJobToSmokeTestApp(app): Job = new {
@@ -153,7 +153,7 @@ local function getJobToSmokeTestApp(app): Job = new {
         }
       }
     }
-    new shared_resources_for_lock_pools.AcquireLockStep { pool = "smoke-test" }
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "smoke-test-production" }
     loadVar("application_image_tag", "\(app.name)-ecr-registry-prod/tag")
     createNotificationSnippets(app, "Smoke test")
     loadNotificationSnippetVariables(app, false)
@@ -168,7 +168,7 @@ local function getJobToSmokeTestApp(app): Job = new {
   on_failure = sendSlackNoticationAndPutMetrics(app,
     new SlackNotificationConfig { is_a_success = false },
     new MetricsConfig { is_a_success = false; put_sidecar_metrics = false })
-  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test" }
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test-production" }
 }
 
 local function getJobToPactTagApp(app): Job = new {

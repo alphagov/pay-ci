@@ -30,8 +30,8 @@ resources = new {
   shared_resources_for_metrics.prometheusPushgatewayResource
   shared_resources.payCiGitHubResource
   shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
-  new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application" }
-  new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test" }
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application-staging" }
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test-staging" }
 
   for (app in allPayApplications) {
     shared_resources.payECRResourceWithVariant("\(app.name)-ecr-registry-staging",
@@ -99,7 +99,7 @@ local function getJobToDeployApp(app): Job = new {
   serial = true
   plan = new {
     getResourcesToDeployApp(app)
-    new shared_resources_for_lock_pools.AcquireLockStep { pool = "deploy-application" }
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "deploy-application-staging" }
     parseReleaseTagsToDeployApp(app)
     loadVariablesToDeployApp(app)
     createNotificationSnippets(app, "Deployment")
@@ -126,7 +126,7 @@ local function getJobToDeployApp(app): Job = new {
   on_failure = sendSlackNoticationAndPutMetrics(app,
     new SlackNotificationConfig { is_a_success = false },
     new MetricsConfig { is_a_success = false; put_sidecar_metrics = true })
-  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application" }
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application-staging" }
 }
 
 local function getJobToSmokeTestApp(app): Job = new {
@@ -144,7 +144,7 @@ local function getJobToSmokeTestApp(app): Job = new {
       }
     }
 
-    new shared_resources_for_lock_pools.AcquireLockStep { pool = "smoke-test" }
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "smoke-test-staging" }
 
     new TaskStep {
       task = "parse-ecr-release-tag"
@@ -168,7 +168,7 @@ local function getJobToSmokeTestApp(app): Job = new {
   on_failure = sendSlackNoticationAndPutMetrics(app,
     new SlackNotificationConfig { is_a_success = false },
     new MetricsConfig { is_a_success = false; put_sidecar_metrics = false })
-  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test" }
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test-staging" }
 
 }
 

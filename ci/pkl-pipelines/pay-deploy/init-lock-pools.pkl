@@ -1,8 +1,10 @@
 amends "../common/shared_pipelines/init_lock_pools.pkl"
 
 pools_to_init {
-  "deploy-application"
-  "smoke-test"
+  "deploy-application-staging"
+  "smoke-test-staging"
+  "deploy-application-production"
+  "smoke-test-production"
 }
 
 concourseTeamName = "pay-deploy"
