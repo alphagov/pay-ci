@@ -44,7 +44,7 @@ function paySendAppReleaseMetric(success: Boolean, environment: String): Pipelin
 
 function paySendAdotReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
   put = "send-adot-release-number-metric"
-  attemps = 3
+  attempts = 3
   resource = "prometheus-pushgateway"
   params {
     ["metric"] = "deployment_pipeline_sidecar_release_number"
