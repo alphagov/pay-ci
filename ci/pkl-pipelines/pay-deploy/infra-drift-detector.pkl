@@ -159,13 +159,13 @@ for (env, time in Map("staging-2", "every-morning-at-six", "production-2", "ever
       }
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {
-        message = "An SNS topic subscriber is unsubscribed - $BUILD_JOB_NAME."
+        message = "SNS subscription check: An SNS topic subscriber is unsubscribed, or has an incorrect subscriber in \(env) - $BUILD_JOB_NAME."
         slack_channel_for_failure = "#govuk-pay-starling"
       })
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {
         is_a_success = true
-        message = "SNS topic subscribers consistent - $BUILD_JOB_NAME."
+        message = "SNS subscription check: SNS topic subscribers consistent in \(env) - $BUILD_JOB_NAME."
       })
     }
   }
