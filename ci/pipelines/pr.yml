@@ -261,12 +261,6 @@ groups:
     jobs:
       - selfservice-e2e
 
-  - name: webhooks
-    jobs:
-      - webhooks-unit-test
-      - webhooks-integration-test
-      - webhooks-as-consumer-pact-test
-
   - name: ci
     jobs:
       - ci-pr-test
@@ -357,12 +351,6 @@ resources:
       repository: alphagov/pay-adminusers
 
   - <<: *pull-request
-    name: webhooks-pull-request
-    source:
-      <<: *pull-request-source
-      repository: alphagov/pay-webhooks
-
-  - <<: *pull-request
     name: publicapi-pull-request
     source:
       <<: *pull-request-source
@@ -420,69 +408,6 @@ resources:
         - "ci/tasks/*"
 
 jobs:
-  - <<: *job-definition
-    name: webhooks-unit-test
-    serial_groups: [unit-test]
-    plan:
-    - <<: *get-pull-request
-      resource: webhooks-pull-request
-    - <<: *get-ci
-    - <<: *put-unit-tests-pending-status
-      put: webhooks-pull-request
-    - <<: *run-java-17-unit-test
-      params:
-        app_name: webhooks
-      on_failure:
-        <<: *put-unit-test-failed-status
-        put: webhooks-pull-request
-    - <<: *put-unit-test-success-status
-      put: webhooks-pull-request
-
-  - <<: *job-definition
-    name: webhooks-integration-test
-    serial_groups: [integration-test]
-    plan:
-    - <<: *get-pull-request
-      resource: webhooks-pull-request
-    - <<: *put-integration-test-pending-status
-      put: webhooks-pull-request
-    - <<: *get-ci
-    - <<: *run-java-17-integration-tests
-      on_failure:
-        <<: *put-integration-test-failed-status
-        put: webhooks-pull-request
-    - <<: *publish-pacts
-      params:
-        consumer_name: webhooks
-    - <<: *put-integration-test-success-status
-      put: webhooks-pull-request
-
-  - name: webhooks-as-consumer-pact-test
-    plan:
-      - <<: *get-pull-request
-        resource: webhooks-pull-request
-        passed: [webhooks-unit-test, webhooks-integration-test]
-      - <<: *put-pact-provider-pending-status
-        put: webhooks-pull-request
-      - <<: *get-ci
-      - get: ledger-master
-      - <<: *pact-provider-test-preflight-check
-        params:
-          consumer: webhooks
-      - in_parallel:
-        - <<: *pact-provider-verification
-          task: ledger-provider-pact-verification
-          input_mapping:
-            test_target: ledger-master
-          params:
-            consumer: webhooks
-            provider: ledger
-        on_failure:
-          <<: *put-pact-provider-failed-status
-          put: webhooks-pull-request
-      - <<: *put-pact-provider-success-status
-        put: webhooks-pull-request
-
   - <<: *job-definition
     name: card-connector-e2e
     plan:
