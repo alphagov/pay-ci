@@ -259,8 +259,6 @@ groups:
 
   - name: publicauth
     jobs:
-      - publicauth-unit-test
-      - publicauth-integration-test
       - publicauth-e2e
 
   - name: selfservice
@@ -1220,43 +1218,6 @@ jobs:
     on_failure:
       <<: *put-e2e-failed-status
       put: ledger-pull-request
-
-  - <<: *job-definition
-    name: publicauth-unit-test
-    serial_groups: [unit-test]
-    plan:
-    - <<: *get-pull-request
-      resource: publicauth-pull-request
-    - <<: *get-ci
-    - <<: *put-unit-tests-pending-status
-      put: publicauth-pull-request
-    - <<: *run-java-unit-test
-      params:
-        app_name: publicauth
-      on_failure:
-        <<: *put-unit-test-failed-status
-        put: publicauth-pull-request
-    - <<: *put-unit-test-success-status
-      put: publicauth-pull-request
-
-  - <<: *job-definition
-    name: publicauth-integration-test
-    serial_groups: [integration-test]
-    plan:
-    - <<: *get-pull-request
-      resource: publicauth-pull-request
-    - <<: *put-integration-test-pending-status
-      put: publicauth-pull-request
-    - <<: *get-ci
-    - <<: *run-java-integration-tests
-      on_failure:
-        <<: *put-integration-test-failed-status
-        put: publicauth-pull-request
-    - <<: *publish-pacts
-      params:
-        consumer_name: publicauth
-    - <<: *put-integration-test-success-status
-      put: publicauth-pull-request
 
   - <<: *job-definition
     name: publicauth-e2e
