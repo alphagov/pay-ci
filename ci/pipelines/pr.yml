@@ -250,9 +250,7 @@ groups:
 
   - name: products_ui
     jobs:
-      - products-ui-test
       - products-ui-e2e
-      - products-ui-as-consumer-pact-test
 
   - name: publicapi
     jobs:
@@ -324,12 +322,6 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-adminusers
-      branch: master
-  - name: products-master
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-products
       branch: master
   - name: cardid-master
     type: git
@@ -1665,25 +1657,6 @@ jobs:
       put: selfservice-pull-request
 
   - <<: *job-definition
-    name: products-ui-test
-    serial_groups: [node-test]
-    plan:
-    - <<: *get-pull-request
-      resource: products-ui-pull-request
-    - <<: *get-ci
-    - <<: *put-test-pending-status
-      put: products-ui-pull-request
-    - <<: *node-test
-      on_failure:
-        <<: *put-test-failed-status
-        put: products-ui-pull-request
-    - <<: *publish-pacts
-      params:
-        consumer_name: products-ui
-    - <<: *put-test-success-status
-      put: products-ui-pull-request
-
-  - <<: *job-definition
     name: products-ui-e2e
     plan:
     - <<: *get-pull-request
@@ -1747,42 +1720,6 @@ jobs:
       put: products-ui-pull-request
     on_failure:
       <<: *put-e2e-failed-status
-      put: products-ui-pull-request
-
-
-  - <<: *job-definition
-    name: products-ui-as-consumer-pact-test
-    plan:
-    - <<: *get-ci
-    - <<: *get-pull-request
-      resource: products-ui-pull-request
-      passed: [products-ui-test]
-    - <<: *put-pact-provider-pending-status
-      put: products-ui-pull-request
-    - get: products-master
-    - get: adminusers-master
-    - <<: *pact-provider-test-preflight-check
-      params:
-        consumer: products-ui
-    - in_parallel:
-      - <<: *pact-provider-verification
-        task: products-provider-pact-verification
-        input_mapping:
-          test_target: products-master
-        params:
-          consumer: products-ui
-          provider: products
-      - <<: *pact-provider-verification
-        task: adminusers-provider-pact-verification
-        input_mapping:
-          test_target: adminusers-master
-        params:
-          consumer: products-ui
-          provider: adminusers
-      on_failure:
-        <<: *put-pact-provider-failed-status
-        put: products-ui-pull-request
-    - <<: *put-pact-provider-success-status
       put: products-ui-pull-request
 
   - <<: *job-definition
