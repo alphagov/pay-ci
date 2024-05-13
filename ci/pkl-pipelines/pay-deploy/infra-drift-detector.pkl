@@ -147,7 +147,6 @@ for (env, time in Map("staging-2", "every-morning-at-six", "production-2", "ever
             ["AWS_DEFAULT_REGION"] = "eu-west-1"
             when (env=="deploy") {
               ["REGIONS"] = "eu-west-1 eu-central-1 us-east-1"
-              ["OK_TO_BE_UNSUBSCRIBED"] = "true"
             }
             else {
               ["REGIONS"] = "eu-west-1 us-east-1"
