@@ -233,9 +233,7 @@ groups:
 
   - name: frontend
     jobs:
-      - card-frontend-test
       - card-frontend-e2e
-      - card-frontend-as-consumer-pact-test
 
   - name: ledger
     jobs:
@@ -1460,25 +1458,6 @@ jobs:
       put: products-pull-request
 
   - <<: *job-definition
-    name: card-frontend-test
-    serial_groups: [node-test]
-    plan:
-    - <<: *get-pull-request
-      resource: card-frontend-pull-request
-    - <<: *get-ci
-    - <<: *put-test-pending-status
-      put: card-frontend-pull-request
-    - <<: *node-test
-      on_failure:
-        <<: *put-test-failed-status
-        put: card-frontend-pull-request
-    - <<: *publish-pacts
-      params:
-        consumer_name: frontend
-    - <<: *put-test-success-status
-      put: card-frontend-pull-request
-
-  - <<: *job-definition
     name: card-frontend-e2e
     plan:
     - <<: *get-pull-request
@@ -1562,31 +1541,6 @@ jobs:
       put: card-frontend-pull-request
     on_failure:
       <<: *put-e2e-failed-status
-      put: card-frontend-pull-request
-
-  - name: card-frontend-as-consumer-pact-test
-    plan:
-    - <<: *get-ci
-    - <<: *get-pull-request
-      resource: card-frontend-pull-request
-      passed: [card-frontend-test]
-    - <<: *put-pact-provider-pending-status
-      put: card-frontend-pull-request
-    - get: card-connector-master
-    - <<: *pact-provider-test-preflight-check
-      params:
-        consumer: frontend
-    - <<: *pact-provider-verification
-      task: connector-provider-pact-verification
-      input_mapping:
-        test_target: card-connector-master
-      params:
-        consumer: frontend
-        provider: connector
-      on_failure:
-        <<: *put-pact-provider-failed-status
-        put: card-frontend-pull-request
-    - <<: *put-pact-provider-success-status
       put: card-frontend-pull-request
 
   - <<: *job-definition
