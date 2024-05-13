@@ -271,10 +271,6 @@ groups:
     jobs:
       - selfservice-e2e
 
-  - name: toolbox
-    jobs:
-      - toolbox-test
-
   - name: webhooks
     jobs:
       - webhooks-unit-test
@@ -429,12 +425,6 @@ resources:
     source:
       <<: *pull-request-source
       repository: alphagov/pay-selfservice
-
-  - <<: *pull-request
-    name: toolbox-pull-request
-    source:
-      <<: *pull-request-source
-      repository: alphagov/pay-toolbox
 
   - <<: *pull-request
     name: products-ui-pull-request
@@ -1673,21 +1663,6 @@ jobs:
     on_failure:
       <<: *put-e2e-failed-status
       put: selfservice-pull-request
-
-  - <<: *job-definition
-    name: toolbox-test
-    plan:
-    - <<: *get-pull-request
-      resource: toolbox-pull-request
-    - <<: *get-ci
-    - <<: *put-test-pending-status
-      put: toolbox-pull-request
-    - <<: *node-test
-      on_failure:
-        <<: *put-test-failed-status
-        put: toolbox-pull-request
-    - <<: *put-test-success-status
-      put: toolbox-pull-request
 
   - <<: *job-definition
     name: products-ui-test
