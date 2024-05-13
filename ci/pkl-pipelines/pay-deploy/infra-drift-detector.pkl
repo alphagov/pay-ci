@@ -119,6 +119,7 @@ for (env, time in Map("staging-2", "every-morning-at-six", "production-2", "ever
           in_parallel = new Listing<Step>{
             (getStep("every-15-minutes")) { trigger = true }
             getStep("pay-ci")
+            getStep("pay-infra")
           }
         }
         new TaskStep {
@@ -136,8 +137,8 @@ for (env, time in Map("staging-2", "every-morning-at-six", "production-2", "ever
         }
         (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
         new TaskStep {
-          task = "check-if-unsubscribed"
-          file = "pay-ci/ci/tasks/check-sns-topic-unsubscribers.yml"
+          task = "check-sns-subscriptions"
+          file = "pay-ci/ci/tasks/check-sns-subscriptions.yml"
           params {
             ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
             ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
@@ -155,13 +156,13 @@ for (env, time in Map("staging-2", "every-morning-at-six", "production-2", "ever
       }
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {
-        message = "An SNS topic subscriber is unsubscribed - $BUILD_JOB_NAME."
+        message = "SNS subscription check: An SNS topic subscriber is unsubscribed, or has an incorrect subscriber in \(env) - $BUILD_JOB_NAME."
         slack_channel_for_failure = "#govuk-pay-starling"
       })
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {
         is_a_success = true
-        message = "SNS topic subscribers consistent - $BUILD_JOB_NAME."
+        message = "SNS subscription check: SNS topic subscribers consistent in \(env) - $BUILD_JOB_NAME."
       })
     }
   }

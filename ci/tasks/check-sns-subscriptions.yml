@@ -1,0 +1,15 @@
+platform: linux
+image_resource:
+   type: registry-image
+   source:
+    repository: governmentdigitalservice/pay-node-runner
+    tag: node16
+inputs:
+  - name: pay-ci
+  - name: pay-infra
+params:
+  REGIONS:
+  OK_TO_BE_UNSUBSCRIBED:
+run:
+  path: node
+  args: ['pay-ci/ci/scripts/check-sns-subscriptions.js']
