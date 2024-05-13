@@ -76,8 +76,8 @@ resources = new {
   shared_resources_for_metrics.prometheusPushgatewayResource
   shared_resources.payCiGitHubResource
   shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
-  new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application" }
-  new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test" }
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application-test" }
+  new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test-test" }
 
   for (app in allPayApplications) {
     shared_resources.payGithubResourceWithBranch("\(app.name)-git-release", app.getGithubRepo(),
@@ -584,7 +584,7 @@ local function getJobToDeployApp(app): Job = new {
   serial = true
   plan = new {
     getResourcesToDeployApp(app)
-    new shared_resources_for_lock_pools.AcquireLockStep { pool = "deploy-application" }
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "deploy-application-test" }
     loadVariablesToDeployApp(app)
     createNotificationSnippets(app, "Deployment")
     loadNotificationSnippetVariables(app, true)
@@ -608,7 +608,7 @@ local function getJobToDeployApp(app): Job = new {
     new SlackNotificationConfig { is_a_success = false },
     new MetricsConfig { is_a_success = false; put_metrics = true; put_sidecar_metrics = true })
 
-  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application" }
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "deploy-application-test" }
 }
 
 local function getJobToSmokeTestApp(app): Job = new {
@@ -628,7 +628,7 @@ local function getJobToSmokeTestApp(app): Job = new {
         }
       }
     }
-    new shared_resources_for_lock_pools.AcquireLockStep { pool = "smoke-test" }
+    new shared_resources_for_lock_pools.AcquireLockStep { pool = "smoke-test-test" }
 
     loadVar("application_image_tag", "\(app.name)-ecr-registry-test/tag")
     createNotificationSnippets(app, "Smoke test")
@@ -646,7 +646,7 @@ local function getJobToSmokeTestApp(app): Job = new {
     new SlackNotificationConfig { is_a_success = false },
     new MetricsConfig { is_a_success = false; put_metrics = true })
 
-  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test" }
+  ensure = new shared_resources_for_lock_pools.ReleaseLockStep { pool = "smoke-test-test" }
 }
 
 local function getJobToPactTagApp(app): Job = new {
