@@ -20,6 +20,7 @@ prometheusPushgatewayResource = new Pipeline.Resource {
 
 function paySendAppReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
   put = "send-app-release-number-metric"
+  attempts = 3
   resource = "prometheus-pushgateway"
   params {
     ["metric"] = "deployment_pipeline_app_release_number"
@@ -43,6 +44,7 @@ function paySendAppReleaseMetric(success: Boolean, environment: String): Pipelin
 
 function paySendAdotReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
   put = "send-adot-release-number-metric"
+  attemps = 3
   resource = "prometheus-pushgateway"
   params {
     ["metric"] = "deployment_pipeline_sidecar_release_number"
@@ -67,6 +69,7 @@ function paySendAdotReleaseMetric(success: Boolean, environment: String): Pipeli
 
 function paySendNginxReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
   put = "send-nginx-release-number-metric"
+  attempts = 3
   resource = "prometheus-pushgateway"
   params {
     ["metric"] = "deployment_pipeline_sidecar_release_number"
@@ -91,6 +94,7 @@ function paySendNginxReleaseMetric(success: Boolean, environment: String): Pipel
 
 function paySendNginxForwardProxyReleaseMetric(success: Boolean, environment: String): Pipeline.PutStep = new {
   put = "send-nginx-forward-proxy-release-number-metric"
+  attempts = 3
   resource = "prometheus-pushgateway"
   params {
     ["metric"] = "deployment_pipeline_sidecar_release_number"
