@@ -105,6 +105,7 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
           in_parallel = new Listing<Step>{
             (getStep("every-15-minutes")) { trigger = true }
             getStep("pay-ci")
+            getStep("pay-infra")
           }
         }
         new TaskStep {
@@ -125,9 +126,11 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
             ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
             ["AWS_REGION"] = "eu-west-1"
             ["AWS_DEFAULT_REGION"] = "eu-west-1"
+            ["OK_TO_BE_UNSUBSCRIBED"] = "true"
             when (env == "test") {
               ["REGIONS"] = "eu-west-1 us-east-1"
-              ["OK_TO_BE_UNSUBSCRIBED"] = "true"
+            } else {
+              ["REGIONS"] = "eu-west-1"
             }
           }
         }
