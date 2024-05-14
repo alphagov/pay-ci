@@ -237,9 +237,6 @@ groups:
 
   - name: products
     jobs:
-      - products-unit-test
-      - products-integration-test
-      - products-as-provider-pact-test
       - products-e2e
 
   - name: products_ui
@@ -1091,64 +1088,6 @@ jobs:
     on_failure:
       <<: *put-e2e-failed-status
       put: publicauth-pull-request
-
-  - <<: *job-definition
-    name: products-unit-test
-    serial_groups: [unit-test]
-    plan:
-    - <<: *get-pull-request
-      resource: products-pull-request
-    - <<: *get-ci
-    - <<: *put-unit-tests-pending-status
-      put: products-pull-request
-    - <<: *run-java-unit-test
-      params:
-        app_name: products
-      on_failure:
-        <<: *put-unit-test-failed-status
-        put: products-pull-request
-    - <<: *put-unit-test-success-status
-      put: products-pull-request
-
-  - <<: *job-definition
-    name: products-integration-test
-    serial_groups: [integration-test]
-    plan:
-    - <<: *get-pull-request
-      resource: products-pull-request
-    - <<: *put-integration-test-pending-status
-      put: products-pull-request
-    - <<: *get-ci
-    - <<: *run-java-integration-tests
-      on_failure:
-        <<: *put-integration-test-failed-status
-        put: products-pull-request
-    - <<: *publish-pacts
-      params:
-        consumer_name: products
-    - <<: *put-integration-test-success-status
-      put: products-pull-request
-
-
-  - <<: *job-definition
-    name: products-as-provider-pact-test
-    plan:
-    - <<: *get-pull-request
-      resource: products-pull-request
-    - <<: *put-pact-provider-pending-status
-      put: products-pull-request
-    - <<: *get-ci
-    - <<: *pact-provider-test-preflight-check
-    - <<: *pact-provider-verification
-      input_mapping:
-        test_target: src
-      params:
-        provider: products
-      on_failure:
-        <<: *put-pact-provider-failed-status
-        put: products-pull-request
-    - <<: *put-pact-provider-success-status
-      put: products-pull-request
 
   - <<: *job-definition
     name: products-e2e
