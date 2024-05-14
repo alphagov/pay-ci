@@ -1097,6 +1097,7 @@ jobs:
             params:
               AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1
               AWS_ROLE_SESSION_NAME: perf-tests-test-assume-role
+              AWS_ROLE_DURATION: 18600
       - task: get-docker-image-info
         file: pay-ci/ci/tasks/get-pr-build-docker-image-info.yml
         params:
