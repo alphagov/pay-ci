@@ -13,6 +13,21 @@ on:
         required: false
         default: 11
         description: JDK version to setup and run tests. Defaults to 11
+      check_for_openapi_file_changes:
+        type: boolean
+        required: false
+        default: true
+        description: Set to `false` to disable checking for OpenAPI file changes (for publicapi)
+      requires_redis_image:
+        type: boolean
+        required: false
+        default: false
+        description: Set to `true` to pull redis docker image (for publicapi)
+      requires_postgres_image:
+        type: boolean
+        required: false
+        default: true
+        description: Set to `false` if app doesn't use databases (publicapi & cardId)
     secrets:
       pact_broker_username:
         required: false
@@ -49,11 +64,21 @@ jobs:
           path: target/pacts
           key: ${{ runner.os }}-build-id-${{ github.head_ref }}-${{ github.sha }}-pacts
       - name: Pull docker image dependencies
+        env:
+          PULL_REDIS_IMAGE: ${{ inputs.requires_redis_image }}
+          PULL_POSTGRES_IMAGE: ${{ inputs.requires_postgres_image }}
         run: |
-          docker pull postgres:15.2
+          if [ "$PULL_POSTGRES_IMAGE" = true ]; then
+            docker pull postgres:15.2
+          fi
+
+          if [ "$PULL_REDIS_IMAGE" = true ]; then
+            docker pull redis:7.2
+          fi
       - name: Compile
         run: mvn clean compile --no-transfer-progress
       - name: Check for OpenApi file changes
+        if: ${{ inputs.check_for_openapi_file_changes }}
         run: |
           if [[ $(git status --porcelain) ]]; then
             echo "Changes to the OpenApi file have not been committed. Run \`mvn compile\` on your branch to regenerate the file and then commit the changes."
