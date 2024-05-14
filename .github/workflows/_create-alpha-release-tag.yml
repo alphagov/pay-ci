@@ -8,7 +8,7 @@
 #
 # jobs:
 #   create-release-tag:
-#     uses: alphagov/pay-ci/.github/workflows/_run-node-unit-tests.yml@master
+#     uses: alphagov/pay-ci/.github/workflows/_create-alpha-release-tag.yml@master
 #
 name: Create alpha_release tag
 
