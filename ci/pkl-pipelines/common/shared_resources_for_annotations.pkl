@@ -21,6 +21,7 @@ grafanaAnnotationResource = new Pipeline.Resource {
 
 function paySendAppReleaseAnnotation(pipeline: String) = new Pipeline.PutStep {
 	put = "grafana-annotation"
+	attempts = 3
 	params = new {
 		["tags"] = new Listing<String> { pipeline "((.:app_name))" }
 		["template"] = "released ${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME} release ((.:app_release_number)) (build ${BUILD_ID})"
