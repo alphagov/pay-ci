@@ -1,0 +1,200 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/PayResources.pkl"
+
+/*
+local group_map = new Mapping {
+  ["adminusers"] = new Listing<String> { "adminusers-e2e" }
+  ["cardid"] = new Listing<String> { "cardid-e2e" }
+  ["connector"] = new Listing<String> { "card-connector-e2e" }
+  ["end_to_end"] = new Listing<String> { "endtoend-e2e" "pay-ci-endtoend-config" }
+  ["frontend"] = new Listing<String> { "card-frontend-e2e" }
+  ["ledger"] = new Listing<String> { "ledger-e2e" }
+  ["products"] = new Listing<String> { "products-e2e" }
+  ["products_ui"] = new Listing<String> { "products-ui-e2e" }
+  ["publicapi"] = new Listing<String> { "publicapi-unit-test" "publicapi-integration-test" "publicapi-e2e" "publicapi-as-consumer-pact-test" }
+  ["publicauth"] = new Listing<String> { "publicauth-e2e" }
+  ["selfservice"] = new Listing<String> { "selfservice-e2e" }
+  ["ci"] = new Listing<String> { "ci-pr-test" }
+  ["update_pipeline"] = new Listing<String> { "update-pr-ci-pipeline" }
+}
+
+groups {
+  for (_name, _jobs in group_map) { new Pipeline.Group { name = _name jobs = _jobs } }
+}
+*/
+
+
+jobs = new {
+  //pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/pr-ci.pkl")
+
+  new {
+    name = "ci-pr-test"
+    max_in_flight = 3
+    build_log_retention = new { builds = 500 }
+    plan {
+      new GetStep {
+        get = "src"
+        params = new { ["integration_tool"] = "checkout" }
+        resource = "ci-pull-request"
+        trigger = true
+        version = "every"
+      }
+
+      new PutStep {
+        put = "ci-pull-request"
+        get_params = new { ["skip_download"] = true }
+        params = new {
+          ["context"] = "test"
+          ["path"] = "src"
+          ["status"] = "pending"
+        }
+      }
+
+      new TaskStep {
+        task = "check-pipelines-and-tasks"
+        config {
+          platform = "linux"
+          image_resource { 
+            // Sample output has a name property, but image_resource is anonymous according
+            // to https://github.com/alphagov/pkl-concourse-pipeline/blob/pkl-concourse-pipeline%400.0.4/src/TaskConfig.pkl#L6
+            type = "registry-image"
+            source {
+              ["repository"] = "golang"
+              ["tag"] = "1.20-alpine"
+            }
+          }
+          inputs = new Listing { 
+            new TaskConfig.Input { name = "src" }
+          }
+          // TODO extract to file
+          run {
+            path = "sh"
+            dir = "src"
+            args = new Listing {
+              "-ec"
+              """
+          apk add git shellcheck
+          go install github.com/alphagov/paas-cf/tools/pipecleaner@latest
+
+          cd /tmp/
+
+          echo "c7d331052a6bf552b017adf5288b8e162346157c  fly-7.6.0-linux-amd64.tgz" > fly-7.6.0-linux-amd64.tgz.sha1
+          wget -c https://github.com/concourse/concourse/releases/download/v7.6.0/fly-7.6.0-linux-amd64.tgz -O fly-7.6.0-linux-amd64.tgz
+          sha1sum -c fly-7.6.0-linux-amd64.tgz.sha1
+          tar -O -zxf fly-7.6.0-linux-amd64.tgz > /usr/local/bin/fly
+          chmod u+x /usr/local/bin/fly
+
+          cd -
+
+          pipecleaner --rubocop=false ci/tasks/*.yml
+
+          find ci/pipelines -name '*.yml' | while read -r PIPELINE; do
+            echo "Validating: $PIPELINE"
+            fly validate-pipeline -c "$PIPELINE"
+            echo
+          done
+          """
+            }
+          }
+        }
+        on_failure = new PutStep {
+            put = "ci-pull-request"
+            get_params = new { ["skip_download"] = true }
+            params = new {
+              ["context"] = "test"
+              ["path"] = "src"
+              ["status"] = "failure"
+            }
+          }
+      }
+
+      new PutStep {
+        put = "ci-pull-request"
+        get_params = new { ["skip_download"] = true }
+        params = new {
+          ["context"] = "test"
+          ["path"] = "src"
+          ["status"] = "success"
+        }
+      }
+    }
+  }
+}
+
+// local function PutStepCiPull(status: String) = new PutStep {
+// }
+
+/*
+resource_types {
+  shared_resources.pullRequestResourceType // Concourse has v0.21, default is v0.23
+}
+
+local resource_apps = new {
+  "adminusers"
+  "cardid"
+  "selfservice"
+  "publicauth"
+  "publicapi"
+  "products"
+  "products-ui"
+  "ledger"
+  "endtoend"
+  "connector" // original calls it card-connector
+  "frontend"  // original calls it card-fronted
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/pr-ci.pkl", "master")
+  githubRepo("card-connector-master", "pay-connector")
+  githubRepo("ledger-master", "pay-ledger")
+  shared_resources.payCiGitHubResource
+
+  for (app in resource_apps) {
+    new PayResources.PayGitHubPullRequestResource {
+      name = "\(app)-pull-request" 
+      repo = "pay-\(app)"
+    }
+  }
+  new PayResources.PayGitHubPullRequestResource {
+    name = "pay-ci-endtoend-config-pull-request" 
+    repo = "pay-ci"
+    source { ["paths"] = new Listing<String> { "ci/tasks/endtoend/" } }
+  }
+  new PayResources.PayGitHubPullRequestResource {
+    name = "ci-pull-request" 
+    repo = "pay-ci"
+    source { ["paths"] = new Listing<String> { "ci/pipelines/*"  "ci/tasks/*"} }
+  }
+
+  new Pipeline.Resource {
+    name = "pull-request-builds-ecr"
+    icon = "docker"
+    type = "registry-image"
+    source = new {
+      ["aws_access_key_id"] = "((readonly_access_key_id))"
+      ["aws_ecr_registry_id"] = "((pay_aws_test_account_id))"
+      ["aws_region"] = "eu-west-1"
+      ["aws_role_arn"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+      ["aws_secret_access_key"] = "((readonly_secret_access_key))"
+      ["aws_session_token"] = "((readonly_session_token))"
+      ["repository"] = "govukpay/pull-request-builds"
+      ["tag"] = "latest"
+    }
+  }
+}
+
+local function githubRepo(_name: String, repo: String) = new Pipeline.Resource {
+  type = "git"
+  name = _name
+  icon = "github"
+  source = new {
+    ["branch"] = "master"
+    ["uri"] = "https://github.com/alphagov/\(repo)"
+    }
+}
+*/
