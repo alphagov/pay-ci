@@ -6,7 +6,6 @@ import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/PayResources.pkl"
 
-/*
 local group_map = new Mapping {
   ["adminusers"] = new Listing<String> { "adminusers-e2e" }
   ["cardid"] = new Listing<String> { "cardid-e2e" }
@@ -26,11 +25,9 @@ local group_map = new Mapping {
 groups {
   for (_name, _jobs in group_map) { new Pipeline.Group { name = _name jobs = _jobs } }
 }
-*/
-
 
 jobs = new {
-  //pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/pr-ci.pkl")
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/pr-ci.pkl")
 
   new {
     name = "ci-pr-test"
@@ -45,15 +42,7 @@ jobs = new {
         version = "every"
       }
 
-      new PutStep {
-        put = "ci-pull-request"
-        get_params = new { ["skip_download"] = true }
-        params = new {
-          ["context"] = "test"
-          ["path"] = "src"
-          ["status"] = "pending"
-        }
-      }
+      PutStepCiPull("pending")
 
       new TaskStep {
         task = "check-pipelines-and-tasks"
@@ -102,34 +91,24 @@ jobs = new {
             }
           }
         }
-        on_failure = new PutStep {
-            put = "ci-pull-request"
-            get_params = new { ["skip_download"] = true }
-            params = new {
-              ["context"] = "test"
-              ["path"] = "src"
-              ["status"] = "failure"
-            }
-          }
+        on_failure = PutStepCiPull("failure")
       }
 
-      new PutStep {
-        put = "ci-pull-request"
-        get_params = new { ["skip_download"] = true }
-        params = new {
-          ["context"] = "test"
-          ["path"] = "src"
-          ["status"] = "success"
-        }
-      }
+      PutStepCiPull("success")
     }
   }
 }
 
-// local function PutStepCiPull(status: String) = new PutStep {
-// }
+local function PutStepCiPull(status: String) = new PutStep {
+  put = "ci-pull-request"
+  get_params = new { ["skip_download"] = true }
+  params = new {
+    ["context"] = "test"
+    ["path"] = "src"
+    ["status"] = status
+  }
+}
 
-/*
 resource_types {
   shared_resources.pullRequestResourceType // Concourse has v0.21, default is v0.23
 }
@@ -197,4 +176,4 @@ local function githubRepo(_name: String, repo: String) = new Pipeline.Resource {
     ["uri"] = "https://github.com/alphagov/\(repo)"
     }
 }
-*/
+
