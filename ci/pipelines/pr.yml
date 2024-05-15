@@ -15,42 +15,6 @@ definitions:
     get: ci
     resource: ci
     trigger: false
-  - &put-unit-tests-pending-status
-    put: updateThisValue
-    params:
-      path: src
-      status: pending
-      context: unit tests
-  - &run-java-unit-test
-    task: run-unit-tests
-    file: ci/ci/tasks/java-tests.yml
-    params:
-      app_name: updateThisValue
-    on_failure:
-      &put-unit-test-failed-status
-      put: updateThisValue
-      params:
-        path: src
-        status: failure
-        context: unit tests
-  - &run-java-17-unit-test
-    task: run-unit-tests
-    file: ci/ci/tasks/java-17-tests.yml
-    params:
-      app_name: updateThisValue
-    on_failure:
-      &put-unit-test-failed-status
-      put: updateThisValue
-      params:
-        path: src
-        status: failure
-        context: unit tests
-  - &put-unit-test-success-status
-    put: updateThisValue
-    params:
-      path: src
-      status: success
-      context: unit tests
   - &generate-docker-creds-config
     task: generate-docker-creds-config
     file: ci/ci/tasks/generate-docker-config-file.yml
@@ -64,48 +28,6 @@ definitions:
     file: ci/ci/tasks/build-docker-image.yml
     params:
       app_name: updateThisValue
-  - &put-integration-test-pending-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: pending
-      context: integration tests
-  - &run-java-integration-tests
-    task: run-integration-tests
-    privileged: true
-    file: ci/ci/tasks/java-integration-tests.yml
-    on_failure:
-      &put-integration-test-failed-status
-      put: updateThisValue
-      get_params:
-        skip_download: true
-      params:
-        path: src
-        status: failure
-        context: integration tests
-  - &run-java-17-integration-tests
-    task: run-integration-tests
-    privileged: true
-    file: ci/ci/tasks/java-17-integration-tests.yml
-    on_failure:
-      &put-integration-test-failed-status
-      put: updateThisValue
-      get_params:
-        skip_download: true
-      params:
-        path: src
-        status: failure
-        context: integration tests
-  - &put-integration-test-success-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: success
-      context: integration tests
   - &put-test-failed-status
     put: card-connector-pull-request
     get_params:
@@ -154,60 +76,11 @@ definitions:
       path: src
       status: success
       context: e2e tests
-  - &node-test
-    task: test
-    file: ci/ci/tasks/node-build-pr.yml
   - &node-build
     task: build
     file: ci/ci/tasks/node-build-pr.yml
     params:
       skip_tests: true
-  - x-pact-credentials: &pact-credentials
-      pact-broker-username: ((pact-broker-username))
-      pact-broker-password: ((pact-broker-password))
-  - &publish-pacts
-    task: publish-pacts
-    vars:
-      <<: *pact-credentials
-    params:
-      consumer_name: updateThisValue
-    file: ci/ci/tasks/publish-pacts.yml
-  - &put-pact-provider-pending-status
-    put: updateThisValue
-    get_params:
-      skip_download: true
-    params:
-      path: src
-      status: pending
-      context: pact provider verification
-  - &put-pact-provider-success-status
-    put: updateThisValue
-    params:
-      path: src
-      status: success
-      context: pact provider verification
-  - &put-pact-provider-failed-status
-    put: updateThisValue
-    params:
-      path: src
-      status: failure
-      context: pact provider verification
-  - &pact-provider-verification
-    task: pact-verification
-    privileged: true
-    file: ci/ci/tasks/pact-provider-verification.yml
-    vars:
-      <<: *pact-credentials
-    params:
-      consumer: updateThisValue
-      provider: updateThisValue
-  - &pact-provider-test-preflight-check
-    task: check-is-valid
-    file: ci/ci/tasks/pact-provider-test-preflight-check.yml
-    vars:
-      <<: *pact-credentials
-    params:
-      consumer:
 
 groups:
   - name: adminusers
