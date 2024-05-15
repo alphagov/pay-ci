@@ -1,4 +1,4 @@
-#!/bin/sh -ec
+#!/bin/sh -e
 
 apk add git shellcheck
 go install github.com/alphagov/paas-cf/tools/pipecleaner@latest
