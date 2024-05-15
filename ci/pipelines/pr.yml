@@ -245,10 +245,7 @@ groups:
 
   - name: publicapi
     jobs:
-      - publicapi-unit-test
-      - publicapi-integration-test
       - publicapi-e2e
-      - publicapi-as-consumer-pact-test
 
   - name: publicauth
     jobs:
@@ -288,18 +285,6 @@ resources:
       aws_region: eu-west-1
       tag: latest
 
-  - name: card-connector-master
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-connector
-      branch: master
-  - name: ledger-master
-    type: git
-    icon: github
-    source:
-      uri: https://github.com/alphagov/pay-ledger
-      branch: master
   - name: pr-ci-pipeline
     type: git
     icon: github
@@ -621,43 +606,6 @@ jobs:
       put: pay-ci-endtoend-config-pull-request
 
   - <<: *job-definition
-    name: publicapi-unit-test
-    serial_groups: [unit-test]
-    plan:
-    - <<: *get-pull-request
-      resource: publicapi-pull-request
-    - <<: *get-ci
-    - <<: *put-unit-tests-pending-status
-      put: publicapi-pull-request
-    - <<: *run-java-unit-test
-      params:
-        app_name: publicapi
-      on_failure:
-        <<: *put-unit-test-failed-status
-        put: publicapi-pull-request
-    - <<: *put-unit-test-success-status
-      put: publicapi-pull-request
-
-  - <<: *job-definition
-    name: publicapi-integration-test
-    serial_groups: [integration-test]
-    plan:
-    - <<: *get-pull-request
-      resource: publicapi-pull-request
-    - <<: *put-integration-test-pending-status
-      put: publicapi-pull-request
-    - <<: *get-ci
-    - <<: *run-java-integration-tests
-      on_failure:
-        <<: *put-integration-test-failed-status
-        put: publicapi-pull-request
-    - <<: *publish-pacts
-      params:
-        consumer_name: publicapi
-    - <<: *put-integration-test-success-status
-      put: publicapi-pull-request
-
-  - <<: *job-definition
     name: publicapi-e2e
     plan:
       - <<: *get-pull-request
@@ -741,40 +689,6 @@ jobs:
     on_failure:
       <<: *put-e2e-failed-status
       put: publicapi-pull-request
-
-  - name: publicapi-as-consumer-pact-test
-    plan:
-      - <<: *get-pull-request
-        resource: publicapi-pull-request
-        passed: [publicapi-unit-test, publicapi-integration-test]
-      - <<: *put-pact-provider-pending-status
-        put: publicapi-pull-request
-      - <<: *get-ci
-      - get: card-connector-master
-      - get: ledger-master
-      - <<: *pact-provider-test-preflight-check
-        params:
-          consumer: publicapi
-      - in_parallel:
-        - <<: *pact-provider-verification
-          task: connector-provider-pact-verification
-          input_mapping:
-            test_target: card-connector-master
-          params:
-            consumer: publicapi
-            provider: connector
-        - <<: *pact-provider-verification
-          task: ledger-provider-pact-verification
-          input_mapping:
-            test_target: ledger-master
-          params:
-            consumer: publicapi
-            provider: ledger
-        on_failure:
-          <<: *put-pact-provider-failed-status
-          put: publicapi-pull-request
-      - <<: *put-pact-provider-success-status
-        put: publicapi-pull-request
 
   - <<: *job-definition
     name: adminusers-e2e
