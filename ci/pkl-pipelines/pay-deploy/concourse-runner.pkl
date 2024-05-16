@@ -18,7 +18,6 @@ resources = new {
     repo = "pay-ci"
     paths {
       "ci/docker/concourse-runner/**"
-      "ci/docker/concourse-runner-with-java-17/**"
       "ci/docker/concourse-runner-with-java-21/**"
       "ci/pipelines/concourse-runner.yml"
     }
@@ -31,26 +30,11 @@ resources = new {
     }
   }
   new PayResources.PayGitHubResource {
-    name = "webhooks-main"
-    repoName = "pay-webhooks"
-    source {
-      branch = "main"
-    }
-  }
-  new PayResources.PayGitHubResource {
     name = "concourse-runner-src"
     repoName = "pay-ci"
     source {
       branch = "master"
       paths { "ci/docker/concourse-runner/*" }
-    }
-  }
-  new PayResources.PayGitHubResource {
-    name = "concourse-runner-with-java-17-src"
-    repoName = "pay-ci"
-    source {
-      branch = "master"
-      paths { "ci/docker/concourse-runner-with-java-17/*" }
     }
   }
   new PayResources.PayGitHubResource {
@@ -69,13 +53,6 @@ resources = new {
     }
   }
   new PayResources.PayDockerHubResource {
-    name = "concourse-runner-with-java-17"
-    source {
-      repository = "governmentdigitalservice/pay-concourse-runner-with-java-17"
-      tag = "latest"
-    }
-  }
-  new PayResources.PayDockerHubResource {
     name = "concourse-runner-with-java-21"
     source {
       repository = "governmentdigitalservice/pay-concourse-runner-with-java-21"
@@ -86,9 +63,8 @@ resources = new {
 
 jobs = new {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/concourse-runner.pkl")
-  buildAndPushConcourseJob("", "adminusers-master")
-  buildAndPushConcourseJob("-with-java-17", "webhooks-main")
-  buildAndPushConcourseJobWithoutTest("-with-java-21")
+  buildAndPushConcourseJob("", "adminusers-master", true)
+  buildAndPushConcourseJob("-with-java-21", "", false)
 
   new {
     name = "concourse-runner-pr"
@@ -98,7 +74,6 @@ jobs = new {
           getStepWithTrigger("concourse-runner-pr", true)
           getStep("pay-ci")
           getStepWithDepth("adminusers-master", 1)
-          getStepWithDepth("webhooks-main", 1)
         }
       }
       putPRTestStatus("concourse-runner-pr", "concourse-runner-tests", "pending")
@@ -113,40 +88,6 @@ jobs = new {
             }
             params = new {
               ["CONTEXT"] = "concourse-runner-pr/ci/docker/concourse-runner"
-              ["UNPACK_ROOTFS"] = "true"
-              ["DOCKER_CONFIG"] = "docker_creds"
-            }
-            config {
-              platform = "linux"
-              image_resource = new {
-                type = "registry-image"
-                source = new {
-                  ["repository"] = "concourse/oci-build-task"
-                }
-              }
-              inputs {
-                new {
-                  name = "concourse-runner-pr"
-                }
-              }
-              outputs {
-                new {
-                  name = "image"
-                }
-              }
-              run {
-                path = "build"
-              }
-            }
-          }
-          new TaskStep {
-            task = "build-concourse-runner-with-java-17"
-            privileged = true
-            output_mapping {
-              ["image"] = "concourse-runner-with-java-17-image"
-            }
-            params = new {
-              ["CONTEXT"] = "concourse-runner-pr/ci/docker/concourse-runner-with-java-17"
               ["UNPACK_ROOTFS"] = "true"
               ["DOCKER_CONFIG"] = "docker_creds"
             }
@@ -216,11 +157,6 @@ jobs = new {
             task = "test-concourse-runner"
             repo = "adminusers-master"
           }
-          new TestConcourseRunnerTask{
-            image = "concourse-runner-with-java-17-image"
-            task = "test-concourse-runner-with-java-17"
-            repo = "webhooks-main"
-          }
         }
       }
       putPRTestStatus("concourse-runner-pr", "concourse-runner-tests", "success")
@@ -229,18 +165,6 @@ jobs = new {
     on_error = putPRTestStatus("concourse-runner-pr", "concourse-runner-tests", "failure")
   }
 
-}
-
-local function withPath(path: String) = new Mixin {
-  source {
-    ["paths"] = new Listing<String> { path }
-  }
-}
-
-local function withPaths(paths: Listing<String>) = new Mixin {
-  source {
-    ["paths"] = paths
-  }
 }
 
 local function getStep(resource: String): GetStep = new {
@@ -274,7 +198,7 @@ local class TestConcourseRunnerTask extends Pipeline.TaskStep {
   hidden repo: String
   config {
     platform = "linux"
-    inputs{
+    inputs {
       new {
         name = "pay-ci"
       }
@@ -294,7 +218,7 @@ local class TestConcourseRunnerTask extends Pipeline.TaskStep {
   }
 }
 
-local function buildAndPushConcourseJob(javaVersionSuffix: String, sampleRepo: String): Pipeline.Job = new {
+local function buildAndPushConcourseJob(javaVersionSuffix: String, sampleRepo: String, runTests: Boolean): Pipeline.Job = new {
   local baseName = "concourse-runner\(javaVersionSuffix)"
 
   name = "build-and-push-\(baseName)"
@@ -303,7 +227,9 @@ local function buildAndPushConcourseJob(javaVersionSuffix: String, sampleRepo: S
       in_parallel = new Listing<Step> {
         getStepWithTrigger("\(baseName)-src", true)
         getStep("pay-ci")
-        getStepWithDepth(sampleRepo, 1)
+        when (runTests) {
+          getStepWithDepth(sampleRepo, 1)
+        }
       }
     }
     shared_resources.generateDockerCredsConfigStep
@@ -338,63 +264,13 @@ local function buildAndPushConcourseJob(javaVersionSuffix: String, sampleRepo: S
         }
       }
     }
-    new TestConcourseRunnerTask {
-      image = "image"
-      repo = sampleRepo
-    }
-    new PutStep{
-      put = baseName
-      params = new {
-        ["image"] = "image/image.tar"
+    when (runTests) {
+      new TestConcourseRunnerTask {
+        image = "image"
+        repo = sampleRepo
       }
     }
-  }
-}
-
-local function buildAndPushConcourseJobWithoutTest(javaVersionSuffix: String): Pipeline.Job = new {
-  local baseName = "concourse-runner\(javaVersionSuffix)"
-
-  name = "build-and-push-\(baseName)"
-  plan {
-    new InParallelStep {
-      in_parallel = new Listing<Step> {
-        getStepWithTrigger("\(baseName)-src", true)
-        getStep("pay-ci")
-      }
-    }
-    shared_resources.generateDockerCredsConfigStep
-    new TaskStep {
-      task = "build"
-      privileged = true
-      params = new {
-        ["CONTEXT"] = "\(baseName)-src/ci/docker/\(baseName)"
-        ["DOCKER_CONFIG"] = "docker_creds"
-        ["UNPACK_ROOTFS"] = "true"
-      }
-      config {
-        platform = "linux"
-        image_resource = new {
-          type = "registry-image"
-          source = new {
-            ["repository"] = "concourse/oci-build-task"
-          }
-        }
-        inputs {
-          new {
-            name = "\(baseName)-src"
-          }
-        }
-        outputs {
-          new {
-            name = "image"
-          }
-        }
-        run {
-          path = "build"
-        }
-      }
-    }
-    new PutStep{
+    new PutStep {
       put = baseName
       params = new {
         ["image"] = "image/image.tar"
