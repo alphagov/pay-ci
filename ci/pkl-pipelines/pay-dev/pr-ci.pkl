@@ -37,30 +37,10 @@ local groupMap = new Mapping <String, Listing<String>> {
 }
 
 local class AppConfig {
-  // run_products_e2e: Boolean = false
-  // run_zap_e2e: Boolean = false
   use_cardid_submodule: Boolean = false
   job_name: String 
   tests: Listing<String> = new {}
   node_build: Boolean = false
-}
-
-local class ResourceConfig {
-  name: String
-}
-
-local resource_apps = new Mapping<String, ResourceConfig> {
-  ["adminusers"] = new { name = "adminusers" }
-  ["cardid"] = new { name = "cardid" }
-  ["connector"] = new { name = "card-connector" }
-  ["endtoend"] = new { name = "endtoend" }
-  ["frontend"] = new { name = "card-frontend" }
-  ["ledger"] = new { name = "ledger" }
-  ["products"] = new { name = "products" }
-  ["products-ui"] = new { name = "products-ui" }
-  ["publicapi"] = new { name = "publicapi" }
-  ["publicauth"] = new { name = "publicauth" }
-  ["selfservice"] = new { name = "selfservice" }
 }
 
 groups {
@@ -73,15 +53,12 @@ resource_types {
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/pr-ci.pkl", "master")
-  // githubRepo("card-connector-master", "pay-connector")
-  // githubRepo("ledger-master", "pay-ledger")
-
-  // Can be replaced with shared_resources.payCiGitHubResource, but for now trying to exactly replace
   shared_resources.payGithubResourceWithBranch("ci", "pay-ci", "master")
+    // Can be replaced with shared_resources.payCiGitHubResource, but for now trying to exactly replace
 
-  for (app, config in resource_apps) {
+  for (app, config in e2e_test_apps) {
     new PayResources.PayGitHubPullRequestResource {
-      name = "\(config.name)-pull-request" 
+      name = "\(config.job_name)-pull-request" 
       repo = "pay-\(app)"
     }
   }
@@ -110,14 +87,6 @@ resources = new {
       ["tag"] = "latest"
     }
   }
-}
-
-local function pullRequestGetStep(name: String) = new GetStep {
-  get = "src"
-  params = new { ["integration_tool"] = "checkout" }
-  resource = name
-  trigger = true
-  version = "every"
 }
 
 jobs = new {
@@ -209,26 +178,6 @@ jobs = new {
       }
       putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "success")
     }
-  }
-}
-
-local function assumeCodeBuildRole(session_name: String) = new TaskStep {
-  task = "assume-role"
-  file = "ci/ci/tasks/assume-role.yml" // TODO ci->pay-ci
-  params = new {
-    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12"
-    ["AWS_ROLE_SESSION_NAME"] = session_name
-  }
-  input_mapping = new { ["pay-ci"] = "ci" } // TODO remove when ci->pay-ci
-}
-
-local function putStatus(stepName: String, context: String, status: String) = new PutStep {
-  put = stepName 
-  get_params = new { ["skip_download"] = true }
-  params = new {
-    ["context"] = context
-    ["path"] = "src"
-    ["status"] = status
   }
 }
 
@@ -407,9 +356,8 @@ local function withParam(key: String, value: String) = new Mixin {
 }
 
 local function withInputMapping(from: String, to: String) = new Mixin {
-  input_mapping = new { [from] = to } // TODO remove when ci->pay-ci
+  input_mapping = new { [from] = to }
 }
-
 
 local function githubRepo(_name: String, repo: String) = new Pipeline.Resource {
   type = "git"
@@ -420,3 +368,32 @@ local function githubRepo(_name: String, repo: String) = new Pipeline.Resource {
     ["uri"] = "https://github.com/alphagov/\(repo)"
     }
 }
+
+local function assumeCodeBuildRole(session_name: String) = new TaskStep {
+  task = "assume-role"
+  file = "ci/ci/tasks/assume-role.yml" // TODO ci->pay-ci
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12"
+    ["AWS_ROLE_SESSION_NAME"] = session_name
+  }
+  input_mapping = new { ["pay-ci"] = "ci" } // TODO remove when ci->pay-ci
+}
+
+local function pullRequestGetStep(name: String) = new GetStep {
+  get = "src"
+  params = new { ["integration_tool"] = "checkout" }
+  resource = name
+  trigger = true
+  version = "every"
+}
+
+local function putStatus(stepName: String, context: String, status: String) = new PutStep {
+  put = stepName 
+  get_params = new { ["skip_download"] = true }
+  params = new {
+    ["context"] = context
+    ["path"] = "src"
+    ["status"] = status
+  }
+}
+
