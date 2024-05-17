@@ -6,219 +6,129 @@ import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/PayResources.pkl"
 
-local e2e_test_apps = new Listing {
-  "adminusers"
-  "cardid"
-  "connector"
-  "frontend"
-  "ledger"
-  "products"
-  "products_ui"
-  "publicapi"
-  "publicauth"
-  "selfservice"
-} // end_to_end is different
+local e2e_test_apps = new Mapping<String, AppConfig> {
+  ["adminusers"] = new { job_name = "adminusers"; tests = new { "card" } }
+  ["cardid"] = new { use_cardid_submodule = true; job_name = "cardid"; tests = new { "card" "zap" } }
+  ["connector"] = new { job_name = "card-connector"; tests = new {"card" } }
+  ["endtoend"] = new { tests = new {"card" "products" "zap"}; job_name = "endtoend" }
+  ["frontend"] = new { job_name = "card-frontend"; tests = new {"card" "products" "zap"} }
+  ["ledger"] = new { job_name = "ledger"; tests = new { "card" } }
+  ["products"] = new { job_name = "products"; tests = new { "products" } }
+  ["products_ui"] = new { job_name = "products-ui" ; tests = new { "products" }; node_build = true }
+  ["publicapi"] = new { job_name = "publicapi"; tests = new {"card" "products" "zap"} }
+  ["publicauth"] = new { job_name = "publicauth"; tests = new { "card" "zap" } }
+  ["selfservice"] = new { job_name = "selfservice"; tests = new { "card" }; node_build = true }
+} // pay-ci-endtoend-config is different enough to break out
 
-local group_map = new Mapping {
-  ["adminusers"] = new Listing<String> { "adminusers-e2e" }
-  ["cardid"] = new Listing<String> { "cardid-e2e" }
-  ["connector"] = new Listing<String> { "card-connector-e2e" }
-  ["end_to_end"] = new Listing<String> { "endtoend-e2e" "pay-ci-endtoend-config" }
-  ["frontend"] = new Listing<String> { "card-frontend-e2e" }
-  ["ledger"] = new Listing<String> { "ledger-e2e" }
-  ["products"] = new Listing<String> { "products-e2e" }
-  ["products_ui"] = new Listing<String> { "products-ui-e2e" }
-  ["publicapi"] = new Listing<String> { "publicapi-unit-test" "publicapi-integration-test" "publicapi-e2e" "publicapi-as-consumer-pact-test" }
-  ["publicauth"] = new Listing<String> { "publicauth-e2e" }
-  ["selfservice"] = new Listing<String> { "selfservice-e2e" }
-  ["ci"] = new Listing<String> { "ci-pr-test" }
-  ["update_pipeline"] = new Listing<String> { "update-pr-ci-pipeline" }
+local groupMap = new Mapping <String, Listing<String>> {
+  ["adminusers"] = new { "adminusers-e2e" }
+  ["cardid"] = new { "cardid-e2e" }
+  ["connector"] = new { "card-connector-e2e" }
+  ["end_to_end"] = new { "endtoend-e2e" "pay-ci-endtoend-config" }
+  ["frontend"] = new { "card-frontend-e2e" }
+  ["ledger"] = new { "ledger-e2e" }
+  ["products"] = new { "products-e2e" }
+  ["products_ui"] = new { "products-ui-e2e" }
+  ["publicapi"] = new { "publicapi-e2e" }
+  ["publicauth"] = new { "publicauth-e2e" }
+  ["selfservice"] = new { "selfservice-e2e" }
+  ["ci"] = new { "ci-pr-test" }
+  ["update_pipeline"] = new { "update-pr-ci-pipeline" }
+}
+
+local class AppConfig {
+  // run_products_e2e: Boolean = false
+  // run_zap_e2e: Boolean = false
+  use_cardid_submodule: Boolean = false
+  job_name: String 
+  tests: Listing<String> = new {}
+  node_build: Boolean = false
+}
+
+local class ResourceConfig {
+  name: String
+}
+
+local resource_apps = new Mapping<String, ResourceConfig> {
+  ["adminusers"] = new { name = "adminusers" }
+  ["cardid"] = new { name = "cardid" }
+  ["connector"] = new { name = "card-connector" }
+  ["endtoend"] = new { name = "endtoend" }
+  ["frontend"] = new { name = "card-frontend" }
+  ["ledger"] = new { name = "ledger" }
+  ["products"] = new { name = "products" }
+  ["products-ui"] = new { name = "products-ui" }
+  ["publicapi"] = new { name = "publicapi" }
+  ["publicauth"] = new { name = "publicauth" }
+  ["selfservice"] = new { name = "selfservice" }
 }
 
 groups {
-  for (_name, _jobs in group_map) { new Pipeline.Group { name = _name jobs = _jobs } }
+  for (groupName, groupJobs in groupMap) { new Pipeline.Group { name = groupName jobs = groupJobs } }
+}
+
+resource_types {
+  shared_resources.pullRequestResourceType // Concourse has v0.21, default is v0.23
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/pr-ci.pkl", "master")
+  // githubRepo("card-connector-master", "pay-connector")
+  // githubRepo("ledger-master", "pay-ledger")
+
+  // Can be replaced with shared_resources.payCiGitHubResource, but for now trying to exactly replace
+  shared_resources.payGithubResourceWithBranch("ci", "pay-ci", "master")
+
+  for (app, config in resource_apps) {
+    new PayResources.PayGitHubPullRequestResource {
+      name = "\(config.name)-pull-request" 
+      repo = "pay-\(app)"
+    }
+  }
+  new PayResources.PayGitHubPullRequestResource {
+    name = "pay-ci-endtoend-config-pull-request" 
+    repo = "pay-ci"
+    source { ["paths"] = new Listing<String> { "ci/tasks/endtoend/" } }
+  }
+  new PayResources.PayGitHubPullRequestResource {
+    name = "ci-pull-request" 
+    repo = "pay-ci"
+    source { ["paths"] = new Listing<String> { "ci/pipelines/*"  "ci/tasks/*"} }
+  }
+  new Pipeline.Resource {
+    name = "pull-request-builds-ecr"
+    icon = "docker"
+    type = "registry-image"
+    source = new {
+      ["aws_access_key_id"] = "((readonly_access_key_id))"
+      ["aws_ecr_registry_id"] = "((pay_aws_test_account_id))"
+      ["aws_region"] = "eu-west-1"
+      ["aws_role_arn"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+      ["aws_secret_access_key"] = "((readonly_secret_access_key))"
+      ["aws_session_token"] = "((readonly_session_token))"
+      ["repository"] = "govukpay/pull-request-builds"
+      ["tag"] = "latest"
+    }
+  }
+}
+
+local function pullRequestGetStep(name: String) = new GetStep {
+  get = "src"
+  params = new { ["integration_tool"] = "checkout" }
+  resource = name
+  trigger = true
+  version = "every"
 }
 
 jobs = new {
-  e2eJob("cardid")
-}
-
-local function putStatus(stepName: String, context: String, status: String) = new PutStep {
-  put = stepName 
-  get_params = new { ["skip_download"] = true }
-  params = new {
-    ["context"] = context
-    ["path"] = "src"
-    ["status"] = status
-  }
-}
-
-local function e2eJob(app: String) = new Job {
-  name = "\(app)-e2e"
-  max_in_flight = 3
-  build_log_retention = new { builds = 500 }
-  on_failure = putStatus("\(app)-pull-request", "e2e tests", "failure")
-  plan {
-    new GetStep {
-      get = "src"
-      params = new { ["integration_tool"] = "checkout" }
-      resource = "\(app)-pull-request"
-      trigger = true
-      version = "every"
-    }
-    new InParallelStep {
-      in_parallel = new Listing<Step> {
-        new GetStep { get = "pay-ci" resource = "pay-ci" }
-        putStatus("\(app)-pull-request", "e2e tests", "pending")
-      }
-    }
-    new TaskStep {
-      task = "update-submodule"
-      config {
-        image_resource { 
-          // Sample output has a name property, but image_resource is anonymous according
-          // to https://github.com/alphagov/pkl-concourse-pipeline/blob/pkl-concourse-pipeline%400.0.4/src/TaskConfig.pkl#L6
-          type = "registry-image"
-          source {
-            ["repository"] = "governmentdigitalservice/pay-concourse-runner"
-          }
-        }
-        inputs = new Listing { 
-          new TaskConfig.Input { name = "src" }
-        }
-        outputs = new Listing { 
-          new TaskConfig.Output { name = "src" }
-        }
-        params = new {
-          ["GH_ACCESS_TOKEN"] = "((github-access-token))"
-        }
-        platform = "linux"
-        // TODO extract to file
-        run {
-          path = "bash"
-          dir = "src"
-          args = new Listing {
-            "-ec"
-            """
-        # rewrite the submodule url for https to add the token.
-        # The risk of setting the token in the url is mitigated since these files are not committed,
-        # the container is ephemeral and anyone with access to read the files could read the token from
-        # environment variable. Furthermore we redact the token from the files after the update.
-        sed -i "s/https://github.com/https://${GH_ACCESS_TOKEN}@github.com//" .gitmodules
-        git submodule init -q data
-        git submodule update data
-        sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
-        sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
-        """
-          }
-        }
-      }
-    }
-    shared_resources.generateDockerCredsConfigStep
-
-    new TaskStep {
-      task = "build-image"
-      file = "pay-ci/ci/tasks/build-docker-image.yml"
-      privileged = true
-      params = new {
-        ["app_name"] = "cardid"
-      }
-    }
-
-    new InParallelStep {
-      in_parallel = new Listing<Step> {
-        new TaskStep {
-          task = "get-docker-image-info"
-          file = "pay-ci/ci/tasks/get-pr-build-docker-image-info.yml"
-          params = new { ["app_name"] = "cardid" }
-        }
-        new TaskStep {
-          task = "assume-role"
-          file = "pay-ci/ci/tasks/assume-role.yml"
-          params = new {
-            ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12"
-            ["AWS_ROLE_SESSION_NAME"] = "e2e-test-assume-role"
-          }
-        }
-      }
-    }
-    new InParallelStep {
-      in_parallel = new Listing<Step> {
-        new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" }
-        new LoadVarStep { load_var = "image_filename" file = "image_info/image_filename" }
-        new LoadVarStep { load_var = "image_tag" file = "image_info/tag" }
-      }
-    }
-    new InParallelStep {
-      in_parallel = new Listing<Step> {
-        new PutStep {
-          put = "pull-request-builds-ecr"
-          get_params = new { ["skip_download"] = true }
-          params = new {
-            ["additional_tags"] = "image_info/tag"
-            ["image"] = "local_image/((.:image_filename))"
-          }
-        }
-        prepareCodeBuild(app, "prepare-e2e-codebuild.yml", "((.:image_tag))") 
-          |> withParam("PR_BUILD", "true")
-      }
-    }
-    new InParallelStep {
-      in_parallel = new Listing<Step> {
-        runCodeBuild("run-card-e2e-tests", "card.json", 3)
-        runCodeBuild("run-zap-tests", "zap.json", 3)
-      }
-    }
-    putStatus("\(app)-pull-request", "e2e tests", "success")
-  }
-}
-
-// TODO move this and mixin to common
-local function prepareCodeBuild(project: String, taskFile: String, tag: String): TaskStep = new {
-  task = "prepare-codebuild"
-  file = "pay-ci/ci/tasks/\(taskFile)"
-  params = new {
-    ["PROJECT_UNDER_TEST"] = project
-    ["RELEASE_TAG_UNDER_TEST"] = tag
-    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-  }
-}
-
-local function runCodeBuild(taskName: String, config: String, attemptCount: Int): TaskStep = new {
-  task = taskName
-  file = "pay-ci/ci/tasks/run-codebuild.yml"
-  when (attemptCount != 1) {
-    attempts = attemptCount
-  }
-  params = new {
-    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(config)"
-    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-  }
-}
-
-local function withParam(key: String, value: String) = new Mixin {
-  params { [key] = value }
-}
-  /*
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/pr-ci.pkl")
-
+  for (app, config in e2e_test_apps) { e2eJob(app, config) }
   new {
     name = "ci-pr-test"
     max_in_flight = 3
     build_log_retention = new { builds = 500 }
     plan {
-      new GetStep {
-        get = "src"
-        params = new { ["integration_tool"] = "checkout" }
-        resource = "ci-pull-request"
-        trigger = true
-        version = "every"
-      }
-
+      pullRequestGetStep("ci-pull-request")
       putStatus("ci-pull-request", "test", "pending")
 
       new TaskStep {
@@ -268,72 +178,238 @@ local function withParam(key: String, value: String) = new Mixin {
             }
           }
         }
-        putStatus("ci-pull-request", "test", "failure")
+        on_failure = putStatus("ci-pull-request", "test", "failure")
       }
-
       putStatus("ci-pull-request", "test", "success")
     }
   }
-}
-
-
-resource_types {
-  shared_resources.pullRequestResourceType // Concourse has v0.21, default is v0.23
-}
-
-local resource_apps = new {
-  "adminusers"
-  "cardid"
-  "selfservice"
-  "publicauth"
-  "publicapi"
-  "products"
-  "products-ui"
-  "ledger"
-  "endtoend"
-  "connector" // original calls it card-connector
-  "frontend"  // original calls it card-fronted
-}
-
-resources = new {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/pr-ci.pkl", "master")
-  githubRepo("card-connector-master", "pay-connector")
-  githubRepo("ledger-master", "pay-ledger")
-  shared_resources.payCiGitHubResource
-
-  for (app in resource_apps) {
-    new PayResources.PayGitHubPullRequestResource {
-      name = "\(app)-pull-request" 
-      repo = "pay-\(app)"
-    }
-  }
-  new PayResources.PayGitHubPullRequestResource {
-    name = "pay-ci-endtoend-config-pull-request" 
-    repo = "pay-ci"
-    source { ["paths"] = new Listing<String> { "ci/tasks/endtoend/" } }
-  }
-  new PayResources.PayGitHubPullRequestResource {
-    name = "ci-pull-request" 
-    repo = "pay-ci"
-    source { ["paths"] = new Listing<String> { "ci/pipelines/*"  "ci/tasks/*"} }
-  }
-
-  new Pipeline.Resource {
-    name = "pull-request-builds-ecr"
-    icon = "docker"
-    type = "registry-image"
-    source = new {
-      ["aws_access_key_id"] = "((readonly_access_key_id))"
-      ["aws_ecr_registry_id"] = "((pay_aws_test_account_id))"
-      ["aws_region"] = "eu-west-1"
-      ["aws_role_arn"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
-      ["aws_secret_access_key"] = "((readonly_secret_access_key))"
-      ["aws_session_token"] = "((readonly_session_token))"
-      ["repository"] = "govukpay/pull-request-builds"
-      ["tag"] = "latest"
+  new {
+    name = "pay-ci-endtoend-config"
+    max_in_flight = 3
+    build_log_retention = new { builds = 500 }
+    on_failure = putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "failure")
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new GetStep { get = "ci" resource = "ci" } // TODO ci->pay-ci
+          pullRequestGetStep("pay-ci-endtoend-config-pull-request")
+        }
+      }
+      putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "pending")
+      assumeCodeBuildRole("pay-ci-endtoend-config-pr-assume-role")
+      new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" }
+      prepareCodeBuild("pay-ci", "prepare-e2e-codebuild.yml", "") 
+        |> withInputMapping("pay-ci", "src")
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          runCodeBuild("run-card-e2e-tests", "card.json", 3) |> withInputMapping("pay-ci", "ci")
+          runCodeBuild("run-products-e2e-tests", "products.json", 3) |> withInputMapping("pay-ci", "ci")
+          runCodeBuild("run-zap-e2e-tests", "zap.json", 3) |> withInputMapping("pay-ci", "ci")
+        }
+      }
+      putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "success")
     }
   }
 }
+
+local function assumeCodeBuildRole(session_name: String) = new TaskStep {
+  task = "assume-role"
+  file = "ci/ci/tasks/assume-role.yml" // TODO ci->pay-ci
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12"
+    ["AWS_ROLE_SESSION_NAME"] = session_name
+  }
+  input_mapping = new { ["pay-ci"] = "ci" } // TODO remove when ci->pay-ci
+}
+
+local function putStatus(stepName: String, context: String, status: String) = new PutStep {
+  put = stepName 
+  get_params = new { ["skip_download"] = true }
+  params = new {
+    ["context"] = context
+    ["path"] = "src"
+    ["status"] = status
+  }
+}
+
+local function e2eJob(app: String, config: AppConfig) = new Job {
+  name = "\(config.job_name)-e2e" // TODO rename card-connector
+  // name = "\(_name)-e2e" // TODO rename card-connnector
+  max_in_flight = 3
+  build_log_retention = new { builds = 500 }
+  on_failure = putStatus("\(config.job_name)-pull-request", "e2e tests", "failure")
+  plan {
+    new GetStep {
+      get = "src"
+      params = new { ["integration_tool"] = "checkout" }
+      resource = "\(config.job_name)-pull-request"
+      trigger = true
+      version = "every"
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new GetStep { get = "ci" resource = "ci" } // TODO ci->pay-ci
+        putStatus("\(config.job_name)-pull-request", "e2e tests", "pending")
+      }
+    }
+
+    when (config.node_build) {
+      new Pipeline.TaskStep {
+        task = "build"
+        file = "ci/ci/tasks/node-build-pr.yml" // TODO ci->pay-ci
+        params = new { ["skip_tests"] = "true" }
+      }
+    }
+
+    when (config.use_cardid_submodule) { updateCardidSubmodule() }
+    // TODO replace with shared_resources.generateDockerCredsConfigStep when ci->pay-ci
+    new Pipeline.TaskStep {
+      task = "generate-docker-creds-config"
+      file = "ci/ci/tasks/generate-docker-config-file.yml"
+      params = new {
+          ["USERNAME"] = "((docker-username))"
+          ["PASSWORD"] = "((docker-access-token))"
+          ["EMAIL"] = "((docker-email))"
+      }
+    }
+
+    new TaskStep {
+      task = "build-image"
+      file = "ci/ci/tasks/build-docker-image.yml" // TODO ci->pay-ci
+      privileged = true
+      params = new {
+        ["app_name"] = app
+      }
+    }
+
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new TaskStep {
+          task = "get-docker-image-info"
+          file = "ci/ci/tasks/get-pr-build-docker-image-info.yml" // TODO ci->pay-ci
+          params = new { ["app_name"] = app }
+        }
+        assumeCodeBuildRole("e2e-test-assume-role")
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" }
+        new LoadVarStep { load_var = "image_filename" file = "image_info/image_filename" }
+        new LoadVarStep { load_var = "image_tag" file = "image_info/tag" }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new PutStep {
+          put = "pull-request-builds-ecr"
+          get_params = new { ["skip_download"] = true }
+          params = new {
+            ["additional_tags"] = "image_info/tag"
+            ["image"] = "local_image/((.:image_filename))"
+          }
+        }
+        prepareCodeBuild(app, "prepare-e2e-codebuild.yml", "((.:image_tag))") 
+          |> withParam("PR_BUILD", "true")
+          |> withInputMapping("pay-ci", "ci")
+      }
+    }
+    when (config.tests.length > 1) {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          for (test in config.tests) {
+            runCodeBuild("run-\(test)-e2e-tests", "\(test).json", 3) |> withInputMapping("pay-ci", "ci")
+          }
+        }
+      }
+    } else {
+      for (test in config.tests) {
+        runCodeBuild("run-\(test)-e2e-tests", "\(test).json", 1) |> withInputMapping("pay-ci", "ci")
+      }
+    }
+    putStatus("\(config.job_name)-pull-request", "e2e tests", "success")
+  }
+}
+
+local function updateCardidSubmodule() = new TaskStep {
+  task = "update-submodule"
+  config {
+    image_resource { 
+      // Sample output has a name property, but image_resource is anonymous according
+      // to https://github.com/alphagov/pkl-concourse-pipeline/blob/pkl-concourse-pipeline%400.0.4/src/TaskConfig.pkl#L6
+      type = "registry-image"
+      source {
+        ["repository"] = "governmentdigitalservice/pay-concourse-runner"
+      }
+    }
+    inputs = new Listing { 
+      new TaskConfig.Input { name = "src" }
+    }
+    outputs = new Listing { 
+      new TaskConfig.Output { name = "src" }
+    }
+    params = new {
+      ["GH_ACCESS_TOKEN"] = "((github-access-token))"
+    }
+    platform = "linux"
+    // TODO extract to file
+    run {
+      path = "bash"
+      dir = "src"
+      args = new Listing {
+        "-ec"
+        """
+    # rewrite the submodule url for https to add the token.
+    # The risk of setting the token in the url is mitigated since these files are not committed,
+    # the container is ephemeral and anyone with access to read the files could read the token from
+    # environment variable. Furthermore we redact the token from the files after the update.
+    sed -i "s/https:\\/\\/github.com/https:\\/\\/${GH_ACCESS_TOKEN}@github.com\\//" .gitmodules
+    git submodule init -q data
+    git submodule update data
+    sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .gitmodules
+    sed -i "s/${GH_ACCESS_TOKEN}/token_redacted/" .git/config
+    """
+      }
+    }
+  }
+}
+
+local function prepareCodeBuild(project: String, taskFile: String, tag: String): TaskStep = new {
+  task = "prepare-codebuild"
+  file = "ci/ci/tasks/\(taskFile)" // TODO ci->pay-ci
+  params = new {
+    ["PROJECT_UNDER_TEST"] = project
+    when (tag.length > 0) {
+      ["RELEASE_TAG_UNDER_TEST"] = tag
+    }
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function runCodeBuild(taskName: String, config: String, attemptCount: Int): TaskStep = new {
+  task = taskName
+  file = "ci/ci/tasks/run-codebuild.yml" // TODO ci->pay-ci
+  when (attemptCount != 1) {
+    attempts = attemptCount
+  }
+  params = new {
+    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(config)"
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function withParam(key: String, value: String) = new Mixin {
+  params { [key] = value }
+}
+
+local function withInputMapping(from: String, to: String) = new Mixin {
+  input_mapping = new { [from] = to } // TODO remove when ci->pay-ci
+}
+
 
 local function githubRepo(_name: String, repo: String) = new Pipeline.Resource {
   type = "git"
@@ -344,4 +420,3 @@ local function githubRepo(_name: String, repo: String) = new Pipeline.Resource {
     ["uri"] = "https://github.com/alphagov/\(repo)"
     }
 }
-*/
