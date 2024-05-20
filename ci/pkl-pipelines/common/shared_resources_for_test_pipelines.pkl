@@ -1,0 +1,77 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+// import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
+
+function loadVar(variable: String, fileName: String): Pipeline.LoadVarStep = new Pipeline.LoadVarStep {
+  load_var = variable
+  file = fileName
+}
+
+function loadVarJson(variable: String, fileName: String): Pipeline.LoadVarStep = new Pipeline.LoadVarStep {
+  load_var = variable
+  file = fileName
+  format = "json"
+}
+
+function getStep(resourceName: String, shouldTrigger: Boolean, isOci: Boolean): Pipeline.GetStep = new Pipeline.GetStep {
+  get = resourceName
+  when (shouldTrigger) {
+    trigger = true
+  }
+  when (isOci) {
+    params {
+      ["format"] = "oci"
+    }
+  }
+}
+
+function prepareCodeBuild(project: String, taskFile: String, tag: String): Pipeline.TaskStep = new {
+  task = "prepare-codebuild"
+  file = "pay-ci/ci/tasks/\(taskFile)" 
+  params = new {
+    ["PROJECT_UNDER_TEST"] = project
+    when (tag.length > 0) {
+      ["RELEASE_TAG_UNDER_TEST"] = tag
+    }
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+  }
+}
+
+function runCodeBuild(taskName: String, config: String, attemptCount: Int): Pipeline.TaskStep = new {
+  task = taskName
+  file = "pay-ci/ci/tasks/run-codebuild.yml"
+  when (attemptCount != 1) {
+    attempts = attemptCount
+  }
+  params = new {
+    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(config)"
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+  }
+}
+
+function withParam(key: String, value: String) = new Mixin {
+  params { [key] = value }
+}
+
+function withInputMapping(from: String, to: String) = new Mixin {
+  input_mapping = new { [from] = to }
+}
+
+function assumeCodeBuildRole(codeBuildRole: String, sessionName: String): Pipeline.TaskStep = new {
+  task = "assume-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-\(codeBuildRole)-test-12"
+    ["AWS_ROLE_SESSION_NAME"] = sessionName
+  }
+}
+
+loadAssumeRoleVar = new Pipeline.LoadVarStep {
+  load_var = "role"
+  file = "assume-role/assume-role.json"
+  format = "json"
+}
+

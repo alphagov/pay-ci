@@ -3,6 +3,7 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
 import "../common/shared_resources_for_slack_notifications.pkl"
 
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
@@ -80,14 +81,14 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          getStep("endtoend-git-release", true, false)
+          shared_test.getStep("endtoend-git-release", true, false)
           getPayCi
         }
       }
 
       shared_resources.generateDockerCredsConfigStep
       parseReleaseTag("endtoend-git-release")
-      loadVar("release_number_tag", "tags/release-number")
+      shared_test.loadVar("release_number_tag", "tags/release-number")
       buildImage("build-endtoend-image", "endtoend-git-release")
       putCandidateImage("endtoend-candidate-ecr-registry-test")
     }
@@ -117,23 +118,23 @@ jobs = new {
       }
 
       parseCandidateTag("endtoend-candidate-ecr-registry-test")
-      loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
-      assumeCodeBuildRole("executor", "e2e-test-assume-role")
+      shared_test.loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
+      shared_test.assumeCodeBuildRole("executor", "e2e-test-assume-role")
 
       new InParallelStep {
         in_parallel = new Listing {
-          loadVar("candidate_image_tag", "endtoend-candidate-ecr-registry-test/tag")
-          loadAssumeRoleVar
+          shared_test.loadVar("candidate_image_tag", "endtoend-candidate-ecr-registry-test/tag")
+          shared_test.loadAssumeRoleVar
         }
       }
 
-      prepareCodeBuild("endtoend", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+      shared_test.prepareCodeBuild("endtoend", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
-          runCodeBuild("run-codebuild-card", "card.json", 3)
-          runCodeBuild("run-codebuild-products", "products.json", 1)
-          runCodeBuild("run-codebuild-zap", "zap.json", 1)
+          shared_test.runCodeBuild("run-codebuild-card", "card.json", 3)
+          shared_test.runCodeBuild("run-codebuild-products", "products.json", 1)
+          shared_test.runCodeBuild("run-codebuild-zap", "zap.json", 1)
         }
       }
 
@@ -169,7 +170,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing<Step> {
           getPayCi
-          getStep("reverse-proxy-git-release", true, false)
+          shared_test.getStep("reverse-proxy-git-release", true, false)
         }
       }
 
@@ -177,20 +178,20 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          loadVar("release-number", "tags/release-number")
-          loadVar("release-name", "reverse-proxy-git-release/.git/ref")
-          loadVar("release-sha", "tags/release-sha")
-          loadVar("candidate-image-tag", "tags/candidate-tag")
-          loadVar("date", "tags/date")
-          assumeCodeBuildRole("builder", "codebuild-assume-role")
+          shared_test.loadVar("release-number", "tags/release-number")
+          shared_test.loadVar("release-name", "reverse-proxy-git-release/.git/ref")
+          shared_test.loadVar("release-sha", "tags/release-sha")
+          shared_test.loadVar("candidate-image-tag", "tags/candidate-tag")
+          shared_test.loadVar("date", "tags/date")
+          shared_test.assumeCodeBuildRole("builder", "codebuild-assume-role")
         }
       }
 
-      loadAssumeRoleVar
+      shared_test.loadAssumeRoleVar
       prepareCodeBuildMultiarch("reverse-proxy")
       shared_resources.generateDockerCredsConfigStep
       runCodeBuildMultiarch("reverse-proxy", 3)
-      runCodeBuild(
+      shared_test.runCodeBuild(
         "run-codebuild-reverse-proxy-manifest",
         "reverse-proxy-manifest.json",
         3
@@ -210,29 +211,29 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing {
-          getStep("reverse-proxy-candidate-ecr-registry-test", true, true)
+          shared_test.getStep("reverse-proxy-candidate-ecr-registry-test", true, true)
           getPayCi
         }
       }
 
       parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
-      loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
-      assumeCodeBuildRole("executor", "e2e-test-assume-role")
+      shared_test.loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
+      shared_test.assumeCodeBuildRole("executor", "e2e-test-assume-role")
 
       new InParallelStep {
         in_parallel = new Listing {
-          loadVar("candidate_image_tag", "reverse-proxy-candidate-ecr-registry-test/tag")
-          loadAssumeRoleVar
+          shared_test.loadVar("candidate_image_tag", "reverse-proxy-candidate-ecr-registry-test/tag")
+          shared_test.loadAssumeRoleVar
         }
       }
 
-      prepareCodeBuild("reverse-proxy", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+      shared_test.prepareCodeBuild("reverse-proxy", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
-          runCodeBuild("run-codebuild-card", "card.json", 3)
-          runCodeBuild("run-codebuild-products", "products.json", 1)
-          runCodeBuild("run-codebuild-zap", "zap.json", 1)
+          shared_test.runCodeBuild("run-codebuild-card", "card.json", 3)
+          shared_test.runCodeBuild("run-codebuild-products", "products.json", 1)
+          shared_test.runCodeBuild("run-codebuild-zap", "zap.json", 1)
         }
       }
 
@@ -240,15 +241,15 @@ jobs = new {
         in_parallel = new Listing {
           shared_resources.generateDockerCredsConfigStep
           parseCandidateTag("reverse-proxy-candidate-ecr-registry-test")
-          assumeCodeBuildRole("executor", "e2e-test-assume-role")
+          shared_test.assumeCodeBuildRole("executor", "e2e-test-assume-role")
           assumeRetagRole
         }
       }
 
       new InParallelStep {
         in_parallel = new Listing {
-          loadVarJson("retag-role", "assume-retag-role/assume-role.json")
-          loadVar("release_image_tag", "parse-candidate-tag/release-tag")
+          shared_test.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
+          shared_test.loadVar("release_image_tag", "parse-candidate-tag/release-tag")
         }
       }
 
@@ -278,7 +279,7 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          getStep("stubs-git-release", true, false)
+          shared_test.getStep("stubs-git-release", true, false)
           getPayCi
         }
       }
@@ -286,7 +287,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing<Step> {
           shared_resources.generateDockerCredsConfigStep
-          assumeCodeBuildRole("builder", "codebuild-assume-role")
+          shared_test.assumeCodeBuildRole("builder", "codebuild-assume-role")
         }
       }
 
@@ -294,17 +295,17 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          loadVar("release-number", "tags/release-number")
-          loadVar("release-name", "stubs-git-release/.git/ref")
-          loadVar("release-sha", "tags/release-sha")
-          loadVar("date", "tags/date")
-          loadAssumeRoleVar
+          shared_test.loadVar("release-number", "tags/release-number")
+          shared_test.loadVar("release-name", "stubs-git-release/.git/ref")
+          shared_test.loadVar("release-sha", "tags/release-sha")
+          shared_test.loadVar("date", "tags/date")
+          shared_test.loadAssumeRoleVar
         }
       }
 
       prepareCodeBuildMultiarch("stubs")
       runCodeBuildMultiarch("stubs", 1)
-      runCodeBuild("run-codebuild-stubs-manifest", "stubs-manifest.json", 1)
+      shared_test.runCodeBuild("run-codebuild-stubs-manifest", "stubs-manifest.json", 1)
     }
 
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
@@ -321,7 +322,7 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing {
-          getStep("stubs-candidate-ecr-registry-test", true, true)
+          shared_test.getStep("stubs-candidate-ecr-registry-test", true, true)
           getPayCi
         }
       }
@@ -330,7 +331,7 @@ jobs = new {
         in_parallel = new Listing {
           shared_resources.generateDockerCredsConfigStep
           parseCandidateTag("stubs-candidate-ecr-registry-test")
-          assumeCodeBuildRole("executor", "e2e-test-assume-role")
+          shared_test.assumeCodeBuildRole("executor", "e2e-test-assume-role")
           assumeRetagRole
           assumeWriteToDeployRole
         }
@@ -338,21 +339,21 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          loadVar("candidate_image_tag", "stubs-candidate-ecr-registry-test/tag")
-          loadAssumeRoleVar
-          loadVarJson("retag-role", "assume-retag-role/assume-role.json")
-          loadVarJson("write-to-deploy-role", "assume-write-to-deploy-role/assume-role.json")
-          loadVar("release_image_tag", "parse-candidate-tag/release-tag")
-          loadVar("release_number", "parse-candidate-tag/release-number")
+          shared_test.loadVar("candidate_image_tag", "stubs-candidate-ecr-registry-test/tag")
+          shared_test.loadAssumeRoleVar
+          shared_test.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
+          shared_test.loadVarJson("write-to-deploy-role", "assume-write-to-deploy-role/assume-role.json")
+          shared_test.loadVar("release_image_tag", "parse-candidate-tag/release-tag")
+          shared_test.loadVar("release_number", "parse-candidate-tag/release-number")
         }
       }
 
-      prepareCodeBuild("stubs", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+      shared_test.prepareCodeBuild("stubs", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
-          runCodeBuild("run-codebuild-card", "card.json", 3)
-          runCodeBuild("run-codebuild-products", "products.json", 1)
+          shared_test.runCodeBuild("run-codebuild-card", "card.json", 3)
+          shared_test.runCodeBuild("run-codebuild-products", "products.json", 1)
         }
       }
 
@@ -411,15 +412,6 @@ local function buildImage(taskName: String, context: String): TaskStep = new {
 
 local function putCandidateImage(putName: String): PutStep =
   putStep(putName, "image/image.tar", "tags/candidate-tag", true)
-
-local function assumeCodeBuildRole(codeBuildRole: String, sessionName: String): TaskStep = new {
-  task = "assume-role"
-  file = "pay-ci/ci/tasks/assume-role.yml"
-  params = new {
-    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-\(codeBuildRole)-test-12"
-    ["AWS_ROLE_SESSION_NAME"] = sessionName
-  }
-}
 
 local assumeRetagRole: TaskStep = new {
   task = "assume-retag-role"
@@ -489,7 +481,7 @@ local function copyMultiarchImageToAccount(repo: String): TaskStep = new {
 local function copyImageToEcr(image: String, displayName: String): Job = new {
   name = "copy-\(image)"
   plan {
-    getStep(image, true, true)
+    shared_test.getStep(image, true, true)
     putStep("ecr-\(image)", "\(image)/image.tar", "", true)
   }
   on_failure = shared_resources_for_slack_notifications.paySlackNotification(
@@ -517,18 +509,6 @@ local function parseCandidateTag(ecrRepo: String): TaskStep = new {
   }
 }
 
-local function prepareCodeBuild(project: String, taskFile: String, tag: String): TaskStep = new {
-  task = "prepare-codebuild"
-  file = "pay-ci/ci/tasks/\(taskFile)"
-  params = new {
-    ["PROJECT_UNDER_TEST"] = project
-    ["RELEASE_TAG_UNDER_TEST"] = tag
-    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-  }
-}
-
 local function prepareCodeBuildMultiarch(project: String): TaskStep = new {
   task = "prepare-codebuild"
   file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
@@ -544,34 +524,14 @@ local function prepareCodeBuildMultiarch(project: String): TaskStep = new {
   }
 }
 
-local function runCodeBuild(taskName: String, config: String, attemptCount: Int): TaskStep = new {
-  task = taskName
-  file = "pay-ci/ci/tasks/run-codebuild.yml"
-  when (attemptCount != 1) {
-    attempts = attemptCount
-  }
-  params = new {
-    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(config)"
-    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-  }
-}
-
 local function runCodeBuildMultiarch(project: String, attempts: Int): InParallelStep = new {
   in_parallel = new Listing {
-    runCodeBuild("run-codebuild-\(project)-amd64", "\(project)-amd64.json", attempts)
-    runCodeBuild("run-codebuild-\(project)-armv8", "\(project)-armv8.json", attempts)
+    shared_test.runCodeBuild("run-codebuild-\(project)-amd64", "\(project)-amd64.json", attempts)
+    shared_test.runCodeBuild("run-codebuild-\(project)-armv8", "\(project)-armv8.json", attempts)
   }
 }
 
 local getPayCi = new GetStep { get = "pay-ci" }
-
-local loadAssumeRoleVar = new LoadVarStep {
-  load_var = "role"
-  file = "assume-role/assume-role.json"
-  format = "json"
-}
 
 local function withTagRegex(tag: String) = new Mixin {
   source { ["tag_regex"] = tag }
@@ -583,31 +543,6 @@ local function withTag(tag: String) = new Mixin {
 
 local function withCheckInterval(interval: String) = new Mixin {
   check_every = interval
-}
-
-// FUNCTIONS BELOW HERE COPIED FROM prometheus-pushgateway.pkl -- MOVE TO SHARED_RESOURCES?
-
-local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
-  load_var = variable
-  file = fileName
-}
-
-local function loadVarJson(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
-  load_var = variable
-  file = fileName
-  format = "json"
-}
-
-local function getStep(resourceName: String, shouldTrigger: Boolean, isOci: Boolean): GetStep = new GetStep {
-  get = resourceName
-  when (shouldTrigger) {
-    trigger = true
-  }
-  when (isOci) {
-    params {
-      ["format"] = "oci"
-    }
-  }
 }
 
 local function putStep(resourceName: String, imageName: String, additionalTags: String, skipDownload: Boolean): PutStep = new PutStep {
@@ -626,4 +561,3 @@ local function putStep(resourceName: String, imageName: String, additionalTags: 
     }
   }
 }
-
