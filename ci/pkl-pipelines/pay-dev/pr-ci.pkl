@@ -165,7 +165,7 @@ jobs = new {
         }
       }
       putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "pending")
-      assumeCodeBuildRole("pay-ci-endtoend-config-pr-assume-role")
+      assumeCodeBuildRole("pay-cd-pay-dev-codebuild-executor", "pay-ci-endtoend-config-pr-assume-role")
       new LoadVarStep { load_var = "role" file = "assume-role/assume-role.json" }
       prepareCodeBuild("pay-ci", "prepare-e2e-codebuild.yml", "") 
         |> withInputMapping("pay-ci", "src")
@@ -238,7 +238,7 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
           file = "ci/ci/tasks/get-pr-build-docker-image-info.yml" // TODO ci->pay-ci
           params = new { ["app_name"] = app }
         }
-        assumeCodeBuildRole("e2e-test-assume-role")
+        assumeCodeBuildRole("pay-cd-pay-dev-codebuild-executor", "e2e-test-assume-role")
       }
     }
     new InParallelStep {
@@ -323,42 +323,6 @@ local function updateCardidSubmodule() = new TaskStep {
   }
 }
 
-local function prepareCodeBuild(project: String, taskFile: String, tag: String): TaskStep = new {
-  task = "prepare-codebuild"
-  file = "ci/ci/tasks/\(taskFile)" // TODO ci->pay-ci
-  params = new {
-    ["PROJECT_UNDER_TEST"] = project
-    when (tag.length > 0) {
-      ["RELEASE_TAG_UNDER_TEST"] = tag
-    }
-    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-  }
-}
-
-local function runCodeBuild(taskName: String, config: String, attemptCount: Int): TaskStep = new {
-  task = taskName
-  file = "ci/ci/tasks/run-codebuild.yml" // TODO ci->pay-ci
-  when (attemptCount != 1) {
-    attempts = attemptCount
-  }
-  params = new {
-    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(config)"
-    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-  }
-}
-
-local function withParam(key: String, value: String) = new Mixin {
-  params { [key] = value }
-}
-
-local function withInputMapping(from: String, to: String) = new Mixin {
-  input_mapping = new { [from] = to }
-}
-
 local function githubRepo(_name: String, repo: String) = new Pipeline.Resource {
   type = "git"
   name = _name
@@ -367,16 +331,6 @@ local function githubRepo(_name: String, repo: String) = new Pipeline.Resource {
     ["branch"] = "master"
     ["uri"] = "https://github.com/alphagov/\(repo)"
     }
-}
-
-local function assumeCodeBuildRole(session_name: String) = new TaskStep {
-  task = "assume-role"
-  file = "ci/ci/tasks/assume-role.yml" // TODO ci->pay-ci
-  params = new {
-    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-executor-test-12"
-    ["AWS_ROLE_SESSION_NAME"] = session_name
-  }
-  input_mapping = new { ["pay-ci"] = "ci" } // TODO remove when ci->pay-ci
 }
 
 local function pullRequestGetStep(name: String) = new GetStep {
