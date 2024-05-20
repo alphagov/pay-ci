@@ -75,3 +75,4 @@ loadAssumeRoleVar = new Pipeline.LoadVarStep {
   format = "json"
 }
 
+getPayCi = new Pipeline.GetStep { get = "pay-ci" }
