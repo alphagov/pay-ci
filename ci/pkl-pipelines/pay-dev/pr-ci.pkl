@@ -29,12 +29,12 @@ local groupMap = new Mapping <String, Listing<String>> {
   ["frontend"] = new { "frontend-e2e" }
   ["ledger"] = new { "ledger-e2e" }
   ["products"] = new { "products-e2e" }
-  ["products_ui"] = new { "products-ui-e2e" }
+  ["products_ui"] = new { "products_ui-e2e" }
   ["publicapi"] = new { "publicapi-e2e" }
   ["publicauth"] = new { "publicauth-e2e" }
   ["selfservice"] = new { "selfservice-e2e" }
   ["ci"] = new { "ci-pr-test" }
-  ["update_pipeline"] = new { "update-pr-ci-pipeline" }
+  ["update_pipeline"] = new { "update-pipeline" }
 }
 
 local class AppConfig {
