@@ -139,9 +139,9 @@ jobs = new {
 
 local function e2eJob(app: String, config: AppConfig) = new Job {
   name = "\(app)-e2e"
-  when (config.migrate_from.length > 0) { // TODO Remove after deployment
-    old_name = config.migrate_from
-  }
+  // when (config.migrate_from.length > 0) { // TODO Remove after deployment
+  //   old_name = config.migrate_from
+  // }
   max_in_flight = 3
   build_log_retention = new { builds = 500 }
   on_failure = putStatus("\(app)-pull-request", "e2e tests", "failure")
@@ -169,7 +169,7 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
     }
 
     when (config.node_build) {
-      new Pipeline.TaskStep {
+      new TaskStep {
         task = "build"
         file = "pay-ci/ci/tasks/node-build-pr.yml"
         params = new { ["skip_tests"] = "true" }
