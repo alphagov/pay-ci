@@ -126,9 +126,9 @@ jobs = new {
         |> shared_test.withInputMapping("pay-ci", "src")
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          shared_test.runCodeBuild("run-card-e2e-tests", "card.json", 3)
-          shared_test.runCodeBuild("run-products-e2e-tests", "products.json", 3)
-          shared_test.runCodeBuild("run-zap-e2e-tests", "zap.json", 3)
+          shared_test.runCodeBuild("run-card-e2e-tests", "card.json", 1)
+          shared_test.runCodeBuild("run-products-e2e-tests", "products.json", 1)
+          shared_test.runCodeBuild("run-zap-e2e-tests", "zap.json", 1)
         }
       }
       putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "success")
