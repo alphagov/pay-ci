@@ -147,16 +147,20 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
   build_log_retention = new { builds = 500 }
   on_failure = putStatus("\(app)-pull-request", "e2e tests", "failure")
   plan {
-    new GetStep {
-      get = "src"
-      params = new { ["integration_tool"] = "checkout" }
-      resource = "\(app)-pull-request"
-      trigger = true
-      version = "every"
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new GetStep {
+          get = "src"
+          params = new { ["integration_tool"] = "checkout" }
+          resource = "\(app)-pull-request"
+          trigger = true
+          version = "every"
+        }
+        shared_test.getPayCi
+      }
     }
     new InParallelStep {
       in_parallel = new Listing<Step> {
-        shared_test.getPayCi
         putStatus("\(app)-pull-request", "e2e tests", "pending")
 
         // TODO remove, along with task and script files, once cardid submodule is no longer needed
