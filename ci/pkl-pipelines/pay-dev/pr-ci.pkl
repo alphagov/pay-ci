@@ -10,12 +10,12 @@ import "../common/PayResources.pkl"
 local e2e_test_apps = new Mapping<String, AppConfig> {
   ["adminusers"] = new { tests = new { "card" } }
   ["cardid"] = new { tests = new { "card" "zap" }; use_cardid_submodule = true }
-  ["connector"] = new { tests = new {"card" } }
+  ["connector"] = new { tests = new {"card" }; migrate_from = "card-connector" }
   ["endtoend"] = new { tests = new {"card" "products" "zap"} }
-  ["frontend"] = new { tests = new {"card" "products" "zap"} }
+  ["frontend"] = new { tests = new {"card" "products" "zap"}; migrate_from = "card-frontend" }
   ["ledger"] = new { tests = new { "card" } }
   ["products"] = new { tests = new { "products" } }
-  ["products_ui"] = new { tests = new { "products" }; node_build = true }
+  ["products-ui"] = new { tests = new { "products" }; node_build = true }
   ["publicapi"] = new { tests = new {"card" "products" "zap"} }
   ["publicauth"] = new { tests = new { "card" "zap" } }
   ["selfservice"] = new { tests = new { "card" }; node_build = true }
@@ -29,7 +29,7 @@ local groupMap = new Mapping <String, Listing<String>> {
   ["frontend"] = new { "frontend-e2e" }
   ["ledger"] = new { "ledger-e2e" }
   ["products"] = new { "products-e2e" }
-  ["products_ui"] = new { "products_ui-e2e" }
+  ["products-ui"] = new { "products-ui-e2e" }
   ["publicapi"] = new { "publicapi-e2e" }
   ["publicauth"] = new { "publicauth-e2e" }
   ["selfservice"] = new { "selfservice-e2e" }
@@ -41,6 +41,7 @@ local class AppConfig {
   use_cardid_submodule: Boolean = false
   tests: Listing<String> = new {}
   node_build: Boolean = false
+  migrate_from: String = ""
 }
 
 groups {
@@ -121,7 +122,7 @@ jobs = new {
       }
       putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "pending")
       shared_test.assumeCodeBuildRole("executor", "pay-ci-endtoend-config-pr-assume-role")
-      shared_test.loadVarJson("role", "assume-role/assume-role.json")
+      shared_test.loadVar("role", "assume-role/assume-role.json")
       shared_test.prepareCodeBuild("pay-ci", "prepare-e2e-codebuild.yml", "") 
         |> shared_test.withInputMapping("pay-ci", "src")
       new InParallelStep {
@@ -138,6 +139,9 @@ jobs = new {
 
 local function e2eJob(app: String, config: AppConfig) = new Job {
   name = "\(app)-e2e"
+  when (config.migrate_from.length > 0) { // TODO Remove after deployment
+    old_name = config.migrate_from
+  }
   max_in_flight = 3
   build_log_retention = new { builds = 500 }
   on_failure = putStatus("\(app)-pull-request", "e2e tests", "failure")
@@ -153,6 +157,14 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
       in_parallel = new Listing<Step> {
         shared_test.getPayCi
         putStatus("\(app)-pull-request", "e2e tests", "pending")
+
+        // TODO remove, along with task and script files, once cardid submodule is no longer needed
+        when (config.use_cardid_submodule) { 
+          new TaskStep {
+            task = "update-submodule"
+            file = "pay-ci/ci/tasks/update-cardid-submodule.yml"
+          }
+        }
       }
     }
 
@@ -161,14 +173,6 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
         task = "build"
         file = "pay-ci/ci/tasks/node-build-pr.yml"
         params = new { ["skip_tests"] = "true" }
-      }
-    }
-
-    // TODO remove, along with task and script files, once cardid submodule is no longer needed
-    when (config.use_cardid_submodule) { 
-      new TaskStep {
-        task = "update-submodule"
-        file = "pay-ci/ci/tasks/update-cardid-submodule.yml"
       }
     }
 
@@ -193,7 +197,7 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
     }
     new InParallelStep {
       in_parallel = new Listing<Step> {
-        shared_test.loadVarJson("role", "assume-role/assume-role.json")
+        shared_test.loadVar("role", "assume-role/assume-role.json")
         shared_test.loadVar("image_filename", "image_info/image_filename")
         shared_test.loadVar("image_tag", "image_info/tag")
       }
@@ -216,7 +220,7 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
       new InParallelStep {
         in_parallel = new Listing<Step> {
           for (test in config.tests) {
-            shared_test.runCodeBuild("run-\(test)-e2e-tests", "\(test).json", 3)
+            shared_test.runCodeBuild("run-\(test)-e2e-tests", "\(test).json", 1)
           }
         }
       }
