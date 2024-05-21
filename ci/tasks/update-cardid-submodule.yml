@@ -5,6 +5,7 @@ image_resource:
   source:
     repository: governmentdigitalservice/pay-concourse-runner
 inputs:
+  - name: pay-ci
   - name: src
 params:
   GH_ACCESS_TOKEN: ((github-access-token))
@@ -13,4 +14,4 @@ outputs:
 run:
   path: ash
   dir: src
-  args: ["pay-ci/ci/scripts/update-cardid-submodule.sh"]
+  args: ["../pay-ci/ci/scripts/update-cardid-submodule.sh"]
