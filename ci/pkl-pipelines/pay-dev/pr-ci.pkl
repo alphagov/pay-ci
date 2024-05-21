@@ -101,7 +101,7 @@ jobs = new {
 
       new TaskStep {
         task = "check-pipelines-and-tasks"
-        file = "pay-ci/ci/tasks/update-cardid-submodule.yml"
+        file = "pay-ci/ci/tasks/check-pipelines-and-tasks.yml"
         on_failure = putStatus("ci-pull-request", "test", "failure")
       }
       putStatus("ci-pull-request", "test", "success")
