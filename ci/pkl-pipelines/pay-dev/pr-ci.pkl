@@ -97,6 +97,7 @@ jobs = new {
     max_in_flight = 3
     build_log_retention = new { builds = 500 }
     plan {
+      shared_test.getPayCi
       pullRequestGetStep("ci-pull-request")
       putStatus("ci-pull-request", "test", "pending")
 
