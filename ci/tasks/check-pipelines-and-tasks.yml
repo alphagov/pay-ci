@@ -6,6 +6,7 @@ image_resource:
     repository: golang
     tag: 1.20-alpine
 inputs:
+  - name: pay-ci
   - name: src
 run:
   path: sh
