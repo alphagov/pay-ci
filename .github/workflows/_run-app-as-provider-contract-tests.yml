@@ -38,9 +38,6 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: Pull docker image dependencies
-        run: |
-          docker pull postgres:15.2
       - name: Set Pact Provider Version
         id: set-pact-provider-version
         run: |

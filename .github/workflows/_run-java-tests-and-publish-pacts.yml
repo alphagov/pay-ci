@@ -18,16 +18,6 @@ on:
         required: false
         default: true
         description: Set to `false` to disable checking for OpenAPI file changes (for publicapi)
-      requires_redis_image:
-        type: boolean
-        required: false
-        default: false
-        description: Set to `true` to pull redis docker image (for publicapi)
-      requires_postgres_image:
-        type: boolean
-        required: false
-        default: true
-        description: Set to `false` if app doesn't use databases (publicapi & cardId)
     secrets:
       pact_broker_username:
         required: false
@@ -63,18 +53,6 @@ jobs:
         with:
           path: target/pacts
           key: ${{ runner.os }}-build-id-${{ github.head_ref }}-${{ github.sha }}-pacts
-      - name: Pull docker image dependencies
-        env:
-          PULL_REDIS_IMAGE: ${{ inputs.requires_redis_image }}
-          PULL_POSTGRES_IMAGE: ${{ inputs.requires_postgres_image }}
-        run: |
-          if [ "$PULL_POSTGRES_IMAGE" = true ]; then
-            docker pull postgres:15.2
-          fi
-
-          if [ "$PULL_REDIS_IMAGE" = true ]; then
-            docker pull redis:7.2
-          fi
       - name: Compile
         run: mvn clean compile --no-transfer-progress
       - name: Check for OpenApi file changes
