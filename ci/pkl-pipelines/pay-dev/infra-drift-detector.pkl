@@ -111,6 +111,7 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
         new TaskStep {
           task = "assume-role"
           file = "pay-ci/ci/tasks/assume-role.yml"
+          attempts = 3
           params {
             ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_\(env)_account_id)):role/concourse"
             ["AWS_ROLE_SESSION_NAME"] = "zendesk-unsubscriber-assume-role"
@@ -120,6 +121,7 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
         new TaskStep {
           task = "check-sns-subscriptions"
           file = "pay-ci/ci/tasks/check-sns-subscriptions.yml"
+          attempts = 3
           params {
             ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
             ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
