@@ -53,7 +53,7 @@ resource_types {
 }
 
 resources = new {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/pr-ci.pkl", "PP-12582-migrate-pr-pipeline-to-pkl")
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/pr-ci.pkl", "master")
   shared_resources.payCiGitHubResource
 
   for (app, config in e2e_test_apps) {
