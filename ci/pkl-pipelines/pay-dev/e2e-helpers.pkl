@@ -82,7 +82,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing<Step> {
           shared_test.getStep("endtoend-git-release", true, false)
-          getPayCi
+          shared_test.getPayCi
         }
       }
 
@@ -113,7 +113,7 @@ jobs = new {
             passed = new Listing { "build-and-push-endtoend-candidate" }
             params { ["format"] = "oci" }
           }
-          getPayCi
+          shared_test.getPayCi
         }
       }
 
@@ -169,7 +169,7 @@ jobs = new {
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          getPayCi
+          shared_test.getPayCi
           shared_test.getStep("reverse-proxy-git-release", true, false)
         }
       }
@@ -212,7 +212,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing {
           shared_test.getStep("reverse-proxy-candidate-ecr-registry-test", true, true)
-          getPayCi
+          shared_test.getPayCi
         }
       }
 
@@ -280,7 +280,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing<Step> {
           shared_test.getStep("stubs-git-release", true, false)
-          getPayCi
+          shared_test.getPayCi
         }
       }
 
@@ -323,7 +323,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing {
           shared_test.getStep("stubs-candidate-ecr-registry-test", true, true)
-          getPayCi
+          shared_test.getPayCi
         }
       }
 
@@ -530,8 +530,6 @@ local function runCodeBuildMultiarch(project: String, attempts: Int): InParallel
     shared_test.runCodeBuild("run-codebuild-\(project)-armv8", "\(project)-armv8.json", attempts)
   }
 }
-
-local getPayCi = new GetStep { get = "pay-ci" }
 
 local function withTagRegex(tag: String) = new Mixin {
   source { ["tag_regex"] = tag }

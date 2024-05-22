@@ -1,0 +1,257 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
+import "../common/PayResources.pkl"
+
+local e2e_test_apps = new Mapping<String, AppConfig> {
+  ["adminusers"] = new { tests = new { "card" } }
+  ["cardid"] = new { tests = new { "card" "zap" }; use_cardid_submodule = true }
+  ["connector"] = new { tests = new {"card" }; migrate_from = "card-connector" }
+  ["endtoend"] = new { tests = new {"card" "products" "zap"} }
+  ["frontend"] = new { tests = new {"card" "products" "zap"}; migrate_from = "card-frontend" }
+  ["ledger"] = new { tests = new { "card" } }
+  ["products"] = new { tests = new { "products" } }
+  ["products-ui"] = new { tests = new { "products" }; node_build = true }
+  ["publicapi"] = new { tests = new {"card" "products" "zap"} }
+  ["publicauth"] = new { tests = new { "card" "zap" } }
+  ["selfservice"] = new { tests = new { "card" }; node_build = true }
+} // pay-ci-endtoend-config is different enough to break out
+
+local groupMap = new Mapping <String, Listing<String>> {
+  ["adminusers"] = new { "adminusers-e2e" }
+  ["cardid"] = new { "cardid-e2e" }
+  ["connector"] = new { "connector-e2e" }
+  ["end_to_end"] = new { "endtoend-e2e" "pay-ci-endtoend-config" }
+  ["frontend"] = new { "frontend-e2e" }
+  ["ledger"] = new { "ledger-e2e" }
+  ["products"] = new { "products-e2e" }
+  ["products-ui"] = new { "products-ui-e2e" }
+  ["publicapi"] = new { "publicapi-e2e" }
+  ["publicauth"] = new { "publicauth-e2e" }
+  ["selfservice"] = new { "selfservice-e2e" }
+  ["ci"] = new { "ci-pr-test" }
+  ["update_pipeline"] = new { "update-pipeline" }
+}
+
+local class AppConfig {
+  use_cardid_submodule: Boolean = false
+  tests: Listing<String> = new {}
+  node_build: Boolean = false
+  migrate_from: String = ""
+}
+
+groups {
+  for (groupName, groupJobs in groupMap) { new Pipeline.Group { name = groupName jobs = groupJobs } }
+}
+
+resource_types {
+  shared_resources.pullRequestResourceType // Concourse has v0.21, default is v0.23
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/pr-ci.pkl", "master")
+  shared_resources.payCiGitHubResource
+
+  for (app, config in e2e_test_apps) {
+    new PayResources.PayGitHubPullRequestResource {
+      name = "\(app)-pull-request" 
+      repo = "pay-\(app)"
+    }
+  }
+  new PayResources.PayGitHubPullRequestResource {
+    name = "pay-ci-endtoend-config-pull-request" 
+    repo = "pay-ci"
+    source { ["paths"] = new Listing<String> { "ci/tasks/endtoend/" } }
+  }
+  new PayResources.PayGitHubPullRequestResource {
+    name = "ci-pull-request" 
+    repo = "pay-ci"
+    source { ["paths"] = new Listing<String> { "ci/pipelines/*"  "ci/tasks/*"} }
+  }
+  new Pipeline.Resource {
+    name = "pull-request-builds-ecr"
+    icon = "docker"
+    type = "registry-image"
+    source = new {
+      ["aws_access_key_id"] = "((readonly_access_key_id))"
+      ["aws_ecr_registry_id"] = "((pay_aws_test_account_id))"
+      ["aws_region"] = "eu-west-1"
+      ["aws_role_arn"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+      ["aws_secret_access_key"] = "((readonly_secret_access_key))"
+      ["aws_session_token"] = "((readonly_session_token))"
+      ["repository"] = "govukpay/pull-request-builds"
+      ["tag"] = "latest"
+    }
+  }
+}
+
+jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/pr-ci.pkl")
+  for (app, config in e2e_test_apps) { e2eJob(app, config) }
+  new {
+    name = "ci-pr-test"
+    max_in_flight = 3
+    build_log_retention = new { builds = 500 }
+    plan {
+      shared_test.getPayCi
+      pullRequestGetStep("ci-pull-request")
+      putStatus("ci-pull-request", "test", "pending")
+
+      new TaskStep {
+        task = "check-pipelines-and-tasks"
+        file = "pay-ci/ci/tasks/check-pipelines-and-tasks.yml"
+        on_failure = putStatus("ci-pull-request", "test", "failure")
+      }
+      putStatus("ci-pull-request", "test", "success")
+    }
+  }
+  new {
+    name = "pay-ci-endtoend-config"
+    max_in_flight = 3
+    build_log_retention = new { builds = 500 }
+    on_failure = putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "failure")
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          shared_test.getPayCi
+          pullRequestGetStep("pay-ci-endtoend-config-pull-request")
+        }
+      }
+      putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "pending")
+      shared_test.assumeCodeBuildRole("executor", "pay-ci-endtoend-config-pr-assume-role")
+      shared_test.loadVar("role", "assume-role/assume-role.json")
+      shared_test.prepareCodeBuild("pay-ci", "prepare-e2e-codebuild.yml", "") 
+        |> shared_test.withInputMapping("pay-ci", "src")
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          shared_test.runCodeBuild("run-card-e2e-tests", "card.json", 1)
+          shared_test.runCodeBuild("run-products-e2e-tests", "products.json", 1)
+          shared_test.runCodeBuild("run-zap-e2e-tests", "zap.json", 1)
+        }
+      }
+      putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "success")
+    }
+  }
+}
+
+local function e2eJob(app: String, config: AppConfig) = new Job {
+  name = "\(app)-e2e"
+  when (config.migrate_from.length > 0) { // TODO Remove after deployment
+    old_name = config.migrate_from
+  }
+  max_in_flight = 3
+  build_log_retention = new { builds = 500 }
+  on_failure = putStatus("\(app)-pull-request", "e2e tests", "failure")
+  plan {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new GetStep {
+          get = "src"
+          params = new { ["integration_tool"] = "checkout" }
+          resource = "\(app)-pull-request"
+          trigger = true
+          version = "every"
+        }
+        shared_test.getPayCi
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        putStatus("\(app)-pull-request", "e2e tests", "pending")
+
+        // TODO remove, along with task and script files, once cardid submodule is no longer needed
+        when (config.use_cardid_submodule) { 
+          new TaskStep {
+            task = "update-submodule"
+            file = "pay-ci/ci/tasks/update-cardid-submodule.yml"
+          }
+        }
+      }
+    }
+
+    when (config.node_build) {
+      new TaskStep {
+        task = "build"
+        file = "pay-ci/ci/tasks/node-build-pr.yml"
+        params = new { ["skip_tests"] = "true" }
+      }
+    }
+
+    shared_resources.generateDockerCredsConfigStep 
+
+    new TaskStep {
+      task = "build-image"
+      file = "pay-ci/ci/tasks/build-docker-image.yml" 
+      privileged = true
+      params = new { ["app_name"] = app }
+    }
+
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new TaskStep {
+          task = "get-docker-image-info"
+          file = "pay-ci/ci/tasks/get-pr-build-docker-image-info.yml"
+          params = new { ["app_name"] = app }
+        }
+        shared_test.assumeCodeBuildRole("executor", "e2e-test-assume-role")
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        shared_test.loadVar("role", "assume-role/assume-role.json")
+        shared_test.loadVar("image_filename", "image_info/image_filename")
+        shared_test.loadVar("image_tag", "image_info/tag")
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new PutStep {
+          put = "pull-request-builds-ecr"
+          get_params = new { ["skip_download"] = true }
+          params = new {
+            ["additional_tags"] = "image_info/tag"
+            ["image"] = "local_image/((.:image_filename))"
+          }
+        }
+        shared_test.prepareCodeBuild(app, "prepare-e2e-codebuild.yml", "((.:image_tag))") 
+          |> shared_test.withParam("PR_BUILD", "true")
+      }
+    }
+    when (config.tests.length > 1) {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          for (test in config.tests) {
+            shared_test.runCodeBuild("run-\(test)-e2e-tests", "\(test).json", 1)
+          }
+        }
+      }
+    } else {
+      for (test in config.tests) {
+        shared_test.runCodeBuild("run-\(test)-e2e-tests", "\(test).json", 1)
+      }
+    }
+    putStatus("\(app)-pull-request", "e2e tests", "success")
+  }
+}
+
+local function pullRequestGetStep(name: String) = new GetStep {
+  get = "src"
+  params = new { ["integration_tool"] = "checkout" }
+  resource = name
+  trigger = true
+  version = "every"
+}
+
+local function putStatus(stepName: String, context: String, status: String) = new PutStep {
+  put = stepName 
+  get_params = new { ["skip_download"] = true }
+  params = new {
+    ["context"] = context
+    ["path"] = "src"
+    ["status"] = status
+  }
+}
