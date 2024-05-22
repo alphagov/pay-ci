@@ -125,6 +125,7 @@ for (env, time in Map("staging-2", "every-morning-at-six", "production-2", "ever
         new TaskStep {
           task = "assume-role"
           file = "pay-ci/ci/tasks/assume-role.yml"
+          attempts = 3
           params {
             when (env == "production") {
               ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_prod_account_id)):role/concourse"
@@ -139,6 +140,7 @@ for (env, time in Map("staging-2", "every-morning-at-six", "production-2", "ever
         new TaskStep {
           task = "check-sns-subscriptions"
           file = "pay-ci/ci/tasks/check-sns-subscriptions.yml"
+          attempts = 3
           params {
             ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
             ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
