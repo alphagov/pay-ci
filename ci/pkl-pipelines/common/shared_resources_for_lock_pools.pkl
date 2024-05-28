@@ -1,9 +1,18 @@
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
+payPoolResourceType = new Pipeline.ResourceType {
+  name = "pay-pool"
+  type = "registry-image"
+  source = new {
+    ["repository"] = "governmentdigitalservice/pay-pool-resource"
+    ["tag"] = "latest"
+  }
+}
+
 class LockPoolResource extends Pipeline.Resource {
   hidden pool: String
   name = "lock-pool-\(pool)"
-  type = "pool"
+  type = "pay-pool"
   icon = "pool"
   source {
     ["branch"] = "pool"
