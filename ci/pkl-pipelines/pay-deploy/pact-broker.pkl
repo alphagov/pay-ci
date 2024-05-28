@@ -10,13 +10,6 @@ local typealias SlackNotificationConfig = shared_resources_for_slack_notificatio
 
 resource_types {
   shared_resources.slackNotificationResourceType
-  new ResourceType {
-    name = "cf-cli"
-    type = "docker-image"
-    source = new {
-      ["repository"] = "nulldriver/cf-cli-resource"
-    }
-  }
 }
 
 resources {
