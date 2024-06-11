@@ -11,8 +11,8 @@ on:
       java_version:
         type: string
         required: false
-        default: 11
-        description: JDK version to setup and run tests. Defaults to 11
+        default: 21
+        description: JDK version to setup and run tests. Defaults to 21
       check_for_openapi_file_changes:
         type: boolean
         required: false
