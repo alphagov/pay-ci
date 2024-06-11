@@ -135,7 +135,7 @@ groups = new {
       "scale-down-all"
       "build-and-push-perf-tests"
       "build-and-run-perftests-from-pr"
-      "update-perf-tests-pipeline"
+      "update-pipeline"
     }
   }
 }
@@ -497,6 +497,7 @@ jobs = new {
       }
     }
   }
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/perf-tests.pkl")
 }
 
 local function buildPerfTestsImage(sourceDir: String, includeReleaseLabels: Boolean): TaskStep = new {
