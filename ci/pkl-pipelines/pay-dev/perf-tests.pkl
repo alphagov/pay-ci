@@ -97,8 +97,11 @@ groups = new {
     name = "individual-perf-tests"
     jobs {
       "run-payment-simulation-perf-test"
+      "run-extended-payment-simulation-perf-test"
       "run-search-payment-simulation-perf-test"
+      "run-extended-search-payment-simulation-perf-test"
       "run-self-service-simulation-perf-test"
+      "run-extended-self-service-simulation-perf-test"
     }
   }
   new {
@@ -125,8 +128,11 @@ groups = new {
     jobs {
       "scale-and-run-all-simulations"
       "run-payment-simulation-perf-test"
+      "run-extended-payment-simulation-perf-test"
       "run-search-payment-simulation-perf-test"
+      "run-extended-search-payment-simulation-perf-test"
       "run-self-service-simulation-perf-test"
+      "run-extended-self-service-simulation-perf-test"
       "scale-up-databases"
       "scale-up-services"
       "scale-up-all"
@@ -192,96 +198,12 @@ jobs = new {
       }
     }
   }
-  new {
-    name = "run-search-payment-simulation-perf-test"
-    serial = true
-    serial_groups { "perf-tests" }
-    plan {
-      new InParallelStep {
-        in_parallel = new InParallelConfig {
-          steps {
-            new GetStep { get = "perf-tests-ecr-release" }
-            new GetStep { get = "perf-tests-git-release" }
-            new GetStep { get = "pay-ci" }
-          }
-        }
-      }
-      assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
-      new InParallelStep {
-        in_parallel = new InParallelConfig {
-          steps {
-            shared_test.loadAssumeRoleVar
-            shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
-            shared_test.loadVarJson("gatling-simulation-settings", "perf-tests-git-release/ci/gatling-simulation-settings.json")
-          }
-        }
-      }
-      prepareCodeBuild
-      searchPaymentsSimulationPerfTest
-    }
-    on_failure = perfTestIndividualExecitionErrorNotification("SearchPaymentsSimulation")
-    on_success = perfTestPassedNotification("SearchPaymentsSimulation")
-  }
-  new {
-    name = "run-payment-simulation-perf-test"
-    serial = true
-    serial_groups { "perf-tests" }
-    plan {
-      new InParallelStep {
-        in_parallel = new InParallelConfig {
-          steps {
-            new GetStep { get = "perf-tests-ecr-release" }
-            new GetStep { get = "perf-tests-git-release" }
-            new GetStep { get = "pay-ci" }
-          }
-        }
-      }
-      assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
-      new InParallelStep {
-        in_parallel = new InParallelConfig {
-          steps {
-            shared_test.loadAssumeRoleVar
-            shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
-            shared_test.loadVarJson("gatling-simulation-settings", "perf-tests-git-release/ci/gatling-simulation-settings.json")
-          }
-        }
-      }
-      prepareCodeBuild
-      paymentSimulationPerfTest
-    }
-    on_failure = perfTestIndividualExecitionErrorNotification("PaymentSimulation")
-    on_success = perfTestPassedNotification("PaymentSimulation")
-  }
-  new {
-    name = "run-self-service-simulation-perf-test"
-    serial = true
-    serial_groups { "perf-tests" }
-    plan {
-      new InParallelStep {
-        in_parallel = new InParallelConfig {
-          steps {
-            new GetStep { get = "perf-tests-ecr-release" }
-            new GetStep { get = "pay-ci" }
-            new GetStep { get = "perf-tests-git-release" }
-          }
-        }
-      }
-      assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
-      new InParallelStep {
-        in_parallel = new InParallelConfig {
-          steps {
-            shared_test.loadAssumeRoleVar
-            shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
-            shared_test.loadVarJson("gatling-simulation-settings", "perf-tests-git-release/ci/gatling-simulation-settings.json")
-          }
-        }
-      }
-      prepareCodeBuild
-      selfServiceSimulationPerfTest
-    }
-    on_failure = perfTestIndividualExecitionErrorNotification("SelfServiceSimulation")
-    on_success = perfTestPassedNotification("SelfServiceSimulation")
-  }
+  standardSearchPaymentSimulationPerfTestJob
+  extendedSearchPaymentSimulationPerfTestJob
+  standardPaymentSimulationPerfTestJob
+  extendedPaymentSimulationPerfTestJob
+  standardSelfServiceSimulationPerfTestJob
+  extendedSelfServiceSimulationPerfTestJob
   new {
     name = "scale-up-databases"
     serial = true
@@ -850,4 +772,127 @@ local function withTagRegex(tag: String) = new Mixin {
 
 local function withTag(tag: String) = new Mixin {
   source { ["tag"] = tag }
+}
+
+local standardSearchPaymentSimulationPerfTestJob: Job = runSearchPaymentSimulationPerfTest(false)
+local extendedSearchPaymentSimulationPerfTestJob: Job = runSearchPaymentSimulationPerfTest(true)
+
+local function runSearchPaymentSimulationPerfTest(extended: Boolean): Job = new {
+  name = if (extended) "run-extended-search-payment-simulation-perf-test" else "run-search-payment-simulation-perf-test"
+  serial = true
+  serial_groups { "perf-tests" }
+  plan {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          new GetStep { get = "perf-tests-ecr-release" }
+          new GetStep { get = "perf-tests-git-release" }
+          new GetStep { get = "pay-ci" }
+        }
+      }
+    }
+    (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
+      params {
+        ["AWS_ROLE_DURATION"] = if (extended) "7200" else "3600"
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          shared_test.loadAssumeRoleVar
+          shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
+          shared_test.loadVarJson(
+            "gatling-simulation-settings",
+            if (extended) "perf-tests-git-release/ci/gatling-extended-simulation-settings.json" else "perf-tests-git-release/ci/gatling-simulation-settings.json"
+          )
+        }
+      }
+    }
+    prepareCodeBuild
+    searchPaymentsSimulationPerfTest
+  }
+  on_failure = perfTestIndividualExecitionErrorNotification("SearchPaymentsSimulation")
+  on_success = perfTestPassedNotification("SearchPaymentsSimulation")
+}
+
+local standardPaymentSimulationPerfTestJob: Job = runPaymentSimulationPerfTest(false)
+local extendedPaymentSimulationPerfTestJob: Job = runPaymentSimulationPerfTest(true)
+
+local function runPaymentSimulationPerfTest(extended: Boolean): Job = new {
+  name = if (extended) "run-extended-payment-simulation-perf-test" else "run-payment-simulation-perf-test"
+  serial = true
+  serial_groups { "perf-tests" }
+  plan {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          new GetStep { get = "perf-tests-ecr-release" }
+          new GetStep { get = "perf-tests-git-release" }
+          new GetStep { get = "pay-ci" }
+        }
+      }
+    }
+    (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
+      params {
+        ["AWS_ROLE_DURATION"] = if (extended) "7200" else "3600"
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          shared_test.loadAssumeRoleVar
+          shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
+          shared_test.loadVarJson(
+            "gatling-simulation-settings",
+            if (extended) "perf-tests-git-release/ci/gatling-extended-simulation-settings.json" else "perf-tests-git-release/ci/gatling-simulation-settings.json"
+          )
+        }
+      }
+    }
+    prepareCodeBuild
+    paymentSimulationPerfTest
+  }
+  on_failure = perfTestIndividualExecitionErrorNotification("PaymentSimulation")
+  on_success = perfTestPassedNotification("PaymentSimulation")
+}
+
+local standardSelfServiceSimulationPerfTestJob: Job = runSelfServiceSimulationPerfTest(false)
+local extendedSelfServiceSimulationPerfTestJob: Job = runSelfServiceSimulationPerfTest(true)
+
+local function runSelfServiceSimulationPerfTest(extended: Boolean): Job = new {
+  name = if (extended) "run-extended-self-service-simulation-perf-test" else "run-self-service-simulation-perf-test"
+  serial = true
+  serial_groups { "perf-tests" }
+  plan {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          new GetStep { get = "perf-tests-ecr-release" }
+          new GetStep { get = "pay-ci" }
+          new GetStep { get = "perf-tests-git-release" }
+        }
+      }
+    }
+    (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
+      params {
+        ["AWS_ROLE_DURATION"] = if (extended) "7200" else "3600"
+      }
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps {
+          shared_test.loadAssumeRoleVar
+          shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
+          shared_test.loadVarJson(
+            "gatling-simulation-settings",
+            if (extended) "perf-tests-git-release/ci/gatling-extended-simulation-settings.json" else "perf-tests-git-release/ci/gatling-simulation-settings.json"
+          )
+        }
+      }
+    }
+    prepareCodeBuild
+    selfServiceSimulationPerfTest
+  }
+  on_failure = perfTestIndividualExecitionErrorNotification("SelfServiceSimulation")
+  on_success = perfTestPassedNotification("SelfServiceSimulation")
 }
