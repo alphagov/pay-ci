@@ -1,0 +1,22 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import ".../common/PayResources.pkl"
+
+function payDailyTimeResource(_name: String, _start: String, _stop: String): Pipeline.Resource = new PayResources.PayTimeResource {
+  name = _name
+  source {
+    ["start"] = _start
+    ["stop"] = _stop
+  }
+}
+
+function payWeeklyTimeResource(_name: String, _start: String, _stop: String, day: String): Pipeline.Resource =
+  (payDailyTimeResource(_name, _start, _stop)) {
+    source {
+      ["days"] = new Listing { day }
+    }
+}
+
+function withLocation(timezone: String) = new Mixin {
+  source { ["location"] = timezone }
+}

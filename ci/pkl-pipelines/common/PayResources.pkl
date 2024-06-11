@@ -34,3 +34,11 @@ class PayDockerHubResource extends Resources.DockerImageResource {
     password = "((docker-access-token))"
   }
 }
+
+class PayTimeResource extends Pipeline.Resource {
+  type = "time"
+  icon = "alarm"
+  source {
+    ["location"] = "Europe/London"
+  }
+}
