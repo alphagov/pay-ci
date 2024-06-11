@@ -1,0 +1,852 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
+import "../common/shared_resources_for_times.pkl" as shared_times
+
+local databases = new Mapping<String, String> {
+  ["adminusers"] = "test-perf-1-adminusers-rds-0"
+  ["connector"] = "test-perf-1-connector-rds-0"
+  ["ledger"] = "test-perf-1-ledger-rds-0"
+  ["products"] = "test-perf-1-products-rds-0"
+  ["publicauth"] = "test-perf-1-publicauth-rds-1"
+  ["webhooks"] = "test-perf-1-webhooks-rds-0"
+}
+
+local servicesExceptWebhooks = new Listing<String> {
+  "adminusers"
+  "cardid"
+  "connector"
+  "egress"
+  "frontend"
+  "ledger"
+  "notifications"
+  "publicapi"
+  "publicauth"
+  "selfservice"
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/perf-tests.pkl", "master")
+  shared_resources.slackNotificationResource
+
+  shared_resources.payCiGitHubResource
+  shared_resources.payGithubPullRequestResource("pay-perftests-pr", "pay-perftests")
+  shared_resources.payGithubResourceWithBranch(
+    "perf-tests-git-release",
+    "pay-perftests",
+    "master"
+  ) |> withTagRegex("alpha_release-(.*)")
+
+  shared_resources.payECRResource(
+    "pull-request-builds-ecr",
+    "govukpay/pull-request-builds",
+    "pay_aws_test_account_id"
+  ) |> withTag("latest")
+
+  shared_resources.payECRResource(
+    "perf-tests-ecr-registry-test",
+    "govukpay/perftests",
+    "pay_aws_test_account_id"
+  ) |> withTag("latest")
+
+
+  shared_resources.payECRResourceWithVariant(
+    "perf-tests-ecr-release",
+    "govukpay/perftests",
+    "pay_aws_test_account_id",
+    "release"
+  )
+
+  shared_resources.payDockerHubResource(
+    "perf-tests-dockerhub",
+    "governmentdigitalservice/pay-perftests",
+    "latest-master"
+  )
+
+
+  shared_times.payDailyTimeResource("every-night-at-11pm", "23:00", "23:30")
+  shared_times.payWeeklyTimeResource(
+    "every-sunday-at-0315",
+    "03:15", "03:25",
+    "Sunday"
+  ) |> shared_times.withLocation("UTC")
+
+  shared_times.payWeeklyTimeResource(
+    "every-sunday-at-0450",
+    "04:50", "05:00",
+    "Sunday"
+  ) |> shared_times.withLocation("UTC")
+}
+
+resource_types = new {
+  shared_resources.slackNotificationResourceType
+  shared_resources.pullRequestResourceType
+}
+
+groups = new {
+  new {
+    name = "complete-perf-tests"
+    jobs {
+      "scale-and-run-all-simulations"
+    }
+  }
+  new {
+    name = "individual-perf-tests"
+    jobs {
+      "run-payment-simulation-perf-test"
+      "run-search-payment-simulation-perf-test"
+      "run-self-service-simulation-perf-test"
+    }
+  }
+  new {
+    name = "environment-scaling"
+    jobs {
+      "scale-up-databases"
+      "scale-up-services"
+      "scale-up-all"
+      "scale-down-databases"
+      "scale-down-services"
+      "scale-down-all"
+    }
+  }
+  new {
+    name = "perf-tests-build"
+    jobs {
+      "build-and-push-perf-tests"
+      "build-and-run-perftests-from-pr"
+    }
+  }
+  pipeline_self_update.payPipelineSelfUpdateGroup
+  new {
+    name = "all-jobs"
+    jobs {
+      "scale-and-run-all-simulations"
+      "run-payment-simulation-perf-test"
+      "run-search-payment-simulation-perf-test"
+      "run-self-service-simulation-perf-test"
+      "scale-up-databases"
+      "scale-up-services"
+      "scale-up-all"
+      "scale-down-databases"
+      "scale-down-services"
+      "scale-down-all"
+      "build-and-push-perf-tests"
+      "build-and-run-perftests-from-pr"
+      "update-perf-tests-pipeline"
+    }
+  }
+}
+
+jobs = new {
+  new {
+    name = "scale-and-run-all-simulations"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            new GetStep { get = "perf-tests-ecr-release" }
+            new GetStep { get = "perf-tests-git-release" }
+            new GetStep { get = "pay-ci" }
+            new GetStep {
+              get = "every-night-at-11pm"
+              trigger = true
+            }
+          }
+        }
+      }
+      assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            shared_test.loadAssumeRoleVar
+            shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
+            shared_test.loadVarJson("gatling-simulation-settings", "perf-tests-git-release/ci/gatling-simulation-settings.json")
+            (shared_test.loadVar("service-volumes", "perf-tests-git-release/ci/scale-service-volumes.yml")) {
+              format = "yml"
+            }
+          }
+        }
+      }
+      pauseDeployToPerfPipeline
+      scaleUpDatabases
+      scaleUpServices
+      prepareCodeBuild
+      paymentSimulationPerfTest
+      // Temporarily disable search scenarios in daily scheduled perftests.
+      // Ledger is currently unable to fulfil these perftest requests reliably.
+      // searchPaymentsSimulationPerfTest
+      selfServiceSimulationPerfTest
+    }
+    on_failure = perfTestExecitionErrorNotification()
+    on_success = perfTestExecitionSuccessNotification()
+    ensure = new DoStep {
+      do {
+        scaleDownServices
+        scaleDownDatabases
+        unpauseDeployToPerfPipeline
+      }
+    }
+  }
+  new {
+    name = "run-search-payment-simulation-perf-test"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            new GetStep { get = "perf-tests-ecr-release" }
+            new GetStep { get = "perf-tests-git-release" }
+            new GetStep { get = "pay-ci" }
+          }
+        }
+      }
+      assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            shared_test.loadAssumeRoleVar
+            shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
+            shared_test.loadVarJson("gatling-simulation-settings", "perf-tests-git-release/ci/gatling-simulation-settings.json")
+          }
+        }
+      }
+      prepareCodeBuild
+      searchPaymentsSimulationPerfTest
+    }
+    on_failure = perfTestIndividualExecitionErrorNotification("SearchPaymentsSimulation")
+    on_success = perfTestPassedNotification("SearchPaymentsSimulation")
+  }
+  new {
+    name = "run-payment-simulation-perf-test"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            new GetStep { get = "perf-tests-ecr-release" }
+            new GetStep { get = "perf-tests-git-release" }
+            new GetStep { get = "pay-ci" }
+          }
+        }
+      }
+      assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            shared_test.loadAssumeRoleVar
+            shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
+            shared_test.loadVarJson("gatling-simulation-settings", "perf-tests-git-release/ci/gatling-simulation-settings.json")
+          }
+        }
+      }
+      prepareCodeBuild
+      paymentSimulationPerfTest
+    }
+    on_failure = perfTestIndividualExecitionErrorNotification("PaymentSimulation")
+    on_success = perfTestPassedNotification("PaymentSimulation")
+  }
+  new {
+    name = "run-self-service-simulation-perf-test"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            new GetStep { get = "perf-tests-ecr-release" }
+            new GetStep { get = "pay-ci" }
+            new GetStep { get = "perf-tests-git-release" }
+          }
+        }
+      }
+      assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            shared_test.loadAssumeRoleVar
+            shared_test.loadVar("release-tag", "perf-tests-ecr-release/tag")
+            shared_test.loadVarJson("gatling-simulation-settings", "perf-tests-git-release/ci/gatling-simulation-settings.json")
+          }
+        }
+      }
+      prepareCodeBuild
+      selfServiceSimulationPerfTest
+    }
+    on_failure = perfTestIndividualExecitionErrorNotification("SelfServiceSimulation")
+    on_success = perfTestPassedNotification("SelfServiceSimulation")
+  }
+  new {
+    name = "scale-up-databases"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      ...timedDbScalingSetup("every-sunday-at-0315")
+      scaleUpDatabases
+    }
+  }
+  new {
+    name = "scale-up-services"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      ...serviceScalingSetup
+      scaleUpServices
+    }
+  }
+  new {
+    name = "scale-up-all"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      ...serviceScalingSetup
+      scaleUpDatabases
+      scaleUpServices
+    }
+  }
+  new {
+    name = "scale-down-databases"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      ...timedDbScalingSetup("every-sunday-at-0450")
+      pauseDeployToPerfPipeline
+      scaleDownDatabases
+    }
+    ensure = unpauseDeployToPerfPipeline
+  }
+  new {
+    name = "scale-down-services"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      ...serviceScalingSetup
+      scaleDownServices
+    }
+  }
+  new {
+    name = "scale-down-all"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      ...serviceScalingSetup
+      pauseDeployToPerfPipeline
+      scaleDownServices
+      scaleDownDatabases
+    }
+    ensure = unpauseDeployToPerfPipeline
+  }
+  new {
+    name = "build-and-push-perf-tests"
+    plan {
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            new GetStep {
+              get = "perf-tests-git-release"
+              trigger = true
+            }
+            new GetStep { get = "pay-ci" }
+          }
+        }
+      }
+      parseReleaseTag("perf-tests-git-release")
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            shared_test.loadVar("release-number", "tags/release-number")
+            shared_test.loadVar("release-name", "perf-tests-git-release/.git/ref")
+            shared_test.loadVar("release-sha", "tags/release-sha")
+          }
+        }
+      }
+      shared_resources.generateDockerCredsConfigStep
+      buildPerfTestsImage("perf-tests-git-release", true)
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            new PutStep {
+              put = "perf-tests-ecr-registry-test"
+              params {
+                ["image"] = "image/image.tar"
+                ["additional_tags"] = "tags/tags"
+              }
+              get_params {
+                ["skip_download"] = true
+              }
+            }
+            new PutStep {
+              put = "perf-tests-dockerhub"
+              params {
+                ["image"] = "image/image.tar"
+                ["additional_tags"] = "tags/tags"
+              }
+              get_params {
+                ["skip_download"] = true
+              }
+            }
+          }
+        }
+      }
+    }
+    on_failure = new PutStep {
+      put = "slack-notification"
+      attempts = 10
+      params {
+        ["channel"] = "#govuk-pay-announce"
+        ["silent"] = true
+        ["text"] = ":red-circle: Failed to build and push pay-perftests image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        ["icon_emoji"] = ":concourse:"
+        ["username"] = "pay-concourse"
+      }
+    }
+    on_success = new PutStep {
+      put = "slack-notification"
+      attempts = 10
+      params {
+        ["channel"] = "#govuk-pay-activity"
+        ["silent"] = true
+        ["text"] = ":green-circle: Built and pushed pay-perftests image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+        ["icon_emoji"] = ":concourse:"
+        ["username"] = "pay-concourse"
+      }
+    }
+  }
+  new {
+    name = "build-and-run-perftests-from-pr"
+    plan {
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            new GetStep { get = "pay-perftests-pr" }
+            new GetStep { get = "pay-ci" }
+          }
+        }
+      }
+      shared_resources.generateDockerCredsConfigStep
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            buildPerfTestsImage("pay-perftests-pr", false)
+            (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
+              params {
+                ["AWS_ROLE_DURATION"] = "18600"
+              }
+            }
+          }
+        }
+      }
+      new TaskStep {
+        task = "get-docker-image-info"
+        file = "pay-ci/ci/tasks/get-pr-build-docker-image-info.yml"
+        params {
+          ["app_name"] = "perftests"
+        }
+        input_mapping {
+          ["src"] = "pay-perftests-pr"
+        }
+      }
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            shared_test.loadVar("image_filename", "image_info/image_filename")
+            shared_test.loadVar("image_tag", "image_info/tag")
+            shared_test.loadVarJson("gatling-simulation-settings", "pay-perftests-pr/ci/gatling-simulation-settings.json")
+            shared_test.loadAssumeRoleVar
+          }
+        }
+      }
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            new PutStep {
+              put = "pull-request-builds-ecr"
+              params {
+                ["image"] = "image/image.tar"
+                ["additional_tags"] = "image_info/tag"
+              }
+              get_params {
+                ["skip_download"] = true
+              }
+            }
+            new TaskStep {
+              task = "prepare-codebuild"
+              file = "pay-ci/ci/tasks/prepare-perftests-codebuild.yml"
+              vars {
+                ["perf_tests_repo"] = "govukpay/pull-request-builds"
+                ["perf_tests_version"] = "((.:image_tag))"
+              }
+            }
+          }
+        }
+      }
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            (paymentSimulationPerfTest) { try { on_failure = null } }
+            (selfServiceSimulationPerfTest) { try { on_failure = null } }
+            (searchPaymentsSimulationPerfTest) { try { on_failure = null } }
+          }
+        }
+      }
+    }
+  }
+}
+
+local function buildPerfTestsImage(sourceDir: String, includeReleaseLabels: Boolean): TaskStep = new {
+  task = "build-perf-tests-image"
+  privileged = true
+  params {
+    ["DOCKER_CONFIG"] = "docker_creds"
+    when (includeReleaseLabels) {
+      ["LABEL_release_number"] = "((.:release-number))"
+      ["LABEL_release_name"] = "((.:release-name))"
+      ["LABEL_release_sha"] = "((.:release-sha))"
+    }
+  }
+  config {
+    platform = "linux"
+    image_resource {
+      type = "registry-image"
+      source { ["repository"] = "concourse/oci-build-task" }
+    }
+    inputs = new Listing {
+      new TaskConfig.Input {
+        name = sourceDir
+        path = "."
+      }
+    }
+    outputs = new Listing {
+      new TaskConfig.Output { name = "image" }
+    }
+    run { path = "build" }
+  }
+}
+
+local serviceScalingSetup = new Listing<Step> {
+  new InParallelStep {
+    in_parallel = new InParallelConfig {
+      steps {
+        new GetStep { get = "pay-ci" }
+        new GetStep { get = "perf-tests-git-release" }
+      }
+    }
+  }
+  assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+  new InParallelStep {
+    in_parallel = new InParallelConfig {
+      steps {
+        shared_test.loadAssumeRoleVar
+        (shared_test.loadVar("service-volumes", "perf-tests-git-release/ci/scale-service-volumes.yml")) {
+          format = "yml"
+        }
+      }
+    }
+  }
+}
+
+local function timedDbScalingSetup(timeTrigger: String): Listing<Step> = new {
+  new InParallelStep {
+    in_parallel = new InParallelConfig {
+      steps {
+        new GetStep { get = "pay-ci" }
+        new GetStep {
+          get = timeTrigger
+          trigger = true
+        }
+      }
+    }
+  }
+  assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+  new InParallelStep {
+    in_parallel = new InParallelConfig {
+      steps {
+        shared_test.loadAssumeRoleVar
+      }
+    }
+  }
+}
+
+local paymentSimulationPerfTest = new TryStep {
+  try = new TaskStep {
+    task = "payment-simulation-perf-test"
+    file = "pay-ci/ci/tasks/run-codebuild.yml"
+    params {
+      ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/perf-tests-PaymentSimulation.json"
+      ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+      ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+      ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+    }
+    on_failure = perfTestFailedNotification("PaymentSimulation")
+  }
+}
+
+local searchPaymentsSimulationPerfTest = new TryStep {
+  try = new TaskStep {
+    task = "search-payments-simulation-perf-test"
+    file = "pay-ci/ci/tasks/run-codebuild.yml"
+    params {
+      ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/perf-tests-SearchPaymentsSimulation.json"
+      ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+      ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+      ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+    }
+    on_failure = perfTestFailedNotification("SearchPaymentsSimulation")
+  }
+}
+
+local selfServiceSimulationPerfTest = new TryStep {
+  try = new TaskStep {
+    task = "self-service-simulation-perf-test"
+    file = "pay-ci/ci/tasks/run-codebuild.yml"
+    params {
+      ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/perf-tests-SelfServiceSimulation.json"
+      ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+      ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+      ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+    }
+    on_failure = perfTestFailedNotification("SelfServiceSimulation")
+  }
+}
+
+local prepareCodeBuild = new TaskStep {
+  task = "prepare-codebuild"
+  file = "pay-ci/ci/tasks/prepare-perftests-codebuild.yml"
+  vars {
+    ["perf_tests_repo"] = "govukpay/perftests"
+    ["perf_tests_version"] = "((.:release-tag))"
+  }
+}
+
+local pauseDeployToPerfPipeline: TaskStep = new {
+  task = "pause-deploy-to-perf-pipeline"
+  file = "pay-ci/ci/tasks/pause-unpause-pipeline.yml"
+  params {
+    ["ACTION"] = "pause"
+    ["PIPELINE"] = "deploy-to-perf"
+    ["FLY_USERNAME"] = "pay-dev"
+    ["FLY_PASSWORD"] = "((readonly_local_user_password))"
+  }
+}
+
+local unpauseDeployToPerfPipeline: TaskStep = (pauseDeployToPerfPipeline) {
+  task = "unpause-deploy-to-perf-pipeline"
+  params {
+    ["ACTION"] = "unpause"
+  }
+}
+
+local scaleUpDatabases = new InParallelStep {
+  in_parallel = new InParallelConfig {
+    steps {
+      for (appName, rdsName in databases) {
+        new TaskStep {
+          task = "start-\(appName)-db"
+          file = "pay-ci/ci/tasks/start-rds-instance.yml"
+          params {
+            ["RDS_INSTANCE_NAME"] = rdsName
+            ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+            ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+            ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+          }
+        }
+      }
+    }
+  }
+}
+
+local scaleDownDatabases = new InParallelStep {
+  in_parallel = new InParallelConfig {
+    steps {
+      for (appName, rdsName in databases) {
+        new TaskStep {
+          task = "stop-\(appName)-db"
+          file = "pay-ci/ci/tasks/stop-rds-instance.yml"
+          params {
+            ["RDS_INSTANCE_NAME"] = rdsName
+            ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+            ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+            ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+          }
+        }
+      }
+    }
+  }
+}
+
+local scaleUpServices = new InParallelStep {
+  in_parallel = new InParallelConfig {
+    steps {
+      for (service in servicesExceptWebhooks) {
+        scaleService(service, "up")
+      }
+      new DoStep {
+        do {
+          assumeRoleTask("deploy", "pay-concourse-stubs-deploy-tooling", "terraform-deploy-assume-role")
+          shared_test.loadVar("deploy-role-stubs", "assume-role/assume-role.json")
+          scaleStubs("up", "deploy-role-stubs")
+        }
+      }
+      new DoStep {
+        do {
+          (scaleService("webhooks-egress", "up")) {
+            params {
+              ["TARGET_GROUP_NAME_SUFFIX"] = "tg"
+            }
+          }
+          scaleService("webhooks", "up")
+        }
+      }
+    }
+  }
+}
+
+local scaleDownServices = new InParallelStep {
+  in_parallel = new InParallelConfig {
+    steps {
+      new DoStep {
+        do {
+          assumeRoleTask("deploy", "pay-concourse-stubs-deploy-tooling", "terraform-deploy-assume-role")
+          shared_test.loadVar("deploy-role", "assume-role/assume-role.json")
+          scaleStubs("down", "deploy-role")
+        }
+      }
+      for (service in servicesExceptWebhooks) {
+        scaleService(service, "down")
+      }
+      new DoStep {
+        do {
+          scaleService("webhooks", "down")
+          (scaleService("webhooks-egress", "down")) {
+            params {
+              ["TARGET_GROUP_NAME_SUFFIX"] = "tg"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+local function scaleStubs(direction: scaleDirection, roleName: String): TaskStep = new {
+  task = "scale-\(direction)-stubs"
+  file = "pay-ci/ci/tasks/scale-fargate-service.yml"
+  params {
+    ["SERVICE_NAME"] = "stubs"
+    ["ECS_CLUSTER"] = "deploy-tooling-fargate"
+    ["SCALE_DIRECTION"] = if (direction == "up") "out" else "in"
+    ["DESIRED_HEALTHY_INSTANCES"] = "((.:service-volumes.scale_\(direction)_to.stubs))"
+    ["AWS_ACCESS_KEY_ID"] = "((.:\(roleName).AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:\(roleName).AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:\(roleName).AWS_SESSION_TOKEN))"
+  }
+}
+
+local typealias scaleDirection = "up" | "down"
+local function scaleService(serviceName: String, direction: scaleDirection): TaskStep = new {
+  task = "scale-\(direction)-\(serviceName)"
+  file = "pay-ci/ci/tasks/scale-fargate-service.yml"
+  params {
+    ["SERVICE_NAME"] = serviceName
+    ["SCALE_DIRECTION"] = if (direction == "up") "out" else "in"
+    ["DESIRED_HEALTHY_INSTANCES"] = "((.:service-volumes.scale_\(direction)_to.\(serviceName)))"
+    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+  }
+}
+
+local function assumeRoleTask(accountName: String, roleName: String, sessionName: String): TaskStep = new {
+  task = "assume-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_\(accountName)_account_id)):role/\(roleName)"
+    ["AWS_ROLE_SESSION_NAME"] = sessionName
+  }
+}
+
+local function perfTestFailedNotification(perfTestName: String): PutStep = new {
+  put = "slack-notification"
+  attempts = 10
+  params {
+      ["channel"] = "#govuk-pay-announce"
+      ["silent"] = true
+      ["text"] = ":red-circle: Performance test \(perfTestName) failed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+      ["icon_emoji"] = ":concourse:"
+      ["username"] = "pay-concourse"
+  }
+}
+
+local function perfTestPassedNotification(perfTestName: String): PutStep = new {
+  put = "slack-notification"
+  attempts = 10
+  params {
+    ["channel"] = "#govuk-pay-activity"
+    ["silent"] = true
+    ["text"] = ":green-circle: Individual performance test execution of \(perfTestName) completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    ["icon_emoji"] = ":concourse:"
+    ["username"] = "pay-concourse"
+  }
+}
+
+local function perfTestExecitionErrorNotification(): PutStep = new {
+  put = "slack-notification"
+  attempts = 10
+  params {
+    // This one failure goes to starling since it's the daily performance test run and this is a notification that the actual execution of
+    // those tests is failing (as opposed to bad results from the performance test itself)
+    ["channel"] = "#govuk-pay-starling"
+    ["silent"] = true
+    ["text"] = ":red-circle: Failed to execute performance test - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    ["icon_emoji"] = ":concourse:"
+    ["username"] = "pay-concourse"
+  }
+}
+
+local function perfTestIndividualExecitionErrorNotification(perfTestName: String): PutStep = new {
+  put = "slack-notification"
+  attempts = 10
+  params {
+    ["channel"] = "#govuk-pay-announce"
+    ["silent"] = true
+    ["text"] = ":red-circle: Failed to execute individual performance test \(perfTestName) - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    ["icon_emoji"] = ":concourse:"
+    ["username"] = "pay-concourse"
+  }
+}
+
+local function perfTestExecitionSuccessNotification(): PutStep = new {
+  put = "slack-notification"
+  attempts = 10
+  params {
+    // This one failure goes to starling since it's the daily performance test run and this is a notification that the actual execution of
+    // those tests is failing (as opposed to bad results from the performance test itself)
+    ["channel"] = "#govuk-pay-activity"
+    ["silent"] = true
+    ["text"] = ":green-circle: Performance test execution completed - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+    ["icon_emoji"] = ":concourse:"
+    ["username"] = "pay-concourse"
+  }
+}
+
+local function parseReleaseTag(gitRelease: String): TaskStep = new {
+  task = "parse-release-tag"
+  file = "pay-ci/ci/tasks/parse-release-tag.yml"
+  input_mapping {
+    ["git-release"] = gitRelease
+  }
+}
+
+local function withTagRegex(tag: String) = new Mixin {
+  source { ["tag_regex"] = tag }
+}
+
+local function withTag(tag: String) = new Mixin {
+  source { ["tag"] = tag }
+}
