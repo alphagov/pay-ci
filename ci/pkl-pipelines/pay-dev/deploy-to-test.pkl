@@ -275,7 +275,7 @@ local function getBuildAndPushCandidateJob(app): Job = new {
     }
     getTaskToRunCodeBuild(app, "manifest")
 
-    when (getTestEnvConfig(app.name).run_e2e_tests == false || app.name == "adot") {
+    when (getTestEnvConfig(app.name).run_e2e_tests == false && app.name != "adot") {
       new InParallelStep {
         in_parallel = new InParallelConfig {
           steps = new Listing<Step> {
@@ -486,6 +486,7 @@ local function getAdotIntegrationTest(app): Job = new {
             }
           }
           loadVar("candidate-image-tag", "adot-candidate/tag")
+          assumeRetagRole()
         }
       }
     }
@@ -522,39 +523,44 @@ local function getAdotIntegrationTest(app): Job = new {
         }
       }
     }
+
     new InParallelStep {
       in_parallel = new InParallelConfig {
-        steps {
-          new DoStep {
-            do = new Listing {
-              new PutStep {
-                put = "adot-ecr-registry-test"
-                params {
-                  ["image"] = "adot-candidate/image.tar"
-                  ["additional_tags"] = "parse-candidate-tag/release-tag"
-                }
-                get_params {
-                  ["skip_download"] = true
-                }
-              }
-              new PutStep {
-                put = "adot-latest"
-                params {
-                  ["image"] = "adot-candidate/image.tar"
-                }
-                get_params {
-                  ["skip_download"] = true
-                }
-              }
+        steps = new Listing<Step> {
+          new TaskStep {
+            task = "retag-candidate-as-release-in-ecr"
+            file = "pay-ci/ci/tasks/manifest-retag.yml"
+            params {
+              ["DOCKER_LOGIN_ECR"] = "1"
+              ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
+              ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
+              ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:release_image_tag))"
+              ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+              ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+              ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
             }
           }
-          new PutStep {
-            put = "adot-dockerhub"
+          new TaskStep {
+            task = "retag-candidate-as-latest-in-ecr"
+            file = "pay-ci/ci/tasks/manifest-retag.yml"
             params {
-              ["image"] = "adot-candidate/image.tar"
+              ["DOCKER_LOGIN_ECR"] = "1"
+              ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
+              ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
+              ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):latest"
+              ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+              ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+              ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
             }
-            get_params {
-              ["skip_download"] = true
+          }
+          when (app.is_a_java_or_node_app == true || app.name == "adot" || app.name == "nginx-proxy") {
+            new TaskStep {
+              task = "retag-candidate-as-release-in-dockerhub"
+              file = "pay-ci/ci/tasks/manifest-retag.yml"
+              params {
+                ["SOURCE_MANIFEST"] = "\(app.getDockerRepo()):((.:candidate-image-tag))"
+                ["NEW_MANIFEST"] = "\(app.getDockerRepo()):latest-master"
+              }
             }
           }
         }
