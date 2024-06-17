@@ -93,10 +93,6 @@ resources = new {
     }
   }
 
-  shared_resources.payDockerHubResource("adot-dockerhub", "governmentdigitalservice/pay-adot", "latest-master")
-  (shared_resources.payECRResource("adot-latest", "govukpay/adot",
-    "pay_aws_test_account_id")) { source { ["tag"] = "latest" } }
-
   shared_resources_for_slack_notifications.slackNotificationResource
   (shared_resources_for_annotations.grafanaAnnotationResource) {
     source { ["tags"] = new Listing<String> { "release" "test-12" } }
@@ -706,9 +702,6 @@ local function getJobToPushImageToStaging(app): Job = new {
             }
             trigger = true
             passed {
-              when (app.name == "adot") {
-                "run-adot-integration-test"
-              }
               when (app.name == "nginx-forward-proxy") {
                 "smoke-test-frontend"
               }
