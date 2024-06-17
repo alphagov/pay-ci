@@ -486,6 +486,12 @@ local function getAdotIntegrationTest(app): Job = new {
         }
       }
     }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        loadVarWithJsonFormat("retag-role", "assume-retag-role/assume-role.json")
+        loadVar("release_image_tag", "parse-candidate-tag/release-tag")
+      }
+    }
     new TaskStep {
       task = "run-toolbox-metric-tests"
       config {
