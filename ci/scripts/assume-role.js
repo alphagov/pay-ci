@@ -1,33 +1,38 @@
 #!/usr/bin/env node
 
 const fs = require('fs')
-const AWS = require('aws-sdk')
 
-const sts = new AWS.STS()
+const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts')
 
-const run = async function run () {
-  const roleParams = {
-    RoleArn: process.env.AWS_ROLE_ARN,
-    RoleSessionName: process.env.AWS_ROLE_SESSION_NAME,
-  }
+const stsClient = new STSClient({ region: 'eu-west-1' });
 
-  if (process.env.AWS_ROLE_DURATION) {
-    roleParams['DurationSeconds'] = process.env.AWS_ROLE_DURATION
-  }
+const run = async function run() {
+    const roleParams = {
+        RoleArn: process.env.AWS_ROLE_ARN,
+        RoleSessionName: process.env.AWS_ROLE_SESSION_NAME,
+    }
 
-  const assumeRoleResponse = await sts.assumeRole(roleParams).promise()
-  const tempCreds = assumeRoleResponse.Credentials
+    if (process.env.AWS_ROLE_DURATION) {
+        roleParams['DurationSeconds'] = process.env.AWS_ROLE_DURATION
+    }
 
-  fs.writeFileSync('assume-role/assume-role.json', JSON.stringify({
-    AWS_ACCESS_KEY_ID: tempCreds.AccessKeyId,
-    AWS_SECRET_ACCESS_KEY: tempCreds.SecretAccessKey,
-    AWS_SESSION_TOKEN: tempCreds.SessionToken
-  }))
+    try {
+        const command = new AssumeRoleCommand(roleParams)
+        const assumeRoleResponse = await stsClient.send(command);
+
+        const tempCreds = assumeRoleResponse.Credentials
+
+        fs.writeFileSync('assume-role/assume-role.json', JSON.stringify({
+            AWS_ACCESS_KEY_ID: tempCreds.AccessKeyId,
+            AWS_SECRET_ACCESS_KEY: tempCreds.SecretAccessKey,
+            AWS_SESSION_TOKEN: tempCreds.SessionToken
+        }))
+
+    } catch (err) {
+        console.error('Failed to assume role: ', err.message)
+        process.exit(1)
+    }
+
 }
-
-process.on('unhandledRejection', error => {
-  console.log('unhandledRejection, assume role failed: ', error.message)
-  process.exit(1)
-})
 
 run()
