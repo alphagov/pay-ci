@@ -8,5 +8,6 @@ RUN npm install -g aws4@^1.x.x
 RUN npm install -g @octokit/rest@^18.x.x
 RUN npm install -g @aws-sdk/client-sts@^3.x.x
 RUN npm install -g @aws-sdk/client-ecs@^3.x.x
+RUN npm install -g @aws-sdk/client-synthetics@^3.x.x
 
 ENV NODE_PATH=/usr/local/lib/node_modules

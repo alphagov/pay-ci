@@ -1,23 +1,31 @@
 #!/usr/bin/env node
 
-const AWS = require('aws-sdk')
-const synthetics = new AWS.Synthetics()
+const {
+  DescribeCanariesLastRunCommand,
+  GetCanaryCommand,
+  SyntheticsClient,
+  StartCanaryCommand
+} = require('@aws-sdk/client-synthetics')
+const syntheticsClient = new SyntheticsClient({ region: 'eu-west-1' })
 const CHECK_INTERVAL = 5000
 const CANARY_TIMEOUT = 60000
 const { SMOKE_TEST_NAME } = process.env
 
 async function describeCanariesLastRun () {
-  return synthetics.describeCanariesLastRun({}).promise()
+  const command = new DescribeCanariesLastRunCommand({})
+  return await syntheticsClient.send(command)
 }
 
 async function getCanary () {
-  return synthetics.getCanary({ Name: SMOKE_TEST_NAME }).promise()
+  const command = new GetCanaryCommand({ Name: SMOKE_TEST_NAME })
+  return await syntheticsClient.send(command)
 }
 
-function startCanary () {
+async function startCanary () {
   console.log(`Starting canary: ${SMOKE_TEST_NAME}`)
   // 'startCanary' should run it once then stop, according to its schedule config in terraform
-  return synthetics.startCanary({ Name: SMOKE_TEST_NAME }).promise()
+  const command = new StartCanaryCommand({ Name: SMOKE_TEST_NAME })
+  return await syntheticsClient.send(command)
 }
 
 function prettyPrintRunReport (runReport) {
