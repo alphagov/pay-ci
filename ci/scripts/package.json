@@ -9,6 +9,8 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-ecs": "^3.600.0",
+    "@aws-sdk/client-sns": "^3.600.0",
+    "@aws-sdk/client-ssm": "^3.600.0",
     "@aws-sdk/client-sts": "^3.600.0",
     "@aws-sdk/client-synthetics": "^3.600.0",
     "aws-sdk": "^2.1354.0"
