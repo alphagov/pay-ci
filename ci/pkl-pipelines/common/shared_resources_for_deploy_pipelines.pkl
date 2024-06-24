@@ -70,7 +70,7 @@ function runDBMigrationsTask(app: PayApplication, cluster: String) = new Pipelin
       type = "registry-image"
       source {
         ["repository"] = "governmentdigitalservice/pay-node-runner"
-        ["tag"] = "node16"
+        ["tag"] = "node18"
       }
     }
     inputs = new Listing<TaskConfig.Input> {
