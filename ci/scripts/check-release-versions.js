@@ -1,5 +1,5 @@
-const AWS = require('aws-sdk')
-const ecs = new AWS.ECS()
+const { ECSClient, DescribeServicesCommand, DescribeTaskDefinitionCommand } = require('@aws-sdk/client-ecs')
+const ecsClient = new ECSClient({ region: 'eu-west-1' })
 
 async function getService (appName, clusterName) {
   try {
@@ -7,7 +7,8 @@ async function getService (appName, clusterName) {
       services: [appName],
       cluster: clusterName
     }
-    const describeServices = await ecs.describeServices(params).promise()
+    const command = new DescribeServicesCommand(params)
+    const describeServices = await ecsClient.send(command)
     return describeServices.services.find(service => service.status === 'ACTIVE')
   } catch (err) {
     throw new Error(`Error fetching service: ${err.message}`)
@@ -16,7 +17,8 @@ async function getService (appName, clusterName) {
 
 async function getTaskDefinitionDetails (taskDefinitionName) {
   try {
-    const { taskDefinition } = await ecs.describeTaskDefinition({ taskDefinition: taskDefinitionName }).promise()
+    const command = new DescribeTaskDefinitionCommand({ taskDefinition: taskDefinitionName })
+    const { taskDefinition } = await ecsClient.send(command)
     return taskDefinition
   } catch (err) {
     throw new Error(`Error fetching task definition details: ${err.message}`)
@@ -35,7 +37,7 @@ function checkReleaseVersion (containerName, tagToBeDeployed, currentContainerDe
   const releaseToBeDeployed = Number(tagToBeDeployed.split('-')[0])
   if (releaseToBeDeployed < currentRelease) {
     throw new Error(`
-        You are trying to deploy release  ${releaseToBeDeployed} of ${containerName} 
+        You are trying to deploy release  ${releaseToBeDeployed} of ${containerName}
         which is older than the current release ${currentRelease}. Bailing out.
         If you need to deploy this version please deploy manually using terraform.`)
   }

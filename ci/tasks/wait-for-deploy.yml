@@ -6,7 +6,7 @@ image_resource:
   type: registry-image
   source:
     repository: governmentdigitalservice/pay-node-runner
-    tag: node16
+    tag: node18
 params:
   AWS_ACCESS_KEY_ID:
   AWS_SECRET_ACCESS_KEY:

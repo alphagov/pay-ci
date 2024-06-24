@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-const AWS = require('aws-sdk')
-const ecs = new AWS.ECS()
+const { ECSClient, DescribeServicesCommand } = require('@aws-sdk/client-ecs')
+const ecsClient = new ECSClient({ region: 'eu-west-1' })
+
 const MAX_RETRIES = 180
 const EGRESS_MAX_RETRIES = 180
 const CHECK_INTERVAL = 5000
@@ -14,12 +15,14 @@ const {
   ENVIRONMENT: env
 } = process.env
 
-function describeServices () {
+async function describeServices () {
   const params = {
     services: [appName],
     cluster: `${env}-fargate`
   }
-  return ecs.describeServices(params).promise()
+
+  const command = new DescribeServicesCommand(params)
+  return await ecsClient.send(command)
 }
 
 async function run () {

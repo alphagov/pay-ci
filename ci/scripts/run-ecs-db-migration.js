@@ -1,5 +1,8 @@
-const AWS = require('aws-sdk')
-const ecs = new AWS.ECS()
+const {
+  DescribeServicesCommand, DescribeTaskDefinitionCommand,
+  DescribeTasksCommand, ECSClient, RunTaskCommand, waitUntilTasksStopped
+} = require('@aws-sdk/client-ecs')
+const ecsClient = new ECSClient({ region: 'eu-west-1' })
 
 const { CLUSTER_NAME, APP_NAME, APPLICATION_IMAGE_TAG } = process.env
 
@@ -27,7 +30,9 @@ async function getService () {
       services: [APP_NAME],
       cluster: CLUSTER_NAME
     }
-    const describeServices = await ecs.describeServices(params).promise()
+    const command = new DescribeServicesCommand(params)
+    const describeServices = await ecsClient.send(command)
+
     return describeServices.services.find(service => service.status === 'ACTIVE')
   } catch (err) {
     throw new Error(`Error fetching service: ${err.message}`)
@@ -36,7 +41,8 @@ async function getService () {
 
 async function getTaskDefinitionDetails (taskDefinition) {
   try {
-    const taskDefinitionDetails = await ecs.describeTaskDefinition({ taskDefinition }).promise()
+    const command = new DescribeTaskDefinitionCommand({ taskDefinition })
+    const taskDefinitionDetails = await ecsClient.send(command)
     return taskDefinitionDetails.taskDefinition
   } catch (err) {
     throw new Error(`Error fetching task definition details: ${err.message}`)
@@ -45,7 +51,8 @@ async function getTaskDefinitionDetails (taskDefinition) {
 
 async function runTask (params) {
   try {
-    return await ecs.runTask(params).promise()
+    let command = new RunTaskCommand(params)
+    return await ecsClient.send(command)
   } catch (err) {
     throw new Error(`Error attempting to run ecs task: ${err.message}`)
   }
@@ -54,21 +61,25 @@ async function runTask (params) {
 async function waitFor (taskArn) {
   console.log(`Waiting for database migration to complete...`)
   try {
-    return await ecs.waitFor('tasksStopped', {
+    return await waitUntilTasksStopped({
+      client: ecsClient,
+      maxWaitTime: 200
+    }, {
       cluster: CLUSTER_NAME,
       tasks: [taskArn]
-    }).promise()
+    })
   } catch (err) {
     throw new Error(`Error attempting to wait for ecs task: ${err.message}`)
   }
 }
 
-async function describeTasks(taskArn) {
+async function describeTasks (taskArn) {
   try {
-    return await ecs.describeTasks({
+    const command = new DescribeTasksCommand({
       cluster: CLUSTER_NAME,
       tasks: [taskArn]
-    }).promise()
+    })
+    return await ecsClient.send(command)
   } catch (err) {
     throw new Error(`Error attempting to describe ecs task: ${err.message}`)
   }
@@ -121,7 +132,7 @@ const run = async function run () {
     const containers = describeTasksResult.tasks[0].containers
     if (containers.some(container => container.exitCode !== 0)) {
       console.log(`One or more containers in the task ${runResult.tasks[0].taskArn} did not exit with 0`)
-      containers.forEach(container => { 
+      containers.forEach(container => {
         if (container.exitCode !== 0) {
           console.log(`${container.taskArn} exited with ${container.reason}`)
         }
