@@ -1,4 +1,4 @@
-FROM node:18.20.3-alpine3.19@sha256:eb460581aaed291f4ce5a32498509269e3bb1da2a482601a728c2ea2c14bd01f
+FROM node:18.20.3-alpine3.19@sha256:acb08e6aa07aa2c24bd4b8bb8031b9032dfa7b4aefadf111b634d3e0b7b18f39
 
 # As of node 15 the docker container fails to npm install without either a WORKDIR or -g
 WORKDIR /node-runner
