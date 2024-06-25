@@ -1,0 +1,29 @@
+---
+resources:
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/kbottla/pay-ci-kb
+      branch: support_rota
+      paths:
+        - ci/pipelines/support-rota.yml
+#  - name: pay-access-control
+#    type: git
+#    icon: github
+#    source:
+#      uri: https://github.com/alphagov/pay-access-control
+#      branch: master
+#      private_key: ((github-access-token))
+
+jobs:
+  - name: run-script-job
+    public: true
+    plan:
+      - get: pay-ci
+        trigger: true
+      - task: run-script-task
+        file: pay-ci/ci/tasks/support-rota-notifications.yml
+#        params:
+#          SLACK_SECRET: ((slack-secret))
+#          PAGER_DUTY_API_KEY: ((pagerduty-api-key))
