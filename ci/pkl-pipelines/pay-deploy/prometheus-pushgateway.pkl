@@ -15,7 +15,6 @@ resources = new {
     source { ["tag"] = pushGatewayVersion }
   }
   shared_resources.payECRResourceWithVariant("adot-ecr-registry-staging", "govukpay/adot", "pay_aws_staging_account_id", "release")
-  shared_resources.payECRResourceWithVariant("adot-ecr-registry-deploy", "govukpay/adot", "pay_aws_deploy_account_id", "release")
   shared_resources.payDockerHubResource("prometheus-pushgateway-resource-dockerhub", "governmentdigitalservice/pay-prometheus-pushgateway-resource", "latest-master")
   (shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", pushGatewayVersion)) {
     check_every = "1h"
@@ -34,7 +33,7 @@ resource_types = new {
 jobs = new {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/prometheus-pushgateway.pkl")
   new {
-    name = "copy-adot-to-deploy"
+    name = "push-adot-to-deploy-ecr"
     plan = new {
       new InParallelStep {
         in_parallel = new Listing<Step> {
@@ -49,14 +48,6 @@ jobs = new {
       loadVarWithJsonFormat("copy-from-staging-ecr-role", "assume-copy-from-ecr-staging-role/assume-role.json")
       loadVarWithJsonFormat("write-to-deploy-ecr-role", "assume-write-to-ecr-deploy-role/assume-role.json")
       copyAdotToDeploy()
-    }
-  }
-  new {
-    name = "push-adot-to-deploy-ecr"
-    plan = new {
-      getStep("adot-ecr-registry-staging", true, true)
-      loadVar("application_image_tag", "adot-ecr-registry-staging/tag")
-      putStep("adot-ecr-registry-deploy", "adot-ecr-registry-staging/image.tar", "adot-ecr-registry-staging/tag", true)
     }
   }
   new {
@@ -199,6 +190,7 @@ local function copyAdotToDeploy(): TaskStep = new TaskStep {
     ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-deploy-ecr-role.AWS_SESSION_TOKEN))"
   }
 }
+
 local function loadVarWithJsonFormat(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
   load_var = variable
   file = fileName
