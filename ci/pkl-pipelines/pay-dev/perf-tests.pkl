@@ -147,6 +147,7 @@ groups = new {
       "scale-down-all"
       "build-and-push-perf-tests"
       "build-and-run-perftests-from-pr"
+      "cleanup-test-perf-1"
       "update-pipeline"
     }
   }
@@ -159,44 +160,7 @@ jobs = new {
     serial_groups { "perf-tests" }
     plan {
       new GetStep { get = "pay-ci" }
-      assumeRoleTask("test", "test-perf-1-perf-test-cleanup-runner", "perf-test-cleanup-runner")
-      shared_test.loadAssumeRoleVar
-      new TaskStep {
-        task = "check-if-db-is-available"
-        file = "pay-ci/ci/tasks/perf-test-cleanup/check-for-running-db.yml"
-        params {
-          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-        }
-      }
-      new TaskStep {
-        task = "run-cleanup-task"
-        file = "pay-ci/ci/tasks/perf-test-cleanup/run-task.yml"
-        params {
-          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-        }
-      }
-      new TaskStep {
-        task = "wait-for-cleanup-task"
-        file = "pay-ci/ci/tasks/perf-test-cleanup/wait-for-task.yml"
-        params {
-          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-        }
-      }
-      new TaskStep {
-        task = "print-task-logs"
-        file = "pay-ci/ci/tasks/perf-test-cleanup/get-logs.yml"
-        params {
-          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-        }
-      }
+      ...cleanup_perf_test_1_plan
     }
   }
   new {
@@ -947,4 +911,49 @@ local function runSelfServiceSimulationPerfTest(extended: Boolean): Job = new {
   }
   on_failure = perfTestIndividualExecitionErrorNotification("SelfServiceSimulation")
   on_success = perfTestPassedNotification("SelfServiceSimulation")
+}
+
+local cleanup_perf_test_1_plan: Listing<Step> = new {
+  (assumeRoleTask("test", "test-perf-1-perf-test-cleanup-runner", "perf-test-cleanup-runner")) {
+    output_mapping {
+      ["assume-role"] = "assume-cleanup-runner-role"
+    }
+  }
+  shared_test.loadVarJson("cleanup-runner-role", "assume-cleanup-runner-role/assume-role.json")
+  new TaskStep {
+    task = "check-if-db-is-available"
+    file = "pay-ci/ci/tasks/perf-test-cleanup/check-for-running-db.yml"
+    params {
+      ["AWS_ACCESS_KEY_ID"] = "((.:cleanup-runner-role.AWS_ACCESS_KEY_ID))"
+      ["AWS_SECRET_ACCESS_KEY"] = "((.:cleanup-runner-role.AWS_SECRET_ACCESS_KEY))"
+      ["AWS_SESSION_TOKEN"] = "((.:cleanup-runner-role.AWS_SESSION_TOKEN))"
+    }
+  }
+  new TaskStep {
+    task = "run-cleanup-task"
+    file = "pay-ci/ci/tasks/perf-test-cleanup/run-task.yml"
+    params {
+      ["AWS_ACCESS_KEY_ID"] = "((.:cleanup-runner-role.AWS_ACCESS_KEY_ID))"
+      ["AWS_SECRET_ACCESS_KEY"] = "((.:cleanup-runner-role.AWS_SECRET_ACCESS_KEY))"
+      ["AWS_SESSION_TOKEN"] = "((.:cleanup-runner-role.AWS_SESSION_TOKEN))"
+    }
+  }
+  new TaskStep {
+    task = "wait-for-cleanup-task"
+    file = "pay-ci/ci/tasks/perf-test-cleanup/wait-for-task.yml"
+    params {
+      ["AWS_ACCESS_KEY_ID"] = "((.:cleanup-runner-role.AWS_ACCESS_KEY_ID))"
+      ["AWS_SECRET_ACCESS_KEY"] = "((.:cleanup-runner-role.AWS_SECRET_ACCESS_KEY))"
+      ["AWS_SESSION_TOKEN"] = "((.:cleanup-runner-role.AWS_SESSION_TOKEN))"
+    }
+  }
+  new TaskStep {
+    task = "print-task-logs"
+    file = "pay-ci/ci/tasks/perf-test-cleanup/get-logs.yml"
+    params {
+      ["AWS_ACCESS_KEY_ID"] = "((.:cleanup-runner-role.AWS_ACCESS_KEY_ID))"
+      ["AWS_SECRET_ACCESS_KEY"] = "((.:cleanup-runner-role.AWS_SECRET_ACCESS_KEY))"
+      ["AWS_SESSION_TOKEN"] = "((.:cleanup-runner-role.AWS_SESSION_TOKEN))"
+    }
+  }
 }
