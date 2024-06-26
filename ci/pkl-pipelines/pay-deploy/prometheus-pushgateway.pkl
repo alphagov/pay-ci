@@ -5,24 +5,27 @@ import "../common/shared_resources.pkl"
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
 
+local pushGatewayVersion = "v1.9.0"
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/prometheus-pushgateway.pkl", "master")
   (shared_resources.payECRResource("ecr-prometheus-pushgateway", "pushgateway", "pay_aws_deploy_account_id")) {
     check_every = "never"
-    source { ["tag"] = "v1.7.0" }
+    source { ["tag"] = pushGatewayVersion }
   }
-  shared_resources.payECRResourceWithVariant("adot-ecr-registry-staging", "govukpay/adot", "pay_aws_staging_account_id", "release")
+  shared_resources.payECRResourceWithVariant("adot-ecr-registry-staging", "govukpay/adot", "pay_aws_staging_account_id", "release") |> asArm()
   shared_resources.payECRResourceWithVariant("adot-ecr-registry-deploy", "govukpay/adot", "pay_aws_deploy_account_id", "release")
   shared_resources.payDockerHubResource("prometheus-pushgateway-resource-dockerhub", "governmentdigitalservice/pay-prometheus-pushgateway-resource", "latest-master")
-  (shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", "v1.7.0")) {
+  (shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", pushGatewayVersion)) {
     check_every = "1h"
-  }
+  } |> asArm()
   shared_resources.payCiGitHubResource
   (shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource")) {
     source { ["tag_regex"] = "alpha_release-(.*)" }
   }
+  shared_resources.payECRResourceWithVariant("adot-ecr-registry-test",
+    "govukpay/adot", "pay_aws_test_account_id", "release")
   shared_resources.slackNotificationResource
 }
 
@@ -32,6 +35,20 @@ resource_types = new {
 
 jobs = new {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/prometheus-pushgateway.pkl")
+  new {
+    name = "copy-adot-to-deploy"
+    plan = new {
+      getStep("pay-ci", false, false)
+      getStep("adot-ecr-registry-test", true, false)
+      parseReleaseTag("adot", false)
+      assumeCopyFromTestEcrRole()
+      loadVar("release_number", "ecr-release-info/release-number")
+      assumeWriteToDeployEcrRole()
+      loadVarWithJsonFormat("copy-from-test-ecr-role", "assume-copy-from-ecr-test-role/assume-role.json")
+      loadVarWithJsonFormat("write-to-deploy-ecr-role", "assume-write-to-ecr-deploy-role/assume-role.json")
+      copyAdotToDeploy()
+    }
+  }
   new {
     name = "push-adot-to-deploy-ecr"
     plan = new {
@@ -150,6 +167,76 @@ local function putStep(resourceName: String, imageName: String, additionalTags: 
   get_params {
     when (skipDownload) {
       ["skip_download"] = true
+    }
+  }
+}
+
+local function asArm() = new Mixin {
+  source { 
+    ["platform"] = new Config { 
+      ["architecture"] = "arm64" 
+      ["os"] = "linux"
+    } 
+  }
+}
+
+local function copyAdotToDeploy(): TaskStep = new TaskStep {
+  task = "copy-adot-to-deploy"
+  file = "pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml"
+  privileged = true
+  params {
+    ["ECR_REPO_NAME"] = "govukpay/adot"
+    ["RELEASE_NUMBER"] = "((.:release_number))"
+    ["SOURCE_ECR_REGISTRY"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_deploy_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:copy-from-test-ecr-role.AWS_ACCESS_KEY_ID))"
+    ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:copy-from-test-ecr-role.AWS_SECRET_ACCESS_KEY))"
+    ["SOURCE_AWS_SESSION_TOKEN"] = "((.:copy-from-test-ecr-role.AWS_SESSION_TOKEN))"
+    ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:write-to-deploy-ecr-role.AWS_ACCESS_KEY_ID))"
+    ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:write-to-deploy-ecr-role.AWS_SECRET_ACCESS_KEY))"
+    ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-deploy-ecr-role.AWS_SESSION_TOKEN))"
+  }
+}
+local function loadVarWithJsonFormat(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+  format = "json"
+}
+
+local function assumeCopyFromTestEcrRole(): TaskStep = new TaskStep {
+  task = "assume-copy-from-ecr-test-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping {
+    ["assume-role"] = "assume-copy-from-ecr-test-role"
+  }
+  params {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "copy-from-ecr-in-test"
+  }
+}
+
+local function assumeWriteToDeployEcrRole(): TaskStep = new TaskStep {
+  task = "assume-write-to-ecr-deploy-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping {
+    ["assume-role"] = "assume-write-to-ecr-deploy-role"
+  }
+  params {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "copy-to-ecr-in-deploy"
+  }
+}
+
+local function parseReleaseTag(appName: String, includeOutputMapping: Boolean) = new TaskStep {
+  task = "parse-ecr-release-tag"
+  file = "pay-ci/ci/tasks/parse-ecr-release-tag.yml"
+  input_mapping = new {
+    ["ecr-image"] = "\(appName)-ecr-registry-test"
+  }
+  when (includeOutputMapping) {
+    local releaseInfoPrefix = if (appName == "nginx-proxy") "nginx" else appName
+    output_mapping = new {
+      ["ecr-release-info"] = "\(releaseInfoPrefix)-release-info"
     }
   }
 }
