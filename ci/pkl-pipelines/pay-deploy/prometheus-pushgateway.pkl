@@ -14,7 +14,7 @@ resources = new {
     check_every = "never"
     source { ["tag"] = pushGatewayVersion }
   }
-  shared_resources.payECRResourceWithVariant("adot-ecr-registry-staging", "govukpay/adot", "pay_aws_staging_account_id", "release") |> asArm()
+  shared_resources.payECRResourceWithVariant("adot-ecr-registry-staging", "govukpay/adot", "pay_aws_staging_account_id", "release")
   shared_resources.payECRResourceWithVariant("adot-ecr-registry-deploy", "govukpay/adot", "pay_aws_deploy_account_id", "release")
   shared_resources.payDockerHubResource("prometheus-pushgateway-resource-dockerhub", "governmentdigitalservice/pay-prometheus-pushgateway-resource", "latest-master")
   (shared_resources.payDockerHubResource("prometheus-pushgateway", "prom/pushgateway", pushGatewayVersion)) {
@@ -24,8 +24,6 @@ resources = new {
   (shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource")) {
     source { ["tag_regex"] = "alpha_release-(.*)" }
   }
-  shared_resources.payECRResourceWithVariant("adot-ecr-registry-test",
-    "govukpay/adot", "pay_aws_test_account_id", "release")
   shared_resources.slackNotificationResource
 }
 
@@ -38,13 +36,17 @@ jobs = new {
   new {
     name = "copy-adot-to-deploy"
     plan = new {
-      getStep("pay-ci", false, false)
-      getStep("adot-ecr-registry-test", true, false)
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          getStep("pay-ci", false, false)
+          getStep("adot-ecr-registry-staging", true, false)
+        }
+      }
       parseReleaseTag("adot", false)
-      assumeCopyFromTestEcrRole()
+      assumeCopyFromStagingEcrRole()
       loadVar("release_number", "ecr-release-info/release-number")
       assumeWriteToDeployEcrRole()
-      loadVarWithJsonFormat("copy-from-test-ecr-role", "assume-copy-from-ecr-test-role/assume-role.json")
+      loadVarWithJsonFormat("copy-from-staging-ecr-role", "assume-copy-from-ecr-staging-role/assume-role.json")
       loadVarWithJsonFormat("write-to-deploy-ecr-role", "assume-write-to-ecr-deploy-role/assume-role.json")
       copyAdotToDeploy()
     }
@@ -187,11 +189,11 @@ local function copyAdotToDeploy(): TaskStep = new TaskStep {
   params {
     ["ECR_REPO_NAME"] = "govukpay/adot"
     ["RELEASE_NUMBER"] = "((.:release_number))"
-    ["SOURCE_ECR_REGISTRY"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+    ["SOURCE_ECR_REGISTRY"] = "((pay_aws_staging_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
     ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_deploy_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
-    ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:copy-from-test-ecr-role.AWS_ACCESS_KEY_ID))"
-    ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:copy-from-test-ecr-role.AWS_SECRET_ACCESS_KEY))"
-    ["SOURCE_AWS_SESSION_TOKEN"] = "((.:copy-from-test-ecr-role.AWS_SESSION_TOKEN))"
+    ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:copy-from-staging-ecr-role.AWS_ACCESS_KEY_ID))"
+    ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:copy-from-staging-ecr-role.AWS_SECRET_ACCESS_KEY))"
+    ["SOURCE_AWS_SESSION_TOKEN"] = "((.:copy-from-staging-ecr-role.AWS_SESSION_TOKEN))"
     ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:write-to-deploy-ecr-role.AWS_ACCESS_KEY_ID))"
     ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:write-to-deploy-ecr-role.AWS_SECRET_ACCESS_KEY))"
     ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-deploy-ecr-role.AWS_SESSION_TOKEN))"
@@ -203,15 +205,15 @@ local function loadVarWithJsonFormat(variable: String, fileName: String): LoadVa
   format = "json"
 }
 
-local function assumeCopyFromTestEcrRole(): TaskStep = new TaskStep {
-  task = "assume-copy-from-ecr-test-role"
+local function assumeCopyFromStagingEcrRole(): TaskStep = new TaskStep {
+  task = "assume-copy-from-ecr-staging-role"
   file = "pay-ci/ci/tasks/assume-role.yml"
   output_mapping {
-    ["assume-role"] = "assume-copy-from-ecr-test-role"
+    ["assume-role"] = "assume-copy-from-ecr-staging-role"
   }
   params {
-    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
-    ["AWS_ROLE_SESSION_NAME"] = "copy-from-ecr-in-test"
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_staging_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "copy-from-ecr-in-staging"
   }
 }
 
@@ -231,7 +233,7 @@ local function parseReleaseTag(appName: String, includeOutputMapping: Boolean) =
   task = "parse-ecr-release-tag"
   file = "pay-ci/ci/tasks/parse-ecr-release-tag.yml"
   input_mapping = new {
-    ["ecr-image"] = "\(appName)-ecr-registry-test"
+    ["ecr-image"] = "\(appName)-ecr-registry-staging"
   }
   when (includeOutputMapping) {
     local releaseInfoPrefix = if (appName == "nginx-proxy") "nginx" else appName
