@@ -162,6 +162,15 @@ jobs = new {
       assumeRoleTask("test", "test-perf-1-perf-test-cleanup-runner", "perf-test-cleanup-runner")
       shared_test.loadAssumeRoleVar
       new TaskStep {
+        task = "check-if-db-is-available"
+        file = "pay-ci/ci/tasks/perf-test-cleanup/check-for-running-db.yml"
+        params {
+          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+        }
+      }
+      new TaskStep {
         task = "run-cleanup-task"
         file = "pay-ci/ci/tasks/perf-test-cleanup/run-task.yml"
         params {
