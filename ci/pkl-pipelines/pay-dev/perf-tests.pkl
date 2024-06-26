@@ -164,14 +164,29 @@ jobs = new {
       new TaskStep {
         task = "run-cleanup-task"
         file = "pay-ci/ci/tasks/perf-test-cleanup/run-task.yml"
+        params {
+          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+        }
       }
       new TaskStep {
         task = "wait-for-cleanup-task"
         file = "pay-ci/ci/tasks/perf-test-cleanup/wait-for-task.yml"
+        params {
+          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+        }
       }
       new TaskStep {
         task = "print-task-logs"
         file = "pay-ci/ci/tasks/perf-test-cleanup/get-logs.yml"
+        params {
+          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
+        }
       }
     }
   }
