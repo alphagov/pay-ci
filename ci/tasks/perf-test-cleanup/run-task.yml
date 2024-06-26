@@ -1,0 +1,16 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+inputs:
+  - name: pay-ci
+outputs:
+  - name: run-cleanup-task
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+run:
+  path: "/bin/ash"
+  args: ['pay-ci/ci/scripts/perf-test-cleanup/run-task.sh']
