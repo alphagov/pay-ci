@@ -122,6 +122,12 @@ groups = new {
       "build-and-run-perftests-from-pr"
     }
   }
+  new {
+    name = "cleanup"
+    jobs {
+      "cleanup-test-perf-1"
+    }
+  }
   pipeline_self_update.payPipelineSelfUpdateGroup
   new {
     name = "all-jobs"
@@ -147,6 +153,28 @@ groups = new {
 }
 
 jobs = new {
+  new {
+    name = "cleanup-test-perf-1"
+    serial = true
+    serial_groups { "perf-tests" }
+    plan {
+      new GetStep { get = "pay-ci" }
+      assumeRoleTask("test", "test-perf-1-perf-test-cleanup-runner", "perf-test-cleanup-runner")
+      shared_test.loadAssumeRoleVar
+      new TaskStep {
+        task = "run-cleanup-task"
+        file = "pay-ci/ci/tasks/perf-test-cleanup/run-task.yml"
+      }
+      new TaskStep {
+        task = "wait-for-cleanup-task"
+        file = "pay-ci/ci/tasks/perf-test-cleanup/wait-for-task.yml"
+      }
+      new TaskStep {
+        task = "print-task-logs"
+        file = "pay-ci/ci/tasks/perf-test-cleanup/get-logs.yml"
+      }
+    }
+  }
   new {
     name = "scale-and-run-all-simulations"
     serial = true

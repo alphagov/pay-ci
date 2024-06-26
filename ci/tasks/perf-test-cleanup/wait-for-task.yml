@@ -1,0 +1,11 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+inputs:
+  - name: pay-ci
+  - name: run-cleanup-task
+run:
+  path: "/bin/ash"
+  args: ['pay-ci/ci/scripts/perf-test-cleanup/wait-for-task.sh']
