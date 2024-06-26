@@ -196,6 +196,11 @@ jobs = new {
       }
       pauseDeployToPerfPipeline
       scaleUpDatabases
+      new DoStep {
+        do {
+          ...cleanup_perf_test_1_plan
+        }
+      }
       scaleUpServices
       prepareCodeBuild
       paymentSimulationPerfTest
@@ -846,6 +851,11 @@ local function runPaymentSimulationPerfTest(extended: Boolean): Job = new {
           new GetStep { get = "perf-tests-git-release" }
           new GetStep { get = "pay-ci" }
         }
+      }
+    }
+    new DoStep {
+      do {
+        ...cleanup_perf_test_1_plan
       }
     }
     (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
