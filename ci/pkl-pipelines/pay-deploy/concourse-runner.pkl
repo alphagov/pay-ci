@@ -153,7 +153,7 @@ jobs = new {
       new InParallelStep {
         in_parallel = new Listing<Step> {
           new TestConcourseRunnerTask {
-            image = "concourse-runner-image"
+            image = "concourse-runner-image-with-java-21"
             task = "test-concourse-runner"
             repo = "adminusers-master"
           }
