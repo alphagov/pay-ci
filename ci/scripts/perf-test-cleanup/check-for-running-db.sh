@@ -5,10 +5,7 @@ set -euo pipefail
 
 DESCRIBE_DB_INSTANCE_OUTPUT=$(mktemp)
 
-aws-vault exec test -- \
-  aws rds describe-db-instances \
-  --db-instance-identifier test-perf-1-connector-rds-0 \
-  > "$DESCRIBE_DB_INSTANCE_OUTPUT"
+aws rds describe-db-instances --db-instance-identifier test-perf-1-connector-rds-0 > "$DESCRIBE_DB_INSTANCE_OUTPUT"
 
 DB_STATUS=$(jq -r '.DBInstances[0].DBInstanceStatus' < "$DESCRIBE_DB_INSTANCE_OUTPUT")
 
