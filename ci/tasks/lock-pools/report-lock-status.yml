@@ -1,16 +1,16 @@
----
 platform: linux
 image_resource:
   type: registry-image
   source:
     repository: governmentdigitalservice/pay-concourse-runner
 inputs:
+  - name: lock-pool-repo
   - name: pay-ci
 outputs:
-  - name: lock-pool-repo
+  - name: lock-status
 params:
-  POOLS_TO_INIT:
+  LOCK_NAME:
 run:
   path: "/bin/ash"
-  dir: "lock-pool-repo/"
-  args: ['../pay-ci/ci/scripts/init-lock-pools.sh']
+  dir: "lock-pool-repo"
+  args: ['../pay-ci/ci/scripts/lock-pools/report-lock-status.sh']

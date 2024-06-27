@@ -47,7 +47,7 @@ jobs {
       new GetStep { get = "pay-ci" }
       new TaskStep {
         task = "init-pools"
-        file = "pay-ci/ci/tasks/init-lock-pools.yml"
+        file = "pay-ci/ci/tasks/lock-pools/init-lock-pools.yml"
         params {
           ["POOLS_TO_INIT"] = pools_to_init.toList().join(",")
         }
@@ -86,6 +86,28 @@ jobs {
           pool = pool_name
           params {
             ["release"] = "get-already-claimed-\(pool_name)-lock"
+          }
+        }
+      }
+    }
+  }
+  for (pool_name in pools_to_init) {
+    new Job {
+      name = "report-status-of-\(pool_name)-lock"
+      plan {
+        new InParallelStep {
+          in_parallel = new InParallelConfig {
+            steps {
+              new GetStep { get = "lock-pool-repo" }
+              new GetStep { get = "pay-ci" }
+            }
+          }
+        }
+        new TaskStep {
+          task = "report-status-of-\(pool_name)-lock"
+          file = "pay-ci/ci/tasks/lock-pools/report-lock-status.yml"
+          params {
+            ["LOCK_NAME"] = pool_name
           }
         }
       }
