@@ -6,6 +6,8 @@ image_resource:
 inputs:
   - name: pay-ci
   - name: lock-status
+params:
+  POTENTIAL_DEADLOCK_TIMEOUT_IN_MINUTES: 15
 run:
   path: "/bin/ash"
   args: ['pay-ci/ci/scripts/lock-pools/detect-potential-deadlock.sh']
