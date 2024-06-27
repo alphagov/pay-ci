@@ -207,7 +207,7 @@ jobs {
                       In 15 minutes if the deadlock is still detected it will be force-unlocked.
                       In order to prevent this you should pause the <https://pay-cd.deploy.payments.service.gov.uk/teams/((.:concourse-team))/pipelines/init-lock-pools|((.:concourse-team)) init-lock-pools pipeline>
 
-                      <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+                      <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>
                       """
                   }
                 }
