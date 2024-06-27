@@ -174,28 +174,44 @@ jobs {
         }
         new TryStep {
           try = new TaskStep {
-            task = "get-status-of-\(pool_name)-lock"
+            task = "detect-potential-deadlock-of-\(pool_name)-lock"
             file = "pay-ci/ci/tasks/lock-pools/detect-potential-deadlock.yml"
             params {
               ["LOCK_NAME"] = pool_name
             }
-          }
-          on_failure = new DoStep {
-            do {
-              new InParallelStep {
-                in_parallel = new Listing<Step> {
-                  shared_resources.loadVar("concourse-team", "lock-status/team")
-                  shared_resources.loadVar("concourse-pipeline", "lock-status/pipeline")
-                  shared_resources.loadVar("concourse-job", "lock-status/job")
-                  shared_resources.loadVar("build-number", "lock-status/build-number")
-                  shared_resources.loadVar("date", "lock-status/date")
+            on_failure = new DoStep {
+              do {
+                new InParallelStep {
+                  in_parallel = new Listing<Step> {
+                    shared_resources.loadVar("concourse-team", "lock-status/team")
+                    shared_resources.loadVar("concourse-pipeline", "lock-status/pipeline")
+                    shared_resources.loadVar("concourse-job", "lock-status/job")
+                    shared_resources.loadVar("build-number", "lock-status/build-number")
+                    shared_resources.loadVar("date", "lock-status/date")
+                  }
+                }
+                new PutStep {
+                  put = "slack-notification"
+                  attempts = 10
+                  params = new Mapping {
+                    ["channel"] = "#jfharden-test-alerts"
+                    ["silent"] = true
+                    ["icon_emoji"] = ":concourse:"
+                    ["username"] = "pay-concourse"
+                    ["text"] = """
+                      :concourse-yellow: :lock: Potential deadlock detected in ((.:concourse-team)) for lock \(pool_name)-lock.
+
+                      Claimant ((.:concourse-team))/((.:concourse-pipeline))/((.:concourse-job)) build number ((.:build-number)).
+                      Lock was claimed at ((.:date)) UTC.
+
+                      In 15 minutes if the deadlock is still detected it will be force-unlocked.
+                      In order to prevent this you should pause the <https://pay-cd.deploy.payments.service.gov.uk/teams/((.:concourse-team))/pipelines/init-lock-pools|((.:concourse-team)) init-lock-pools pipeline>
+
+                      <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
+                      """
+                  }
                 }
               }
-              shared_resources_for_slack_notifications.paySlackNotification(new shared_resources_for_slack_notifications.SlackNotificationConfig {
-                is_a_success = false
-                slack_channel_for_failure = "#govuk-pay-starling"
-                message = ":concourse-yellow: :lock: Potential deadlock detected in ((.:concourse-team)) for lock \(pool_name)-lock. Claimant ((.:concourse-team))/((.:concourse-pipeline))/((.:concourse-job)) build number ((.:build-number)). Lock was claimed at ((.:date)) UTC"
-              })
             }
           }
         }
