@@ -172,3 +172,14 @@ function putPRTestFailedStatus(resourceName: String, test_name: String): Pipelin
     ["context"] = test_name
   }
 }
+
+function loadVar(variable: String, fileName: String): Pipeline.LoadVarStep = new Pipeline.LoadVarStep {
+  load_var = variable
+  file = fileName
+}
+
+function loadVarJson(variable: String, fileName: String): Pipeline.LoadVarStep = new Pipeline.LoadVarStep {
+  load_var = variable
+  file = fileName
+  format = "json"
+}

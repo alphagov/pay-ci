@@ -3,6 +3,8 @@ extends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/p
 import "../pipeline_self_update.pkl"
 import "../shared_resources.pkl"
 import "../shared_resources_for_lock_pools.pkl"
+import "../shared_resources_for_times.pkl"
+import "../shared_resources_for_slack_notifications.pkl"
 
 hidden pools_to_init = new Listing<String> {}
 
@@ -10,6 +12,7 @@ hidden concourseTeamName = "UPDATE_ME"
 
 resource_types {
   shared_resources_for_lock_pools.payPoolResourceType
+  shared_resources_for_slack_notifications.slackNotificationResourceType
 }
 
 resources {
@@ -37,7 +40,44 @@ resources {
     }
   }
   shared_resources.payCiGitHubResource
+  shared_resources_for_times.payIntervalResource("every-15-minutes", "15m")
+  shared_resources_for_slack_notifications.slackNotificationResource
   pipeline_self_update.PayPipelineSelfUpdateResource("\(concourseTeamName)/init-lock-pools.pkl", "master")
+}
+
+groups {
+  new {
+    name = "report-lock-status"
+    jobs {
+      for (pool_name in pools_to_init) {
+        "report-status-of-\(pool_name)-lock"
+      }
+    }
+  }
+  new {
+    name = "force-release-locks"
+    jobs {
+      for (pool_name in pools_to_init) {
+        "force-release-\(pool_name)-lock"
+      }
+    }
+  }
+  new {
+    name = "initialise-pools"
+    jobs {
+      "initialise-pools"
+    }
+  }
+  new {
+    name = "auto-deadlock-resolution"
+    jobs {
+      for (pool_name in pools_to_init) {
+        "report-potential-deadlock-of-\(pool_name)-lock"
+        // "break-deadlock-in-\(pool_name)"
+      }
+    }
+  }
+  pipeline_self_update.payPipelineSelfUpdateGroup
 }
 
 jobs {
@@ -90,8 +130,6 @@ jobs {
         }
       }
     }
-  }
-  for (pool_name in pools_to_init) {
     new Job {
       name = "report-status-of-\(pool_name)-lock"
       plan {
@@ -108,6 +146,57 @@ jobs {
           file = "pay-ci/ci/tasks/lock-pools/report-lock-status.yml"
           params {
             ["LOCK_NAME"] = pool_name
+          }
+        }
+      }
+    }
+    new Job {
+      name = "report-potential-deadlock-of-\(pool_name)-lock"
+      plan {
+        new InParallelStep {
+          in_parallel = new InParallelConfig {
+            steps {
+              new GetStep {
+                get = "every-15-minutes"
+                trigger = true
+              }
+              new GetStep { get = "pay-ci" }
+              new GetStep { get = "lock-pool-repo" }
+            }
+          }
+        }
+        new TaskStep {
+          task = "get-status-of-\(pool_name)-lock"
+          file = "pay-ci/ci/tasks/lock-pools/report-lock-status.yml"
+          params {
+            ["LOCK_NAME"] = pool_name
+          }
+        }
+        new TryStep {
+          try = new TaskStep {
+            task = "get-status-of-\(pool_name)-lock"
+            file = "pay-ci/ci/tasks/lock-pools/detect-potential-deadlock.yml"
+            params {
+              ["LOCK_NAME"] = pool_name
+            }
+          }
+          on_failure = new DoStep {
+            do {
+              new InParallelStep {
+                in_parallel = new Listing<Step> {
+                  shared_resources.loadVar("concourse-team", "lock-status/team")
+                  shared_resources.loadVar("concourse-pipeline", "lock-status/pipeline")
+                  shared_resources.loadVar("concourse-job", "lock-status/job")
+                  shared_resources.loadVar("build-number", "lock-status/build-number")
+                  shared_resources.loadVar("date", "lock-status/date")
+                }
+              }
+              shared_resources_for_slack_notifications.paySlackNotification(new shared_resources_for_slack_notifications.SlackNotificationConfig {
+                is_a_success = false
+                slack_channel_for_failure = "#govuk-pay-starling"
+                message = ":concourse-yellow: :lock: Potential deadlock detected in ((.:concourse-team)) for lock \(pool_name)-lock. Claimant ((.:concourse-team))/((.:concourse-pipeline))/((.:concourse-job)) build number ((.:build-number)). Lock was claimed at ((.:date)) UTC"
+              })
+            }
           }
         }
       }

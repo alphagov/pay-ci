@@ -1,0 +1,11 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+inputs:
+  - name: pay-ci
+  - name: lock-status
+run:
+  path: "/bin/ash"
+  args: ['pay-ci/ci/scripts/lock-pools/detect-potential-deadlock.sh']

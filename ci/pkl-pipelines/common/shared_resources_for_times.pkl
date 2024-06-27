@@ -17,6 +17,13 @@ function payWeeklyTimeResource(_name: String, _start: String, _stop: String, day
     }
 }
 
+function payIntervalResource(_name: String, interval: String): Pipeline.Resource = new PayResources.PayTimeResource {
+  name = _name
+    source {
+      ["interval"] = interval
+    }
+}
+
 function withLocation(timezone: String) = new Mixin {
   source { ["location"] = timezone }
 }
