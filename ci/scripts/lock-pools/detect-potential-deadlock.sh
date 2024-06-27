@@ -19,12 +19,12 @@ POTENTIAL_DEADLOCK_TIMEOUT_IN_SECONDS=900 # 15 minutes
 POTENTIAL_DEADLOCK_IF_CLAIMED_BEFORE=$((CURRENT_TIMESTAMP - POTENTIAL_DEADLOCK_TIMEOUT_IN_SECONDS))
 IGNORE_POTENTIAL_DEADLOCK_BEFORE=$((CURRENT_TIMESTAMP - (POTENTIAL_DEADLOCK_TIMEOUT_IN_SECONDS * 2)))
 
-if [ "$CURRENT_TIMESTAMP" -gt "$POTENTIAL_DEADLOCK_IF_CLAIMED_BEFORE" ]; then
+if [ "$LOCK_CLAIMED_TIMESTAMP" -gt "$POTENTIAL_DEADLOCK_IF_CLAIMED_BEFORE" ]; then
   echo "Lock was claimed at $DATE, but this is less than 15 minutes ago, nothing to do."
   exit 0
 fi
 
-if [ "$CURRENT_TIMESTAMP" -lt "$IGNORE_POTENTIAL_DEADLOCK_BEFORE" ]; then
+if [ "$LOCK_CLAIMED_TIMESTAMP" -lt "$IGNORE_POTENTIAL_DEADLOCK_BEFORE" ]; then
   echo "Lock was claimed at $DATE, this is more than 30 minutes ago, ignoring in the knowledge the auto-deadlock resolution will happen"
   exit 0
 fi
