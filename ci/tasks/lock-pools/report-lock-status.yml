@@ -13,4 +13,4 @@ params:
 run:
   path: "/bin/ash"
   dir: "lock-pool-repo"
-  args: ['pay-ci/ci/scripts/lock-pools/report-lock-status.sh']
+  args: ['../pay-ci/ci/scripts/lock-pools/report-lock-status.sh']
