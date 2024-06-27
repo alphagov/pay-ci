@@ -57,7 +57,7 @@ print_and_write_lock_status() {
 
 if [ -f "${LOCK_NAME}/unclaimed/${LOCK_NAME}-lock" ]; then
   print_and_write_lock_status "unclaimed"
-elif [ -f "${LOCK_NAME}claimed/${LOCK_NAME}-lock" ]; then
+elif [ -f "${LOCK_NAME}/claimed/${LOCK_NAME}-lock" ]; then
   print_and_write_lock_status "claimed"
 else
   echo "Error! Couldn't find lock file '${LOCK_NAME}-lock' in either claimed or unclaimed directories"
