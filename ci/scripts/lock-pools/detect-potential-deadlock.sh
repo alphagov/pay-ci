@@ -7,10 +7,11 @@ LOCK_STATUS=$(cat lock-status/status)
 DATE=$(cat lock-status/date)
 LOCK_CLAIMED_TIMESTAMP=$(cat lock-status/timestamp)
 
-if [ "$LOCK_STATUS" = "unclaimed" ]; then
-  echo "Lock is unclaimed, nothing to do"
-  exit 0
-fi
+## FIXME - uncomment this
+### if [ "$LOCK_STATUS" = "unclaimed" ]; then
+###   echo "Lock is unclaimed, nothing to do"
+###   exit 0
+### fi
 
 CURRENT_TIMESTAMP=$(date +%s)
 
