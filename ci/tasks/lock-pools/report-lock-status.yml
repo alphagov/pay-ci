@@ -5,6 +5,7 @@ image_resource:
     repository: governmentdigitalservice/pay-concourse-runner
 inputs:
   - name: lock-pool-repo
+  - name: pay-ci
 outputs:
   - name: lock-status
 params:

@@ -96,9 +96,11 @@ jobs {
       name = "report-status-of-\(pool_name)-lock"
       plan {
         new InParallelStep {
-          in_parallel = new {
-            new GetStep { get = "lock-pool-repo"}
-            new GetStep { get = "pay-ci" }
+          in_parallel = new InParallelConfig {
+            steps {
+              new GetStep { get = "lock-pool-repo" }
+              new GetStep { get = "pay-ci" }
+            }
           }
         }
         new TaskStep {
