@@ -15,11 +15,12 @@ if [ "$LOCK_STATUS" = "unclaimed" ]; then
   exit 0
 fi
 
+echo "Logging into concourse with fly"
 fly -t "${LOCK_TEAM}" login \
   -c "https://pay-cd.deploy.payments.service.gov.uk/" \
   -u "${LOCK_TEAM}" \
   -p "${FLY_PASSWORD}" \
-  -n "${LOCK_TEAM}"
+  -n "${LOCK_TEAM}" >> /dev/null 2>&1
 
 BUILD_DETAILS_TMPFILE=$(mktemp)
 
