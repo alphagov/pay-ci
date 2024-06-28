@@ -1,0 +1,12 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+inputs:
+  - name: pay-ci
+  - name: lock-status
+  - name: current-build-info
+run:
+  path: "/bin/ash"
+  args: ['pay-ci/ci/scripts/lock-pools/check-if-i-have-the-lock.sh']
