@@ -3,11 +3,6 @@
 
 set -euo pipefail
 
-BUILD_TEAM=$(cat current-build-info/build_team)
-BUILD_PIPELINE=$(cat current-build-info/build_pipeline)
-BUILD_JOB=$(cat current-build-info/build_job)
-BUILD_NAME=$(cat current-build-info/build_name)
-
 LOCK_STATUS=$(cat lock-status/status)
 LOCK_TEAM=$(cat lock-status/team)
 LOCK_PIPELINE=$(cat lock-status/pipeline)
