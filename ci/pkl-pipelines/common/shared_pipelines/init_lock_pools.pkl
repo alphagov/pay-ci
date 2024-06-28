@@ -69,11 +69,18 @@ groups {
     }
   }
   new {
-    name = "auto-deadlock-resolution"
+    name = "report-potential-deadlock"
     jobs {
       for (pool_name in pools_to_init) {
         "report-potential-deadlock-of-\(pool_name)-lock"
-        // "break-deadlock-in-\(pool_name)"
+      }
+    }
+  }
+  new {
+    name = "auto-deadlock-resolution"
+    jobs {
+      for (pool_name in pools_to_init) {
+        "auto-resolve-deadlock-of-\(pool_name)-lock"
       }
     }
   }
@@ -81,6 +88,7 @@ groups {
 }
 
 jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("\(concourseTeamName)/init-lock-pools.pkl")
   new Job {
     name = "initialise-pools"
     plan {
@@ -194,14 +202,14 @@ jobs {
                   put = "slack-notification"
                   attempts = 10
                   params = new Mapping {
-                    ["channel"] = "#jfharden-test-alerts"
+                    ["channel"] = "#govuk-pay-starling"
                     ["silent"] = true
                     ["icon_emoji"] = ":concourse:"
                     ["username"] = "pay-concourse"
                     ["text"] = """
                       :concourse-yellow: :lock: Potential deadlock detected in ((.:concourse-team)) for lock \(pool_name)-lock.
 
-                      Claimant ((.:concourse-team))/((.:concourse-pipeline))/((.:concourse-job)) build number ((.:build-number)).
+                      Claimant: <https://pay-cd.deploy.payments.service.gov.uk/teams/((.:concourse-team))/pipelines/((.:concourse-pipeline))/jobs/((.:concourse-job))/builds/((.:build-number))|((.:concourse-team))/((.:concourse-pipeline))/((.:concourse-job)) build number ((.:build-number))>.
                       Lock was claimed at ((.:date)) UTC.
 
                       In 15 minutes if the deadlock is still detected it will be force-unlocked.
@@ -217,6 +225,86 @@ jobs {
         }
       }
     }
+    new Job {
+      name = "auto-resolve-deadlock-of-\(pool_name)-lock"
+      plan {
+        new InParallelStep {
+          in_parallel = new InParallelConfig {
+            steps {
+              new GetStep {
+                get = "every-15-minutes"
+                trigger = true
+              }
+              new GetStep { get = "pay-ci" }
+              new GetStep { get = "lock-pool-repo" }
+            }
+          }
+        }
+        new TaskStep {
+          task = "get-status-of-\(pool_name)-lock"
+          file = "pay-ci/ci/tasks/lock-pools/report-lock-status.yml"
+          params {
+            ["LOCK_NAME"] = pool_name
+          }
+        }
+        new TryStep {
+          try = new TaskStep {
+            task = "detect-deadlock-of-\(pool_name)-lock"
+            file = "pay-ci/ci/tasks/lock-pools/detect-deadlock.yml"
+            params {
+              ["LOCK_NAME"] = pool_name
+            }
+            on_failure = new DoStep {
+              do {
+                new InParallelStep {
+                  in_parallel = new Listing<Step> {
+                    shared_resources.loadVar("concourse-team", "lock-status/team")
+                    shared_resources.loadVar("concourse-pipeline", "lock-status/pipeline")
+                    shared_resources.loadVar("concourse-job", "lock-status/job")
+                    shared_resources.loadVar("build-number", "lock-status/build-number")
+                    shared_resources.loadVar("date", "lock-status/date")
+                  }
+                }
+                new InParallelStep {
+                  in_parallel = new Listing<Step> {
+                    new PutStep {
+                      put = "slack-notification"
+                      attempts = 10
+                      params = new Mapping {
+                        ["channel"] = "#govuk-pay-starling"
+                        ["silent"] = true
+                        ["icon_emoji"] = ":concourse:"
+                        ["username"] = "pay-concourse"
+                        ["text"] = """
+                          :concourse-red: :lock: Deadlock detected in ((.:concourse-team)) for lock \(pool_name)-lock.
+
+                          Claimant: <https://pay-cd.deploy.payments.service.gov.uk/teams/((.:concourse-team))/pipelines/((.:concourse-pipeline))/jobs/((.:concourse-job))/builds/((.:build-number))|((.:concourse-team))/((.:concourse-pipeline))/((.:concourse-job)) build number ((.:build-number))>.
+                          Lock was claimed at ((.:date)) UTC.
+
+                          Force unlocking!
+
+                          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>
+                          """
+                      }
+                    }
+                    new DoStep {
+                      do {
+                        new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
+                        new shared_resources_for_lock_pools.ReleaseLockStep {
+                          pool = pool_name
+                          params {
+                            ["release"] = "get-already-claimed-\(pool_name)-lock"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
-  pipeline_self_update.PayPipelineSelfUpdateJob("\(concourseTeamName)/init-lock-pools.pkl")
 }
