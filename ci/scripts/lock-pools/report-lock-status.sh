@@ -30,7 +30,7 @@ print_and_write_lock_status() {
   local CONCOURSE_TEAM=$(echo "$FULL_CLAIMANT_INFO" | cut -f 1 -d "/")
   local CONCOURSE_PIPELINE=$(echo "$FULL_CLAIMANT_INFO" | cut -f 2 -d "/")
   local CONCOURSE_JOB=$(echo "$FULL_CLAIMANT_INFO" | cut -f 3 -d "/")
-  local BUILD_NUMBER=$(echo "$COMMIT_MESSAGE" | sed -E 's/.* build ([0-9]+) (un)?claiming: .*/\1/')
+  local BUILD_NUMBER=$(echo "$COMMIT_MESSAGE" | sed -E 's/.* build ([0-9.]+) (un)?claiming: .*/\1/')
 
   echo
   if [ "$LOCK_STATUS" = "claimed" ]; then
