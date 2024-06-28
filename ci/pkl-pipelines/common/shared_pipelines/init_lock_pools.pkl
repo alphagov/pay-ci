@@ -41,6 +41,7 @@ resources {
   }
   shared_resources.payCiGitHubResource
   shared_resources_for_times.payIntervalResource("every-15-minutes", "15m")
+  shared_resources_for_times.payIntervalResource("every-5-minutes", "5m")
   shared_resources_for_slack_notifications.slackNotificationResource
   pipeline_self_update.PayPipelineSelfUpdateResource("\(concourseTeamName)/init-lock-pools.pkl", "master")
 }
@@ -81,6 +82,7 @@ groups {
     jobs {
       for (pool_name in pools_to_init) {
         "auto-resolve-deadlock-of-\(pool_name)-lock"
+        "auto-resolve-failed-job-deadlock-of-\(pool_name)-lock"
       }
     }
   }
@@ -237,6 +239,7 @@ jobs {
               }
               new GetStep { get = "pay-ci" }
               new GetStep { get = "lock-pool-repo" }
+              new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
             }
           }
         }
@@ -287,15 +290,89 @@ jobs {
                           """
                       }
                     }
-                    new DoStep {
-                      do {
-                        new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
-                        new shared_resources_for_lock_pools.ReleaseLockStep {
-                          pool = pool_name
-                          params {
-                            ["release"] = "get-already-claimed-\(pool_name)-lock"
-                          }
-                        }
+                    new shared_resources_for_lock_pools.ReleaseLockStep {
+                      pool = pool_name
+                      params {
+                        ["release"] = "get-already-claimed-\(pool_name)-lock"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    new Job {
+      name = "auto-resolve-failed-job-deadlock-of-\(pool_name)-lock"
+      plan {
+        new InParallelStep {
+          in_parallel = new InParallelConfig {
+            steps {
+              new GetStep {
+                get = "every-5-minutes"
+                // FIXME
+                // trigger = true
+              }
+              new GetStep { get = "pay-ci" }
+              new GetStep { get = "lock-pool-repo" }
+              new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
+            }
+          }
+        }
+        new TaskStep {
+          task = "get-status-of-\(pool_name)-lock"
+          file = "pay-ci/ci/tasks/lock-pools/report-lock-status.yml"
+          params {
+            ["LOCK_NAME"] = pool_name
+          }
+        }
+        new TryStep {
+          try = new TaskStep {
+            task = "detect-failed-job-deadlock-of-\(pool_name)-lock"
+            file = "pay-ci/ci/tasks/lock-pools/detect-deadlock-from-failed-job.yml"
+            params {
+              ["FLY_PASSWORD"] = "((readonly_local_user_password))"
+            }
+            on_failure = new DoStep {
+              do {
+                new InParallelStep {
+                  in_parallel = new Listing<Step> {
+                    shared_resources.loadVar("concourse-team", "lock-status/team")
+                    shared_resources.loadVar("concourse-pipeline", "lock-status/pipeline")
+                    shared_resources.loadVar("concourse-job", "lock-status/job")
+                    shared_resources.loadVar("build-number", "lock-status/build-number")
+                    shared_resources.loadVar("date", "lock-status/date")
+                  }
+                }
+                new InParallelStep {
+                  in_parallel = new Listing<Step> {
+                    new PutStep {
+                      put = "slack-notification"
+                      attempts = 10
+                      params = new Mapping {
+                        ["channel"] = "#govuk-pay-starling"
+                        ["silent"] = true
+                        ["icon_emoji"] = ":concourse:"
+                        ["username"] = "pay-concourse"
+                        ["text"] = """
+                          :concourse-red: :lock: Deadlock due to failed job detected in ((.:concourse-team)) for lock \(pool_name)-lock.
+
+                          Claimant: <https://pay-cd.deploy.payments.service.gov.uk/teams/((.:concourse-team))/pipelines/((.:concourse-pipeline))/jobs/((.:concourse-job))/builds/((.:build-number))|((.:concourse-team))/((.:concourse-pipeline))/((.:concourse-job)) build number ((.:build-number))>.
+                          Lock was claimed at ((.:date)) UTC.
+                          The claimant job is in a failure state meaning the lock will never be released.
+
+                          Force unlocking!
+
+                          <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>
+                          """
+                      }
+                    }
+                    new shared_resources_for_lock_pools.ReleaseLockStep {
+                      pool = pool_name
+                      params {
+                        ["release"] = "get-already-claimed-\(pool_name)-lock"
                       }
                     }
                   }
