@@ -46,7 +46,7 @@ print_and_write_lock_status() {
   echo "           URL: https://pay-cd.deploy.payments.service.gov.uk/teams/$CONCOURSE_TEAM/pipelines/$CONCOURSE_PIPELINE/jobs/$CONCOURSE_JOB/builds/$BUILD_NUMBER"
   echo
 
-  echo "claimed" > ../lock-status/status
+  echo "$LOCK_STATUS" > ../lock-status/status
   echo "$CONCOURSE_TEAM" > ../lock-status/team
   echo "$CONCOURSE_PIPELINE" > ../lock-status/pipeline
   echo "$CONCOURSE_JOB" > ../lock-status/job
