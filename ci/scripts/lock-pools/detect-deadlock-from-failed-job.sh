@@ -19,6 +19,7 @@ fly -t "${LOCK_TEAM}" login \
   -c "https://pay-cd.deploy.payments.service.gov.uk/" \
   -u "${LOCK_TEAM}" \
   -p "${FLY_PASSWORD}" \
+  -n "${LOCK_TEAM}"
 
 BUILD_DETAILS_TMPFILE=$(mktemp)
 
