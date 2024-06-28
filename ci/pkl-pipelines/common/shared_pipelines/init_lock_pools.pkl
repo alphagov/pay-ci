@@ -312,8 +312,7 @@ jobs {
             steps {
               new GetStep {
                 get = "every-5-minutes"
-                // FIXME
-                // trigger = true
+                trigger = true
               }
               new GetStep { get = "pay-ci" }
               new GetStep { get = "lock-pool-repo" }
