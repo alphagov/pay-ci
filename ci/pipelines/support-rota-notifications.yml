@@ -1,0 +1,67 @@
+---
+params: &params
+  ACCESS_CONTROL_USER_CONFIG_FILE_PATH: "../../../../pay-access-control/config/users.yml"
+  SLACK_SECRET: ((slack-secret))
+  SLACK_IN_HOURS_CHANNEL_ID: ((slack-support-channel-id))
+  SLACK_OOH_CHANNEL_ID: ((slack-ooh-channel-id))
+  PAGER_DUTY_API_KEY: ((pagerduty-api-key))
+  PD_IN_HOURS_PRIMARY_SCHEDULE_ID: ((pagerduty-ih-primary-schedule-id))
+  PD_IN_HOURS_SECONDARY_SCHEDULE_ID: ((pagerduty-ih-secondary-schedule-id))
+  PD_IN_HOURS_PRODUCT_SCHEDULE_ID: ((pagerduty-ih-product-schedule-id))
+  PD_IN_HOURS_COMMS_SCHEDULE_ID: ((pagerduty-ih-comms-schedule-id))
+  PD_OOH_PRIMARY_SCHEDULE_ID: ((pagerduty-ooh-primary-schedule-id))
+  PD_OOH_SECONDARY_SCHEDULE_ID: ((pagerduty-ooh-secondary-schedule-id))
+  PD_OOH_COMMS_SCHEDULE_ID: ((pagerduty-ooh-comms-schedule-id))
+
+resources:
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: pp_12796_support_notifications_task
+      username: "alphagov-pay-ci-concourse"
+      password: ((github-access-token))
+  - name: pay-access-control
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-access-control
+      branch: pp_12796_add_slack_handles
+      username: "alphagov-pay-ci-concourse"
+      password: ((github-access-token))
+  - name: every-weekday-at-9-30
+    type: time
+    icon: alarm
+    source:
+      days: [ Monday, Tuesday, Wednesday, Thursday, Friday ]
+      start: 9:30 AM
+      stop: 11:45 PM
+      location: Europe/London
+jobs:
+  - name: update-inhours-topic
+    plan:
+      - get: pay-ci
+        trigger: false
+      - get: pay-access-control
+        trigger: false
+      - get: every-weekday-at-9-30
+        trigger: true
+      - task: update-topic
+        file: pay-ci/ci/tasks/support-rota-notifications.yml
+        params:
+          <<: *params
+          OPERATION: "update-in-hours-topic"
+  - name: update-out-of-hours-topic
+    plan:
+      - get: pay-ci
+        trigger: false
+      - get: pay-access-control
+        trigger: false
+      - get: every-weekday-at-9-30
+        trigger: true
+      - task: update-topic
+        file: pay-ci/ci/tasks/support-rota-notifications.yml
+        params:
+          <<: *params
+          OPERATION: "update-on-call-topic"

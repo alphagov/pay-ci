@@ -1,0 +1,17 @@
+{
+  "name": "support-rota-notification",
+  "version": "1.0.0",
+  "description": "Script to update slack channel topic weekly for support rota changes and setup any reminders",
+  "main": "support-rota-notifications.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "kbottla",
+  "license": "MIT",
+  "dependencies": {
+    "@slack/web-api": "^7.2.0",
+    "axios": "^1.7.2",
+    "js-yaml": "^4.1.0",
+    "moment-timezone": "^0.5.45"
+  }
+}
