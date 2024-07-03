@@ -19,7 +19,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-ci
-      branch: pp_12796_support_notifications_task
+      branch: master
       username: "alphagov-pay-ci-concourse"
       password: ((github-access-token))
   - name: pay-access-control
@@ -27,7 +27,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-access-control
-      branch: pp_12796_add_slack_handles
+      branch: master
       username: "alphagov-pay-ci-concourse"
       password: ((github-access-token))
   - name: every-weekday-at-9-30
