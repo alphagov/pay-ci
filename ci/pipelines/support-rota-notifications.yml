@@ -27,7 +27,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-access-control
-      branch: master
+      branch: main
       username: "alphagov-pay-ci-concourse"
       password: ((github-access-token))
   - name: every-weekday-at-9-30
