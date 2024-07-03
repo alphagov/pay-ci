@@ -1,0 +1,38 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: node
+    tag: "18"
+
+inputs:
+  - name: pay-ci
+  - name: pay-access-control
+
+params:
+  SLACK_SECRET:
+  SLACK_IN_HOURS_CHANNEL_ID:
+  SLACK_OOH_CHANNEL_ID:
+  PAGER_DUTY_API_KEY:
+  PD_IN_HOURS_PRIMARY_SCHEDULE_ID:
+  PD_IN_HOURS_SECONDARY_SCHEDULE_ID:
+  PD_IN_HOURS_PRODUCT_SCHEDULE_ID:
+  PD_IN_HOURS_COMMS_SCHEDULE_ID:
+  PD_OOH_PRIMARY_SCHEDULE_ID:
+  PD_OOH_SECONDARY_SCHEDULE_ID:
+  PD_OOH_COMMS_SCHEDULE_ID:
+  OPERATION:
+  ACCESS_CONTROL_USER_CONFIG_FILE_PATH:
+
+run:
+  path: /bin/sh
+  args:
+    - -eu
+    - -c
+    - |
+      cd pay-ci/ci/scripts/support-rota-notification
+      ls -la
+      npm install
+      node index.js $OPERATION
