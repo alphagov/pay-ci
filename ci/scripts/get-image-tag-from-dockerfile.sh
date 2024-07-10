@@ -9,6 +9,8 @@
 
 set -euo pipefail
 
+cd "src"
+
 if [ ! -f "$DOCKERFILE" ]; then
   echo "Error: Dockerfile $DOCKERFILE not found"
   exit 1

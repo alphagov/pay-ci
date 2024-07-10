@@ -19,7 +19,11 @@ resources {
       ["paths"] = new Listing<String> { "ci/docker/pact-broker/*" }
     }
   }
-  shared_resources.payCiGitHubResource
+  (shared_resources.payCiGitHubResource) {
+    source {
+      branch = "pp-12835/fix-pact-broker-image-tag-extraction"
+    }
+  }
   shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
   shared_resources.payECRResource("pact-broker-ecr-registry-deploy", "govukpay/pact-broker", "pay_aws_deploy_account_id")
   shared_resources.slackNotificationResource
@@ -94,6 +98,9 @@ jobs {
         file = "pay-ci/ci/tasks/get-image-tag-from-dockerfile.yml"
         input_mapping {
           ["src"] = "pact-broker-src"
+        }
+        params {
+          ["DOCKERFILE"] = "ci/docker/pact-broker/Dockerfile"
         }
       }
       new TaskStep {

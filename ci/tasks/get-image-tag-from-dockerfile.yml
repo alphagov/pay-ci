@@ -8,7 +8,7 @@ inputs:
   - name: pay-ci
   - name: src
 params:
-  DOCKERFILE: "src/Dockerfile"
+  DOCKERFILE: "Dockerfile"
 run:
   path: sh
   args: ['pay-ci/ci/scripts/get-image-tag-from-dockerfile.sh']
