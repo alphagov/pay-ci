@@ -9,14 +9,14 @@
 
 set -euo pipefail
 
-cd "src"
+DOCKERFILE_PATH="src/${DOCKERFILE}"
 
-if [ ! -f "$DOCKERFILE" ]; then
+if [ ! -f "$DOCKERFILE_PATH" ]; then
   echo "Error: Dockerfile $DOCKERFILE not found"
   exit 1
 fi
 
-BASE_IMAGE=$(grep "^FROM " "$DOCKERFILE" | awk '{ print $2; }' | sort | uniq)
+BASE_IMAGE=$(grep "^FROM " "$DOCKERFILE_PATH" | awk '{ print $2; }' | sort | uniq)
 
 if [ "$(echo "$BASE_IMAGE" | wc -l)" -ne 1 ]; then
   echo "Error: There's not exactly a single unique FROM line definition in the Dockerfile, can't extract a single tag"

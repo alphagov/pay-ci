@@ -7,6 +7,8 @@ image_resource:
 inputs:
   - name: pay-ci
   - name: src
+outputs:
+  - name: tags
 params:
   DOCKERFILE: "Dockerfile"
 run:
