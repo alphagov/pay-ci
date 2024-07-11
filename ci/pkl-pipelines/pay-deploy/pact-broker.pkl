@@ -91,30 +91,12 @@ jobs {
       shared_resources.generateDockerCredsConfigStep
       new TaskStep {
         task = "get-pact-broker-image-tag"
-        config {
-          platform = "linux"
-          image_resource {
-            type = "registry-image"
-            source {
-              ["repository"] = "alpine"
-              ["tag"] = "latest"
-            }
-          }
-          inputs = new Listing {
-            new TaskConfig.Input { name = "pact-broker-src" }
-          }
-          outputs = new Listing {
-            new TaskConfig.Output { name = "tags" }
-          }
-          run {
-            path = "ash"
-            args {
-              "-ec"
-              """
-              cat pact-broker-src/ci/docker/pact-broker/Dockerfile | grep -i FROM | head -n 1 | awk '{print $2;}' | cut -f 2 -d ":" | tee tags/tag
-              """
-            }
-          }
+        file = "pay-ci/ci/tasks/get-image-tag-from-dockerfile.yml"
+        input_mapping {
+          ["src"] = "pact-broker-src"
+        }
+        params {
+          ["DOCKERFILE"] = "ci/docker/pact-broker/Dockerfile"
         }
       }
       new TaskStep {
