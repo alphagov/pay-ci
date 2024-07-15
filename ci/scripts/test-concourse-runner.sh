@@ -22,6 +22,7 @@ https://maven.apache.org/xsd/settings-1.0.0.xsd">
 </settings>
 EOF
 
+## Test docker by running app tests
 mvn --global-settings settings.xml clean verify
 
 stop_docker
