@@ -14,7 +14,7 @@ RUN apk add --no-cache \
   python3 \
   ca-certificates \
   jq \
-  openjdk11 \
+  openjdk21 \
   npm \
   maven \
   tini \
