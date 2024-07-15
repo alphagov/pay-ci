@@ -2,7 +2,7 @@ container_limits: {}
 image_resource:
   type: registry-image
   source:
-    repository: governmentdigitalservice/pay-concourse-runner-with-java-21
+    repository: governmentdigitalservice/pay-concourse-runner
 caches:
   - path: src/.m2
 inputs:
