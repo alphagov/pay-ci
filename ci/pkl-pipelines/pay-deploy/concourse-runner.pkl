@@ -18,7 +18,6 @@ resources = new {
     repo = "pay-ci"
     paths {
       "ci/docker/concourse-runner/**"
-      "ci/docker/concourse-runner-with-java-21/**"
       "ci/pipelines/concourse-runner.yml"
     }
   }
@@ -37,25 +36,10 @@ resources = new {
       paths { "ci/docker/concourse-runner/*" }
     }
   }
-  new PayResources.PayGitHubResource {
-    name = "concourse-runner-with-java-21-src"
-    repoName = "pay-ci"
-    source {
-      branch = "master"
-      paths { "ci/docker/concourse-runner-with-java-21/*" }
-    }
-  }
   new PayResources.PayDockerHubResource {
     name = "concourse-runner"
     source {
       repository = "governmentdigitalservice/pay-concourse-runner"
-      tag = "latest"
-    }
-  }
-  new PayResources.PayDockerHubResource {
-    name = "concourse-runner-with-java-21"
-    source {
-      repository = "governmentdigitalservice/pay-concourse-runner-with-java-21"
       tag = "latest"
     }
   }
@@ -64,7 +48,6 @@ resources = new {
 jobs = new {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/concourse-runner.pkl")
   buildAndPushConcourseJob("", "adminusers-master", true)
-  buildAndPushConcourseJob("-with-java-21", "", false)
 
   new {
     name = "concourse-runner-pr"
@@ -114,46 +97,12 @@ jobs = new {
               }
             }
           }
-          new TaskStep {
-            task = "build-concourse-runner-with-java-21"
-            privileged = true
-            output_mapping {
-              ["image"] = "concourse-runner-with-java-21-image"
-            }
-            params = new {
-              ["CONTEXT"] = "concourse-runner-pr/ci/docker/concourse-runner-with-java-21"
-              ["UNPACK_ROOTFS"] = "true"
-              ["DOCKER_CONFIG"] = "docker_creds"
-            }
-            config {
-              platform = "linux"
-              image_resource = new {
-                type = "registry-image"
-                source = new {
-                  ["repository"] = "concourse/oci-build-task"
-                }
-              }
-              inputs {
-                new {
-                  name = "concourse-runner-pr"
-                }
-              }
-              outputs {
-                new {
-                  name = "image"
-                }
-              }
-              run {
-                path = "build"
-              }
-            }
-          }
         }
       }
       new InParallelStep {
         in_parallel = new Listing<Step> {
           new TestConcourseRunnerTask {
-            image = "concourse-runner-with-java-21-image"
+            image = "concourse-runner-image"
             task = "test-concourse-runner"
             repo = "adminusers-master"
           }
@@ -164,7 +113,6 @@ jobs = new {
     on_failure = putPRTestStatus("concourse-runner-pr", "concourse-runner-tests", "failure")
     on_error = putPRTestStatus("concourse-runner-pr", "concourse-runner-tests", "failure")
   }
-
 }
 
 local function getStep(resource: String): GetStep = new {
