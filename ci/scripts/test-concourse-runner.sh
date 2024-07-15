@@ -23,6 +23,16 @@ https://maven.apache.org/xsd/settings-1.0.0.xsd">
 EOF
 
 ## Test docker by running app tests
-mvn --global-settings settings.xml clean verify
+mvn --global-settings settings.xml clean verify --no-transfer-progress
+
+## Test docker scout
+echo "Checking docker scout installation..."
+
+if docker scout version >>/dev/null 2>&1; then
+  echo "Docker scout is installed"
+else
+  echo "Error: Docker scout is not installed"
+  exit 1
+fi
 
 stop_docker
