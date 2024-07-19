@@ -42,3 +42,4 @@ class PayTimeResource extends Pipeline.Resource {
     ["location"] = "Europe/London"
   }
 }
+
