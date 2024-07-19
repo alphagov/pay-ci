@@ -27,3 +27,33 @@ function payIntervalResource(_name: String, interval: String): Pipeline.Resource
 function withLocation(timezone: String) = new Mixin {
   source { ["location"] = timezone }
 }
+
+cronResourceType: Pipeline.ResourceType = new {
+  name = "cron-resource"
+  type = "registry-image"
+  source = new {
+    ["repository"] = "governmentdigitalservice/pay-cron-resource"
+    ["tag"] = "latest"
+  }
+}
+
+class PayCronResource extends Pipeline.Resource {
+  type = "cron-resource"
+  icon = "calendar-clock-outline"
+  source {
+    ["location"] = "Europe/London"
+  }
+}
+
+quarterlyCronResource: Pipeline.Resource = new PayCronResource {
+  name = "quarterly"
+  source {
+    // At 00:00 on 1st of the month in March, June, September, and December.
+    ["expression"] = "0 0 1 MAR,JUN,SEP,DEC *"
+  }
+}
+
+getQuarterlyCronTrigger: Pipeline.GetStep = new {
+  get = "quarterly"
+  trigger = true
+}
