@@ -6,12 +6,12 @@ import "../common/shared_resources_for_slack_notifications.pkl"
 
 local class ConcourseResource {
   name: String
-  git_branch: String = "main"
+  git_branch: String
 }
 
 local concourse_resources = new Listing<ConcourseResource> {
   new { name = "pool-resource" git_branch = "master" }
-  new { name = "cron-resource" git_branch = "master" }
+  new { name = "cron-resource" git_branch = "main" }
 }
 
 resource_types {
@@ -20,7 +20,7 @@ resource_types {
 
 resources {
   for (concourse_resource in concourse_resources) {
-    (shared_resources.payGithubResourceWithBranch("\(concourse_resource.name)-git-release", "pool-resource", concourse_resource.git_branch)) {
+    (shared_resources.payGithubResourceWithBranch("\(concourse_resource.name)-git-release", concourse_resource.name, concourse_resource.git_branch)) {
       source { ["tag_regex"] = "alpha_release-(.*)" }
     }
     shared_resources.payDockerHubResource(
@@ -28,7 +28,7 @@ resources {
     )
   }
   shared_resources.payCiGitHubResource
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/pool-resource.pkl", "master")
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/concourse-resources.pkl", "master")
   shared_resources_for_slack_notifications.slackNotificationResource
 }
 
@@ -127,7 +127,7 @@ jobs {
       }
     }
   }
-  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/pool-resource.pkl")
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/concourse-resources.pkl")
 }
 
 local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
