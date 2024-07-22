@@ -42,6 +42,7 @@ resources {
   shared_resources.payCiGitHubResource
   shared_resources_for_times.payIntervalResource("every-15-minutes", "15m")
   shared_resources_for_times.payIntervalResource("every-5-minutes", "5m")
+  shared_resources_for_times.payDailyTimeResource("every-day-at-2-30", "2:30", "2:40")
   shared_resources_for_slack_notifications.slackNotificationResource
   pipeline_self_update.PayPipelineSelfUpdateResource("\(concourseTeamName)/init-lock-pools.pkl", "master")
 }
@@ -131,7 +132,15 @@ jobs {
     new Job {
       name = "force-release-\(pool_name)-lock"
       plan {
-        new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
+        new InParallelStep {
+          in_parallel = new Listing<Step> {
+            new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
+            new GetStep {
+              get = "every-day-at-2-30"
+              trigger = true
+            }
+          }
+        }
         new shared_resources_for_lock_pools.ReleaseLockStep {
           pool = pool_name
           params {
