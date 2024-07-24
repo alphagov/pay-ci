@@ -39,7 +39,7 @@ cronResourceType: Pipeline.ResourceType = new {
 
 class PayCronResource extends Pipeline.Resource {
   type = "cron-resource"
-  icon = "calendar-clock-outline"
+  icon = "calendar-multiselect"
   source {
     ["location"] = "Europe/London"
   }
