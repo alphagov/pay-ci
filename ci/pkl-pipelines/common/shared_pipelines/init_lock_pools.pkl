@@ -95,7 +95,15 @@ jobs {
   new Job {
     name = "initialise-pools"
     plan {
-      new GetStep { get = "pay-ci" }
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new GetStep { get = "pay-ci" }
+          new GetStep {
+            get = "every-day-at-2-30"
+            trigger = true
+          }
+        }
+      }
       new TaskStep {
         task = "init-pools"
         file = "pay-ci/ci/tasks/lock-pools/init-lock-pools.yml"
@@ -132,15 +140,7 @@ jobs {
     new Job {
       name = "force-release-\(pool_name)-lock"
       plan {
-        new InParallelStep {
-          in_parallel = new Listing<Step> {
-            new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
-            new GetStep {
-              get = "every-day-at-2-30"
-              trigger = true
-            }
-          }
-        }
+        new shared_resources_for_lock_pools.GetLockStep { pool = pool_name }
         new shared_resources_for_lock_pools.ReleaseLockStep {
           pool = pool_name
           params {
