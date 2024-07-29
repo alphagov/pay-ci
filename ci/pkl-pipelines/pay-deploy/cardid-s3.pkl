@@ -1,0 +1,79 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_s3.pkl"
+
+resources {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/cardid-s3.pkl", "master")
+  shared_resources.payCiGitHubResource
+  shared_resources.payGithubResourceWithBranch("cardid-git-release", "pay-cardid", "master")
+
+  new shared_resources_for_s3.PayS3BucketResource {
+    name = "worldpay-bin-ranges"
+    roleArn = "arn:aws:iam::424875624006:role/concourse-worker-promoted-bin-ranges-read-only-deploy"
+    bucketName = "bin-ranges-promoted-deploy"
+    fileName = "latest/worldpay-v3.csv"
+  }
+  new shared_resources_for_s3.PayS3BucketResource {
+    name = "discover-bin-ranges"
+    roleArn = "arn:aws:iam::424875624006:role/concourse-worker-promoted-bin-ranges-read-only-deploy"
+    bucketName = "bin-ranges-promoted-deploy"
+    fileName = "latest/discover.csv"
+  }
+  new shared_resources_for_s3.PayS3BucketResource {
+    name = "testcard-bin-ranges"
+    roleArn = "arn:aws:iam::424875624006:role/concourse-worker-promoted-bin-ranges-read-only-deploy"
+    bucketName = "bin-ranges-promoted-deploy"
+    fileName = "latest/test-cards.csv"
+  }
+}
+
+groups {
+  new {
+    name = "cardid"
+    jobs {
+      "trigger-cardid-release"
+    }
+  }
+  pipeline_self_update.payPipelineSelfUpdateGroup
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/cardid-s3.pkl")
+  new {
+    name = "trigger-cardid-release"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new GetStep { get = "pay-ci" }
+          new GetStep {
+            get = "worldpay-bin-ranges"
+            trigger = true
+          }
+          new GetStep {
+            get = "discover-bin-ranges"
+            trigger = true
+          }
+          new GetStep {
+            get = "testcards-bin-ranges"
+            trigger = true
+          }
+        }
+      }
+
+      new TaskStep {
+        task = "trigger-cardid-release"
+        file = "pay-ci/ci/tasks/github-trigger-workflow.yml"
+        input_mapping {
+          ["src"] = "cardid-git-release"
+        }
+        params {
+          ["REPO"] = "alphagov/pay-cardid"
+          ["WORKFLOW"] = "ci-trigger-release.yml"
+          ["GITHUB_TOKEN"] = "((github-access-token))"
+        }
+      }
+    }
+  }
+}
