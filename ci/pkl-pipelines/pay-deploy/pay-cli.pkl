@@ -1,0 +1,47 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/PayResources.pkl"
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/pay-cli.pkl", "master")
+  shared_resources.payCiGitHubResource
+  new PayResources.PayGitHubResource {
+    name = "pay-cli-git-main"
+    repoName = "pay-cli"
+    source {
+      branch = "main"
+      commit_filter = new {
+        exclude = new {"\\[automated release\\]"}
+      }
+    }
+  }
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/pay-cli.pkl")
+  new {
+    name = "version-and-push"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new GetStep {get = "pay-ci"}
+          new GetStep {get = "pay-cli-git-main" trigger = true}
+        }
+      }
+      new TaskStep {
+        task = "npm-version-and-create-pr"
+        file = "pay-ci/ci/tasks/npm-version-and-create-pr.yml"
+        input_mapping {
+          ["src"] = "pay-cli-git-main"
+        }
+        params {
+          ["BASE"] = "main"
+          ["REPO"] = "alphagov/pay-cli"
+          ["GITHUB_TOKEN"] = "((github-access-token))"
+        }
+      }
+    }
+  }
+}
