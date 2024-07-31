@@ -56,8 +56,11 @@ jobs {
             trigger = true
           }
           new GetStep {
-            get = "testcards-bin-ranges"
+            get = "testcard-bin-ranges"
             trigger = true
+          }
+          new GetStep {
+            get = "cardid-git-release"
           }
         }
       }
