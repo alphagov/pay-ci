@@ -13,13 +13,7 @@ resource_types {
 resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/infra-drift-detector.pkl", "master")
   shared_resources.payCiGitHubResource
-  new PayResources.PayGitHubResource {
-    name = "pay-infra"
-    repoName = "pay-infra"
-    source {
-      branch = "master"
-    }
-  }
+  new PayResources.PayInfraGitHubResource {}
   shared_resources.slackNotificationResource
   new {
     name = "every-15-minutes"

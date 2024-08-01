@@ -31,13 +31,7 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/deploy-to-staging.pkl", "master")
   shared_resources_for_metrics.prometheusPushgatewayResource
   shared_resources.payCiGitHubResource
-  new PayResources.PayGitHubResource {
-    name = "pay-infra"
-    repoName = "pay-infra"
-    source {
-      branch = "master"
-    }
-  }
+  new PayResources.PayInfraGitHubResource {}
   new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application-staging" }
   new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test-staging" }
 

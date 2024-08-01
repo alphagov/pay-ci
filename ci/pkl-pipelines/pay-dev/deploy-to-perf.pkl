@@ -28,14 +28,7 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-to-perf.pkl", "master")
   shared_resources_for_metrics.prometheusPushgatewayResource
   shared_resources.payCiGitHubResource
-  new PayResources.PayGitHubResource {
-    name = "pay-infra"
-    repoName = "pay-infra"
-    source {
-      branch = "master"
-    }
-  }
-
+  new PayResources.PayInfraGitHubResource {}
   shared_resources.payECRResourceWithVariant("adot-ecr-registry-perf", "govukpay/adot", "pay_aws_test_account_id", "perf")
   for (app in allPayApplications) {
     when (app.name != "adot") {

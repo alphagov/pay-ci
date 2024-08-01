@@ -31,13 +31,7 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/deploy-to-production.pkl", "master")
   shared_resources_for_metrics.prometheusPushgatewayResource
   shared_resources.payCiGitHubResource
-  new PayResources.PayGitHubResource {
-    name = "pay-infra"
-    repoName = "pay-infra"
-    source {
-      branch = "master"
-    }
-  }
+  new PayResources.PayInfraGitHubResource{}
 
   for (app in allPayApplications) {
     shared_resources.payECRResourceWithVariant("\(app.name)-ecr-registry-prod",
