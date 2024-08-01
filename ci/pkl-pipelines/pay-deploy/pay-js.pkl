@@ -2,6 +2,7 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
+import "../common/PayResources.pkl"
 
 local class PayJsLibraryPipeline {
   name: String
@@ -23,12 +24,13 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/pay-js.pkl", "master")
   shared_resources.payCiGitHubResource
   for (jsLibrary in payJsLibraries) {
-    (shared_resources.payGithubResourceWithBranch("js-\(jsLibrary.name)-git-release", "pay-js-\(jsLibrary.name)", jsLibrary.source_branch)) {
+    new PayResources.PayGitHubResource {
+      name = "js-\(jsLibrary.name)-git-release"
+      repoName = "pay-js-\(jsLibrary.name)"
       source {
-        ["commit_filter"] = new Mapping<String, Listing<String>> {
-          ["exclude"] = new Listing {
-            "\\[automated release\\]"
-          }
+        branch = jsLibrary.source_branch
+        commit_filter = new {
+          exclude = new {"\\[automated release\\]"}
         }
       }
     }
