@@ -9,6 +9,7 @@ import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/shared_resources_for_lock_pools.pkl"
 import "../common/shared_resources_for_annotations.pkl"
+import "../common/PayResources.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
@@ -68,21 +69,23 @@ resource_types {
   shared_resources_for_lock_pools.payPoolResourceType
 }
 
-local function withTagRegex(regex: String) = new Mixin {
-  source { ["tag_regex"] = regex }
-}
-
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-to-test.pkl", "master")
   shared_resources_for_metrics.prometheusPushgatewayResource
   shared_resources.payCiGitHubResource
-  shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
+  new PayResources.PayInfraGitHubResource {}
   new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application-test" }
   new shared_resources_for_lock_pools.LockPoolResource { pool = "smoke-test-test" }
 
   for (app in allPayApplications) {
-    shared_resources.payGithubResourceWithBranch("\(app.name)-git-release", app.getGithubRepo(),
-      getTestEnvConfig(app.name).github_branch) |> withTagRegex(getTestEnvConfig(app.name).tag_regex)
+    new PayResources.PayGitHubResource {
+      name = "\(app.name)-git-release"
+      repoName = app.getGithubRepo()
+      source {
+        branch = getTestEnvConfig(app.name).github_branch
+        tag_regex = getTestEnvConfig(app.name).tag_regex
+      }
+    }
 
     shared_resources.payECRResourceWithVariant("\(app.name)-ecr-registry-test",
       app.getECRRepo(), "pay_aws_test_account_id", "release")

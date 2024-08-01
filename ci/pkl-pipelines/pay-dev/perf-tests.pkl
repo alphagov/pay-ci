@@ -5,6 +5,7 @@ import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
 import "../common/shared_resources_for_times.pkl" as shared_times
+import "../common/PayResources.pkl"
 
 local databases = new Mapping<String, String> {
   ["adminusers"] = "test-perf-1-adminusers-rds-0"
@@ -34,11 +35,14 @@ resources = new {
 
   shared_resources.payCiGitHubResource
   shared_resources.payGithubPullRequestResource("pay-perftests-pr", "pay-perftests")
-  shared_resources.payGithubResourceWithBranch(
-    "perf-tests-git-release",
-    "pay-perftests",
-    "master"
-  ) |> withTagRegex("alpha_release-(.*)")
+  new PayResources.PayGitHubResource {
+    name = "perf-tests-git-release"
+    repoName = "pay-perftests"
+    source {
+      branch = "master"
+      tag_regex = "alpha_release-(.*)"
+    }
+  }
 
   shared_resources.payECRResource(
     "pull-request-builds-ecr",

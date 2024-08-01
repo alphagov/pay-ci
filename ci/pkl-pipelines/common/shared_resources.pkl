@@ -19,13 +19,7 @@ payCiGitHubResource: PayResources.PayGitHubResource = new  {
   }
 }
 
-payInfraGitHubResource: PayResources.PayGitHubResource = new  {
-  name = "pay-infra"
-  repoName = "pay-infra"
-  source {
-    branch = "master"
-  }
-}
+payInfraGitHubResource: PayResources.PayInfraGitHubResource = new  {}
 
 function payDockerHubResource(resource_name: String, repo: String, tag: String): Pipeline.Resource = new {
   name = resource_name
@@ -44,32 +38,6 @@ function payDockerHubResourceAsPayResource(resource_name: String, repo: String, 
   source {
     repository = repo
     tag = _tag
-  }
-}
-
-function payGithubResourceAsPayResource(resource_name: String, repo: String, repo_branch: String): PayResources.PayGitHubResource = new {
-  name = resource_name
-  repoName = repo
-  source {
-    when (repo_branch.length > 0) {
-      branch = repo_branch
-    }
-  }
-}
-
-function payGithubResource(resource_name: String, repo: String) = payGithubResourceWithBranch(resource_name, repo, "")
-
-function payGithubResourceWithBranch(resource_name: String, repo: String, repo_branch: String): Pipeline.Resource = new {
-  name = resource_name
-  type = "git"
-  icon = "github"
-  source = new {
-    ["uri"] = "https://github.com/alphagov/\(repo)"
-    when (repo_branch.length > 0) {
-      ["branch"] = repo_branch
-    }
-    ["username"] = "alphagov-pay-ci-concourse"
-    ["password"] = "((github-access-token))"
   }
 }
 

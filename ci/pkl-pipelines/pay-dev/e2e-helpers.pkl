@@ -5,6 +5,7 @@ import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
 import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/PayResources.pkl"
 
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
 
@@ -12,14 +13,30 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/e2e-helpers.pkl", "master")
   shared_resources.payCiGitHubResource
 
-  shared_resources.payGithubResourceWithBranch("endtoend-git-release", "pay-endtoend", "master")
-  |> withTagRegex("alpha_release-(.*)")
-
-  shared_resources.payGithubResourceWithBranch("stubs-git-release", "pay-stubs", "master")
-  |> withTagRegex("alpha_release-(.*)")
-
-  shared_resources.payGithubResourceWithBranch("reverse-proxy-git-release", "pay-scripts", "master")
-  |> withTagRegex("reverse_proxy_alpha_release-(.*)")
+  new PayResources.PayGitHubResource {
+    name = "endtoend-git-release"
+    repoName = "pay-endtoend"
+    source {
+      branch = "master"
+      tag_regex = "alpha_release-(.*)"
+    }
+  }
+  new PayResources.PayGitHubResource {
+    name = "stubs-git-release"
+    repoName = "pay-stubs"
+    source {
+      branch = "master"
+      tag_regex = "alpha_release-(.*)"
+    }
+  }
+  new PayResources.PayGitHubResource {
+    name = "reverse-proxy-git-release"
+    repoName = "pay-scripts"
+    source {
+      branch = "master"
+      tag_regex = "reverse_proxy_alpha_release-(.*)"
+    }
+  }
 
   shared_resources.payECRResource(
     "endtoend-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id"

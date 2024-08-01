@@ -4,6 +4,7 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/shared_resources.pkl"
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/PayResources.pkl"
 
 local pushGatewayVersion = "v1.9.0"
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
@@ -20,8 +21,12 @@ resources = new {
     check_every = "1h"
   } |> asArm()
   shared_resources.payCiGitHubResource
-  (shared_resources.payGithubResource("prometheus-pushgateway-resource-release", "pay-prometheus-pushgateway-resource")) {
-    source { ["tag_regex"] = "alpha_release-(.*)" }
+  new PayResources.PayGitHubResource {
+    name = "prometheus-pushgateway-resource-release"
+    repoName = "pay-prometheus-pushgateway-resource"
+    source {
+      tag_regex = "alpha_release-(.*)"
+    }
   }
   shared_resources.slackNotificationResource
 }

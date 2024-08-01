@@ -10,6 +10,16 @@ class PayGitHubResource extends Resources.GitResource {
   }
 }
 
+class PayInfraGitHubResource extends Resources.GitResource {
+  name = "pay-infra"
+  source = new {
+    branch = "master"
+    uri = "https://github.com/alphagov/pay-infra"
+    username = "alphagov-pay-ci-concourse"
+    password = "((github-access-token))"
+  }
+}
+
 class PayGitHubPullRequestResource extends Pipeline.Resource {
   type = "pull-request"
   icon = "github"
