@@ -6,6 +6,7 @@ import "../common/shared_resources_for_metrics.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/shared_resources_for_annotations.pkl"
+import "../common/PayResources.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
@@ -27,7 +28,13 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-to-perf.pkl", "master")
   shared_resources_for_metrics.prometheusPushgatewayResource
   shared_resources.payCiGitHubResource
-  shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
+  new PayResources.PayGitHubResource {
+    name = "pay-infra"
+    repoName = "pay-infra"
+    source {
+      branch = "master"
+    }
+  }
 
   shared_resources.payECRResourceWithVariant("adot-ecr-registry-perf", "govukpay/adot", "pay_aws_test_account_id", "perf")
   for (app in allPayApplications) {

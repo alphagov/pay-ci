@@ -5,6 +5,7 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/PayResources.pkl"
 
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
 
@@ -14,13 +15,22 @@ resource_types {
 
 resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/pact-broker.pkl", "master")
-  (shared_resources.payGithubResourceWithBranch("pact-broker-src", "pay-ci", "master")) {
+  new PayResources.PayGitHubResource {
+    name = "pact-broker-src"
+    repoName = "pay-ci"
     source {
-      ["paths"] = new Listing<String> { "ci/docker/pact-broker/*" }
+      branch = "master"
+      paths = new {"ci/docker/pact-broker/*"}
     }
   }
   shared_resources.payCiGitHubResource
-  shared_resources.payGithubResourceWithBranch("pay-infra", "pay-infra", "master")
+  new PayResources.PayGitHubResource {
+    name = "pay-infra"
+    repoName = "pay-infra"
+    source {
+      branch = "master"
+    }
+  }
   shared_resources.payECRResource("pact-broker-ecr-registry-deploy", "govukpay/pact-broker", "pay_aws_deploy_account_id")
   shared_resources.slackNotificationResource
 }

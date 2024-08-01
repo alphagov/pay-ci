@@ -47,32 +47,6 @@ function payDockerHubResourceAsPayResource(resource_name: String, repo: String, 
   }
 }
 
-function payGithubResourceAsPayResource(resource_name: String, repo: String, repo_branch: String): PayResources.PayGitHubResource = new {
-  name = resource_name
-  repoName = repo
-  source {
-    when (repo_branch.length > 0) {
-      branch = repo_branch
-    }
-  }
-}
-
-function payGithubResource(resource_name: String, repo: String) = payGithubResourceWithBranch(resource_name, repo, "")
-
-function payGithubResourceWithBranch(resource_name: String, repo: String, repo_branch: String): Pipeline.Resource = new {
-  name = resource_name
-  type = "git"
-  icon = "github"
-  source = new {
-    ["uri"] = "https://github.com/alphagov/\(repo)"
-    when (repo_branch.length > 0) {
-      ["branch"] = repo_branch
-    }
-    ["username"] = "alphagov-pay-ci-concourse"
-    ["password"] = "((github-access-token))"
-  }
-}
-
 function payECRResource(resource_name: String, repo: String, aws_account_id: String): Pipeline.Resource = payECRResourceWithVariant(resource_name, repo, aws_account_id, "")
 
 function payECRResourceWithVariant(resource_name: String, repo: String, aws_account_id: String, variant: String): Pipeline.Resource = new {

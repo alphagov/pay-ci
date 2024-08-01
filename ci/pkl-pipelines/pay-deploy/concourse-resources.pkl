@@ -3,6 +3,7 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/PayResources.pkl"
 
 local class ConcourseResource {
   name: String
@@ -20,9 +21,15 @@ resource_types {
 
 resources {
   for (concourse_resource in concourse_resources) {
-    (shared_resources.payGithubResourceWithBranch("\(concourse_resource.name)-git-release", concourse_resource.name, concourse_resource.git_branch)) {
-      source { ["tag_regex"] = "alpha_release-(.*)" }
+    new PayResources.PayGitHubResource {
+      name = "\(concourse_resource.name)-git-release"
+      repoName = concourse_resource.name
+      source {
+        branch = concourse_resource.git_branch
+        tag_regex = "alpha_release-(.*)"
+      }
     }
+
     shared_resources.payDockerHubResource(
       "\(concourse_resource.name)-dockerhub", "governmentdigitalservice/pay-\(concourse_resource.name)", "latest"
     )
