@@ -15,7 +15,7 @@ resources = new {
   (shared_resources.payGithubPullRequestResource("pkl-pipeline-pr", "pay-ci")) {
     source {
       ["paths"] = new Listing<String> {
-        "ci/pkl-pipelines/"
+        "ci/pkl-pipelines/foo"
       }
     }
   }
