@@ -3,11 +3,16 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_s3.pkl"
+import "../common/PayResources.pkl"
 
 resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/cardid-s3.pkl", "master")
   shared_resources.payCiGitHubResource
-  shared_resources.payGithubResourceWithBranch("cardid-git-release", "pay-cardid", "master")
+
+  new PayResources.PayGitHubResource {
+    name = "cardid-git-release"
+    repoName = "pay-cardid"
+  }
 
   new shared_resources_for_s3.PayS3BucketResource {
     name = "worldpay-bin-ranges"
