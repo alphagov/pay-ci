@@ -12,6 +12,9 @@ resources {
   new PayResources.PayGitHubResource {
     name = "cardid-git-release"
     repoName = "pay-cardid"
+    source {
+      branch = "master"
+    }
   }
 
   new shared_resources_for_s3.PayS3BucketResource {
