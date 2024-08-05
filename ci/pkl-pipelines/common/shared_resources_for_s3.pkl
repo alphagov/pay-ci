@@ -1,0 +1,21 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+class PayS3BucketResource extends Pipeline.Resource {
+  hidden bucketName: String
+  hidden fileName: String
+  hidden roleArn: String
+
+  type = "s3"
+  icon = "file-delimited"
+
+  source = new {
+    ["access_key_id"] = "((readonly_access_key_id))"
+    ["secret_access_key"] = "((readonly_secret_access_key))"
+    ["session_token"] = "((readonly_session_token))"
+    ["aws_role_arn"] = roleArn
+    ["region_name"] = "eu-west-1"
+    ["private"] = true
+    ["bucket"] = bucketName
+    ["versioned_file"] = fileName
+  }
+}
