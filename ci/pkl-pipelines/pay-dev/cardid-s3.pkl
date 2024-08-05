@@ -6,7 +6,7 @@ import "../common/shared_resources_for_s3.pkl"
 import "../common/PayResources.pkl"
 
 resources {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/cardid-s3.pkl", "master")
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/cardid-s3.pkl", "master")
   shared_resources.payCiGitHubResource
 
   new PayResources.PayGitHubResource {
@@ -48,7 +48,7 @@ groups {
 }
 
 jobs {
-  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/cardid-s3.pkl")
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/cardid-s3.pkl")
   new {
     name = "trigger-cardid-release"
     plan {
