@@ -1,0 +1,81 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/PayResources.pkl"
+import "../common/shared_resources.pkl"
+import "../common/pipeline_self_update.pkl"
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/node-runner.pkl", "master")
+  new PayResources.PayGitHubResource {
+    name = "node-runner-src"
+    repoName = "pay-ci"
+    source {
+      branch = "master"
+      paths = new {
+        "ci/docker/node-runner/*"
+      }
+    }
+  }
+  shared_resources.payCiGitHubResource
+  new PayResources.PayDockerHubResource {
+    name = "node-runner-node18"
+    source {
+      repository = "governmentdigitalservice/pay-node-runner"
+      tag = "node18"
+    }
+  }
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/node-runner.pkl")
+  new {
+    name = "build-and-push"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new GetStep {get = "node-runner-src" trigger = true}
+          new GetStep {get = "pay-ci"}
+        }
+      }
+      shared_resources.generateDockerCredsConfigStep
+      new TaskStep {
+        task = "build-node-18"
+        privileged = true
+        output_mapping = new {
+            ["image"] = "node18-image"
+        }
+        params {
+            ["CONTEXT"] = "node-runner-src/ci/docker/node-runner"
+            ["DOCKER_CONFIG"] = "docker_creds"
+        }
+        config = new {
+            platform = "linux"
+            image_resource {
+              type = "registry-image"
+              source {
+                ["repository"] = "concourse/oci-build-task"
+              }
+            }
+            run {
+              path = "build"
+            }
+            inputs {
+              new {name = "node-runner-src"}
+            }
+            outputs {
+              new {name = "image"}
+            }
+        }
+      }
+      new PutStep {
+        put = "node-runner-node18"
+        params {
+          ["image"] = "node18-image/image.tar"
+        }
+        get_params {
+          ["skip_download"] = true
+        }
+      }
+    }
+  }
+}
