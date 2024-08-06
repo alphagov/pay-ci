@@ -304,7 +304,7 @@ local function getBuildAndPushCandidateJob(app): Job = new {
                 ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
               }
             }
-            when (app.is_a_java_or_node_app == true || app.name == "adot" || app.name == "nginx-proxy") {
+            when (app.is_a_java_or_node_app == true || app.name == "adot" || app.name == "nginx-proxy" || app.name == "egress") {
               new TaskStep {
                 task = "retag-candidate-as-release-in-dockerhub"
                 file = "pay-ci/ci/tasks/manifest-retag.yml"
