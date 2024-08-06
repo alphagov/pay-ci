@@ -1,6 +1,7 @@
 amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
 import "../common/PayResources.pkl"
+import "../common/shared_resources.pkl"
 import "../common/pipeline_self_update.pkl"
 
 resources = new {
@@ -15,13 +16,7 @@ resources = new {
       }
     }
   }
-  new PayResources.PayGitHubResource {
-    name = "pay-ci"
-    repoName = "pay-ci"
-    source {
-      branch = "master"
-    }
-  }
+  shared_resources.payCiGitHubResource
   new PayResources.PayDockerHubResource {
     name = "node-runner-node18"
     source {
@@ -42,15 +37,7 @@ jobs {
           new GetStep {get = "pay-ci"}
         }
       }
-      new TaskStep {
-        task = "generate-docker-creds-config"
-        file = "pay-ci/ci/tasks/generate-docker-config-file.yml"
-        params {
-          ["USERNAME"] = "((docker-username))"
-          ["PASSWORD"] = "((docker-access-token))"
-          ["EMAIL"] = "((docker-email))"
-        }
-      }
+      shared_resources.generateDockerCredsConfigStep
       new TaskStep {
         task = "build-node-18"
         privileged = true
