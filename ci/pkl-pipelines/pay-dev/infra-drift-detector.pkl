@@ -98,7 +98,7 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
   }
 }
 
-  for (env in List("test", "ci", "dev")) {
+  for (env in List("test", "dev")) {
     new {
       name = "\(env)-check-for-zendesk-unsubscribers"
       plan {
