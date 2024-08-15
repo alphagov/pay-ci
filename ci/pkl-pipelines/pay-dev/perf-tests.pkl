@@ -213,8 +213,8 @@ jobs = new {
       // searchPaymentsSimulationPerfTest
       selfServiceSimulationPerfTest
     }
-    on_failure = perfTestExecitionErrorNotification()
-    on_success = perfTestExecitionSuccessNotification()
+    on_failure = perfTestExecutionErrorNotification()
+    on_success = perfTestExecutionSuccessNotification()
     ensure = new DoStep {
       do {
         scaleDownServices
@@ -743,7 +743,7 @@ local function perfTestPassedNotification(perfTestName: String): PutStep = new {
   }
 }
 
-local function perfTestExecitionErrorNotification(): PutStep = new {
+local function perfTestExecutionErrorNotification(): PutStep = new {
   put = "slack-notification"
   attempts = 10
   params {
@@ -757,7 +757,7 @@ local function perfTestExecitionErrorNotification(): PutStep = new {
   }
 }
 
-local function perfTestIndividualExecitionErrorNotification(perfTestName: String): PutStep = new {
+local function perfTestIndividualExecutionErrorNotification(perfTestName: String): PutStep = new {
   put = "slack-notification"
   attempts = 10
   params {
@@ -769,7 +769,7 @@ local function perfTestIndividualExecitionErrorNotification(perfTestName: String
   }
 }
 
-local function perfTestExecitionSuccessNotification(): PutStep = new {
+local function perfTestExecutionSuccessNotification(): PutStep = new {
   put = "slack-notification"
   attempts = 10
   params {
@@ -836,7 +836,7 @@ local function runSearchPaymentSimulationPerfTest(extended: Boolean): Job = new 
     prepareCodeBuild
     searchPaymentsSimulationPerfTest
   }
-  on_failure = perfTestIndividualExecitionErrorNotification("SearchPaymentsSimulation")
+  on_failure = perfTestIndividualExecutionErrorNotification("SearchPaymentsSimulation")
   on_success = perfTestPassedNotification("SearchPaymentsSimulation")
 }
 
@@ -882,7 +882,7 @@ local function runPaymentSimulationPerfTest(extended: Boolean): Job = new {
     prepareCodeBuild
     paymentSimulationPerfTest
   }
-  on_failure = perfTestIndividualExecitionErrorNotification("PaymentSimulation")
+  on_failure = perfTestIndividualExecutionErrorNotification("PaymentSimulation")
   on_success = perfTestPassedNotification("PaymentSimulation")
 }
 
@@ -923,7 +923,7 @@ local function runSelfServiceSimulationPerfTest(extended: Boolean): Job = new {
     prepareCodeBuild
     selfServiceSimulationPerfTest
   }
-  on_failure = perfTestIndividualExecitionErrorNotification("SelfServiceSimulation")
+  on_failure = perfTestIndividualExecutionErrorNotification("SelfServiceSimulation")
   on_success = perfTestPassedNotification("SelfServiceSimulation")
 }
 
