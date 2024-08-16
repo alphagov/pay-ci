@@ -3,7 +3,7 @@ image_resource:
   type: docker-image
   source:
     repository: alpine
-    tag: latest
+    tag: 3
 inputs:
   - name: pay-ci
   - name: src
