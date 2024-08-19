@@ -45,9 +45,17 @@ jobs:
             #   image_name:tag
             #   image_name:tag@sha256:<sha>
             #   image_name@sha256
+            #   scratch
             #
             IMAGE=$(cut -f 1 -d "@" <<<"$BASE_CONTAINER_DEFINITION")
             DIGEST=$(cut -f 2 -d "@" <<<"$BASE_CONTAINER_DEFINITION")
+
+            shopt -s nocasematch
+            if [[ "$IMAGE" == "scratch" ]]; then
+              echo "Scratch container, no manifest to check"
+              continue
+            fi
+            shopt -u nocasematch
 
             if [ -z "$DIGEST" ]; then
               echo
