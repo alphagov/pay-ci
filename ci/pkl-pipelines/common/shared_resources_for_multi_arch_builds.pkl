@@ -61,7 +61,6 @@ class RetagMultiArchImageInECR extends Pipeline.TaskStep {
 
 class RetagMultiArchImageInDockerhubAsLatestMaster extends Pipeline.TaskStep {
   hidden repo: String
-  hidden newTag: String = "latest-master"
   hidden sourceTag: String = "((.:candidate-image-tag))"
 
   task = "retag-candidate-as-release-in-dockerhub"
