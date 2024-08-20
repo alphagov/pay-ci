@@ -8,6 +8,7 @@ import "../common/shared_resources_for_metrics.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/shared_resources_for_lock_pools.pkl"
+import "../common/shared_resources_for_multi_arch_builds.pkl"
 import "../common/shared_resources_for_annotations.pkl"
 import "../common/PayResources.pkl"
 
@@ -249,30 +250,7 @@ local function getBuildAndPushCandidateJob(app): Job = new {
       loadVarWithJsonFormat("retag-role", "assume-retag-role/assume-role.json")
     }
 
-    new TaskStep {
-      task = "prepare-codebuild"
-      file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
-      params {
-        ["PROJECT_TO_BUILD"] = app.name
-        ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-        ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-        ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-        ["RELEASE_NUMBER"] = "((.:release-number))"
-        ["RELEASE_NAME"] = "((.:release-name))"
-        ["RELEASE_SHA"] = "((.:release-sha))"
-        ["BUILD_DATE"] = "((.:date))"
-      }
-    }
-
-    new InParallelStep {
-      in_parallel = new InParallelConfig {
-        steps = new Listing<Step> {
-          getTaskToRunCodeBuild(app, "amd64")
-          getTaskToRunCodeBuild(app, "armv8")
-        }
-      }
-    }
-    getTaskToRunCodeBuild(app, "manifest")
+    ...shared_resources_for_multi_arch_builds.multiArchCandidateBuild(app.name)
 
     when (getTestEnvConfig(app.name).run_e2e_tests == false && app.name != "adot") {
       new InParallelStep {

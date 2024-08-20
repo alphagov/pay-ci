@@ -1,0 +1,42 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "./shared_resources_for_deploy_pipelines.pkl"
+
+class RunCodeBuildStep extends Pipeline.TaskStep {
+  hidden appName: String
+  hidden arch: "amd64" | "armv8" | "manifest"
+
+  task = "run-codebuild-\(appName)-\(arch)"
+  attempts = 3
+  file = "pay-ci/ci/tasks/run-codebuild.yml"
+  params {
+    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(appName)-\(arch).json"
+    ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+  }
+}
+
+function multiArchCandidateBuild(appName: String): Listing<Pipeline.Step> = new {
+  new Pipeline.TaskStep {
+    task = "prepare-codebuild"
+    file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
+    params {
+      ["PROJECT_TO_BUILD"] = appName
+      ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+      ["RELEASE_NUMBER"] = "((.:release-number))"
+      ["RELEASE_NAME"] = "((.:release-name))"
+      ["RELEASE_SHA"] = "((.:release-sha))"
+      ["BUILD_DATE"] = "((.:date))"
+    }
+  }
+
+  new Pipeline.InParallelStep {
+    in_parallel = new Pipeline.InParallelConfig {
+      steps = new Listing<Pipeline.Step> {
+        new RunCodeBuildStep { appName = this.appName arch = "amd64" }
+        new RunCodeBuildStep { appName = this.appName arch = "armv8" }
+      }
+    }
+  }
+
+  new RunCodeBuildStep { appName = this.appName arch = "manifest" }
+}
