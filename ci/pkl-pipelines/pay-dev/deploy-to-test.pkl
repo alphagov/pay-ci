@@ -559,16 +559,6 @@ local function getAdotIntegrationTest(app): Job = new {
     new MetricsConfig { put_metrics = false })
 }
 
-local function getTaskToRunCodeBuild(app: PayApp, architecture: String) = new TaskStep {
-  task = "run-codebuild-\(app.name)-\(architecture)"
-  attempts = 3
-  file = "pay-ci/ci/tasks/run-codebuild.yml"
-  params {
-    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(app.name)-\(architecture).json"
-    ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
-  }
-}
-
 local function getJobToDeployApp(app): Job = new {
   name = "deploy-\(app.name)"
   serial = true
@@ -1006,17 +996,6 @@ local function sendSlackNotification(config: SlackNotificationConfig) = new {
     shared_resources_for_slack_notifications.paySlackNotification(config)
   } else {
     shared_resources_for_slack_notifications.paySlackNotificationForAppDeployment(config)
-  }
-}
-
-local function putGrafanaAnnotation() = new PutStep {
-  put = "grafana-annotation"
-  params {
-    ["tags"] = new Listing {
-      "((.:app_name))"
-      "deploy-to-test"
-    }
-    ["template"] = "released ${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME} release ((.:app_release_number)) (build ${BUILD_ID})"
   }
 }
 
