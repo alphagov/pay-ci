@@ -46,7 +46,7 @@ class RetagMultiArchImageInECR extends Pipeline.TaskStep {
   hidden sourceTag: String = "((.:candidate-image-tag))"
   hidden account: "dev" | "test" | "staging" | "production" | "deploy" = "test"
 
-  task = "retag-candidate-as-\(if (newTag.contains("release")) "release" else newTag)-in-ecr"
+  task = "retag-candidate-as-\(if (newTag.contains("release")) "release" else if (newTag.contains("perf")) "perf" else newTag)-in-ecr"
   file = "pay-ci/ci/tasks/manifest-retag.yml"
   params = new {
     ["DOCKER_LOGIN_ECR"] = "1"
