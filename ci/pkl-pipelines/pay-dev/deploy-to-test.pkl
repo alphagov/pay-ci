@@ -256,7 +256,7 @@ local function getBuildAndPushCandidateJob(app): Job = new {
       new InParallelStep {
         in_parallel = new InParallelConfig {
           steps = new Listing<Step> {
-            new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = app.getECRRepo() newTag = "((.:release_tag))" }
+            new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = app.getECRRepo() newTag = "((.:release-tag))" }
             new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = app.getECRRepo() newTag = "latest" }
             when (app.is_a_java_or_node_app == true || app.name == "adot" || app.name == "nginx-proxy" || app.name == "egress") {
               new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = app.getDockerRepo() }
