@@ -141,12 +141,12 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_test.loadVar("candidate_image_tag", "endtoend-candidate-ecr-registry-test/tag")
+          shared_test.loadVar("candidate-image-tag", "endtoend-candidate-ecr-registry-test/tag")
           shared_test.loadAssumeRoleVar
         }
       }
 
-      shared_test.prepareCodeBuild("endtoend", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+      shared_test.prepareCodeBuild("endtoend", "prepare-e2e-codebuild.yml", "((.:candidate-image-tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
@@ -234,12 +234,12 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_test.loadVar("candidate_image_tag", "reverse-proxy-candidate-ecr-registry-test/tag")
+          shared_test.loadVar("candidate-image-tag", "reverse-proxy-candidate-ecr-registry-test/tag")
           shared_test.loadAssumeRoleVar
         }
       }
 
-      shared_test.prepareCodeBuild("reverse-proxy", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+      shared_test.prepareCodeBuild("reverse-proxy", "prepare-e2e-codebuild.yml", "((.:candidate-image-tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
@@ -267,13 +267,9 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          retagCandidateInEcr("reverse-proxy", "((.:release_image_tag))", "release")
-          retagCandidateInEcr("reverse-proxy", "latest", "latest")
-          retagCandidateInDockerHub(
-            "governmentdigitalservice/pay-reverse-proxy",
-            "((.:candidate_image_tag))",
-            "release"
-          )
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/reverse-proxy" newTag = "((.:release_image_tag))" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/reverse-proxy" newTag = "latest" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = "governmentdigitalservice/pay-reverse-proxy" }
         }
       }
     }
@@ -349,7 +345,7 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_test.loadVar("candidate_image_tag", "stubs-candidate-ecr-registry-test/tag")
+          shared_test.loadVar("candidate-image-tag", "stubs-candidate-ecr-registry-test/tag")
           shared_test.loadAssumeRoleVar
           shared_test.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
           shared_test.loadVarJson("write-to-deploy-role", "assume-write-to-deploy-role/assume-role.json")
@@ -358,7 +354,7 @@ jobs = new {
         }
       }
 
-      shared_test.prepareCodeBuild("stubs", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+      shared_test.prepareCodeBuild("stubs", "prepare-e2e-codebuild.yml", "((.:candidate-image-tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
@@ -369,13 +365,9 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          retagCandidateInEcr("stubs", "((.:release_image_tag))", "release")
-          retagCandidateInEcr("stubs", "latest", "latest")
-          retagCandidateInDockerHub(
-            "governmentdigitalservice/pay-stubs",
-            "((.:candidate_image_tag))",
-            "release"
-          )
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/stubs" newTag = "((.:release_image_tag))" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/stubs" newTag = "latest" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = "governmentdigitalservice/pay-stubs" }
           copyMultiarchImageToAccount("stubs")
         }
       }
@@ -444,29 +436,6 @@ local assumeWriteToDeployRole: TaskStep = new {
   params = new {
     ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_dev_worker_ecr_access"
     ["AWS_ROLE_SESSION_NAME"] = "write-ecr-to-deploy"
-  }
-}
-
-local function retagCandidateInDockerHub(repo: String, tag: String, taskTag: String): TaskStep = new {
-  task = "retag-candidate-as-\(taskTag)-in-dockerhub"
-  file = "pay-ci/ci/tasks/manifest-retag.yml"
-  params = new {
-    ["SOURCE_MANIFEST"] = "\(repo):\(tag)"
-    ["NEW_MANIFEST"] = "\(repo):latest-master"
-  }
-}
-
-local function retagCandidateInEcr(repo: String, tag: String, taskTag: String): TaskStep = new {
-  task = "retag-candidate-as-\(taskTag)-in-ecr"
-  file = "pay-ci/ci/tasks/manifest-retag.yml"
-  params = new {
-    ["DOCKER_LOGIN_ECR"] = "1"
-    ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
-    ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo):((.:candidate_image_tag))"
-    ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo):\(tag)"
-    ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
   }
 }
 

@@ -3,6 +3,7 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_metrics.pkl"
+import "../common/shared_resources_for_multi_arch_builds.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/shared_resources_for_lock_pools.pkl"
@@ -284,7 +285,11 @@ local function getJobToRetagImageForNextEnv(app): Job = new {
     loadVarWithJsonFormat("retag-role", "assume-retag-role/assume-role.json")
     copyImagesToEUWest(app)
 
-    retagCandidateAsPerfInECR(app, false)
+    new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR {
+      repo = app.getECRRepo()
+      sourceTag = "((.:release-number))-candidate"
+      newTag = "((.:perf-tag))"
+    }
   }
   on_success = shared_resources_for_metrics.paySendAppReleaseMetric(true, "production-2")
   on_failure = shared_resources_for_metrics.paySendAppReleaseMetric(false, "production-2")
@@ -356,7 +361,11 @@ local function getJobToRetagImageForDBMigrations(app): Job = new {
     }
     loadVarWithJsonFormat("retag-role", "assume-retag-role/assume-role.json")
     copyImagesToEUWest(app)
-    retagCandidateAsPerfInECR(app, true)
+    new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR {
+      repo = app.getECRRepo()
+      sourceTag = "((.:release-number))-candidate"
+      newTag = "((.:perf-db-tag))"
+    }
   }
   on_success = shared_resources_for_metrics.paySendAppReleaseMetric(true, "production-2")
   on_failure = shared_resources_for_metrics.paySendAppReleaseMetric(false, "production-2")
@@ -649,24 +658,6 @@ local function copyImagesToEUWest(app: PayApp): TaskStep = new TaskStep {
     ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
     ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
     ["DESTINATION_REGION"] = "eu-west-1"
-  }
-}
-
-local function retagCandidateAsPerfInECR(app: PayApp, dbMigration: Boolean): TaskStep = new TaskStep {
-  task = "retag-candidate-as-perf-in-ecr"
-  file = "pay-ci/ci/tasks/manifest-retag.yml"
-  params {
-    ["DOCKER_LOGIN_ECR"] = "1"
-    ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
-    ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
-    when (dbMigration) {
-      ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:perf-db-tag))"
-    } else {
-      ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:perf-tag))"
-    }
-    ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:release-number))-candidate"
   }
 }
 

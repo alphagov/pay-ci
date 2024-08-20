@@ -256,41 +256,10 @@ local function getBuildAndPushCandidateJob(app): Job = new {
       new InParallelStep {
         in_parallel = new InParallelConfig {
           steps = new Listing<Step> {
-            new TaskStep {
-              task = "retag-candidate-as-release-in-ecr"
-              file = "pay-ci/ci/tasks/manifest-retag.yml"
-              params {
-                ["DOCKER_LOGIN_ECR"] = "1"
-                ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
-                ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
-                ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:release-tag))"
-                ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
-                ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
-                ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
-              }
-            }
-            new TaskStep {
-              task = "retag-candidate-as-latest-in-ecr"
-              file = "pay-ci/ci/tasks/manifest-retag.yml"
-              params {
-                ["DOCKER_LOGIN_ECR"] = "1"
-                ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
-                ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
-                ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):latest"
-                ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
-                ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
-                ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
-              }
-            }
+            new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = app.getECRRepo() newTag = "((.:release-tag))" }
+            new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = app.getECRRepo() newTag = "latest" }
             when (app.is_a_java_or_node_app == true || app.name == "adot" || app.name == "nginx-proxy" || app.name == "egress") {
-              new TaskStep {
-                task = "retag-candidate-as-release-in-dockerhub"
-                file = "pay-ci/ci/tasks/manifest-retag.yml"
-                params {
-                  ["SOURCE_MANIFEST"] = "\(app.getDockerRepo()):((.:candidate-image-tag))"
-                  ["NEW_MANIFEST"] = "\(app.getDockerRepo()):latest-master"
-                }
-              }
+              new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = app.getDockerRepo() }
             }
           }
         }
@@ -388,41 +357,10 @@ local function getRunE2ETestsJob(app): Job = new {
     new InParallelStep {
       in_parallel = new InParallelConfig {
         steps = new Listing<Step> {
-          new TaskStep {
-            task = "retag-candidate-as-release-in-ecr"
-            file = "pay-ci/ci/tasks/manifest-retag.yml"
-            params {
-              ["DOCKER_LOGIN_ECR"] = "1"
-              ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
-              ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
-              ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:release_image_tag))"
-              ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
-              ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
-              ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
-            }
-          }
-          new TaskStep {
-            task = "retag-candidate-as-latest-in-ecr"
-            file = "pay-ci/ci/tasks/manifest-retag.yml"
-            params {
-              ["DOCKER_LOGIN_ECR"] = "1"
-              ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
-              ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
-              ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):latest"
-              ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
-              ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
-              ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
-            }
-          }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = app.getECRRepo() newTag = "((.:release_image_tag))" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = app.getECRRepo() newTag = "latest" }
           when (app.is_a_java_or_node_app == true || app.name == "adot" || app.name == "nginx-proxy") {
-            new TaskStep {
-              task = "retag-candidate-as-release-in-dockerhub"
-              file = "pay-ci/ci/tasks/manifest-retag.yml"
-              params {
-                ["SOURCE_MANIFEST"] = "\(app.getDockerRepo()):((.:candidate-image-tag))"
-                ["NEW_MANIFEST"] = "\(app.getDockerRepo()):latest-master"
-              }
-            }
+            new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = app.getDockerRepo() }
           }
         }
       }
@@ -510,41 +448,10 @@ local function getAdotIntegrationTest(app): Job = new {
     new InParallelStep {
       in_parallel = new InParallelConfig {
         steps = new Listing<Step> {
-          new TaskStep {
-            task = "retag-candidate-as-release-in-ecr"
-            file = "pay-ci/ci/tasks/manifest-retag.yml"
-            params {
-              ["DOCKER_LOGIN_ECR"] = "1"
-              ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
-              ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
-              ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:release_image_tag))"
-              ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
-              ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
-              ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
-            }
-          }
-          new TaskStep {
-            task = "retag-candidate-as-latest-in-ecr"
-            file = "pay-ci/ci/tasks/manifest-retag.yml"
-            params {
-              ["DOCKER_LOGIN_ECR"] = "1"
-              ["AWS_ACCOUNT_ID"] = "((pay_aws_test_account_id))"
-              ["SOURCE_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):((.:candidate-image-tag))"
-              ["NEW_MANIFEST"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(app.getECRRepo()):latest"
-              ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
-              ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
-              ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
-            }
-          }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = app.getECRRepo() newTag = "((.:release_image_tag))" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = app.getECRRepo() newTag = "latest" }
           when (app.is_a_java_or_node_app == true || app.name == "adot" || app.name == "nginx-proxy") {
-            new TaskStep {
-              task = "retag-candidate-as-release-in-dockerhub"
-              file = "pay-ci/ci/tasks/manifest-retag.yml"
-              params {
-                ["SOURCE_MANIFEST"] = "\(app.getDockerRepo()):((.:candidate-image-tag))"
-                ["NEW_MANIFEST"] = "\(app.getDockerRepo()):latest-master"
-              }
-            }
+            new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = app.getDockerRepo() }
           }
         }
       }
@@ -557,16 +464,6 @@ local function getAdotIntegrationTest(app): Job = new {
   on_failure = sendNotificationAndMetrics(app,
     new SlackNotificationConfig { message = "\(app.name) candidate image ((.:candidate-image-tag)) failed post-merge end to end tests" },
     new MetricsConfig { put_metrics = false })
-}
-
-local function getTaskToRunCodeBuild(app: PayApp, architecture: String) = new TaskStep {
-  task = "run-codebuild-\(app.name)-\(architecture)"
-  attempts = 3
-  file = "pay-ci/ci/tasks/run-codebuild.yml"
-  params {
-    ["PATH_TO_CONFIG"] = "../../../../run-codebuild-configuration/\(app.name)-\(architecture).json"
-    ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
-  }
 }
 
 local function getJobToDeployApp(app): Job = new {
@@ -1006,17 +903,6 @@ local function sendSlackNotification(config: SlackNotificationConfig) = new {
     shared_resources_for_slack_notifications.paySlackNotification(config)
   } else {
     shared_resources_for_slack_notifications.paySlackNotificationForAppDeployment(config)
-  }
-}
-
-local function putGrafanaAnnotation() = new PutStep {
-  put = "grafana-annotation"
-  params {
-    ["tags"] = new Listing {
-      "((.:app_name))"
-      "deploy-to-test"
-    }
-    ["template"] = "released ${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME} release ((.:app_release_number)) (build ${BUILD_ID})"
   }
 }
 
