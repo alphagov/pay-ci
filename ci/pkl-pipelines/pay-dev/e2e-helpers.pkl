@@ -141,12 +141,12 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_test.loadVar("candidate_image_tag", "endtoend-candidate-ecr-registry-test/tag")
+          shared_test.loadVar("candidate-image-tag", "endtoend-candidate-ecr-registry-test/tag")
           shared_test.loadAssumeRoleVar
         }
       }
 
-      shared_test.prepareCodeBuild("endtoend", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+      shared_test.prepareCodeBuild("endtoend", "prepare-e2e-codebuild.yml", "((.:candidate-image-tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
@@ -234,12 +234,12 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_test.loadVar("candidate_image_tag", "reverse-proxy-candidate-ecr-registry-test/tag")
+          shared_test.loadVar("candidate-image-tag", "reverse-proxy-candidate-ecr-registry-test/tag")
           shared_test.loadAssumeRoleVar
         }
       }
 
-      shared_test.prepareCodeBuild("reverse-proxy", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+      shared_test.prepareCodeBuild("reverse-proxy", "prepare-e2e-codebuild.yml", "((.:candidate-image-tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
@@ -345,7 +345,7 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          shared_test.loadVar("candidate_image_tag", "stubs-candidate-ecr-registry-test/tag")
+          shared_test.loadVar("candidate-image-tag", "stubs-candidate-ecr-registry-test/tag")
           shared_test.loadAssumeRoleVar
           shared_test.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
           shared_test.loadVarJson("write-to-deploy-role", "assume-write-to-deploy-role/assume-role.json")
@@ -354,7 +354,7 @@ jobs = new {
         }
       }
 
-      shared_test.prepareCodeBuild("stubs", "prepare-e2e-codebuild.yml", "((.:candidate_image_tag))")
+      shared_test.prepareCodeBuild("stubs", "prepare-e2e-codebuild.yml", "((.:candidate-image-tag))")
 
       new InParallelStep {
         in_parallel = new Listing {
