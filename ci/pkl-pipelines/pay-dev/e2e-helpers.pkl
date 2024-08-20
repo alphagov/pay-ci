@@ -3,6 +3,7 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_multi_arch_builds.pkl"
 import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/PayResources.pkl"
@@ -205,14 +206,8 @@ jobs = new {
       }
 
       shared_test.loadAssumeRoleVar
-      prepareCodeBuildMultiarch("reverse-proxy")
       shared_resources.generateDockerCredsConfigStep
-      runCodeBuildMultiarch("reverse-proxy", 3)
-      shared_test.runCodeBuild(
-        "run-codebuild-reverse-proxy-manifest",
-        "reverse-proxy-manifest.json",
-        3
-      )
+      ...shared_resources_for_multi_arch_builds.multiArchCandidateBuild("reverse-proxy")
     }
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "Failed to build and push e2e helper reverse-proxy"
@@ -320,9 +315,7 @@ jobs = new {
         }
       }
 
-      prepareCodeBuildMultiarch("stubs")
-      runCodeBuildMultiarch("stubs", 1)
-      shared_test.runCodeBuild("run-codebuild-stubs-manifest", "stubs-manifest.json", 1)
+      ...shared_resources_for_multi_arch_builds.multiArchCandidateBuild("stubs")
     }
 
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
