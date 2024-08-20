@@ -519,32 +519,6 @@ local function parseCandidateTag(ecrRepo: String): TaskStep = new {
   }
 }
 
-local function prepareCodeBuildMultiarch(project: String): TaskStep = new {
-  task = "prepare-codebuild"
-  file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
-  params = new {
-    ["PROJECT_TO_BUILD"] = project
-    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-    ["RELEASE_NUMBER"] = "((.:release-number))"
-    ["RELEASE_NAME"] = "((.:release-name))"
-    ["RELEASE_SHA"] = "((.:release-sha))"
-    ["BUILD_DATE"] = "((.:date))"
-  }
-}
-
-local function runCodeBuildMultiarch(project: String, attempts: Int): InParallelStep = new {
-  in_parallel = new Listing {
-    shared_test.runCodeBuild("run-codebuild-\(project)-amd64", "\(project)-amd64.json", attempts)
-    shared_test.runCodeBuild("run-codebuild-\(project)-armv8", "\(project)-armv8.json", attempts)
-  }
-}
-
-local function withTagRegex(tag: String) = new Mixin {
-  source { ["tag_regex"] = tag }
-}
-
 local function withTag(tag: String) = new Mixin {
   source { ["tag"] = tag }
 }
