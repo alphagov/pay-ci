@@ -269,7 +269,7 @@ jobs = new {
         in_parallel = new Listing {
           new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "reverse-proxy" newTag = "((.:release_image_tag))" }
           new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "reverse-proxy" newTag = "latest" }
-          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = "governmentdigitalservice/pay-stubs" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = "governmentdigitalservice/pay-reverse-proxy" }
         }
       }
     }
