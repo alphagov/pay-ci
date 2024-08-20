@@ -3,6 +3,7 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_multi_arch_builds.pkl"
 import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/PayResources.pkl"
@@ -205,14 +206,8 @@ jobs = new {
       }
 
       shared_test.loadAssumeRoleVar
-      prepareCodeBuildMultiarch("reverse-proxy")
       shared_resources.generateDockerCredsConfigStep
-      runCodeBuildMultiarch("reverse-proxy", 3)
-      shared_test.runCodeBuild(
-        "run-codebuild-reverse-proxy-manifest",
-        "reverse-proxy-manifest.json",
-        3
-      )
+      ...shared_resources_for_multi_arch_builds.multiArchCandidateBuild("reverse-proxy")
     }
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "Failed to build and push e2e helper reverse-proxy"
@@ -320,9 +315,7 @@ jobs = new {
         }
       }
 
-      prepareCodeBuildMultiarch("stubs")
-      runCodeBuildMultiarch("stubs", 1)
-      shared_test.runCodeBuild("run-codebuild-stubs-manifest", "stubs-manifest.json", 1)
+      ...shared_resources_for_multi_arch_builds.multiArchCandidateBuild("stubs")
     }
 
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
@@ -524,32 +517,6 @@ local function parseCandidateTag(ecrRepo: String): TaskStep = new {
   input_mapping {
     ["ecr-repo"] = ecrRepo
   }
-}
-
-local function prepareCodeBuildMultiarch(project: String): TaskStep = new {
-  task = "prepare-codebuild"
-  file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
-  params = new {
-    ["PROJECT_TO_BUILD"] = project
-    ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-    ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-    ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-    ["RELEASE_NUMBER"] = "((.:release-number))"
-    ["RELEASE_NAME"] = "((.:release-name))"
-    ["RELEASE_SHA"] = "((.:release-sha))"
-    ["BUILD_DATE"] = "((.:date))"
-  }
-}
-
-local function runCodeBuildMultiarch(project: String, attempts: Int): InParallelStep = new {
-  in_parallel = new Listing {
-    shared_test.runCodeBuild("run-codebuild-\(project)-amd64", "\(project)-amd64.json", attempts)
-    shared_test.runCodeBuild("run-codebuild-\(project)-armv8", "\(project)-armv8.json", attempts)
-  }
-}
-
-local function withTagRegex(tag: String) = new Mixin {
-  source { ["tag_regex"] = tag }
 }
 
 local function withTag(tag: String) = new Mixin {
