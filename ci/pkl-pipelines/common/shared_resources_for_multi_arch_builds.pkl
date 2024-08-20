@@ -51,8 +51,8 @@ class RetagMultiArchImageInECR extends Pipeline.TaskStep {
   params = new {
     ["DOCKER_LOGIN_ECR"] = "1"
     ["AWS_ACCOUNT_ID"] = "((pay_aws_\(account)_account_id))"
-    ["SOURCE_MANIFEST"] = "((pay_aws_\(account)_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo):\(sourceTag)"
-    ["NEW_MANIFEST"] = "((pay_aws_\(account)_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/\(repo):\(newTag)"
+    ["SOURCE_MANIFEST"] = "((pay_aws_\(account)_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(repo):\(sourceTag)"
+    ["NEW_MANIFEST"] = "((pay_aws_\(account)_account_id)).dkr.ecr.eu-west-1.amazonaws.com/\(repo):\(newTag)"
     ["AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
     ["AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
     ["AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"

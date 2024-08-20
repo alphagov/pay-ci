@@ -267,8 +267,8 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "reverse-proxy" newTag = "((.:release_image_tag))" }
-          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "reverse-proxy" newTag = "latest" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/reverse-proxy" newTag = "((.:release_image_tag))" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/reverse-proxy" newTag = "latest" }
           new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = "governmentdigitalservice/pay-reverse-proxy" }
         }
       }
@@ -365,8 +365,8 @@ jobs = new {
 
       new InParallelStep {
         in_parallel = new Listing {
-          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "stubs" newTag = "((.:release_image_tag))" }
-          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "stubs" newTag = "latest" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/stubs" newTag = "((.:release_image_tag))" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/stubs" newTag = "latest" }
           new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = "governmentdigitalservice/pay-stubs" }
           copyMultiarchImageToAccount("stubs")
         }
