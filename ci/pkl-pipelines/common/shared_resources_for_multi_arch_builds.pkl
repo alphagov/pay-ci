@@ -64,7 +64,7 @@ class RetagMultiArchImageInDockerhubAsLatestMaster extends Pipeline.TaskStep {
   hidden newTag: String = "latest-master"
   hidden sourceTag: String = "((.:candidate_image_tag))"
 
-  task = "retag-candidate-as-\(newTag)-in-dockerhub"
+  task = "retag-candidate-as-release-in-dockerhub"
   file = "pay-ci/ci/tasks/manifest-retag.yml"
   params = new {
     ["SOURCE_MANIFEST"] = "\(repo):\(sourceTag)"
