@@ -3,6 +3,8 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import ".../common/PayResources.pkl"
 
+typealias AWSAccountName = "dev" | "test" | "staging" | "production" | "deploy"
+
 anonymousConcourseRunnerResource = new TaskConfig.AnonymousResource {
   type = "registry-image"
   source = new {
@@ -151,3 +153,19 @@ function loadVarJson(variable: String, fileName: String): Pipeline.LoadVarStep =
   file = fileName
   format = "json"
 }
+
+class AssumeRunCodeBuildRoleStep extends Pipeline.TaskStep {
+  hidden session_name: String = "concourse-assumed-role"
+
+  task = "assume-run-codebuild-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping {
+    ["assume-role"] = "run-codebuild-assume-role"
+  }
+  params {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/pay-cd-pay-dev-codebuild-builder-test-12"
+    ["AWS_ROLE_SESSION_NAME"] = session_name
+  }
+}
+
+LoadRunCodeBuildAssumedRoleVar: Pipeline.LoadVarStep = loadVarJson("role", "run-codebuild-assume-role/assume-role.json")
