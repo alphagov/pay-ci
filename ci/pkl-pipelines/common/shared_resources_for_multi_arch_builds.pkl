@@ -1,6 +1,8 @@
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
+import "./shared_resources.pkl"
 import "./shared_resources_for_deploy_pipelines.pkl"
+
 
 local class RunCodeBuildStep extends Pipeline.TaskStep {
   hidden _appName: String
@@ -44,7 +46,7 @@ class RetagMultiArchImageInECR extends Pipeline.TaskStep {
   hidden repo: String
   hidden newTag: String
   hidden sourceTag: String = "((.:candidate-image-tag))"
-  hidden account: "dev" | "test" | "staging" | "production" | "deploy" = "test"
+  hidden account: shared_resources.AWSAccountName = "test"
 
   task = "retag-candidate-as-\(if (newTag.contains("release")) "release" else if (newTag.contains("perf")) "perf" else newTag)-in-ecr"
   file = "pay-ci/ci/tasks/manifest-retag.yml"
@@ -70,3 +72,20 @@ class RetagMultiArchImageInDockerhubAsLatestMaster extends Pipeline.TaskStep {
     ["NEW_MANIFEST"] = "\(repo):latest-master"
   }
 }
+
+
+class AssumeRetagRoleStep extends Pipeline.TaskStep {
+  hidden account: shared_resources.AWSAccountName = "test"
+
+  task = "assume-retag-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping = new {
+    ["assume-role"] = "assume-retag-role"
+  }
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_\(account)_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "retag-ecr-image-as-release"
+  }
+}
+
+LoadAssumedRetagRoleVar: Pipeline.LoadVarStep = shared_resources.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
