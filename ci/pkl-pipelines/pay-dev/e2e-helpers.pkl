@@ -34,6 +34,7 @@ local class ImageToMultiArchBuild {
 local images_to_multi_arch_build = new Listing<ImageToMultiArchBuild> {
   new { name = "reverse-proxy" github_repo = "pay-scripts" release_tag_prefix = "reverse_proxy_" }
   new { name = "stubs" github_repo = "pay-stubs" copy_release_to_deploy = true }
+  new { name = "zap" github_repo = "pay-scripts" release_tag_prefix = "zap_"}
 }
 
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
