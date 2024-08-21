@@ -8,6 +8,19 @@ import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
 import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/PayResources.pkl"
 
+local class ImageToCopyFromDockerhubToECR {
+  repo: String
+  tag: String
+  image: String = "\(repo):\(tag)"
+  displayName: String
+}
+
+local images_to_copy_from_dockerhub_to_ecr = new Listing<ImageToCopyFromDockerhubToECR> {
+  new { displayName = "postgres-15-alpine" repo = "postgres" tag = "15-alpine" }
+  new { displayName = "localstack-localstack-3" repo = "localstack/localstack" tag = "3" }
+  new { displayName = "selenium-standalone-chrome-3-141-59" repo = "selenium/standalone-chrome" tag = "3.141.59" }
+}
+
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
 
 resources = new {
@@ -63,26 +76,13 @@ resources = new {
     "endtoend-dockerhub", "governmentdigitalservice/pay-endtoend", "latest-master"
   )
 
-  shared_resources.payDockerHubResource("postgres-15-alpine", "postgres", "15-alpine")
-  |> withCheckInterval("1h")
+  for (image_to_copy in images_to_copy_from_dockerhub_to_ecr) {
+    shared_resources.payDockerHubResource(image_to_copy.displayName, image_to_copy.repo, image_to_copy.tag)
+    |> withCheckInterval("1h")
 
-  shared_resources.payECRResource("ecr-postgres-15-alpine", "postgres", "pay_aws_test_account_id")
-  |> withTag("15-alpine") |> withCheckInterval("never")
-
-  shared_resources.payDockerHubResource("localstack-localstack-3", "localstack/localstack", "3")
-  |> withCheckInterval("1h")
-
-  shared_resources.payECRResource(
-    "ecr-localstack-localstack-3", "localstack/localstack", "pay_aws_test_account_id"
-  ) |> withTag("3") |> withCheckInterval("never")
-
-  shared_resources.payDockerHubResource(
-    "selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome", "3.141.59"
-  ) |> withCheckInterval("1h")
-
-  shared_resources.payECRResource(
-    "ecr-selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome", "pay_aws_test_account_id"
-  ) |> withTag("3.141.59") |> withCheckInterval("never")
+    shared_resources.payECRResource("ecr-\(image_to_copy.displayName)", image_to_copy.repo, "pay_aws_test_account_id")
+    |> withTag(image_to_copy.tag) |> withCheckInterval("never")
+  }
 
   shared_resources.slackNotificationResource
 }
@@ -381,9 +381,9 @@ jobs = new {
     )
   }
 
-  copyImageToEcr("postgres-15-alpine", "postgres:15-alpine")
-  copyImageToEcr("localstack-localstack-3", "localstack/localstack:2.0")
-  copyImageToEcr("selenium-standalone-chrome-3-141-59", "selenium/standalone-chrome:3-141-59")
+  for (image_to_copy in images_to_copy_from_dockerhub_to_ecr) {
+    copyImageToEcr(image_to_copy.displayName, image_to_copy.image)
+  }
 }
 
 // THINGS BELOW HERE MAY BE USEFUL IN SHARED_RESOURCES
