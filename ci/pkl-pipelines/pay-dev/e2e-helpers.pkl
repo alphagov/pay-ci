@@ -9,16 +9,17 @@ import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/PayResources.pkl"
 
 local class ImageToCopyFromDockerhubToECR {
+  name: String
   repo: String
   tag: String
   image: String = "\(repo):\(tag)"
-  displayName: String
 }
 
 local images_to_copy_from_dockerhub_to_ecr = new Listing<ImageToCopyFromDockerhubToECR> {
-  new { displayName = "postgres-15-alpine" repo = "postgres" tag = "15-alpine" }
-  new { displayName = "localstack-localstack-3" repo = "localstack/localstack" tag = "3" }
-  new { displayName = "selenium-standalone-chrome-3-141-59" repo = "selenium/standalone-chrome" tag = "3.141.59" }
+  new { name = "postgres-15-alpine" repo = "postgres" tag = "15-alpine" }
+  new { name = "localstack-localstack-3" repo = "localstack/localstack" tag = "3" }
+  new { name = "selenium-standalone-chrome-3-141-59" repo = "selenium/standalone-chrome" tag = "3.141.59" }
+}
 }
 
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
@@ -77,14 +78,47 @@ resources = new {
   )
 
   for (image_to_copy in images_to_copy_from_dockerhub_to_ecr) {
-    shared_resources.payDockerHubResource(image_to_copy.displayName, image_to_copy.repo, image_to_copy.tag)
+    shared_resources.payDockerHubResource(image_to_copy.name, image_to_copy.repo, image_to_copy.tag)
     |> withCheckInterval("1h")
 
-    shared_resources.payECRResource("ecr-\(image_to_copy.displayName)", image_to_copy.repo, "pay_aws_test_account_id")
+    shared_resources.payECRResource("ecr-\(image_to_copy.name)", image_to_copy.repo, "pay_aws_test_account_id")
     |> withTag(image_to_copy.tag) |> withCheckInterval("never")
   }
 
   shared_resources.slackNotificationResource
+}
+
+groups {
+  new {
+    name = "copy-from-dockerhub-to-ecr"
+    jobs {
+      for (image in images_to_copy_from_dockerhub_to_ecr) {
+        "copy-\(image.name)"
+      }
+    }
+  }
+  new {
+    name = "end-to-end"
+    jobs {
+      "build-and-push-endtoend-candidate"
+      "endtoend-e2e"
+    }
+  }
+  new {
+    name = "reverse-proxy"
+    jobs {
+      "build-and-push-reverse-proxy-candidate"
+      "reverse-proxy-e2e"
+    }
+  }
+  new {
+    name = "stubs"
+    jobs {
+      "build-and-push-stubs-candidate"
+      "stubs-e2e"
+    }
+  }
+  pipeline_self_update.payPipelineSelfUpdateGroup
 }
 
 resource_types = new {
@@ -382,7 +416,7 @@ jobs = new {
   }
 
   for (image_to_copy in images_to_copy_from_dockerhub_to_ecr) {
-    copyImageToEcr(image_to_copy.displayName, image_to_copy.image)
+    copyImageToEcr(image_to_copy.name, image_to_copy.image)
   }
 }
 
