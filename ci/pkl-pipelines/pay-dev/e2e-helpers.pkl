@@ -20,6 +20,17 @@ local images_to_copy_from_dockerhub_to_ecr = new Listing<ImageToCopyFromDockerhu
   new { name = "localstack-localstack-3" repo = "localstack/localstack" tag = "3" }
   new { name = "selenium-standalone-chrome-3-141-59" repo = "selenium/standalone-chrome" tag = "3.141.59" }
 }
+
+local class ImageToMultiArchBuild {
+  name: String
+  githubRepo: String
+  release_tag_prefix: String  = ""
+  branch: String = "master"
+}
+
+local images_to_multi_arch_build = new Listing<ImageToMultiArchBuild> {
+  new { name = "reverse-proxy" githubRepo = "pay-scripts" release_tag_prefix = "reverse_proxy_" }
+  new { name = "stubs" githubRepo = "pay-stubs" }
 }
 
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
@@ -36,20 +47,15 @@ resources = new {
       tag_regex = "alpha_release-(.*)"
     }
   }
-  new PayResources.PayGitHubResource {
-    name = "stubs-git-release"
-    repoName = "pay-stubs"
-    source {
-      branch = "master"
-      tag_regex = "alpha_release-(.*)"
-    }
-  }
-  new PayResources.PayGitHubResource {
-    name = "reverse-proxy-git-release"
-    repoName = "pay-scripts"
-    source {
-      branch = "master"
-      tag_regex = "reverse_proxy_alpha_release-(.*)"
+
+  for (image_to_build in images_to_multi_arch_build) {
+    new PayResources.PayGitHubResource {
+      name = "\(image_to_build.name)-git-release"
+      repoName = image_to_build.githubRepo
+      source {
+        branch = image_to_build.branch
+        tag_regex = "\(image_to_build.release_tag_prefix)alpha_release-(.*)"
+      }
     }
   }
 
@@ -61,21 +67,18 @@ resources = new {
     "endtoend-candidate-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id", "candidate"
   )
 
-  shared_resources.payECRResourceWithVariant(
-    "reverse-proxy-candidate-ecr-registry-test",
-    "govukpay/reverse-proxy",
-    "pay_aws_test_account_id",
-    "candidate")
-
-  shared_resources.payECRResourceWithVariant(
-    "stubs-candidate-ecr-registry-test",
-    "govukpay/stubs",
-    "pay_aws_test_account_id",
-    "candidate")
-
   shared_resources.payDockerHubResource(
     "endtoend-dockerhub", "governmentdigitalservice/pay-endtoend", "latest-master"
   )
+
+  for (image_to_build in images_to_multi_arch_build) {
+    shared_resources.payECRResourceWithVariant(
+      "\(image_to_build.name)-candidate-ecr-registry-test",
+      "govukpay/\(image_to_build.name)",
+      "pay_aws_test_account_id",
+      "candidate"
+    )
+  }
 
   for (image_to_copy in images_to_copy_from_dockerhub_to_ecr) {
     shared_resources.payDockerHubResource(image_to_copy.name, image_to_copy.repo, image_to_copy.tag)
@@ -104,18 +107,13 @@ groups {
       "endtoend-e2e"
     }
   }
-  new {
-    name = "reverse-proxy"
-    jobs {
-      "build-and-push-reverse-proxy-candidate"
-      "reverse-proxy-e2e"
-    }
-  }
-  new {
-    name = "stubs"
-    jobs {
-      "build-and-push-stubs-candidate"
-      "stubs-e2e"
+  for (image in images_to_multi_arch_build) {
+    new {
+      name = image.name
+      jobs {
+        "build-and-push-\(image.name)-candidate"
+        "\(image.name)-e2e"
+      }
     }
   }
   pipeline_self_update.payPipelineSelfUpdateGroup
