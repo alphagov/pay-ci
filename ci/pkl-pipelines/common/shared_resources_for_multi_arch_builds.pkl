@@ -2,6 +2,7 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "./shared_resources.pkl"
 import "./shared_resources_for_deploy_pipelines.pkl"
+import "../common/PayResources.pkl"
 import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
 import "../common/shared_resources_for_slack_notifications.pkl" as shared_slack
 
@@ -15,6 +16,7 @@ open class ImageToMultiArchBuild {
   branch: String = "master"
   copy_release_to_deploy: Boolean = false
   retag_after_build: Boolean = false // At the end of a build candidate job, retag the image as release
+  release_tag_regex: String = "\(release_tag_prefix)alpha_release-(.*)"
 }
 
 class MultiArchCandidateBuildJob extends Pipeline.Job {
@@ -254,3 +256,22 @@ class AssumeRetagRoleStep extends Pipeline.TaskStep {
 }
 
 const LoadAssumedRetagRoleVar: Pipeline.LoadVarStep = shared_resources.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
+
+class MultiArchBuildGithubSourceResource extends PayResources.PayGitHubResource {
+  hidden image: ImageToMultiArchBuild
+
+  name = "\(image.name)-git-release"
+  repoName = image.github_repo
+  source {
+    branch = image.branch
+    tag_regex = image.release_tag_regex
+  }
+}
+
+// I'd rather this be a class but that requires a giant refactor
+function multiArchCandidateECRRepoResource(image: ImageToMultiArchBuild): Pipeline.Resource = shared_resources.payECRResourceWithVariant(
+  "\(image.name)-candidate-ecr-registry-test",
+  "govukpay/\(image.name)",
+  "pay_aws_test_account_id",
+  "candidate"
+)

@@ -4,7 +4,6 @@ import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_multi_arch_builds.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
-import "../common/PayResources.pkl"
 
 local bastion_image: shared_resources_for_multi_arch_builds.ImageToMultiArchBuild = new {
   name = "bastion"
@@ -20,66 +19,13 @@ resource_types {
 
 resources {
   shared_resources.payCiGitHubResource
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/bastion.pkl", "master")
-  new PayResources.PayGitHubResource {
-    name = "bastion-git-release"
-    repoName = "pay-aws-bastion"
-    source {
-      branch = "main"
-      tag_regex = "alpha_release-(.*)"
-    }
-  }
   shared_resources_for_slack_notifications.slackNotificationResource
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/bastion.pkl", "master")
+  new shared_resources_for_multi_arch_builds.MultiArchBuildGithubSourceResource { image = bastion_image }
 }
 
 jobs {
   new shared_resources_for_multi_arch_builds.MultiArchCandidateBuildJob { image = bastion_image }
 
-  // new {
-  //   name = "build-and-push-bastion"
-  //   plan {
-  //     new InParallelStep {
-  //       in_parallel = new Listing<Step> {
-  //         new GetStep { get = "bastion-git-release" trigger = true }
-  //         new GetStep { get = "pay-ci" }
-  //       }
-  //     }
-  //     new InParallelStep {
-  //       in_parallel = new Listing<Step> {
-  //         new TaskStep {
-  //           task = "parse-release-tag"
-  //           file = "pay-ci/ci/tasks/parse-release-tag.yml"
-  //           input_mapping {
-  //             ["git-release"] = "bastion-git-release"
-  //           }
-  //         }
-  //         new shared_resources_for_multi_arch_builds.AssumeRetagRoleStep {}
-  //         new shared_resources.AssumeRunCodeBuildRoleStep {}
-  //         shared_resources.generateDockerCredsConfigStep
-  //       }
-  //     }
-
-  //     new InParallelStep {
-  //       in_parallel = new Listing<Step> {
-  //         shared_resources.loadVar("release-number", "tags/release-number")
-  //         shared_resources.loadVar("release-name", "bastion-git-release/.git/ref")
-  //         shared_resources.loadVar("release-sha", "tags/release-sha")
-  //         shared_resources.loadVar("candidate-image-tag", "tags/candidate-tag")
-  //         shared_resources.loadVar("release-image-tag", "tags/tags")
-  //         shared_resources.loadVar("date", "tags/date")
-  //         shared_resources_for_multi_arch_builds.LoadAssumedRetagRoleVar
-  //         shared_resources.LoadRunCodeBuildAssumedRoleVar
-  //       }
-  //     }
-  //     ...shared_resources_for_multi_arch_builds.multiArchCandidateBuild("aws-bastion")
-  //     new InParallelStep {
-  //       in_parallel = new Listing<Step> {
-  //         new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/bastion" newTag = "((.:release-image-tag))" }
-  //         new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/bastion" newTag = "latest" }
-  //         new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = "governmentdigitalservice/pay-aws-bastion" }
-  //       }
-  //     }
-  //   }
-  // }
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/bastion.pkl")
 }

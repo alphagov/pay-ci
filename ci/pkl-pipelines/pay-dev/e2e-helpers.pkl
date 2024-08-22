@@ -43,14 +43,7 @@ resources = new {
   }
 
   for (image_to_build in images_to_multi_arch_build) {
-    new PayResources.PayGitHubResource {
-      name = "\(image_to_build.name)-git-release"
-      repoName = image_to_build.github_repo
-      source {
-        branch = image_to_build.branch
-        tag_regex = "\(image_to_build.release_tag_prefix)alpha_release-(.*)"
-      }
-    }
+    new shared_resources_for_multi_arch_builds.MultiArchBuildGithubSourceResource { image = image_to_build }
   }
 
   shared_resources.payECRResource(
@@ -66,12 +59,7 @@ resources = new {
   )
 
   for (image_to_build in images_to_multi_arch_build) {
-    shared_resources.payECRResourceWithVariant(
-      "\(image_to_build.name)-candidate-ecr-registry-test",
-      "govukpay/\(image_to_build.name)",
-      "pay_aws_test_account_id",
-      "candidate"
-    )
+    shared_resources_for_multi_arch_builds.multiArchCandidateECRRepoResource(image_to_build)
   }
 
   for (image_to_copy in images_to_copy_from_dockerhub_to_ecr) {
