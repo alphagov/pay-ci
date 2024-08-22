@@ -10,15 +10,17 @@ open class ImageToMultiArchBuild {
   github_repo: String
   dockerhub_repo: String = "governmentdigitalservice/pay-\(name)"
   ecr_repo: String = "govukpay/\(name)"
+  codebuild_project_name: String = name
   release_tag_prefix: String  = ""
   branch: String = "master"
   copy_release_to_deploy: Boolean = false
+  retag_after_build: Boolean = false // At the end of a build candidate job, retag the image as release
 }
 
 class MultiArchCandidateBuildJob extends Pipeline.Job {
   hidden image: ImageToMultiArchBuild
 
-  name = "build-and-push-\(image.name)-candidate"
+  name = "build-and-push-\(image.name)-\(if (image.retag_after_build) "release" else "candidate")"
 
   plan {
     new Pipeline.InParallelStep {
@@ -33,6 +35,9 @@ class MultiArchCandidateBuildJob extends Pipeline.Job {
         new shared_resources.ParseGithubAlphaReleaseTagTask { gitRelease = "\(image.name)-git-release" }
         shared_test.assumeCodeBuildRole("builder", "codebuild-assume-role")
         shared_resources.generateDockerCredsConfigStep
+        when (image.retag_after_build) {
+          new AssumeRetagRoleStep {}
+        }
       }
     }
 
@@ -44,10 +49,24 @@ class MultiArchCandidateBuildJob extends Pipeline.Job {
         shared_test.loadVar("candidate-image-tag", "tags/candidate-tag")
         shared_test.loadVar("date", "tags/date")
         shared_test.loadAssumeRoleVar
+        when (image.retag_after_build) {
+          shared_test.loadVar("release-image-tag", "tags/tags")
+          LoadAssumedRetagRoleVar
+        }
       }
     }
 
     ...multiArchCandidateBuild(image)
+
+    when (image.retag_after_build) {
+      new Pipeline.InParallelStep {
+        in_parallel = new Listing<Pipeline.Step> {
+          new RetagMultiArchImageInECR { repo = "govukpay/bastion" newTag = "((.:release-image-tag))" }
+          new RetagMultiArchImageInECR { repo = "govukpay/bastion" newTag = "latest" }
+          new RetagMultiArchImageInDockerhubAsLatestMaster { repo = "governmentdigitalservice/pay-aws-bastion" }
+        }
+      }
+    }
   }
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig { message = "Failed to build and push \(image.name)"
@@ -169,7 +188,7 @@ const function multiArchCandidateBuild(image: ImageToMultiArchBuild): Listing<Pi
     task = "prepare-codebuild"
     file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
     params {
-      ["PROJECT_TO_BUILD"] = image.name
+      ["PROJECT_TO_BUILD"] = image.codebuild_project_name
       ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
       ["RELEASE_NUMBER"] = "((.:release-number))"
       ["RELEASE_NAME"] = "((.:release-name))"
@@ -181,12 +200,12 @@ const function multiArchCandidateBuild(image: ImageToMultiArchBuild): Listing<Pi
   new Pipeline.InParallelStep {
     in_parallel = new Pipeline.InParallelConfig {
       steps = new Listing<Pipeline.Step> {
-        new RunCodeBuildStep { _appName = image.name arch = "amd64" }
-        new RunCodeBuildStep { _appName = image.name arch = "armv8" }
+        new RunCodeBuildStep { _appName = image.codebuild_project_name arch = "amd64" }
+        new RunCodeBuildStep { _appName = image.codebuild_project_name arch = "armv8" }
       }
     }
   }
-  new RunCodeBuildStep { _appName = image.name arch = "manifest" }
+  new RunCodeBuildStep { _appName = image.codebuild_project_name arch = "manifest" }
 }
 
 class RetagMultiArchImageInECR extends Pipeline.TaskStep {
@@ -234,4 +253,4 @@ class AssumeRetagRoleStep extends Pipeline.TaskStep {
   }
 }
 
-LoadAssumedRetagRoleVar: Pipeline.LoadVarStep = shared_resources.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
+const LoadAssumedRetagRoleVar: Pipeline.LoadVarStep = shared_resources.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
