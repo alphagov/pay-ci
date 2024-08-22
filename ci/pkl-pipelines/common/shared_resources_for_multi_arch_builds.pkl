@@ -2,7 +2,154 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 import "./shared_resources.pkl"
 import "./shared_resources_for_deploy_pipelines.pkl"
+import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
+import "../common/shared_resources_for_slack_notifications.pkl" as shared_slack
 
+open class ImageToMultiArchBuild {
+  name: String
+  github_repo: String
+  dockerhub_repo: String = "governmentdigitalservice/pay-\(name)"
+  ecr_repo: String = "govukpay/\(name)"
+  release_tag_prefix: String  = ""
+  branch: String = "master"
+  copy_release_to_deploy: Boolean = false
+}
+
+class MultiArchCandidateBuildJob extends Pipeline.Job {
+  hidden image: ImageToMultiArchBuild
+
+  name = "build-and-push-\(image.name)-candidate"
+
+  plan {
+    new Pipeline.InParallelStep {
+      in_parallel = new Listing<Pipeline.Step> {
+        shared_test.getPayCi
+        shared_test.getStep("\(image.name)-git-release", true, false)
+      }
+    }
+
+    new Pipeline.InParallelStep {
+      in_parallel = new Listing<Pipeline.Step> {
+        new shared_resources.ParseGithubAlphaReleaseTagTask { gitRelease = "\(image.name)-git-release" }
+        shared_test.assumeCodeBuildRole("builder", "codebuild-assume-role")
+        shared_resources.generateDockerCredsConfigStep
+      }
+    }
+
+    new Pipeline.InParallelStep {
+      in_parallel = new Listing<Pipeline.Step> {
+        shared_test.loadVar("release-number", "tags/release-number")
+        shared_test.loadVar("release-name", "\(image.name)-git-release/.git/ref")
+        shared_test.loadVar("release-sha", "tags/release-sha")
+        shared_test.loadVar("candidate-image-tag", "tags/candidate-tag")
+        shared_test.loadVar("date", "tags/date")
+        shared_test.loadAssumeRoleVar
+      }
+    }
+
+    ...multiArchCandidateBuild(image)
+  }
+  on_failure = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig { message = "Failed to build and push \(image.name)"
+      slack_channel_for_failure = "#govuk-pay-starling" }
+  )
+  on_success = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig { is_a_success = true; message = "Built and pushed \(image.name)" }
+  )
+}
+
+open class MultiArchEndToEndTest extends Pipeline.Job {
+  hidden image: ImageToMultiArchBuild
+
+  name = "\(image.name)-e2e"
+  plan {
+    new Pipeline.InParallelStep {
+      in_parallel = new Listing {
+        shared_test.getStep("\(image.name)-candidate-ecr-registry-test", true, true)
+        shared_test.getPayCi
+      }
+    }
+
+    new Pipeline.InParallelStep {
+      in_parallel = new Listing {
+        shared_resources.generateDockerCredsConfigStep
+        new shared_resources.ParseECRCandidateTagTask { ecr_repo = "\(image.name)-candidate-ecr-registry-test" }
+        shared_test.assumeCodeBuildRole("executor", "e2e-test-assume-role")
+        new shared_resources.AssumeConcourseRoleTask {}
+        when (image.copy_release_to_deploy) {
+          new Pipeline.TaskStep {
+            task = "assume-write-to-deploy-role"
+            file = "pay-ci/ci/tasks/assume-role.yml"
+            output_mapping = new {
+              ["assume-role"] = "assume-write-to-deploy-role"
+            }
+            params = new {
+              ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_dev_worker_ecr_access"
+              ["AWS_ROLE_SESSION_NAME"] = "write-ecr-to-deploy"
+            }
+          }
+        }
+      }
+    }
+
+    new Pipeline.InParallelStep {
+      in_parallel = new Listing {
+        shared_test.loadVar("candidate-image-tag", "\(image.name)-candidate-ecr-registry-test/tag")
+        shared_test.loadAssumeRoleVar
+        shared_test.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
+        shared_test.loadVar("release_image_tag", "parse-candidate-tag/release-tag")
+        shared_test.loadVar("release_number", "parse-candidate-tag/release-number")
+        when (image.copy_release_to_deploy) {
+          shared_test.loadVarJson("write-to-deploy-role", "assume-write-to-deploy-role/assume-role.json")
+        }
+      }
+    }
+
+    shared_test.prepareCodeBuild(image.name, "prepare-e2e-codebuild.yml", "((.:candidate-image-tag))")
+
+    new Pipeline.InParallelStep {
+      in_parallel = new Listing {
+        shared_test.runCodeBuild("run-codebuild-card", "card.json", 3)
+        shared_test.runCodeBuild("run-codebuild-products", "products.json", 1)
+        shared_test.runCodeBuild("run-codebuild-zap", "zap.json", 1)
+      }
+    }
+
+    new Pipeline.InParallelStep {
+      in_parallel = new Listing {
+        new RetagMultiArchImageInECR { repo = image.ecr_repo newTag = "((.:release_image_tag))" }
+        new RetagMultiArchImageInECR { repo = image.ecr_repo newTag = "latest" }
+        new RetagMultiArchImageInDockerhubAsLatestMaster { repo = image.dockerhub_repo }
+        when (image.copy_release_to_deploy) {
+          new Pipeline.TaskStep {
+            task = "copy-images-to-\(image.name)-ecr-registry-deploy"
+            file = "pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml"
+            privileged = true
+            params = new {
+              ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:write-to-deploy-role.AWS_ACCESS_KEY_ID))"
+              ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:write-to-deploy-role.AWS_SECRET_ACCESS_KEY))"
+              ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-deploy-role.AWS_SESSION_TOKEN))"
+              ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_deploy_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+              ["ECR_REPO_NAME"] = image.ecr_repo
+              ["RELEASE_NUMBER"] = "((.:release_number))"
+              ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+              ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+              ["SOURCE_AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+              ["SOURCE_ECR_REGISTRY"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+            }
+          }
+        }
+      }
+    }
+  }
+  on_failure = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig { message = "\(image.name) failed post-merge e2e tests"
+      slack_channel_for_failure = "#govuk-pay-starling" }
+  )
+  on_success = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig { is_a_success = true; message = "\(image.name) passed post-merge e2e tests and was pushed as a final release" }
+  )
+}
 
 local class RunCodeBuildStep extends Pipeline.TaskStep {
   hidden _appName: String
@@ -17,12 +164,12 @@ local class RunCodeBuildStep extends Pipeline.TaskStep {
   }
 }
 
-function multiArchCandidateBuild(appName: String): Listing<Pipeline.Step> = new {
+const function multiArchCandidateBuild(image: ImageToMultiArchBuild): Listing<Pipeline.Step> = new {
   new Pipeline.TaskStep {
     task = "prepare-codebuild"
     file = "pay-ci/ci/tasks/prepare-codebuild-multiarch.yml"
     params {
-      ["PROJECT_TO_BUILD"] = appName
+      ["PROJECT_TO_BUILD"] = image.name
       ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
       ["RELEASE_NUMBER"] = "((.:release-number))"
       ["RELEASE_NAME"] = "((.:release-name))"
@@ -34,12 +181,12 @@ function multiArchCandidateBuild(appName: String): Listing<Pipeline.Step> = new 
   new Pipeline.InParallelStep {
     in_parallel = new Pipeline.InParallelConfig {
       steps = new Listing<Pipeline.Step> {
-        new RunCodeBuildStep { _appName = appName arch = "amd64" }
-        new RunCodeBuildStep { _appName = appName arch = "armv8" }
+        new RunCodeBuildStep { _appName = image.name arch = "amd64" }
+        new RunCodeBuildStep { _appName = image.name arch = "armv8" }
       }
     }
   }
-  new RunCodeBuildStep { _appName = appName arch = "manifest" }
+  new RunCodeBuildStep { _appName = image.name arch = "manifest" }
 }
 
 class RetagMultiArchImageInECR extends Pipeline.TaskStep {
@@ -72,7 +219,6 @@ class RetagMultiArchImageInDockerhubAsLatestMaster extends Pipeline.TaskStep {
     ["NEW_MANIFEST"] = "\(repo):latest-master"
   }
 }
-
 
 class AssumeRetagRoleStep extends Pipeline.TaskStep {
   hidden account: shared_resources.AWSAccountName = "test"

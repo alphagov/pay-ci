@@ -21,17 +21,7 @@ local images_to_copy_from_dockerhub_to_ecr = new Listing<ImageToCopyFromDockerhu
   new { name = "selenium-standalone-chrome-3-141-59" repo = "selenium/standalone-chrome" tag = "3.141.59" }
 }
 
-local class ImageToMultiArchBuild {
-  name: String
-  github_repo: String
-  dockerhub_repo: String = "governmentdigitalservice/pay-\(name)"
-  ecr_repo: String = "govukpay/\(name)"
-  release_tag_prefix: String  = ""
-  branch: String = "master"
-  copy_release_to_deploy: Boolean = false
-}
-
-local images_to_multi_arch_build = new Listing<ImageToMultiArchBuild> {
+local images_to_multi_arch_build = new Listing<shared_resources_for_multi_arch_builds.ImageToMultiArchBuild> {
   new { name = "reverse-proxy" github_repo = "pay-scripts" release_tag_prefix = "reverse_proxy_" }
   new { name = "stubs" github_repo = "pay-stubs" copy_release_to_deploy = true }
   new { name = "zap" github_repo = "pay-scripts" release_tag_prefix = "zap_"}
@@ -141,7 +131,7 @@ jobs = new {
       }
 
       shared_resources.generateDockerCredsConfigStep
-      parseReleaseTag("endtoend-git-release")
+      new shared_resources.ParseGithubAlphaReleaseTagTask { gitRelease = "endtoend-git-release" }
       shared_test.loadVar("release_number_tag", "tags/release-number")
       buildImage("build-endtoend-image", "endtoend-git-release")
       putCandidateImage("endtoend-candidate-ecr-registry-test")
@@ -171,7 +161,7 @@ jobs = new {
         }
       }
 
-      parseCandidateTag("endtoend-candidate-ecr-registry-test")
+      new shared_resources.ParseECRCandidateTagTask { ecr_repo = "endtoend-candidate-ecr-registry-test" }
       shared_test.loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
       shared_test.assumeCodeBuildRole("executor", "e2e-test-assume-role")
 
@@ -218,9 +208,9 @@ jobs = new {
     )
   }
 
-  for (image in images_to_multi_arch_build) {
-    multiArchBuild(image)
-    multiArchEndToEndTest(image)
+  for (image_to_build in images_to_multi_arch_build) {
+    new shared_resources_for_multi_arch_builds.MultiArchCandidateBuildJob { image = image_to_build }
+    new shared_resources_for_multi_arch_builds.MultiArchEndToEndTest { image = image_to_build }
   }
 
   for (image_to_copy in images_to_copy_from_dockerhub_to_ecr) {
@@ -257,152 +247,6 @@ local function buildImage(taskName: String, context: String): TaskStep = new {
 local function putCandidateImage(putName: String): PutStep =
   putStep(putName, "image/image.tar", "tags/candidate-tag", true)
 
-local assumeRetagRole: TaskStep = new {
-  task = "assume-retag-role"
-  file = "pay-ci/ci/tasks/assume-role.yml"
-  output_mapping = new {
-    ["assume-role"] = "assume-retag-role"
-  }
-  params = new {
-    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
-    ["AWS_ROLE_SESSION_NAME"] = "retag-ecr-image-as-release"
-  }
-}
-
-local assumeWriteToDeployRole: TaskStep = new {
-  task = "assume-write-to-deploy-role"
-  file = "pay-ci/ci/tasks/assume-role.yml"
-  output_mapping = new {
-    ["assume-role"] = "assume-write-to-deploy-role"
-  }
-  params = new {
-    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_dev_worker_ecr_access"
-    ["AWS_ROLE_SESSION_NAME"] = "write-ecr-to-deploy"
-  }
-}
-
-local function copyMultiarchImageToAccount(repo: String): TaskStep = new {
-  task = "copy-images-to-\(repo)-ecr-registry-deploy"
-  file = "pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml"
-  privileged = true
-  params = new {
-    ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:write-to-deploy-role.AWS_ACCESS_KEY_ID))"
-    ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:write-to-deploy-role.AWS_SECRET_ACCESS_KEY))"
-    ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-deploy-role.AWS_SESSION_TOKEN))"
-    ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_deploy_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
-    ["ECR_REPO_NAME"] = "govukpay/\(repo)"
-    ["RELEASE_NUMBER"] = "((.:release_number))"
-    ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
-    ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
-    ["SOURCE_AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
-    ["SOURCE_ECR_REGISTRY"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
-  }
-}
-
-local function multiArchBuild(image: ImageToMultiArchBuild): Job = new {
-  name = "build-and-push-\(image.name)-candidate"
-  plan {
-    new InParallelStep {
-      in_parallel = new Listing<Step> {
-        shared_test.getPayCi
-        shared_test.getStep("\(image.name)-git-release", true, false)
-      }
-    }
-
-    new InParallelStep {
-      in_parallel = new Listing<Step> {
-        parseReleaseTag("\(image.name)-git-release")
-        shared_test.assumeCodeBuildRole("builder", "codebuild-assume-role")
-        shared_resources.generateDockerCredsConfigStep
-      }
-    }
-
-    new InParallelStep {
-      in_parallel = new Listing<Step> {
-        shared_test.loadVar("release-number", "tags/release-number")
-        shared_test.loadVar("release-name", "\(image.name)-git-release/.git/ref")
-        shared_test.loadVar("release-sha", "tags/release-sha")
-        shared_test.loadVar("candidate-image-tag", "tags/candidate-tag")
-        shared_test.loadVar("date", "tags/date")
-        shared_test.loadAssumeRoleVar
-      }
-    }
-
-    ...shared_resources_for_multi_arch_builds.multiArchCandidateBuild(image.name)
-  }
-  on_failure = shared_resources_for_slack_notifications.paySlackNotification(
-    new SlackNotificationConfig { message = "Failed to build and push e2e helper \(image.name)"
-      slack_channel_for_failure = "#govuk-pay-starling" }
-  )
-  on_success = shared_resources_for_slack_notifications.paySlackNotification(
-    new SlackNotificationConfig { is_a_success = true; message = "Built and pushed e2e helper \(image.name)" }
-  )
-}
-
-local function multiArchEndToEndTest(image: ImageToMultiArchBuild): Job = new {
-  name = "\(image.name)-e2e"
-  plan {
-    new InParallelStep {
-      in_parallel = new Listing {
-        shared_test.getStep("\(image.name)-candidate-ecr-registry-test", true, true)
-        shared_test.getPayCi
-      }
-    }
-
-    new InParallelStep {
-      in_parallel = new Listing {
-        shared_resources.generateDockerCredsConfigStep
-        parseCandidateTag("\(image.name)-candidate-ecr-registry-test")
-        shared_test.assumeCodeBuildRole("executor", "e2e-test-assume-role")
-        assumeRetagRole
-        when (image.copy_release_to_deploy) {
-          assumeWriteToDeployRole
-        }
-      }
-    }
-
-    new InParallelStep {
-      in_parallel = new Listing {
-        shared_test.loadVar("candidate-image-tag", "\(image.name)-candidate-ecr-registry-test/tag")
-        shared_test.loadAssumeRoleVar
-        shared_test.loadVarJson("retag-role", "assume-retag-role/assume-role.json")
-        shared_test.loadVar("release_image_tag", "parse-candidate-tag/release-tag")
-        shared_test.loadVar("release_number", "parse-candidate-tag/release-number")
-        when (image.copy_release_to_deploy) {
-          shared_test.loadVarJson("write-to-deploy-role", "assume-write-to-deploy-role/assume-role.json")
-        }
-      }
-    }
-
-    shared_test.prepareCodeBuild(image.name, "prepare-e2e-codebuild.yml", "((.:candidate-image-tag))")
-
-    new InParallelStep {
-      in_parallel = new Listing {
-        shared_test.runCodeBuild("run-codebuild-card", "card.json", 3)
-        shared_test.runCodeBuild("run-codebuild-products", "products.json", 1)
-        shared_test.runCodeBuild("run-codebuild-zap", "zap.json", 1)
-      }
-    }
-
-    new InParallelStep {
-      in_parallel = new Listing {
-        new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = image.ecr_repo newTag = "((.:release_image_tag))" }
-        new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = image.ecr_repo newTag = "latest" }
-        new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = image.dockerhub_repo }
-        when (image.copy_release_to_deploy) {
-          copyMultiarchImageToAccount(image.name)
-        }
-      }
-    }
-  }
-  on_failure = shared_resources_for_slack_notifications.paySlackNotification(
-    new SlackNotificationConfig { message = "e2e helper \(image.name) failed post-merge e2e tests"
-      slack_channel_for_failure = "#govuk-pay-starling" }
-  )
-  on_success = shared_resources_for_slack_notifications.paySlackNotification(
-    new SlackNotificationConfig { is_a_success = true; message = "e2e helper \(image.name) passed post-merge e2e tests and was pushed as a final release" }
-  )
-}
 
 local function copyImageToEcr(image: String, displayName: String): Job = new {
   name = "copy-\(image)"
@@ -417,22 +261,6 @@ local function copyImageToEcr(image: String, displayName: String): Job = new {
   on_success = shared_resources_for_slack_notifications.paySlackNotification(
     new SlackNotificationConfig { is_a_success = true; message = "Copied \(displayName) image from Docker Hub to ECR" }
   )
-}
-
-local function parseReleaseTag(gitRelease: String): TaskStep = new {
-  task = "parse-release-tag"
-  file = "pay-ci/ci/tasks/parse-release-tag.yml"
-  input_mapping {
-    ["git-release"] = gitRelease
-  }
-}
-
-local function parseCandidateTag(ecrRepo: String): TaskStep = new {
-  task = "parse-candidate-tag"
-  file = "pay-ci/ci/tasks/parse-candidate-tag.yml"
-  input_mapping {
-    ["ecr-repo"] = ecrRepo
-  }
 }
 
 local function withTag(tag: String) = new Mixin {
