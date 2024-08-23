@@ -7,6 +7,7 @@ import "../common/shared_resources_for_slack_notifications.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/shared_resources_for_annotations.pkl"
 import "../common/shared_resources_for_lock_pools.pkl"
+import "../common/shared_resources_for_terraform.pkl"
 import "../common/PayResources.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
@@ -95,7 +96,7 @@ jobs {
   getJobToDeployScheduledTasks()
 }
 
-local function getJobToDeployApp(app): Job = new {
+local function getJobToDeployApp(app: shared_resources_for_deploy_pipelines.PayApplication): Job = new {
   name = "deploy-\(app.name)-to-staging"
   serial = true
   plan = new {
@@ -116,6 +117,8 @@ local function getJobToDeployApp(app): Job = new {
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
 
     checkReleaseVersions(app)
+
+    ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps(app.getTerraformRootPath("staging-2"))
 
     shared_resources_for_deploy_pipelines.deployApplicationTask(app, awsEnvVars, "deploy-to-staging")
     shared_resources_for_annotations.paySendAppReleaseAnnotation("deploy-to-staging")
@@ -339,6 +342,7 @@ local function getJobToDeployScheduledTasks(): Job = new {
       }
     }
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+    ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("provisioning/terraform/deployments/staging/staging-2/management/scheduled_http_v2")
     shared_resources_for_deploy_pipelines.deployApplicationTask(payScheduledTask,
       awsEnvVars, "deploy-to-staging")
   }

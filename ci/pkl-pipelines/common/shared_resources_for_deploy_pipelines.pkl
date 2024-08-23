@@ -20,10 +20,16 @@ class PayApplication {
     dockerhub_repo = getDockerRepo()
     ecr_repo = getECRRepo()
   }
+  // We should change the webhooks egress directory
+  terraform_path_within_environment: String = "microservices_v2/\(if (name == "webhooks-egress") "webhooks_egress" else name)"
 
   function getECRRepo(): String = "govukpay/\(override_ecr_repo ?? name)"
   function getDockerRepo(): String = "governmentdigitalservice/pay-\(override_ecr_repo ?? name)"
   function getGithubRepo(): String = (override_github_repo ?? "pay-" + name)
+  function getTerraformRootPath(environment: String) = List(
+    "pay-infra", "provisioning", "terraform", "deployments",
+    environment.split("-")[0], environment, terraform_path_within_environment
+  ).join("/")
 }
 
 class MetricsConfig {

@@ -92,6 +92,12 @@ jobs:
         params:
           <<: *aws_assumed_role_creds
           ENVIRONMENT: test
+      - file: pay-ci/ci/tasks/find-terraform-version.yml
+        params:
+          TERRAFORM_ROOT: pay-infra/provisioning/terraform/deployments/deploy/deploy-7/management/smoke_tests
+        task: find-terraform-version
+      - file: terraform-version/.terraform-version
+        load_var: terraform-version
       - task: apply-the-terraform
         config:
           platform: linux

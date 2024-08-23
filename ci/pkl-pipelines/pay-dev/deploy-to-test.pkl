@@ -10,6 +10,7 @@ import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/shared_resources_for_lock_pools.pkl"
 import "../common/shared_resources_for_multi_arch_builds.pkl"
 import "../common/shared_resources_for_annotations.pkl"
+import "../common/shared_resources_for_terraform.pkl"
 import "../common/PayResources.pkl"
 
 local typealias PayApp = shared_resources_for_deploy_pipelines.PayApplication
@@ -466,7 +467,7 @@ local function getAdotIntegrationTest(app): Job = new {
     new MetricsConfig { put_metrics = false })
 }
 
-local function getJobToDeployApp(app): Job = new {
+local function getJobToDeployApp(app: shared_resources_for_deploy_pipelines.PayApplication): Job = new {
   name = "deploy-\(app.name)"
   serial = true
   plan = new {
@@ -481,9 +482,12 @@ local function getJobToDeployApp(app): Job = new {
     }
 
     assumeRole("terraform-test-assume-role")
+
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
 
     checkReleaseVersions(app)
+
+    ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps(app.getTerraformRootPath("test-12"))
 
     shared_resources_for_deploy_pipelines.deployApplicationTask(app, awsEnvVars, "deploy-to-test")
     shared_resources_for_deploy_pipelines.waitForDeployTask(app, "test-12")
@@ -687,6 +691,7 @@ local function getJobToDeployScheduledTasks(): Job = new {
       }
     }
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
+    ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("provisioning/terraform/deployments/test/test-12/management/scheduled_http_v2")
     shared_resources_for_deploy_pipelines.deployApplicationTask(payScheduledTask,
       awsEnvVars, "deploy-to-test")
   }

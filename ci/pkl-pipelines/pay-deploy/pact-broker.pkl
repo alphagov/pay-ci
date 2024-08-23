@@ -5,6 +5,7 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/shared_resources_for_terraform.pkl"
 import "../common/PayResources.pkl"
 
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
@@ -50,6 +51,7 @@ jobs {
       }
       (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
       loadVar("pactbroker_image_tag", "pact-broker-ecr-registry-deploy/tag")
+      ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/deploy/deploy-tooling/environment/pactbroker")
       new TaskStep {
         task = "deploy-pact-broker"
         file = "pay-ci/ci/tasks/deploy-pact-broker.yml"
