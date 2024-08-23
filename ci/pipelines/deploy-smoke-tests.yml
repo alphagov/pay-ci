@@ -108,7 +108,7 @@ jobs:
             type: registry-image
             source:
               repository: hashicorp/terraform
-              tag: 1.3.7
+              tag: "((.:terraform-version))"
           params:
             ENVIRONMENT: test
             SMOKE_TEST_VERSION: ((.:release_version))
@@ -159,7 +159,7 @@ jobs:
             type: registry-image
             source:
               repository: hashicorp/terraform
-              tag: 1.3.7
+              tag: "((.:terraform-version))"
           params:
             ENVIRONMENT: staging
             SMOKE_TEST_VERSION: ((.:release_version))
@@ -211,7 +211,7 @@ jobs:
             type: registry-image
             source:
               repository: hashicorp/terraform
-              tag: 1.3.7
+              tag: "((.:terraform-version))"
           params:
             ENVIRONMENT: production
             SMOKE_TEST_VERSION: ((.:release_version))
