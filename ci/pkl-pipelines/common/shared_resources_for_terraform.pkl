@@ -1,0 +1,14 @@
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "./shared_resources.pkl"
+
+function LoadTerraformVersionForTFRootSteps(terraform_root: String): Listing<Pipeline.Step> = new {
+  new Pipeline.TaskStep {
+    task = "find-terraform-version"
+    file = "pay-ci/ci/tasks/find-terraform-version.yml"
+    params {
+      ["TERRAFORM_ROOT"] = terraform_root
+    }
+  }
+  shared_resources.loadVar("terraform-version", "terraform-version/.terraform-version")
+}
