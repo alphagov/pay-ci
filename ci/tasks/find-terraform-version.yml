@@ -1,0 +1,18 @@
+---
+inputs:
+  - name: pay-ci
+  - name: pay-infra
+outputs:
+  - name: terraform-version
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+    tag: latest
+params:
+  TERRAFORM_ROOT:
+run:
+  path: ash
+  args:
+    - pay-ci/ci/scripts/find-terraform-version.sh
