@@ -169,3 +169,38 @@ class AssumeRunCodeBuildRoleStep extends Pipeline.TaskStep {
 }
 
 LoadRunCodeBuildAssumedRoleVar: Pipeline.LoadVarStep = loadVarJson("role", "run-codebuild-assume-role/assume-role.json")
+
+class ParseGithubAlphaReleaseTagTask extends Pipeline.TaskStep {
+  hidden gitRelease: String
+
+  task = "parse-release-tag"
+  file = "pay-ci/ci/tasks/parse-release-tag.yml"
+  input_mapping {
+    ["git-release"] = gitRelease
+  }
+}
+
+class ParseECRCandidateTagTask extends Pipeline.TaskStep {
+  hidden ecr_repo: String
+
+  task = "parse-candidate-tag"
+  file = "pay-ci/ci/tasks/parse-candidate-tag.yml"
+  input_mapping {
+    ["ecr-repo"] = ecr_repo
+  }
+}
+
+class AssumeConcourseRoleTask extends Pipeline.TaskStep {
+  hidden aws_account_name: AWSAccountName = "test"
+  hidden output_name: Pipeline.Identifier = "assume-retag-role"
+
+  task = "assume-retag-role"
+  file = "pay-ci/ci/tasks/assume-role.yml"
+  output_mapping = new {
+    ["assume-role"] = output_name
+  }
+  params = new {
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_\(aws_account_name)_account_id)):role/concourse"
+    ["AWS_ROLE_SESSION_NAME"] = "retag-ecr-image"
+  }
+}

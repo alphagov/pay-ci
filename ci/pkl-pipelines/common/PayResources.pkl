@@ -1,7 +1,7 @@
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Resources.pkl"
 
-class PayGitHubResource extends Resources.GitResource {
+open class PayGitHubResource extends Resources.GitResource {
   hidden repoName: String
   source = new {
     uri = "https://github.com/alphagov/\(repoName)"
@@ -10,7 +10,7 @@ class PayGitHubResource extends Resources.GitResource {
   }
 }
 
-class PayInfraGitHubResource extends Resources.GitResource {
+open class PayInfraGitHubResource extends Resources.GitResource {
   name = "pay-infra"
   source = new {
     branch = "master"
@@ -20,7 +20,7 @@ class PayInfraGitHubResource extends Resources.GitResource {
   }
 }
 
-class PayGitHubPullRequestResource extends Pipeline.Resource {
+open class PayGitHubPullRequestResource extends Pipeline.Resource {
   type = "pull-request"
   icon = "github"
   hidden repo: String
@@ -35,7 +35,7 @@ class PayGitHubPullRequestResource extends Pipeline.Resource {
   }
 }
 
-class PayDockerHubResource extends Resources.DockerImageResource {
+open class PayDockerHubResource extends Resources.DockerImageResource {
   type = "registry-image"
   icon = "docker"
   source = new {
@@ -45,11 +45,10 @@ class PayDockerHubResource extends Resources.DockerImageResource {
   }
 }
 
-class PayTimeResource extends Pipeline.Resource {
+open class PayTimeResource extends Pipeline.Resource {
   type = "time"
   icon = "alarm"
   source {
     ["location"] = "Europe/London"
   }
 }
-

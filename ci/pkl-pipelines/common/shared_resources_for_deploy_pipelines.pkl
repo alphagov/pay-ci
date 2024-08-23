@@ -1,6 +1,8 @@
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
 
+import "./shared_resources_for_multi_arch_builds.pkl"
+
 class PayApplication {
   name: String
   is_a_java_or_node_app: Boolean = false
@@ -12,6 +14,12 @@ class PayApplication {
   use_app_specific_deploy_task: Boolean = false
   smoke_test: Boolean = true
   pact_tag: Boolean = false
+  multi_arch_build_image: shared_resources_for_multi_arch_builds.ImageToMultiArchBuild = new {
+    name = outer.name
+    github_repo = getGithubRepo()
+    dockerhub_repo = getDockerRepo()
+    ecr_repo = getECRRepo()
+  }
 
   function getECRRepo(): String = "govukpay/\(override_ecr_repo ?? name)"
   function getDockerRepo(): String = "governmentdigitalservice/pay-\(override_ecr_repo ?? name)"

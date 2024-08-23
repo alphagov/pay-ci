@@ -196,7 +196,7 @@ jobs {
   getJobToDeployScheduledTasks()
 }
 
-local function getBuildAndPushCandidateJob(app): Job = new {
+local function getBuildAndPushCandidateJob(app: shared_resources_for_deploy_pipelines.PayApplication): Job = new {
   when (getTestEnvConfig(app.name).run_e2e_tests) {
     name = "build-and-push-\(app.name)-candidate"
   } else {
@@ -250,7 +250,7 @@ local function getBuildAndPushCandidateJob(app): Job = new {
       loadVarWithJsonFormat("retag-role", "assume-retag-role/assume-role.json")
     }
 
-    ...shared_resources_for_multi_arch_builds.multiArchCandidateBuild(app.name)
+    ...shared_resources_for_multi_arch_builds.multiArchCandidateBuild(app.multi_arch_build_image)
 
     when (getTestEnvConfig(app.name).run_e2e_tests == false && app.name != "adot") {
       new InParallelStep {
