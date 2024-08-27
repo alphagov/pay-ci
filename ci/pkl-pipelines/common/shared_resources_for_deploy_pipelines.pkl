@@ -135,7 +135,7 @@ function getAdditionalConfigForNotifications() = new TaskConfig {
     type = "registry-image"
     source {
       ["repository"] = "hashicorp/terraform"
-      ["tag"] = "1.3.7"
+      ["tag"] = "((.:terraform-version))"
     }
   }
   run = new TaskConfig.Run {
