@@ -3,6 +3,7 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/shared_resources_for_terraform.pkl"
 import "../common/PayResources.pkl"
 
 local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
@@ -83,6 +84,7 @@ for (env, time in Map("staging-2", "every-morning-at-six", "production-2", "ever
         }
       }
       (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
+       ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/\(env.split("-")[0])/\(env)/environment/bastion/")
       new TaskStep {
         task = "check-for-drift"
         file = "pay-ci/ci/tasks/check-for-tf-drift.yml"

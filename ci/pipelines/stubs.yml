@@ -74,6 +74,12 @@ jobs:
         format: json
       - load_var: stubs_image_tag
         file: stubs-ecr-registry-deploy/tag
+      - file: pay-ci/ci/tasks/find-terraform-version.yml
+        params:
+          TERRAFORM_ROOT: pay-infra/provisioning/terraform/deployments/deploy/deploy-tooling/environment/stubs
+        task: find-terraform-version
+      - file: terraform-version/.terraform-version
+        load_var: terraform-version
       - task: deploy-stubs
         file: pay-ci/ci/tasks/deploy-stubs.yml
         params:
