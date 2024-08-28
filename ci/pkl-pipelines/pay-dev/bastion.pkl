@@ -1,31 +1,12 @@
-amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+amends "../common/shared_pipelines/bastion.pkl"
 
-import "../common/pipeline_self_update.pkl"
-import "../common/shared_resources.pkl"
-import "../common/shared_resources_for_multi_arch_builds.pkl"
-import "../common/shared_resources_for_slack_notifications.pkl"
-
-local bastion_image: shared_resources_for_multi_arch_builds.ImageToMultiArchBuild = new {
-  name = "bastion"
-  github_repo = "pay-aws-bastion"
-  branch = "main"
-  codebuild_project_name = "aws-bastion"
-  retag_after_build = true
+bastion_envs = new Listing<BastionEnv> {
+  new {
+    environment = "test-12"
+    with_build = true
+    push_to_account_after_deploy = "staging"
+  }
+  new { environment = "test-perf-1" }
 }
 
-resource_types {
-  shared_resources_for_slack_notifications.slackNotificationResourceType
-}
-
-resources {
-  shared_resources.payCiGitHubResource
-  shared_resources_for_slack_notifications.slackNotificationResource
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/bastion.pkl", "master")
-  new shared_resources_for_multi_arch_builds.MultiArchBuildGithubSourceResource { image = bastion_image }
-}
-
-jobs {
-  new shared_resources_for_multi_arch_builds.MultiArchCandidateBuildJob { image = bastion_image }
-
-  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/bastion.pkl")
-}
+concourse_team_name = "pay-dev"

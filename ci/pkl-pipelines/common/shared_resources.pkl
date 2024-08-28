@@ -190,17 +190,29 @@ class ParseECRCandidateTagTask extends Pipeline.TaskStep {
   }
 }
 
+class ParseECRReleaseTagTask extends Pipeline.TaskStep {
+  hidden ecr_repo: String
+
+  task = "parse-ecr-release-info"
+  file = "pay-ci/ci/tasks/parse-ecr-release-tag.yml"
+  input_mapping {
+    ["ecr-image"] = ecr_repo
+  }
+}
+
 class AssumeConcourseRoleTask extends Pipeline.TaskStep {
   hidden aws_account_name: AWSAccountName = "test"
+  hidden role_name: String = "concourse"
   hidden output_name: Pipeline.Identifier = "assume-retag-role"
+  hidden session_name: String = "retag-ecr-image"
 
-  task = "assume-retag-role"
+  task = output_name
   file = "pay-ci/ci/tasks/assume-role.yml"
   output_mapping = new {
     ["assume-role"] = output_name
   }
   params = new {
-    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_\(aws_account_name)_account_id)):role/concourse"
-    ["AWS_ROLE_SESSION_NAME"] = "retag-ecr-image"
+    ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_\(aws_account_name)_account_id)):role/\(role_name)"
+    ["AWS_ROLE_SESSION_NAME"] = session_name
   }
 }

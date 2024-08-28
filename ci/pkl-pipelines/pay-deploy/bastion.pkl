@@ -1,0 +1,9 @@
+amends "../common/shared_pipelines/bastion.pkl"
+
+bastion_envs = new Listing<BastionEnv> {
+  new { environment = "staging-2"; push_to_account_after_deploy = "production" }
+  new { environment = "production-2"; push_to_account_after_deploy = "deploy" }
+  new { environment = "deploy-tooling" }
+}
+
+concourse_team_name = "pay-deploy"
