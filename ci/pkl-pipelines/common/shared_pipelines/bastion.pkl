@@ -1,0 +1,188 @@
+extends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../pipeline_self_update.pkl"
+import "../shared_resources.pkl"
+import "../shared_resources_for_deploy_pipelines.pkl" as shared_deploy
+import "../shared_resources_for_multi_arch_builds.pkl"
+import "../shared_resources_for_slack_notifications.pkl" as shared_slack
+import "../shared_resources_for_terraform.pkl"
+
+hidden bastion_envs: Listing<BastionEnv>
+hidden concourse_team_name: String
+
+class BastionEnv {
+  environment: String
+  with_build: Boolean = false
+  account: shared_resources.AWSAccountName = environment.split("-")[0] as shared_resources.AWSAccountName
+  push_to_account_after_deploy: shared_resources.AWSAccountName?
+  tf_root = "pay-infra/provisioning/terraform/deployments/\(account)/\(environment)/environment/bastion"
+}
+
+hidden any_build_envs = bastion_envs.toList().any((env) -> env.with_build)
+hidden aws_accounts = bastion_envs.toList().map((env) -> env.account).distinct.sort()
+
+local bastion_image: shared_resources_for_multi_arch_builds.ImageToMultiArchBuild = new {
+  name = "bastion"
+  github_repo = "pay-aws-bastion"
+  branch = "main"
+  codebuild_project_name = "aws-bastion"
+  retag_after_build = true
+}
+
+resource_types {
+  shared_slack.slackNotificationResourceType
+}
+
+resources {
+  shared_resources.payCiGitHubResource
+  shared_resources.payInfraGitHubResource
+  shared_slack.slackNotificationResource
+  for (aws_account in aws_accounts) {
+    shared_resources.payECRResourceWithVariant("bastion-ecr-registry-\(aws_account)", "govukpay/bastion", "pay_aws_\(aws_account)_account_id", "release")
+  }
+  pipeline_self_update.PayPipelineSelfUpdateResource("\(concourse_team_name)/bastion.pkl", "master")
+  when (any_build_envs) {
+    new shared_resources_for_multi_arch_builds.MultiArchBuildGithubSourceResource { image = bastion_image }
+  }
+}
+
+jobs {
+  for (bastion_env in bastion_envs) {
+    when (bastion_env.with_build) {
+      new shared_resources_for_multi_arch_builds.MultiArchCandidateBuildJob { image = bastion_image }
+    }
+
+    deploy_bastion_image_in_account_job(bastion_env)
+
+    when (bastion_env.push_to_account_after_deploy != null) {
+      push_bastion_image_to_account_job(bastion_env, bastion_env.push_to_account_after_deploy)
+    }
+  }
+
+  pipeline_self_update.PayPipelineSelfUpdateJob("\(concourse_team_name)/bastion.pkl")
+}
+
+local function deploy_bastion_image_in_account_job(bastion_env: BastionEnv) = new Job {
+  name = "deploy-bastion-to-\(bastion_env.environment)"
+  plan {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new GetStep {
+          get = "bastion-ecr-registry-\(bastion_env.account)"
+          trigger = true
+          params {
+            ["skip_download"] = true
+          }
+        }
+        new GetStep { get = "pay-ci" }
+        new GetStep { get = "pay-infra" }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new shared_resources.AssumeConcourseRoleTask {
+          role_name = "pay-concourse-bastion-deploy-\(bastion_env.environment)"
+          aws_account_name = bastion_env.account
+          output_name = "assume-role"
+          session_name = "deploy-bastion-\(bastion_env.environment)"
+        }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+        shared_resources.loadVar("application_image_tag", "bastion-ecr-registry-\(bastion_env.account)/tag")
+      }
+    }
+    ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps(bastion_env.tf_root)
+    new shared_deploy.TerraformInitStep { terraform_root = bastion_env.tf_root }
+    new shared_deploy.TerraformApplyStep {
+      terraform_root = bastion_env.tf_root
+      terraform_variables {
+        new shared_deploy.TerraformApplyVariable { name = "application_image_tag"; value = "((.:application_image_tag))" }
+      }
+    }
+  }
+  on_failure = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      message = "Failed to deploy bastion image to \(bastion_env.account)"
+      slack_channel_for_failure = "#govuk-pay-starling"
+    }
+  )
+  on_success = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      is_a_success = true
+      message = "Deployed bastion image to \(bastion_env.account)"
+    }
+  )
+}
+
+local function push_bastion_image_to_account_job(bastion_env: BastionEnv, account_to_push_to: shared_resources.AWSAccountName) = new Job {
+  name = "push-bastion-to-\(account_to_push_to)-ecr"
+
+  plan = new {
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          new GetStep {
+            get = "bastion-ecr-registry-\(bastion_env.account)"
+            params { ["skip_download"] = true }
+            trigger = true
+            passed { "deploy-bastion-to-\(bastion_env.environment)" }
+          }
+          new GetStep { get = "pay-ci" }
+        }
+      }
+    }
+    new shared_resources.ParseECRReleaseTagTask { ecr_repo = "bastion-ecr-registry-\(bastion_env.account)" }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          shared_resources.loadVar("release_number", "ecr-release-info/release-number")
+
+          new shared_resources.AssumeConcourseRoleTask {
+            aws_account_name = bastion_env.account
+            output_name = "copy-from-role"
+          }
+          new shared_resources.AssumeConcourseRoleTask {
+            aws_account_name = account_to_push_to
+            output_name = "copy-to-role"
+          }
+        }
+      }
+    }
+
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          shared_resources.loadVarJson("copy-from-role", "copy-from-role/assume-role.json")
+          shared_resources.loadVarJson("copy-to-role", "copy-to-role/assume-role.json")
+        }
+      }
+    }
+
+    new TaskStep {
+      task = "push-bastion-images-to-\(account_to_push_to)"
+      file = "pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml"
+      privileged = true
+      params {
+        ["ECR_REPO_NAME"] = "govukpay/bastion"
+        ["RELEASE_NUMBER"] = "((.:release_number))"
+        ["SOURCE_ECR_REGISTRY"] = "((pay_aws_\(bastion_env.account)_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+        ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_\(account_to_push_to)_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+        ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:copy-from-role.AWS_ACCESS_KEY_ID))"
+        ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:copy-from-role.AWS_SECRET_ACCESS_KEY))"
+        ["SOURCE_AWS_SESSION_TOKEN"] = "((.:copy-from-role.AWS_SESSION_TOKEN))"
+        ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:copy-to-role.AWS_ACCESS_KEY_ID))"
+        ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:copy-to-role.AWS_SECRET_ACCESS_KEY))"
+        ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:copy-to-role.AWS_SESSION_TOKEN))"
+      }
+    }
+  }
+  on_failure = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      message = "Failed to push bastion image from \(bastion_env.account) to \(account_to_push_to)"
+      slack_channel_for_failure = "#govuk-pay-starling"
+    }
+  )
+}
