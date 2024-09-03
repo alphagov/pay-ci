@@ -49,7 +49,7 @@ class MetricsConfig {
 local payApps: Listing<PayApplication> = new Listing<PayApplication> {
   new { name = "adminusers"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
   new { name = "cardid"; pact_tag = true; is_a_java_or_node_app = true }
-  new { name = "connector"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
+  new { name = "connector"; has_db = true; pact_tag = true; is_a_java_or_node_app = true; enforce_version_check { production = false } }
   new { name = "egress"; use_app_specific_deploy_task = true }
   new { name = "frontend"; use_app_specific_deploy_task = true; pact_tag = true;is_a_java_or_node_app = true }
   new { name = "ledger"; has_db = true; pact_tag = true ; is_a_java_or_node_app = true }
