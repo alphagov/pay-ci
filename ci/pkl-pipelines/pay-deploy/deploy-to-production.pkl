@@ -128,7 +128,9 @@ local function getJobToDeployApp(app: shared_resources_for_deploy_pipelines.PayA
     assumeRole("terraform-prod-assume-role")
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
 
-    checkReleaseVersions(app)
+    when (app.enforce_version_check.production) {
+      checkReleaseVersions(app)
+    }
 
     ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps(app.getTerraformRootPath("production-2"))
 
