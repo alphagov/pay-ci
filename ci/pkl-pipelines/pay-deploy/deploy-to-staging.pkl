@@ -116,7 +116,9 @@ local function getJobToDeployApp(app: shared_resources_for_deploy_pipelines.PayA
     assumeRole("terraform-staging-assume-role")
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
 
-    checkReleaseVersions(app)
+    when (app.enforce_version_check.staging) {
+      checkReleaseVersions(app)
+    }
 
     ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps(app.getTerraformRootPath("staging-2"))
 

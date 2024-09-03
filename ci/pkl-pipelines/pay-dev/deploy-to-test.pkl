@@ -485,7 +485,9 @@ local function getJobToDeployApp(app: shared_resources_for_deploy_pipelines.PayA
 
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
 
-    checkReleaseVersions(app)
+    when (app.enforce_version_check.test) {
+      checkReleaseVersions(app)
+    }
 
     ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps(app.getTerraformRootPath("test-12"))
 
