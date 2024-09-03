@@ -11,6 +11,7 @@ services:
       - ../docker-config/java_app.env
       - ../docker-config/publicapi.env
     environment:
+      - BIND_HOST=0.0.0.0
       - PORT=9100
     networks:
       pymnt_network:
@@ -28,6 +29,8 @@ services:
   frontend:
     image: ${DOCKER_REGISTRY_URI:-}${repo_frontend:-govukpay/frontend}:${tag_frontend:-latest-master}
     env_file: ../docker-config/frontend.env
+    environment:
+      - BIND_HOST=0.0.0.0
     networks:
       pymnt_network:
         aliases:
@@ -43,6 +46,7 @@ services:
   frontend_proxy:
     image: ${DOCKER_REGISTRY_URI:-}${repo_reverse_proxy:-govukpay/reverse-proxy}:${tag_reverseproxy:-latest-master}
     environment:
+      - BIND_HOST=0.0.0.0
       - KEY_FILE=/ssl/keys/frontend.pymnt.localdomain.key
       - CERT_FILE=/ssl/certs/frontend.pymnt.localdomain.crt
       - HOST=frontend.internal.pymnt.localdomain
@@ -83,6 +87,7 @@ services:
       - ../docker-config/java_app.env
       - ../docker-config/adminusers.env
     environment:
+      - BIND_HOST=0.0.0.0
       - RUN_MIGRATION=true
       - RUN_APP=true
     networks:
@@ -118,6 +123,7 @@ services:
     image: ${DOCKER_REGISTRY_URI:-}${repo_selfservice:-govukpay/selfservice}:${tag_selfservice:-latest-master}
     env_file: ../docker-config/selfservice.env
     environment:
+      - BIND_HOST=0.0.0.0
       - NODE_ENV=${NODE_ENV:-production}
       - RUN_APP=true
     networks:
@@ -138,6 +144,7 @@ services:
       - KEY_FILE=/ssl/keys/selfservice.pymnt.localdomain.key
       - CERT_FILE=/ssl/certs/selfservice.pymnt.localdomain.crt
       - HOST=selfservice.internal.pymnt.localdomain
+      - BIND_HOST=0.0.0.0
       - PORT=9400
       - START_IN_DEV_MODE=${START_IN_DEV_MODE}
       - NAXSI_WHITELIST_RULES=/etc/nginx/selfservice.naxsi
@@ -152,13 +159,14 @@ services:
     mem_limit: 50M
     logging:
       driver: "json-file"
-      
+
   connector:
     image: ${DOCKER_REGISTRY_URI:-}${repo_connector:-govukpay/connector}:${tag_connector:-latest-master}
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/connector.env
     environment:
+      - BIND_HOST=0.0.0.0
       - RUN_MIGRATION=true
       - RUN_APP=true
     networks:
@@ -198,6 +206,7 @@ services:
       - ../docker-config/java_app.env
       - ../docker-config/ledger.env
     environment:
+      - BIND_HOST=0.0.0.0
       - RUN_MIGRATION=true
       - RUN_APP=true
     networks:
@@ -236,6 +245,7 @@ services:
       - ../docker-config/java_app.env
       - ../docker-config/publicauth.env
     environment:
+      - BIND_HOST=0.0.0.0
       - RUN_MIGRATION=true
       - RUN_APP=true
     networks:
@@ -270,6 +280,8 @@ services:
   stubs:
     image: ${DOCKER_REGISTRY_URI:-}${repo_stubs:-govukpay/stubs}:${tag_stubs:-latest-master}
     env_file: ../docker-config/stubs.env
+    environment:
+      - BIND_HOST=0.0.0.0
     networks:
       pymnt_network:
         aliases:
@@ -286,6 +298,7 @@ services:
       - CERT_FILE=/ssl/certs/stubs.pymnt.localdomain.crt
       - KEY_FILE=/ssl/keys/stubs.pymnt.localdomain.key
       - HOST=stubs.internal.pymnt.localdomain
+      - BIND_HOST=0.0.0.0
       - PORT=9900
       - START_IN_DEV_MODE=false
       - X_FRAME_OPTIONS_HEADER=ALLOW
@@ -302,6 +315,8 @@ services:
     env_file:
       - ../docker-config/java_app.env
       - ../docker-config/cardid.env
+    environment:
+      - BIND_HOST=0.0.0.0
     networks:
       pymnt_network:
         aliases:
@@ -314,7 +329,7 @@ services:
       timeout: 10s
     logging:
       driver: "json-file"
-  
+
   endtoend:
     image: ${DOCKER_REGISTRY_URI:-}${repo_endtoend:-govukpay/endtoend}:${tag_endtoend:-latest-master}
     env_file: ../docker-config/endtoend.env
