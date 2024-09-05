@@ -26,7 +26,7 @@ RUN apk add --virtual build-dependencies build-base
 
 ENV DOCKER_HOME=/root/.docker
 RUN mkdir -p /root/.docker/cli-plugins
-RUN curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/v1.10.0/install.sh | sh -s --
+RUN curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/v1.13.0/install.sh | sh -s --
 
 RUN curl -LO https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v1.86.0/pact-1.86.0-linux-x86_64.tar.gz \
     && tar xzf pact-1.86.0-linux-x86_64.tar.gz \
@@ -56,4 +56,4 @@ COPY ./docker-helpers.sh /
 COPY ./docker-wrapper /usr/local/bin/
 ENTRYPOINT [ "docker-wrapper" ]
 
-CMD "ash"
+CMD ["ash"]
