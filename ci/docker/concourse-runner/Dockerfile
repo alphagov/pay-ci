@@ -56,4 +56,4 @@ COPY ./docker-helpers.sh /
 COPY ./docker-wrapper /usr/local/bin/
 ENTRYPOINT [ "docker-wrapper" ]
 
-CMD "ash"
+CMD ["ash"]
