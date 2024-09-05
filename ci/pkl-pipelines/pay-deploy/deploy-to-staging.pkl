@@ -344,7 +344,7 @@ local function getJobToDeployScheduledTasks(): Job = new {
       }
     }
     loadVarWithJsonFormat("role", "assume-role/assume-role.json")
-    ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("provisioning/terraform/deployments/staging/staging-2/management/scheduled_http_v2")
+    ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/staging/staging-2/management/scheduled_http_v2")
     shared_resources_for_deploy_pipelines.deployApplicationTask(payScheduledTask,
       awsEnvVars, "deploy-to-staging")
   }

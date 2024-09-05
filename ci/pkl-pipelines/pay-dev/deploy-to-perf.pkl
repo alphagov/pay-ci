@@ -143,7 +143,7 @@ jobs {
         }
       }
       (loadVar("role", "assume-role/assume-role.json")) { format = "json" }
-      ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("provisioning/terraform/deployments/test/test-perf-1/management/scheduled_http_v2")
+      ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/test/test-perf-1/management/scheduled_http_v2")
       shared_resources_for_deploy_pipelines.deployApplicationTask(payScheduledTask,
         awsEnvVars, "deploy-to-perf")
     }
