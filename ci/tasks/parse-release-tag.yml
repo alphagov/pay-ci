@@ -3,7 +3,7 @@ image_resource:
   type: registry-image
   source:
     repository: alpine
-    tag: 3
+    tag: latest
 inputs:
   - name: git-release
 outputs:
