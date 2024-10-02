@@ -38,6 +38,22 @@ resources:
       start: 9:30 AM
       stop: 11:45 PM
       location: Europe/London
+  - name: every-friday-at-3pm
+    type: time
+    icon: alarm
+    source:
+      days: [ Friday ]
+      start: 3:00 PM
+      stop: 5:00 PM
+      location: Europe/London
+  - name: every-tues-weds-at-3pm
+    type: time
+    icon: alarm
+    source:
+      days: [ Tuesday, Wednesday ]
+      start: 3:00 PM
+      stop: 5:00 PM
+      location: Europe/London
 jobs:
   - name: update-inhours-topic
     plan:
@@ -65,3 +81,29 @@ jobs:
         params:
           <<: *params
           OPERATION: "update-on-call-topic"
+  - name: inhours-notification-to-update-notes
+    plan:
+      - get: pay-ci
+        trigger: false
+      - get: pay-access-control
+        trigger: false
+      - get: every-tues-weds-at-3pm
+        trigger: true
+      - task: send-notification
+        file: pay-ci/ci/tasks/support-rota-notifications.yml
+        params:
+          <<: *params
+          OPERATION: "notify-to-update-rolling-notes"
+  - name: oncall-notification-to-triage-alerts
+    plan:
+      - get: pay-ci
+        trigger: false
+      - get: pay-access-control
+        trigger: false
+      - get: every-friday-at-3pm
+        trigger: true
+      - task: send-notification
+        file: pay-ci/ci/tasks/support-rota-notifications.yml
+        params:
+          <<: *params
+          OPERATION: "notify-to-triage-alerts"

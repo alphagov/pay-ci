@@ -4,7 +4,7 @@ const {
   getUserEmailForSchedule, getInHoursQueryDateRange,
   getOutOfHoursQueryDateRange
 } = require('./pagerduty-client')
-const { setSlackChannelTopic } = require('./slack-client')
+const { setSlackChannelTopic, sendSlackNotification } = require('./slack-client')
 const { getUsersSlackHandle } = require('./access-control-util')
 
 const timeZone = 'Europe/London'
@@ -17,6 +17,12 @@ async function updateSupportTopics () {
       break
     case 'update-on-call-topic':
       await updateOnCallSupportTopic()
+      break
+    case 'notify-to-update-rolling-notes':
+      await notifyToUpdateRollingNotes()
+      break
+    case 'notify-to-triage-alerts':
+      await notifyToTriageAlerts()
       break
     default:
       console.log('Invalid option.')
@@ -52,6 +58,45 @@ async function updateInHoursSupportTopic () {
   } else {
     console.log('Skipped updating in-hours topic. Only sets the topic from Mon-Fri')
   }
+}
+
+async function notifyToUpdateRollingNotes () {
+  const now = moment.tz(timeZone)
+
+  if (now.isoWeekday() >= 1 && now.isoWeekday() <= 5) {
+    const { querySinceDate, queryUntilDate } = getInHoursQueryDateRange(timeZone, now)
+
+    const inHoursPrimaryUserEmail = await getUserEmailForSchedule(process.env.PD_IN_HOURS_PRIMARY_SCHEDULE_ID, querySinceDate, queryUntilDate)
+    const inHoursProductUserEmail = await getUserEmailForSchedule(process.env.PD_IN_HOURS_PRODUCT_SCHEDULE_ID, querySinceDate, queryUntilDate)
+
+    const slackHandles = getUsersSlackHandle(
+      process.env.ACCESS_CONTROL_USER_CONFIG_FILE_PATH,
+      {
+        primary: inHoursPrimaryUserEmail,
+        product: inHoursProductUserEmail
+      })
+
+    const text = getNotificationTextToUpdateRollingNotes(slackHandles.primary, slackHandles.product)
+    await sendSlackNotification(process.env.SLACK_IN_HOURS_CHANNEL_ID, text)
+  } else {
+    console.log('Skipped sending notification.')
+  }
+}
+
+async function notifyToTriageAlerts () {
+  const now = moment.tz(timeZone)
+
+  let { querySinceDate, queryUntilDate } = getOutOfHoursQueryDateRange(timeZone, now)
+  const oohPrimaryUserEmail = await getUserEmailForSchedule(process.env.PD_OOH_PRIMARY_SCHEDULE_ID, querySinceDate, queryUntilDate)
+
+  const slackHandles = getUsersSlackHandle(
+    process.env.ACCESS_CONTROL_USER_CONFIG_FILE_PATH,
+    {
+      primary: oohPrimaryUserEmail,
+    })
+
+  const text = getNotificationTextToTriageAlerts(slackHandles.primary)
+  await sendSlackNotification(process.env.SLACK_IN_HOURS_CHANNEL_ID, text)
 }
 
 async function updateOnCallSupportTopic () {
@@ -94,6 +139,14 @@ function getOutOfHoursOrEscalationTopic (primary, secondary, oohComms, inHoursCo
 :second_place_medal: Developer OOH 2: <@${secondary}>
 :fine: Comms lead OOH: <@${oohComms}>
 ${commsInHours}`
+}
+
+function getNotificationTextToUpdateRollingNotes (primaryInHours, inHoursProductSupport) {
+  return `<@${primaryInHours}> <@${inHoursProductSupport}> Make sure support rolling week notes is updated before the handover.`
+}
+
+function getNotificationTextToTriageAlerts (primaryOOH) {
+  return `<@${primaryOOH}> Remember to review and solve Splunk alert (in zendesk) on Saturday, Sunday and public holidays. See https://manual.payments.service.gov.uk/manual/support/on-call-what-it-means.html#splunk-alerts for more info`
 }
 
 updateSupportTopics().then(r => {
