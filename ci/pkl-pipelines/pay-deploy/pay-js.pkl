@@ -37,7 +37,7 @@ resources = new {
   shared_resources.payCiGitHubResource
   for (jsLibrary in payJsLibraries) {
     new PayResources.PayGitHubResource {
-      name = "js-\(jsLibrary.name)-git-release"
+      name = "\(jsLibrary.short_name)-git-release"
       repoName = jsLibrary.name
       source {
         branch = jsLibrary.source_branch
