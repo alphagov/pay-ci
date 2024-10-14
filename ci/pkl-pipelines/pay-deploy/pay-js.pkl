@@ -11,11 +11,21 @@ local class PayJsLibraryPipeline {
 
 local payJsLibraries: Listing<PayJsLibraryPipeline> = new {
   new {
-    name = "commons"
+    name = "pay-js-commons"
+    short_name = "js-commons"
+    really_short_name = "commons"
     source_branch = "master"
   }
   new {
-    name = "metrics"
+    name = "pay-js-metrics"
+    short_name = "js-metrics"
+    really_short_name = "metrics"
+    source_branch = "main"
+  }
+  new {
+    name = "run-amock"
+    short_name = "run-amock"
+    really_short_name = "run-amock"
     source_branch = "main"
   }
 }
@@ -26,7 +36,7 @@ resources = new {
   for (jsLibrary in payJsLibraries) {
     new PayResources.PayGitHubResource {
       name = "js-\(jsLibrary.name)-git-release"
-      repoName = "pay-js-\(jsLibrary.name)"
+      repoName = jsLibrary.name
       source {
         branch = jsLibrary.source_branch
         commit_filter = new {
@@ -40,8 +50,8 @@ resources = new {
 groups = new {
   for (jsLibrary in payJsLibraries) {
     new {
-      name = "js-\(jsLibrary.name)"
-      jobs = new { "version-and-push-\(jsLibrary.name)" }
+      name = jsLibrary.short_name
+      jobs = new { "version-and-push-\(jsLibrary.really_short_name)" }
     }
   }
   pipeline_self_update.payPipelineSelfUpdateGroup
@@ -51,12 +61,12 @@ jobs = new {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/pay-js.pkl")
   for (jsLibrary in payJsLibraries) {
     new {
-      name = "version-and-push-\(jsLibrary.name)"
+      name = "version-and-push-\(jsLibrary.really_short_name)"
       plan = new {
         new InParallelStep {
           in_parallel = new Listing<Step> {
             new GetStep {
-              get = "js-\(jsLibrary.name)-git-release"
+              get = "\(jsLibrary.short_name)-git-release"
               trigger = true
             }
             new GetStep { get = "pay-ci" }
@@ -66,11 +76,11 @@ jobs = new {
           task = "npm-version-and-create-pr"
           file = "pay-ci/ci/tasks/npm-version-and-create-pr.yml"
           input_mapping = new {
-            ["src"] = "js-\(jsLibrary.name)-git-release"
+            ["src"] = "\(jsLibrary.short_name)-git-release"
           }
           params = new {
             ["BASE"] = "\(jsLibrary.source_branch)"
-            ["REPO"] = "alphagov/pay-js-\(jsLibrary.name)"
+            ["REPO"] = "alphagov/\(jsLibrary.name)"
             ["GITHUB_TOKEN"] = "((github-access-token))"
           }
         }
