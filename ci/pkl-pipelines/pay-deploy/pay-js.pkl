@@ -6,6 +6,8 @@ import "../common/PayResources.pkl"
 
 local class PayJsLibraryPipeline {
   name: String
+  short_name: String
+  really_short_name: String
   source_branch: String
 }
 
