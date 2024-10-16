@@ -185,7 +185,11 @@ jobs = new {
           }
         }
       }
-      assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+      (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
+        params {
+          ["AWS_ROLE_DURATION"] = "18600"
+        }
+      }
       new InParallelStep {
         in_parallel = new InParallelConfig {
           steps {
@@ -486,7 +490,11 @@ local serviceScalingSetup = new Listing<Step> {
       }
     }
   }
-  assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+  (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
+    params {
+      ["AWS_ROLE_DURATION"] = "18600"
+    }
+  }
   new InParallelStep {
     in_parallel = new InParallelConfig {
       steps {
@@ -511,7 +519,11 @@ local function timedDbScalingSetup(timeTrigger: String): Listing<Step> = new {
       }
     }
   }
-  assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+  (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
+    params {
+      ["AWS_ROLE_DURATION"] = "18600"
+    }
+  }
   new InParallelStep {
     in_parallel = new InParallelConfig {
       steps {
