@@ -8,6 +8,8 @@ params:
   RDS_INSTANCE_NAME:
   AWS_DEFAULT_REGION: eu-west-1
   MAX_ATTEMPTS: 480 # 120 minutes (to account for databases backing up, and configuring enhanced monitoring)
+inputs:
+  - name: pay-ci
 run:
   path: /bin/bash
   args: ["pay-ci/ci/scripts/stop-rds-instance.sh"]
