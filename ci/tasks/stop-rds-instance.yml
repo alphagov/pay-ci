@@ -7,50 +7,7 @@ image_resource:
 params:
   RDS_INSTANCE_NAME:
   AWS_DEFAULT_REGION: eu-west-1
-  MAX_ATTEMPTS: 240 # 60 minutes
+  MAX_ATTEMPTS: 480 # 120 minutes (to account for databases backing up, and configuring enhanced monitoring)
 run:
   path: /bin/bash
-  args:
-    - -euo
-    - pipefail
-    - -c
-    - |
-      function db_instance_state() {
-        aws rds describe-db-instances --db-instance-identifier "${RDS_INSTANCE_NAME}" --query "DBInstances[0].DBInstanceStatus" --output text
-      }
-
-      CURRENT_STATE=$(db_instance_state)
-
-      if [ "${CURRENT_STATE}" == "stopped" ]; then
-        echo "RDS instance ${RDS_INSTANCE_NAME} is already stopped"
-        exit 0
-      elif [ "${CURRENT_STATE}" == "stopping" ]; then
-        echo "RDS instance ${RDS_INSTANCE_NAME} is already stopping"
-      elif [ "${CURRENT_STATE}" != "available" ]; then
-        echo "RDS instance ${RDS_INSTANCE_NAME} is not in a state which can be stopped. " \
-          "It's currently in state ${CURRENT_STATE}, manual intervention will be required"
-        exit  1
-      else
-        echo "Stopping RDS instance ${RDS_INSTANCE_NAME}"
-        aws rds stop-db-instance --db-instance-identifier "${RDS_INSTANCE_NAME}" >> /dev/null
-      fi
-
-      TOTAL_WAIT_TIME_IN_MINUTES=$((MAX_ATTEMPTS * 15 / 60))
-
-      echo "Starting to wait up to ${TOTAL_WAIT_TIME_IN_MINUTES} minutes for RDS instance ${RDS_INSTANCE_NAME} to stop"
-
-      for ATTEMPT in $(seq 1 "${MAX_ATTEMPTS}"); do
-        CURRENT_STATE=$(db_instance_state)
-
-        if [ "${CURRENT_STATE}" == "stopped" ]; then
-          echo "The RDS instance ${RDS_INSTANCE_NAME} is now stopped"
-          exit 0
-        fi
-
-        echo "The RDS instance ${RDS_INSTANCE_NAME} is currently in state ${CURRENT_STATE}." \
-            "Waiting 15 seconds before checking again. Attempt ${ATTEMPT}/${MAX_ATTEMPTS}"
-        sleep 15
-      done
-
-      echo "RDS instance ${RDS_INSTANCE_NAME} did not reach the stopped state within ${TOTAL_WAIT_TIME_IN_MINUTES} minutes"
-      exit 1
+  args: ["pay-ci/ci/scripts/stop-rds-instance.sh"]

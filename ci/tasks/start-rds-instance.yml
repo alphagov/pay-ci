@@ -7,41 +7,7 @@ image_resource:
 params:
   RDS_INSTANCE_NAME:
   AWS_DEFAULT_REGION: eu-west-1
+  MAX_ATTEMPTS: 480 # 120 minutes (to account for databases backing up, and configuring enhanced monitoring)
 run:
   path: /bin/bash
-  args:
-    - -euo
-    - pipefail
-    - -c
-    - |
-      CURRENT_STATE=$(
-        aws rds describe-db-instances \
-          --db-instance-identifier "${RDS_INSTANCE_NAME}" \
-          --query "DBInstances[0].DBInstanceStatus" \
-          --output text
-      )
-
-      if [ "${CURRENT_STATE}" == "available" ]; then
-        echo "RDS instance ${RDS_INSTANCE_NAME} is already available"
-        exit 0
-      elif [ "${CURRENT_STATE}" == "starting" ]; then
-        echo "RDS instance ${RDS_INSTANCE_NAME} is already starting up"
-      elif [ "${CURRENT_STATE}" != "stopped" ]; then
-        echo "RDS instance ${RDS_INSTANCE_NAME} is not in a state that can be started." \
-          "It's currently in ${CURRENT_STATE}, manual intervention will be required to resolve this."
-
-        exit 1
-      else
-        echo "Starting RDS instance ${RDS_INSTANCE_NAME}"
-        aws rds start-db-instance --db-instance-identifier "${RDS_INSTANCE_NAME}" >> /dev/null
-      fi
-
-      # You can't change how long 'aws rds wait' waits, in total it waits for 30 minutes, but we want to
-      # wait for 60 minutes, so if it fails the first time we will run it again.
-      echo "Waiting for RDS instance ${RDS_INSTANCE_NAME} to be available"
-      if ! aws rds wait db-instance-available --db-instance-identifier "${RDS_INSTANCE_NAME}"; then
-        echo "Still not available after 30 minutes, waiting another 30 minutes"
-        aws rds wait db-instance-available --db-instance-identifier "${RDS_INSTANCE_NAME}"
-      fi
-
-      echo "RDS instance ${RDS_INSTANCE_NAME} is now available"
+  args: ["pay-ci/ci/scripts/start-rds-instance.sh"]
