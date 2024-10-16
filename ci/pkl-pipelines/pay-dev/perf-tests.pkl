@@ -33,7 +33,11 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/perf-tests.pkl", "master")
   shared_resources.slackNotificationResource
 
-  shared_resources.payCiGitHubResource
+  (shared_resources.payCiGitHubResource) {
+    source {
+      branch = "pp-13257/make-start-stop-db-more-robust"
+    }
+  }
   shared_resources.payGithubPullRequestResource("pay-perftests-pr", "pay-perftests")
   new PayResources.PayGitHubResource {
     name = "perf-tests-git-release"
@@ -185,7 +189,11 @@ jobs = new {
           }
         }
       }
-      assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+      (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
+        params {
+          ["AWS_ROLE_DURATION"] = "18600"
+        }
+      }
       new InParallelStep {
         in_parallel = new InParallelConfig {
           steps {
@@ -511,7 +519,11 @@ local function timedDbScalingSetup(timeTrigger: String): Listing<Step> = new {
       }
     }
   }
-  assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")
+  (assumeRoleTask("test", "pay-cd-pay-dev-codebuild-executor-perf-tests-test-perf-1", "perf-tests-test-assume-role")) {
+    params {
+      ["AWS_ROLE_DURATION"] = "18600"
+    }
+  }
   new InParallelStep {
     in_parallel = new InParallelConfig {
       steps {
