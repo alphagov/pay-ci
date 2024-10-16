@@ -33,11 +33,7 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/perf-tests.pkl", "master")
   shared_resources.slackNotificationResource
 
-  (shared_resources.payCiGitHubResource) {
-    source {
-      branch = "pp-13257/make-start-stop-db-more-robust"
-    }
-  }
+  shared_resources.payCiGitHubResource
   shared_resources.payGithubPullRequestResource("pay-perftests-pr", "pay-perftests")
   new PayResources.PayGitHubResource {
     name = "perf-tests-git-release"
