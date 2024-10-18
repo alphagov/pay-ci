@@ -25,7 +25,7 @@ local payJsLibraries: Listing<PayJsLibraryPipeline> = new {
     source_branch = "main"
   }
   new {
-    name = "run-amock"
+    name = "pay-run-amock"
     short_name = "run-amock"
     really_short_name = "run-amock"
     source_branch = "main"
