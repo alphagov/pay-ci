@@ -1,0 +1,96 @@
+name: Github Actions - Run CodeQL scan
+
+on:
+  workflow_call:
+    inputs:
+      is_node_repo:
+        type: boolean
+        required: false
+        default: false
+        description: Set to `true` to run Node CodeQL scans
+      is_java_repo:
+        type: boolean
+        required: false
+        default: false
+        description: Set to `true` to run Java CodeQL scans
+      java_version:
+        type: string
+        required: false
+        default: 21
+        description: JDK version to setup and run tests. Defaults to 21
+
+permissions:
+  # required for CodeQL to raise security issues on the repo
+  security-events: write
+
+jobs:
+  run-codeql-scan:
+    name: Analyze
+    runs-on: 'ubuntu-latest'
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+        with:
+          fetch-depth: '0'
+
+      # JAVA REPOS ########
+      - name: Initialize CodeQL
+        if: ${{ inputs.is_java_repo }}
+        uses: github/codeql-action/init@379614612a29c9e28f31f39a59013eb8012a51f0
+        with:
+          # CodeQL options: [ 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift' ]
+          languages: 'java-kotlin'
+          config: |
+            paths:
+              - 'src/**'
+
+      - name: Set up JDK
+        if: ${{ inputs.is_java_repo }}
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: 'adopt'
+
+      - name: Compile project
+        if: ${{ inputs.is_java_repo }}
+        run: mvn clean compile
+
+      - name: Perform CodeQL Analysis
+        if: ${{ inputs.is_java_repo }}
+        uses: github/codeql-action/analyze@379614612a29c9e28f31f39a59013eb8012a51f0
+        with:
+          category: "/language:java-kotlin"
+
+      # NODE REPOS ########
+      - name: Initialize CodeQL
+        if: ${{ inputs.is_node_repo }}
+        uses: github/codeql-action/init@379614612a29c9e28f31f39a59013eb8012a51f0
+        with:
+          # CodeQL options: [ 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift' ]
+          languages: 'javascript-typescript'
+          config: |
+            paths:
+              - 'app/**'
+              - 'test/**'
+
+      - name: Set up Node
+        if: ${{ inputs.is_node_repo }}
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        if: ${{ inputs.is_node_repo }}
+        run: npm ci
+
+      - name: Compile
+        if: ${{ inputs.is_node_repo }}
+        run: npm run compile
+
+      - name: Perform CodeQL Analysis
+        if: ${{ inputs.is_node_repo }}
+        uses: github/codeql-action/analyze@379614612a29c9e28f31f39a59013eb8012a51f0
+        with:
+          category: "/language:javascript-typescript"
