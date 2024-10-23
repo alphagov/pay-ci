@@ -1,0 +1,27 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+inputs:
+  - name: src
+outputs:
+  - name: pr_info
+params:
+  app_name:
+run:
+  path: /bin/bash
+  args:
+    - -ec
+    - |
+      mkdir -p pr_info/
+
+      pr_number=$(cat src/.git/resource/pr)
+      head_sha=$(cat src/.git/resource/head_sha)
+      pr_build_reference="${app_name}-${pr_number}-${head_sha}"
+
+      echo "${pr_build_reference}" | tee pr_info/pr_build_reference
+      echo "${pr_build_reference}-candidate" | tee pr_info/image-tag
+      echo "${head_sha}" | tee pr_info/pr_sha
+      date +%Y-%m-%d_%H-%M-%S | tee pr_info/date
+

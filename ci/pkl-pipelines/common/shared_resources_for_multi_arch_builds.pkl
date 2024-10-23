@@ -10,6 +10,7 @@ open class ImageToMultiArchBuild {
   name: String
   github_repo: String
   dockerhub_repo: String = "governmentdigitalservice/pay-\(name)"
+  push_to_docker_hub = "true"
   ecr_repo: String = "govukpay/\(name)"
   codebuild_project_name: String = name
   release_tag_prefix: String  = ""
@@ -196,6 +197,8 @@ const function multiArchCandidateBuild(image: ImageToMultiArchBuild): Listing<Pi
       ["RELEASE_NAME"] = "((.:release-name))"
       ["RELEASE_SHA"] = "((.:release-sha))"
       ["BUILD_DATE"] = "((.:date))"
+      ["ECR_REPO_NAME"] = image.ecr_repo
+      ["PUSH_TO_DOCKERHUB"] = image.push_to_docker_hub
     }
   }
 
