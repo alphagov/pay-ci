@@ -1,0 +1,31 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: node
+    tag: "18"
+
+inputs:
+  - name: pay-ci
+  - name: pay-cli
+
+params:
+  ECR_REPO:
+  IMAGE_TAG:
+  AWS_DEFAULT_REGION:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  PAY_CLI_PATH: "../../../../pay-cli"
+
+run:
+  path: /bin/sh
+  args:
+    - -eu
+    - -c
+    - |
+      cd pay-ci/ci/scripts/test-bastion
+      npm install
+      node index.js
