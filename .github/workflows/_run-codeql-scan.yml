@@ -8,6 +8,11 @@ on:
         required: false
         default: false
         description: Set to `true` to run Node CodeQL scans
+      is_typescript_repo:
+        type: boolean
+        required: false
+        default: false
+        description: Set to `true` to run Typescript CodeQL scans
       is_java_repo:
         type: boolean
         required: false
@@ -36,7 +41,7 @@ jobs:
           fetch-depth: '0'
 
       # JAVA REPOS ########
-      - name: Initialize CodeQL
+      - name: Initialize CodeQL (Java)
         if: ${{ inputs.is_java_repo }}
         uses: github/codeql-action/init@379614612a29c9e28f31f39a59013eb8012a51f0
         with:
@@ -64,7 +69,7 @@ jobs:
           category: "/language:java-kotlin"
 
       # NODE REPOS ########
-      - name: Initialize CodeQL
+      - name: Initialize CodeQL (Node)
         if: ${{ inputs.is_node_repo }}
         uses: github/codeql-action/init@379614612a29c9e28f31f39a59013eb8012a51f0
         with:
@@ -75,22 +80,32 @@ jobs:
               - 'app/**'
               - 'test/**'
 
+      - name: Initialize CodeQL (Typescript)
+        if: ${{ inputs.is_typescript_repo }}
+        uses: github/codeql-action/init@379614612a29c9e28f31f39a59013eb8012a51f0
+        with:
+          # CodeQL options: [ 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift' ]
+          languages: 'javascript-typescript'
+          config: |
+            paths:
+              - 'src/**'
+
       - name: Set up Node
-        if: ${{ inputs.is_node_repo }}
+        if: ${{ inputs.is_node_repo || inputs.is_typescript_repo }}
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
         with:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
-        if: ${{ inputs.is_node_repo }}
+        if: ${{ inputs.is_node_repo || inputs.is_typescript_repo  }}
         run: npm ci
 
       - name: Compile
-        if: ${{ inputs.is_node_repo }}
+        if: ${{ inputs.is_node_repo || inputs.is_typescript_repo  }}
         run: npm run compile
 
       - name: Perform CodeQL Analysis
-        if: ${{ inputs.is_node_repo }}
+        if: ${{ inputs.is_node_repo || inputs.is_typescript_repo  }}
         uses: github/codeql-action/analyze@379614612a29c9e28f31f39a59013eb8012a51f0
         with:
           category: "/language:javascript-typescript"
