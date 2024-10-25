@@ -21,11 +21,13 @@ class PayApplication {
   smoke_test: Boolean = true
   pact_tag: Boolean = false
   enforce_version_check: EnforceVersionCheckConfig = new {}
+  push_to_docker_hub: Boolean = true
   multi_arch_build_image: shared_resources_for_multi_arch_builds.ImageToMultiArchBuild = new {
     name = outer.name
     github_repo = getGithubRepo()
     dockerhub_repo = getDockerRepo()
     ecr_repo = getECRRepo()
+    push_to_docker_hub = outer.push_to_docker_hub
   }
   // We should change the webhooks egress directory
   terraform_path_within_environment: String = "microservices_v2/\(if (name == "webhooks-egress") "webhooks_egress" else name)"
@@ -53,7 +55,7 @@ local payApps: Listing<PayApplication> = new Listing<PayApplication> {
   new { name = "egress"; use_app_specific_deploy_task = true }
   new { name = "frontend"; use_app_specific_deploy_task = true; pact_tag = true;is_a_java_or_node_app = true }
   new { name = "ledger"; has_db = true; pact_tag = true ; is_a_java_or_node_app = true }
-  new { name = "notifications" }
+  new { name = "notifications"; push_to_docker_hub = false }
   new { name = "products"; has_db = true; pact_tag = true ; is_a_java_or_node_app = true }
   new { name = "products-ui"; pact_tag = true ; is_a_java_or_node_app = true }
   new { name = "publicapi"; pact_tag = true ; is_a_java_or_node_app = true }
@@ -61,17 +63,17 @@ local payApps: Listing<PayApplication> = new Listing<PayApplication> {
   new { name = "selfservice"; pact_tag = true; is_a_java_or_node_app = true }
   new { name = "toolbox"; smoke_test = false; is_a_java_or_node_app = true }
   new { name = "webhooks"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
-  new { name = "webhooks-egress"; use_app_specific_deploy_task = true }
+  new { name = "webhooks-egress"; use_app_specific_deploy_task = true; push_to_docker_hub = false }
 }.toList().sortBy((app) -> app.name).toListing()
 
 // sidecars or other helpers
 local payHelpers: Listing<PayApplication> = new Listing<PayApplication> {
   new { name = "adot"; smoke_test = false; }
-  new { name = "alpine"; smoke_test = false; override_app_to_deploy = "scheduled-tasks"; override_github_repo = "pay-infra" }
-  new { name = "nginx-forward-proxy"; smoke_test = false; override_app_to_deploy = "frontend" }
+  new { name = "alpine"; smoke_test = false; override_app_to_deploy = "scheduled-tasks"; override_github_repo = "pay-infra"; push_to_docker_hub = false }
+  new { name = "nginx-forward-proxy"; smoke_test = false; override_app_to_deploy = "frontend"; push_to_docker_hub = false }
   new { name = "nginx-proxy"; smoke_test = false; override_ecr_repo = "docker-nginx-proxy"
     override_app_to_deploy = "toolbox" }
-  new { name = "stream-s3-sqs"; smoke_test = false; override_app_to_deploy = "scheduled-tasks" }
+  new { name = "stream-s3-sqs"; smoke_test = false; override_app_to_deploy = "scheduled-tasks"; push_to_docker_hub = false}
 }.toList().sortBy((app) -> app.name).toListing()
 
 payScheduledTask = new PayApplication { name = "scheduled-tasks"; use_app_specific_deploy_task = true }
