@@ -1,5 +1,5 @@
 ---
-# The JSON configuration is written into the run-codebuild-configuration 
+# The JSON configuration is written into the run-codebuild-configuration
 # output for a later task to use as an input
 
 platform: linux
@@ -12,6 +12,8 @@ inputs:
 outputs:
   - name: run-codebuild-configuration
 params:
+  ECR_REPO_NAME:
+  PUSH_TO_DOCKERHUB:
   PROJECT_TO_BUILD:
   RELEASE_NAME:
   RELEASE_NUMBER:
@@ -37,7 +39,9 @@ run:
           "RELEASE_NUMBER": "${RELEASE_NUMBER}",
           "RELEASE_NAME": "${RELEASE_NAME}",
           "RELEASE_SHA": "${RELEASE_SHA}",
-          "BUILD_DATE": "${BUILD_DATE}"
+          "BUILD_DATE": "${BUILD_DATE}",
+          "ECR_REPO_NAME": "${ECR_REPO_NAME}",
+          "PUSH_TO_DOCKERHUB": "${PUSH_TO_DOCKERHUB}"
         }
       }
       EOAMD
@@ -52,7 +56,9 @@ run:
           "RELEASE_NUMBER": "${RELEASE_NUMBER}",
           "RELEASE_NAME": "${RELEASE_NAME}",
           "RELEASE_SHA": "${RELEASE_SHA}",
-          "BUILD_DATE": "${BUILD_DATE}"
+          "BUILD_DATE": "${BUILD_DATE}",
+          "ECR_REPO_NAME": "${ECR_REPO_NAME}",
+          "PUSH_TO_DOCKERHUB": "${PUSH_TO_DOCKERHUB}"
         }
       }
       EOF
@@ -64,7 +70,9 @@ run:
         "secondarySourcesVersions": {},
         "environmentVariables": {
           "RELEASE_NUMBER": "${RELEASE_NUMBER}",
-          "BUILD_DATE": "${BUILD_DATE}"
+          "BUILD_DATE": "${BUILD_DATE}",
+          "ECR_REPO_NAME": "${ECR_REPO_NAME}",
+          "PUSH_TO_DOCKERHUB": "${PUSH_TO_DOCKERHUB}"
         }
       }
       EOF
