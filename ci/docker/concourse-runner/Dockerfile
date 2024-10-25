@@ -9,7 +9,9 @@ RUN apk add --no-cache \
   bash \
   curl \
   docker-compose \
+  dpkg \
   netcat-openbsd \
+  gcompat \
   git \
   python3 \
   ca-certificates \
@@ -51,6 +53,12 @@ RUN echo "$FLY_CLI_SHA256SUM  /tmp/fly" >> /tmp/fly.sha256 \
   && sha256sum -c /tmp/fly.sha256 \
   && mv /tmp/fly /usr/local/bin/ \
   && chmod 555 /usr/local/bin/fly
+
+RUN wget "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" \
+   && dpkg -x session-manager-plugin.deb session-manager-plugin \
+    && rm session-manager-plugin.deb
+RUN ln -s /session-manager-plugin/usr/local/sessionmanagerplugin/bin/session-manager-plugin /usr/local/bin/
+RUN chmod +x /usr/local/bin/session-manager-plugin
 
 COPY ./docker-helpers.sh /
 COPY ./docker-wrapper /usr/local/bin/
