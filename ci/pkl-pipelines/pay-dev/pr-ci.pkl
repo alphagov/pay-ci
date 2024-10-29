@@ -5,10 +5,12 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_test_pipelines.pkl" as shared_test
+import "../common/shared_resources_for_multi_arch_builds.pkl" as shared_multiarch_build
 import "../common/PayResources.pkl"
 
 local e2e_test_apps = new Mapping<String, AppConfig> {
   ["adminusers"] = new { tests = new { "card" } }
+  ["aws-bastion"] = new { tests = new {} }
   ["cardid"] = new { tests = new { "card" "zap" } }
   ["connector"] = new { tests = new {"card" }; migrate_from = "card-connector" }
   ["endtoend"] = new { tests = new {"card" "products" "zap"} }
@@ -23,6 +25,7 @@ local e2e_test_apps = new Mapping<String, AppConfig> {
 
 local groupMap = new Mapping <String, Listing<String>> {
   ["adminusers"] = new { "adminusers-e2e" }
+  ["aws-bastion"] = new { "aws-bastion-e2e" }
   ["cardid"] = new { "cardid-e2e" }
   ["connector"] = new { "connector-e2e" }
   ["end_to_end"] = new { "endtoend-e2e" "pay-ci-endtoend-config" }
@@ -54,20 +57,28 @@ resource_types {
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/pr-ci.pkl", "master")
   shared_resources.payCiGitHubResource
+  new PayResources.PayGitHubResource {
+    name = "pay-cli-src"
+    repoName = "pay-cli"
+    source {
+      branch = "main"
+    }
+  }
 
   for (app, config in e2e_test_apps) {
     new PayResources.PayGitHubPullRequestResource {
-      name = "\(app)-pull-request" 
+      name = "\(app)-pull-request"
       repo = "pay-\(app)"
     }
   }
+
   new PayResources.PayGitHubPullRequestResource {
-    name = "pay-ci-endtoend-config-pull-request" 
+    name = "pay-ci-endtoend-config-pull-request"
     repo = "pay-ci"
     source { ["paths"] = new Listing<String> { "ci/tasks/endtoend/" } }
   }
   new PayResources.PayGitHubPullRequestResource {
-    name = "ci-pull-request" 
+    name = "ci-pull-request"
     repo = "pay-ci"
     source { ["paths"] = new Listing<String> { "ci/pipelines/*"  "ci/tasks/*"} }
   }
@@ -90,7 +101,14 @@ resources = new {
 
 jobs = new {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/pr-ci.pkl")
-  for (app, config in e2e_test_apps) { e2eJob(app, config) }
+  for (app, config in e2e_test_apps) {
+    when (app != "aws-bastion") {
+      e2eJob(app, config)
+    }
+  }
+
+  e2eJobForBastion()
+
   new {
     name = "ci-pr-test"
     max_in_flight = 3
@@ -123,7 +141,7 @@ jobs = new {
       putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "pending")
       shared_test.assumeCodeBuildRole("executor", "pay-ci-endtoend-config-pr-assume-role")
       shared_test.loadVar("role", "assume-role/assume-role.json")
-      shared_test.prepareCodeBuild("pay-ci", "prepare-e2e-codebuild.yml", "") 
+      shared_test.prepareCodeBuild("pay-ci", "prepare-e2e-codebuild.yml", "")
         |> shared_test.withInputMapping("pay-ci", "src")
       new InParallelStep {
         in_parallel = new Listing<Step> {
@@ -135,6 +153,99 @@ jobs = new {
       putStatus("pay-ci-endtoend-config-pull-request", "e2e tests", "success")
     }
   }
+}
+
+local function e2eJobForBastion() = new Job {
+  name = "aws-bastion-e2e"
+  max_in_flight = 3
+  build_log_retention = new { builds = 500 }
+  on_failure = putStatus("aws-bastion-pull-request", "e2e tests", "failure")
+
+  plan {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new GetStep {
+          get = "src"
+          params = new { ["integration_tool"] = "checkout" }
+          resource = "aws-bastion-pull-request"
+          trigger = true
+          version = "every"
+        }
+        shared_test.getPayCi
+        new GetStep { get = "pay-cli-src" }
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        putStatus("aws-bastion-pull-request", "e2e tests", "pending")
+      }
+    }
+
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new TaskStep {
+          task = "get-pr-info"
+          file = "pay-ci/ci/tasks/get-pr-info.yml"
+          params {
+            ["app_name"] = "aws-bastion"
+          }
+        }
+        shared_test.assumeCodeBuildRole("builder", "codebuild-assume-role")
+      }
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        shared_test.loadAssumeRoleVar
+        shared_test.loadVar("image-tag", "pr_info/image-tag")
+        shared_test.loadVar("release-number", "pr_info/pr_build_reference")
+        shared_test.loadVar("release-name", "pr_info/pr_sha")
+        shared_test.loadVar("release-sha", "pr_info/pr_sha")
+        shared_test.loadVar("date", "pr_info/date")
+      }
+    }
+
+    ...shared_multiarch_build.multiArchCandidateBuild(
+      new shared_multiarch_build.ImageToMultiArchBuild {
+        name = "aws-bastion"
+        ecr_repo = "govukpay/pull-request-builds"
+        branch = "((.:release-sha))"
+        push_to_docker_hub = false
+    })
+
+    new TaskStep {
+      task = "assume-concourse-role"
+      file = "pay-ci/ci/tasks/assume-role.yml"
+      params {
+        ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+        ["AWS_ROLE_SESSION_NAME"] = "concourser-role"
+      }
+      output_mapping {
+        ["assume-role"] = "assume-concourse-role"
+      }
+    }
+
+    shared_test.loadVar("concourse_role", "assume-concourse-role/assume-role.json")
+
+    new TaskStep {
+      task = "test-bastion"
+      file = "pay-ci/ci/tasks/run-bastion-e2e.yml"
+      input_mapping {
+        ["pay-ci"] = "pay-ci"
+        ["pay-cli"] = "pay-cli-src"
+      }
+      params {
+        ["ECR_REPO"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/pull-request-builds"
+        ["IMAGE_TAG"] = "((.:image-tag))"
+        ["AWS_DEFAULT_REGION"] = "eu-west-1"
+        ["AWS_ACCESS_KEY_ID"] = "((.:concourse_role.AWS_ACCESS_KEY_ID))"
+        ["AWS_SECRET_ACCESS_KEY"] = "((.:concourse_role.AWS_SECRET_ACCESS_KEY))"
+        ["AWS_SESSION_TOKEN"] = "((.:concourse_role.AWS_SESSION_TOKEN))"
+      }
+    }
+
+    putStatus("aws-bastion-pull-request", "e2e tests", "success")
+  }
+
 }
 
 local function e2eJob(app: String, config: AppConfig) = new Job {
@@ -172,11 +283,11 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
       }
     }
 
-    shared_resources.generateDockerCredsConfigStep 
+    shared_resources.generateDockerCredsConfigStep
 
     new TaskStep {
       task = "build-image"
-      file = "pay-ci/ci/tasks/build-docker-image.yml" 
+      file = "pay-ci/ci/tasks/build-docker-image.yml"
       privileged = true
       params = new { ["app_name"] = app }
     }
@@ -208,8 +319,8 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
             ["image"] = "local_image/((.:image_filename))"
           }
         }
-        shared_test.prepareCodeBuild(app, "prepare-e2e-codebuild.yml", "((.:image_tag))") 
-          |> shared_test.withParam("PR_BUILD", "true")
+        shared_test.prepareCodeBuild(app, "prepare-e2e-codebuild.yml", "((.:image_tag))")
+        |> shared_test.withParam("PR_BUILD", "true")
       }
     }
     when (config.tests.length > 1) {
@@ -225,6 +336,7 @@ local function e2eJob(app: String, config: AppConfig) = new Job {
         shared_test.runCodeBuild("run-\(test)-e2e-tests", "\(test).json", 1)
       }
     }
+
     putStatus("\(app)-pull-request", "e2e tests", "success")
   }
 }
@@ -238,7 +350,7 @@ local function pullRequestGetStep(name: String) = new GetStep {
 }
 
 local function putStatus(stepName: String, context: String, status: String) = new PutStep {
-  put = stepName 
+  put = stepName
   get_params = new { ["skip_download"] = true }
   params = new {
     ["context"] = context
