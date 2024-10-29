@@ -9,6 +9,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@aws-sdk/client-ecs": "^3.670.0"
+    "@aws-sdk/client-ecs": "^3.670.0",
+    "@aws-sdk/client-ssm": "^3.679.0",
+    "pg": "^8.13.1"
   }
 }
