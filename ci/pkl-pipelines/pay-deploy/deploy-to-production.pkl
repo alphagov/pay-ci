@@ -44,7 +44,7 @@ resources = new {
   new shared_resources_for_lock_pools.LockPoolResource { pool = "deploy-application-production" }
   shared_resources_for_slack_notifications.slackNotificationResource
   (shared_resources_for_annotations.grafanaAnnotationResource) {
-    source { ["tags"] = new Listing<String> { "release" "production-2" } }
+    source { ["tags"] = new Listing<String> { "release" "production-2" "production-2-fargate" "production" } }
   }
 }
 
