@@ -6,6 +6,7 @@ import "../shared_resources_for_deploy_pipelines.pkl" as shared_deploy
 import "../shared_resources_for_multi_arch_builds.pkl"
 import "../shared_resources_for_slack_notifications.pkl" as shared_slack
 import "../shared_resources_for_terraform.pkl"
+import "../PayResources.pkl"
 
 hidden bastion_envs: Listing<BastionEnv>
 hidden concourse_team_name: String
@@ -26,7 +27,7 @@ local bastion_image: shared_resources_for_multi_arch_builds.ImageToMultiArchBuil
   github_repo = "pay-aws-bastion"
   branch = "main"
   codebuild_project_name = "aws-bastion"
-  retag_after_build = true
+  retag_after_build = false
 }
 
 resource_types {
@@ -40,6 +41,17 @@ resources {
   for (aws_account in aws_accounts) {
     shared_resources.payECRResourceWithVariant("bastion-ecr-registry-\(aws_account)", "govukpay/bastion", "pay_aws_\(aws_account)_account_id", "release")
   }
+  when (any_build_envs) {
+    shared_resources.payECRResourceWithVariant("bastion-candidate", "govukpay/bastion", "pay_aws_test_account_id", "candidate")
+    new PayResources.PayGitHubResource {
+      name = "pay-cli-src"
+      repoName = "pay-cli"
+      source {
+        branch = "main"
+      }
+    }
+  }
+
   pipeline_self_update.PayPipelineSelfUpdateResource("\(concourse_team_name)/bastion.pkl", "master")
   when (any_build_envs) {
     new shared_resources_for_multi_arch_builds.MultiArchBuildGithubSourceResource { image = bastion_image }
@@ -50,6 +62,7 @@ jobs {
   for (bastion_env in bastion_envs) {
     when (bastion_env.with_build) {
       new shared_resources_for_multi_arch_builds.MultiArchCandidateBuildJob { image = bastion_image }
+      run_bastion_e2e_test_and_retag_image_as_release_job()
     }
 
     deploy_bastion_image_in_account_job(bastion_env)
@@ -185,4 +198,120 @@ local function push_bastion_image_to_account_job(bastion_env: BastionEnv, accoun
       slack_channel_for_failure = "#govuk-pay-starling"
     }
   )
+}
+
+local function run_bastion_e2e_test_and_retag_image_as_release_job() = new Job {
+  name = "bastion-e2e-test-and-retag-image-as-release"
+  on_failure = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      message = "Failed to run bastion E2E test for candidate ((.:candidate-image-tag)) and retag-image as release"
+      slack_channel_for_failure = "#govuk-pay-starling"
+    }
+  )
+  on_success = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      is_a_success = true
+      message = "Retagged bastion candidate image ((.:candidate-image-tag)) as release ((.:release-tag))"
+    }
+  )
+
+  plan {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        new GetStep {
+          get = "bastion-candidate"
+          trigger = true
+          params {
+            ["format"] = "oci"
+          }
+        }
+        new GetStep { get = "pay-ci" }
+        new GetStep { get = "pay-cli-src" }
+      }
+    }
+
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          shared_resources.generateDockerCredsConfigStep
+          new TaskStep {
+            task = "parse-candidate-tag"
+            file = "pay-ci/ci/tasks/parse-candidate-tag.yml"
+            input_mapping = new {
+              ["ecr-repo"] = "bastion-candidate"
+            }
+          }
+          new LoadVarStep {
+            load_var = "candidate-image-tag"
+            file = "bastion-candidate/tag"
+          }
+        }
+      }
+    }
+    new LoadVarStep {
+      load_var = "release-tag"
+      file = "parse-candidate-tag/release-tag"
+    }
+
+    new TaskStep {
+      task = "assume-concourse-role-to-run-e2e-test"
+      file = "pay-ci/ci/tasks/assume-role.yml"
+      params {
+        ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+        ["AWS_ROLE_SESSION_NAME"] = "concourser-role"
+      }
+      output_mapping {
+        ["assume-role"] = "assume-concourse-role"
+      }
+    }
+
+    new LoadVarStep {
+      load_var = "concourse_role"
+      file = "assume-concourse-role/assume-role.json"
+    }
+
+    new TaskStep {
+      task = "test-bastion"
+      file = "pay-ci/ci/tasks/run-bastion-e2e.yml"
+      input_mapping {
+        ["pay-ci"] = "pay-ci"
+        ["pay-cli"] = "pay-cli-src"
+      }
+      params {
+        ["ECR_REPO"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com/govukpay/bastion"
+        ["IMAGE_TAG"] = "((.:candidate-image-tag))"
+        ["AWS_DEFAULT_REGION"] = "eu-west-1"
+        ["AWS_ACCESS_KEY_ID"] = "((.:concourse_role.AWS_ACCESS_KEY_ID))"
+        ["AWS_SECRET_ACCESS_KEY"] = "((.:concourse_role.AWS_SECRET_ACCESS_KEY))"
+        ["AWS_SESSION_TOKEN"] = "((.:concourse_role.AWS_SESSION_TOKEN))"
+      }
+    }
+
+    new TaskStep {
+      task = "assume-retag-role"
+      file = "pay-ci/ci/tasks/assume-role.yml"
+      output_mapping {
+        ["assume-role"] = "assume-retag-role"
+      }
+      params {
+        ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_test_account_id)):role/concourse"
+        ["AWS_ROLE_SESSION_NAME"] = "retag-ecr-image-as-release"
+      }
+    }
+    new LoadVarStep {
+      load_var = "retag-role"
+      file = "assume-retag-role/assume-role.json"
+      format = "json"
+    }
+    new InParallelStep {
+      in_parallel = new InParallelConfig {
+        steps = new Listing<Step> {
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/bastion" newTag = "((.:release-tag))" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInECR { repo = "govukpay/bastion" newTag = "latest" }
+          new shared_resources_for_multi_arch_builds.RetagMultiArchImageInDockerhubAsLatestMaster { repo = "governmentdigitalservice/pay-aws-bastion" }
+        }
+      }
+    }
+  }
+
 }
