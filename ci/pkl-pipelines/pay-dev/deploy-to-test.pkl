@@ -100,7 +100,7 @@ resources = new {
 
   shared_resources_for_slack_notifications.slackNotificationResource
   (shared_resources_for_annotations.grafanaAnnotationResource) {
-    source { ["tags"] = new Listing<String> { "release" "test-12" } }
+    source { ["tags"] = new Listing<String> { "release" "test-12" "test-12-fargate" "test" } }
   }
 }
 
