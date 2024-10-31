@@ -1,0 +1,33 @@
+name: Github Actions - Run Dependency Review
+
+on:
+  workflow_call:
+    inputs:
+      minimum_severity:
+        type: string
+        required: false
+        default: 'low'
+        description: Override default severity rating (options are 'low', 'moderate', 'high', 'critical')
+      warn_only:
+        type: boolean
+        required: false
+        default: false
+        description: Set to true to allow the action to complete with success status, regardless of findings
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b  # v4.1.4
+        with:
+          show-progress: false
+
+      - name: Review changes to repository supply chain
+        uses: actions/dependency-review-action@4081bf99e2866ebe428fc0477b69eb4fcda7220a  # v4.4.0
+        with:
+          fail-on-severity: ${{ inputs.minimum_severity }}
+          warn-only: ${{ inputs.warn_only }}
