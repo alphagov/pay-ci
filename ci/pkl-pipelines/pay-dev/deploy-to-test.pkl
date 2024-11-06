@@ -842,6 +842,10 @@ local function checkReleaseVersions(app): TaskStep = new TaskStep {
     ["AWS_REGION"] = "eu-west-1"
     ["CLUSTER_NAME"] = "test-12-fargate"
     ["APPLICATION_IMAGE_TAG"] = "((.:application_image_tag))"
+    ["FLY_USERNAME"] = "pay-dev"
+    ["FLY_PASSWORD"] = "((readonly_local_user_password))"
+    ["PIPELINE_NAME"] = "deploy-to-test"
+    ["CONTAINER_SUFFIX"] = "test"
     when (app.is_a_java_or_node_app) {
       ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
       ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
