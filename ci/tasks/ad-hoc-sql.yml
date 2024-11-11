@@ -8,6 +8,6 @@ inputs:
   - name: ad-hoc-sql-scripts
   - name: pay-ci
 run:
-  path: ash
+  path: /bin/bash
   args:
     - pay-ci/ci/scripts/ad-hoc-sql.sh
