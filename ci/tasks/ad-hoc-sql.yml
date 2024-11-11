@@ -1,0 +1,12 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+    tag: latest
+inputs:
+  - name: ad-hoc-sql-scripts
+run:
+  path: ash
+  args:
+    - pay-ci/ci/scripts/ad-hoc-sql.sh
