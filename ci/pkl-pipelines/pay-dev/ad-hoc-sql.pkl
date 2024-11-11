@@ -14,7 +14,11 @@ local servicesWithDatabase: Listing<String> = new {
 
 resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/ad-hoc-sql.pkl", "pp-12922/spike-ad-hoc-sql-pipeline")
-  shared_resources.payCiGitHubResource
+  (shared_resources.payCiGitHubResource) {
+    source {
+      branch = "pp-12922/spike-ad-hoc-sql-pipeline"
+    }
+  }
 
   new {
     name = "ad-hoc-sql-scripts"
@@ -22,6 +26,7 @@ resources {
     icon = "file-delimited"
 
     source {
+      ["aws_role_arn"] = "arn:aws:iam::((pay_aws_dev_account_id)):role/concourse"
       ["access_key_id"] = "((readonly_access_key_id))"
       ["secret_access_key"] = "((readonly_secret_access_key))"
       ["session_token"] = "((readonly_session_token))"
@@ -43,8 +48,17 @@ jobs {
         new InParallelStep {
           in_parallel = new Listing<Step> {
             new GetStep { get = "pay-ci" }
-            new GetStep { get = "ad-hoc-sql-scripts" }
+            new GetStep {
+              get = "ad-hoc-sql-scripts"
+              params {
+                ["unpack"] = true
+              }
+            }
           }
+        }
+        new TaskStep {
+          task = "ad-hoc-sql"
+          file = "pay-ci/ci/tasks/ad-hoc-sql.yml"
         }
       }
     }
