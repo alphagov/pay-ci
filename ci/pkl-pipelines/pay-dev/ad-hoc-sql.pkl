@@ -1,0 +1,52 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+
+local servicesWithDatabase: Listing<String> = new {
+  "adminusers"
+  "connector"
+  "ledger"
+  "products"
+  "publicauth"
+  "webhooks"
+}
+
+resources {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/ad-hoc-sql.pkl", "pp-12922/spike-ad-hoc-sql-pipeline")
+  shared_resources.payCiGitHubResource
+
+  new {
+    name = "ad-hoc-sql-scripts"
+    type = "s3"
+    icon = "file-delimited"
+
+    source {
+      ["access_key_id"] = "((readonly_access_key_id))"
+      ["secret_access_key"] = "((readonly_secret_access_key))"
+      ["session_token"] = "((readonly_session_token))"
+      ["region_name"] = "eu-west-1"
+      ["private"] = true
+      ["bucket"] = "pay-adhoc-sql-test-zdsppbwnfauljmia"
+      ["regexp"] = "ad_hoc_sql_v1/[Zz][Dd]-([0-9]+).zip"
+    }
+  }
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/ad-hoc-sql.pkl")
+
+  for (service in servicesWithDatabase) {
+    new {
+      name = "execute-ad-hoc-sql-against-\(service)"
+      plan {
+        new InParallelStep {
+          in_parallel = new Listing<Step> {
+            new GetStep { get = "pay-ci" }
+            new GetStep { get = "ad-hoc-sql-scripts" }
+          }
+        }
+      }
+    }
+  }
+}
