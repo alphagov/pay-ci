@@ -2,8 +2,8 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: alpine
-    tag: latest
+    repository: ubuntu
+    tag: 22.04
 inputs:
   - name: ad-hoc-sql-scripts
   - name: pay-ci
