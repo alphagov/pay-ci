@@ -6,6 +6,7 @@ image_resource:
     tag: latest
 inputs:
   - name: ad-hoc-sql-scripts
+  - name: pay-ci
 run:
   path: ash
   args:
