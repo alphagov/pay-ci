@@ -140,7 +140,13 @@ async function flyLogin () {
     if (!FLY_PASSWORD) {
       throw new Error('FLY_PASSWORD environment variable is not set. Cannot log into fly to check enabled versions')
     }
-    const loginResult = spawnSync('fly', ['login', '-t', FLY_USERNAME, '-u', FLY_USERNAME, '-p', FLY_PASSWORD], flyOptions)
+    const loginResult = spawnSync('fly', [
+      '-t', FLY_USERNAME,
+      'login',
+      '-u', FLY_USERNAME,
+      '-p', FLY_PASSWORD,
+      '-n', FLY_USERNAME,
+      '-c', 'https://pay-cd.deploy.payments.service.gov.uk'], flyOptions)
 
     if (loginResult.error) {
       throw new Error(`Failed to log into fly: ${loginResult.error.message}`)
