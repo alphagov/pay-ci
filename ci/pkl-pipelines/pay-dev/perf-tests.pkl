@@ -942,6 +942,9 @@ local function runSelfServiceSimulationPerfTest(extended: Boolean): Job = new {
 local cleanup_perf_test_1_plan: Listing<Step> = new {
   (assumeRoleTask("test", "test-perf-1-perf-test-cleanup-runner", "perf-test-cleanup-runner")) {
     task = "assume-cleanup-runner-role"
+    params {
+      ["AWS_ROLE_DURATION"] = "10800"
+    }
     output_mapping {
       ["assume-role"] = "assume-cleanup-runner-role"
     }
