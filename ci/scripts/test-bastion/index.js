@@ -217,7 +217,7 @@ function checkAndActOnTunnelOutput (command, data) {
     throw new Error(data)
   }
 
-  if (data.includes('Do you require read-only access, or write-access to the database')) {
+  if (data.includes('Do you require read-only, read-write, or admin  access to the database')) {
     command.stdin.write('R\n')
   }
 
