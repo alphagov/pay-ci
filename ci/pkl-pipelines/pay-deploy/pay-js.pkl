@@ -1,5 +1,7 @@
 amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Resources.pkl"
+
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/PayResources.pkl"
@@ -9,6 +11,7 @@ local class PayJsLibraryPipeline {
   short_name: String
   really_short_name: String
   source_branch: String
+  repo_org: String
 }
 
 local payJsLibraries: Listing<PayJsLibraryPipeline> = new {
@@ -17,18 +20,28 @@ local payJsLibraries: Listing<PayJsLibraryPipeline> = new {
     short_name = "js-commons"
     really_short_name = "commons"
     source_branch = "master"
+    repo_org = "alphagov"
   }
   new {
     name = "pay-js-metrics"
     short_name = "js-metrics"
     really_short_name = "metrics"
     source_branch = "main"
+    repo_org = "alphagov"
   }
   new {
     name = "pay-run-amock"
     short_name = "run-amock"
     really_short_name = "run-amock"
     source_branch = "main"
+    repo_org = "alphagov"
+  }
+  new {
+    name = "pay-firehose-logging-lambda"
+    short_name = "pay-firehose-logging-lambda"
+    really_short_name = "pay-firehose-logging-lambda"
+    source_branch = "main"
+    repo_org = "kbottla"
   }
 }
 
@@ -36,11 +49,13 @@ resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/pay-js.pkl", "master")
   shared_resources.payCiGitHubResource
   for (jsLibrary in payJsLibraries) {
-    new PayResources.PayGitHubResource {
+    new Resources.GitResource {
       name = "\(jsLibrary.short_name)-git-release"
-      repoName = jsLibrary.name
-      source {
+      source = new {
         branch = jsLibrary.source_branch
+        uri = "https://github.com/\(jsLibrary.repo_org)/\(jsLibrary.name)"
+        username = "alphagov-pay-ci-concourse"
+        password = "((github-access-token))"
         commit_filter = new {
           exclude = new {"\\[automated release\\]"}
         }
@@ -82,7 +97,7 @@ jobs = new {
           }
           params = new {
             ["BASE"] = "\(jsLibrary.source_branch)"
-            ["REPO"] = "alphagov/\(jsLibrary.name)"
+            ["REPO"] = "\(jsLibrary.repo_org)/\(jsLibrary.name)"
             ["GITHUB_TOKEN"] = "((github-access-token))"
           }
         }

@@ -1,0 +1,119 @@
+aws_assumed_role_creds: &aws_assumed_role_creds
+  AWS_ACCESS_KEY_ID: ((.:role.AWS_ACCESS_KEY_ID))
+  AWS_SECRET_ACCESS_KEY: ((.:role.AWS_SECRET_ACCESS_KEY))
+  AWS_SESSION_TOKEN: ((.:role.AWS_SESSION_TOKEN))
+
+resources:
+  - name: update-firehose-logging-transformation-lambda-definition
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+      paths:
+        - ci/pipelines/update-firehose-logging-transformation-lambda.yml
+  - name: pay-ci
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-ci
+      branch: master
+  - name: pay-infra
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/alphagov/pay-infra
+      branch: master
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+  - name: firehose-lambda-git-release
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/kbottla/pay-firehose-logging-lambda
+      tag_regex: "alpha_release-(.*)"
+      username: alphagov-pay-ci-concourse
+      password: ((github-access-token))
+
+jobs:
+  - name: update-firehose-logging-lambda-pipeline
+    plan:
+      - get: update-firehose-logging-transformation-lambda-definition
+        trigger: true
+      - set_pipeline: update-firehose-logging-lambda
+        file: update-firehose-logging-transformation-lambda-definition/ci/pipelines/update-firehose-logging-transformation-lambda.yml
+
+  - name: update-lambda-in-test-environment
+    plan:
+      - get: pay-infra
+      - get: pay-ci
+      - get: firehose-lambda-git-release
+        trigger: true
+      - task: parse-release-tag
+        file: pay-ci/ci/tasks/parse-release-tag.yml
+        input_mapping:
+          git-release: firehose-lambda-git-release
+      - in_parallel:
+          steps:
+            - load_var: release-number
+              file: tags/release-number
+      - task: build-zip
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: governmentdigitalservice/pay-concourse-runner
+          inputs:
+            - name: firehose-lambda-git-release
+          outputs:
+            - name: firehose-lambda-git-release/dist
+          params:
+            RELEASE_VERSION: ((.:release-number))
+          run:
+            path: /bin/bash
+            args:
+              - -ec
+              - |
+                cd firehose-lambda-git-release
+                npm run build
+
+      - task: assume-role
+        file: pay-ci/ci/tasks/assume-role.yml
+        params:
+          AWS_ROLE_ARN: arn:aws:iam::((pay_aws_test_account_id)):role/concourse_update_canary
+          AWS_ROLE_SESSION_NAME: update-lambda
+      - load_var: role
+        file: assume-role/assume-role.json
+        format: json
+      - file: pay-ci/ci/tasks/find-terraform-version.yml
+        params:
+          TERRAFORM_ROOT: pay-infra/provisioning/terraform/path-to-lambda
+        task: find-terraform-version
+      - file: terraform-version/.terraform-version
+        load_var: terraform-version
+      - task: update-lambda
+        config:
+          platform: linux
+          inputs:
+            - name: pay-infra
+            - name: firehose-lambda-git-release/dist
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: "((.:terraform-version))"
+          params:
+            ENVIRONMENT: test
+            LAMBDA_VERSION: ((.:release-number))
+            <<: *aws_assumed_role_creds
+          run:
+            path: /bin/sh
+            args:
+              - -ec
+              - |
+                aws lambda update-function-code \
+                  --function-name  firehose-logging-transformation \
+                  --zip-file fileb://firehose-lambda-git-release/dist/firehose-logging-lambda-${LAMBDA_VERSION}.zip
+
+            # or apply terraform
