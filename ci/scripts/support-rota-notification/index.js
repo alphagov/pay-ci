@@ -32,7 +32,7 @@ async function updateSupportTopics () {
 
 function isABankHoliday (now) {
   //todo: use https://www.gov.uk/bank-holidays.json to get bank holiday dates
-  const bankHolidays = ['25-12-2024', '26-12-2024', '1-Jan-2025', '18-04-2025', '05-05-2025', '26-05-2025',
+  const bankHolidays = ['25-12-2024', '26-12-2024', '01-01-2025', '18-04-2025', '05-05-2025', '26-05-2025',
     '25-08-2025', '25-12-2025', '26-12-2025']
 
   return bankHolidays.includes(now.format('DD-MM-YYYY'))
