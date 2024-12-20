@@ -30,6 +30,14 @@ async function updateSupportTopics () {
   }
 }
 
+function isABankHoliday (now) {
+  //todo: use https://www.gov.uk/bank-holidays.json to get bank holiday dates
+  const bankHolidays = ['25-12-2024', '26-12-2024', '1-Jan-2025', '18-04-2025', '05-05-2025', '26-05-2025',
+    '25-08-2025', '25-12-2025', '26-12-2025']
+
+  return bankHolidays.includes(now.format('DD-MM-YYYY'))
+}
+
 /**
  * Updates in-hours Slack channel topic. Only sets from Mon-Fri.
  *  1. If run during in-hours, gets current users on schedule
@@ -37,6 +45,11 @@ async function updateSupportTopics () {
  */
 async function updateInHoursSupportTopic () {
   const now = moment.tz(timeZone)
+
+  if (isABankHoliday(now)) {
+    console.log('Skipped updating in-hours topic because of bank holiday')
+    return
+  }
 
   if (now.isoWeekday() >= 1 && now.isoWeekday() <= 5) {
     const { querySinceDate, queryUntilDate } = getInHoursQueryDateRange(timeZone, now)
@@ -63,6 +76,11 @@ async function updateInHoursSupportTopic () {
 async function notifyToUpdateRollingNotes () {
   const now = moment.tz(timeZone)
 
+  if (isABankHoliday(now)) {
+    console.log('Skipped sending notification because of bank holiday')
+    return
+  }
+
   if (now.isoWeekday() >= 1 && now.isoWeekday() <= 5) {
     const { querySinceDate, queryUntilDate } = getInHoursQueryDateRange(timeZone, now)
 
@@ -85,25 +103,46 @@ async function notifyToUpdateRollingNotes () {
 
 async function notifyToTriageAlerts () {
   const now = moment.tz(timeZone)
+  const currentDay = now.isoWeekday()
 
-  let { querySinceDate, queryUntilDate } = getOutOfHoursQueryDateRange(timeZone, now)
-  const oohPrimaryUserEmail = await getUserEmailForSchedule(process.env.PD_OOH_PRIMARY_SCHEDULE_ID, querySinceDate, queryUntilDate)
+  if (now.isoWeekday() === 6 && now.isoWeekday() === 7) {
+    console.log('Skipped sending notification because of weekend')
+    return
+  }
+  if (isABankHoliday(now)) {
+    console.log('Skipped sending notification because of bank holiday')
+    return
+  }
 
-  const slackHandles = getUsersSlackHandle(
-    process.env.ACCESS_CONTROL_USER_CONFIG_FILE_PATH,
-    {
-      primary: oohPrimaryUserEmail,
-    })
+  const nextSaturday = now.add(6 - currentDay, 'days').startOf('day')
+  const nextSunday = now.add(7 - currentDay, 'days').startOf('day')
 
-  const text = getNotificationTextToTriageAlerts(slackHandles.primary)
-  await sendSlackNotification(process.env.SLACK_IN_HOURS_CHANNEL_ID, text)
+  let { querySinceDate, queryUntilDate } = getOutOfHoursQueryDateRange(timeZone, nextSaturday)
+  const oohPrimaryUserEmailOnSaturday = await getUserEmailForSchedule(process.env.PD_OOH_PRIMARY_SCHEDULE_ID, querySinceDate, queryUntilDate)
+  let { querySinceDateForSunday, queryUntilDateForSunday } = getOutOfHoursQueryDateRange(timeZone, nextSunday)
+  const oohPrimaryUserEmailOnSunday = await getUserEmailForSchedule(process.env.PD_OOH_PRIMARY_SCHEDULE_ID, querySinceDateForSunday, queryUntilDateForSunday)
+
+  const emails = new Set([oohPrimaryUserEmailOnSaturday, oohPrimaryUserEmailOnSunday])
+
+  for (const oohPrimaryUserEmail of emails) {
+    if (oohPrimaryUserEmail) {
+      const slackHandles = getUsersSlackHandle(
+        process.env.ACCESS_CONTROL_USER_CONFIG_FILE_PATH,
+        {
+          primary: oohPrimaryUserEmail,
+        })
+
+      const text = getNotificationTextToTriageAlerts(slackHandles.primary)
+      await sendSlackNotification(process.env.SLACK_IN_HOURS_CHANNEL_ID, text)
+    }
+  }
 }
 
 async function updateOnCallSupportTopic () {
   const now = moment.tz(timeZone)
 
   let inHoursCommsUserEmail
-  if (now.isoWeekday() >= 1 && now.isoWeekday() <= 5) {
+  if (now.isoWeekday() >= 1 && now.isoWeekday() <= 5 && !isABankHoliday(now)) {
     let { querySinceDate, queryUntilDate } = getInHoursQueryDateRange(timeZone, now)
     inHoursCommsUserEmail = await getUserEmailForSchedule(process.env.PD_IN_HOURS_COMMS_SCHEDULE_ID, querySinceDate, queryUntilDate)
   }
@@ -146,7 +185,7 @@ function getNotificationTextToUpdateRollingNotes (primaryInHours, inHoursProduct
 }
 
 function getNotificationTextToTriageAlerts (primaryOOH) {
-  return `<@${primaryOOH}> Remember to review and solve Splunk alert (in zendesk) on Saturday, Sunday and public holidays. See https://manual.payments.service.gov.uk/manual/support/on-call-what-it-means.html#splunk-alerts for more info`
+  return `<@${primaryOOH}> Remember to review and solve Splunk alerts (in zendesk) on Saturday, Sunday and public holidays. See https://manual.payments.service.gov.uk/manual/support/on-call-what-it-means.html#splunk-alerts for more info`
 }
 
 updateSupportTopics().then(r => {
