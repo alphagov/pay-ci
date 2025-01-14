@@ -38,6 +38,7 @@ jobs:
             node_modules
             govuk_modules
             public
+            dist
           key: ${{ runner.os }}-build-id-${{ github.head_ref }}-${{ github.sha }}
       - name: Cache pacts directory
         if: ${{ inputs.publish_pacts }}
@@ -67,6 +68,7 @@ jobs:
             node_modules
             govuk_modules
             public
+            dist
           key: ${{ runner.os }}-build-id-${{ github.head_ref }}-${{ github.sha }}
       - name: Cache pacts directory
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
