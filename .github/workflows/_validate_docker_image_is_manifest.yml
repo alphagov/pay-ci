@@ -38,7 +38,13 @@ jobs:
           DOCKERFILE=${{ inputs.dockerfile }}
 
           while read -r BASE_CONTAINER_DEFINITION; do
-            echo "Checking base container definition: $BASE_CONTAINER_DEFINITION"
+            # Only check images which refer to a remotre repository, not another layer in the same manifest
+            if [[ "$BASE_CONTAINER_DEFINITION" =~ ^[A-Za-z0-9_-]+(:[A-Za-z0-9_.-]+)?@.* ]]; then
+              echo "Checking base container definition: $BASE_CONTAINER_DEFINITION"
+            else
+              echo "FROM $BASE_CONTAINER_DEFINITION is not a reference to an image in a remote registry, not checking"
+              continue
+            fi
 
             # Image definitions are going to be of one of the forms:
             #
