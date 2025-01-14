@@ -2,6 +2,10 @@ name: Github Actions for NodeJS apps - run cypress tests
 
 on:
   workflow_call:
+    inputs:
+      LIBGL_ALWAYS_SOFTWARE:
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -25,6 +29,7 @@ jobs:
             node_modules
             govuk_modules
             public
+            dist
           key: ${{ runner.os }}-build-id-${{ github.head_ref }}-${{ github.sha }}
       - name: Parse Cypress version
         id: parse-cypress-version
@@ -35,6 +40,8 @@ jobs:
           path: ~/.cache/Cypress
           key: ${{ runner.os }}-cypress-${{ steps.parse-cypress-version.outputs.CYPRESS_VERSION }}
       - name: Run cypress tests
+        env:
+          LIBGL_ALWAYS_SOFTWARE: ${{ inputs.LIBGL_ALWAYS_SOFTWARE }}
         run: |
           npm run cypress:server > /dev/null 2>&1 &
           sleep 3
