@@ -15,4 +15,4 @@ params:
   JIRA_API_TOKEN:
 run:
   path: /bin/sh
-  args: ["pay-ci/ci/scripts/run-vulnerability-scan/create-triage-jira-issue.sh"]
+  args: ["pay-ci/ci/scripts/run-vulnerability-scan/create-network-review-jira-issue.sh"]
