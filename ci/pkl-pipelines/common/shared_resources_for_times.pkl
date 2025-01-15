@@ -57,3 +57,16 @@ getQuarterlyCronTrigger: Pipeline.GetStep = new {
   get = "quarterly"
   trigger = true
 }
+
+twiceYearlyCronResource: Pipeline.Resource = new PayCronResource {
+  name = "twice-yearly"
+  source {
+    // At 00:00 on 1st of the month in June, and December.
+    ["expression"] = "0 0 1 JUN,DEC *"
+  }
+}
+
+getTwiceYearlyCronTrigger: Pipeline.GetStep = new {
+  get = "twice-yearly"
+  trigger = true
+}
