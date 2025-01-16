@@ -5,7 +5,6 @@ image_resource:
   source:
     repository: governmentdigitalservice/pay-concourse-runner
 inputs:
-  - name: reports
   - name: pay-ci
 outputs:
   - name: jira-story
