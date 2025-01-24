@@ -103,9 +103,9 @@ async function notifyToUpdateRollingNotes () {
 
 async function notifyToTriageAlerts () {
   const now = moment.tz(timeZone)
-  const currentDay = now.isoWeekday()
+  const today = now.isoWeekday()
 
-  if (now.isoWeekday() === 6 && now.isoWeekday() === 7) {
+  if (today === 6 && today === 7) {
     console.log('Skipped sending notification because of weekend')
     return
   }
@@ -114,15 +114,19 @@ async function notifyToTriageAlerts () {
     return
   }
 
-  const nextSaturday = now.add(6 - currentDay, 'days').startOf('day')
-  const nextSunday = now.add(7 - currentDay, 'days').startOf('day')
+  const nextSaturday = now.add(6 - today, 'days').startOf('day')
+  const nextSunday = now.add(7 - today, 'days').startOf('day')
+  debug(`Derived next Saturday date: ${nextSaturday}`)
+  debug(`Derived next Sunday date: ${nextSunday}`)
 
   let { querySinceDate, queryUntilDate } = getOutOfHoursQueryDateRange(timeZone, nextSaturday)
   const oohPrimaryUserEmailOnSaturday = await getUserEmailForSchedule(process.env.PD_OOH_PRIMARY_SCHEDULE_ID, querySinceDate, queryUntilDate)
   let { querySinceDateForSunday, queryUntilDateForSunday } = getOutOfHoursQueryDateRange(timeZone, nextSunday)
-  const oohPrimaryUserEmailOnSunday = await getUserEmailForSchedule(process.env.PD_OOH_PRIMARY_SCHEDULE_ID, querySinceDateForSunday, queryUntilDateForSunday)
+  debug(`Date range to query for Sunday: ${querySinceDateForSunday} - ${queryUntilDateForSunday}`)
 
-  const emails = new Set([oohPrimaryUserEmailOnSaturday, oohPrimaryUserEmailOnSunday])
+  // const oohPrimaryUserEmailOnSunday = await getUserEmailForSchedule(process.env.PD_OOH_PRIMARY_SCHEDULE_ID, querySinceDateForSunday, queryUntilDateForSunday)
+  // const emails = new Set([oohPrimaryUserEmailOnSaturday, oohPrimaryUserEmailOnSunday])
+  const emails = new Set([oohPrimaryUserEmailOnSaturday])
 
   for (const oohPrimaryUserEmail of emails) {
     if (oohPrimaryUserEmail) {
@@ -186,6 +190,10 @@ function getNotificationTextToUpdateRollingNotes (primaryInHours, inHoursProduct
 
 function getNotificationTextToTriageAlerts (primaryOOH) {
   return `<@${primaryOOH}> Remember to review and solve Splunk alerts (in zendesk) on Saturday, Sunday and public holidays. See https://manual.payments.service.gov.uk/manual/support/on-call-what-it-means.html#splunk-alerts for more info`
+}
+
+function debug (message) {
+  console.log('DEBUG: ' + message)
 }
 
 updateSupportTopics().then(r => {

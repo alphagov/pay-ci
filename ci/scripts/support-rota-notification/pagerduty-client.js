@@ -45,22 +45,22 @@ function getInHoursQueryDateRange (timeZone, now) {
   return { querySinceDate, queryUntilDate }
 }
 
-function getOutOfHoursQueryDateRange (timeZone, now) {
+function getOutOfHoursQueryDateRange (timeZone, forDate) {
   const oohStartTime = moment.tz({ hour: 17, minute: 30, second: 0, millisecond: 0 }, timeZone)
   const oohEndTime = moment.tz({ hour: 9, minute: 30, second: 0, millisecond: 0 }, timeZone)
 
   let querySinceDate
   let queryUntilDate
 
-  if (now.isoWeekday() === 6 && now.isoWeekday() === 7) {
-    querySinceDate = now.toISOString()
-    queryUntilDate = now.add(1, 'seconds').toISOString()
-  } else if (now.isSameOrAfter(oohEndTime) && now.isBefore(oohStartTime)) {
+  if (forDate.isoWeekday() === 6 && forDate.isoWeekday() === 7) {
+    querySinceDate = forDate.toISOString()
+    queryUntilDate = forDate.add(1, 'seconds').toISOString()
+  } else if (forDate.isSameOrAfter(oohEndTime) && forDate.isBefore(oohStartTime)) {
     querySinceDate = oohStartTime.add(1, 'seconds').toISOString()
     queryUntilDate = oohStartTime.add(2, 'seconds').toISOString()
   } else {
-    querySinceDate = now.toISOString()
-    queryUntilDate = now.add(1, 'seconds').toISOString()
+    querySinceDate = forDate.toISOString()
+    queryUntilDate = forDate.add(1, 'seconds').toISOString()
   }
   return { querySinceDate, queryUntilDate }
 }
