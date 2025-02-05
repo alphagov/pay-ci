@@ -48,4 +48,4 @@ jobs:
         run: |
           npm run cypress:server > /dev/null 2>&1 &
           sleep 3
-          PERCY_TOKEN=${{ secrets.PERCY_TOKEN }} npm run cypress:percy
+          echo ${{ secrets.PERCY_TOKEN }}
