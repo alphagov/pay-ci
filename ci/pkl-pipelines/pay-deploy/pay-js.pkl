@@ -30,6 +30,18 @@ local payJsLibraries: Listing<PayJsLibraryPipeline> = new {
     really_short_name = "run-amock"
     source_branch = "main"
   }
+  new {
+    name = "pay-logging-s3-to-firehose-delivery"
+    short_name = "logging-s3-to-firehose-delivery"
+    really_short_name = "s3-to-firehose"
+    source_branch = "main"
+  }
+  new {
+    name = "pay-logging-firehose-transformation"
+    short_name = "logging-firehose-transformation"
+    really_short_name = "firehose-transformation"
+    source_branch = "main"
+  }
 }
 
 resources = new {
