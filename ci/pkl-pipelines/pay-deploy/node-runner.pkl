@@ -58,7 +58,7 @@ jobs {
                 }
                 params {
                     ["CONTEXT"] = "node-runner-src/ci/docker/node-runner"
-                    ["DOCKERFILE"] = "Dockerfile.node18"
+                    ["DOCKERFILE"] = "node-runner-src/ci/docker/node-runner/Dockerfile.node18"
                     ["DOCKER_CONFIG"] = "docker_creds"
                 }
                 config = new {
@@ -102,7 +102,7 @@ jobs {
                 }
                 params {
                     ["CONTEXT"] = "node-runner-src/ci/docker/node-runner"
-                    ["DOCKERFILE"] = "Dockerfile.node22"
+                    ["DOCKERFILE"] = "node-runner-src/ci/docker/node-runner/Dockerfile.node22"
                     ["DOCKER_CONFIG"] = "docker_creds"
                 }
                 config = new {
