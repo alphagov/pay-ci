@@ -1,0 +1,25 @@
+platform: linux
+image_resource:  
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-node-runner
+    tag: node22
+inputs:
+  - name: src
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
+run:
+  path: sh
+  dir: src
+  args:
+    - -c
+    - |
+      apk add --no-cache aws-cli
+
+      npm ci
+      npm run build
+
+      aws s3 cp dist/ s3://pay-govuk-lambda-deploy/ --recursive --exclude "*" --include "*.zip"

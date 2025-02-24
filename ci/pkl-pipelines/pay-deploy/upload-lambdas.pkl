@@ -1,0 +1,72 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_deploy_pipelines.pkl"
+import "../common/PayResources.pkl"
+
+local nodeJsLambdas = new Listing<String> {
+  "pay-logging-firehose-transformation"
+  "pay-logging-s3-to-firehose-delivery"
+}
+
+resources {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/upload-lambdas.pkl", "master")
+  shared_resources.payCiGitHubResource
+  for (lambda in nodeJsLambdas) {
+    new PayResources.PayGitHubResource {
+      name = "\(lambda)-git-release"
+      repoName = lambda
+      source {
+        branch = "main"
+        tag_filter = "alpha_release-*"
+      }
+    }
+  }
+}
+
+groups {
+  for (lambda in nodeJsLambdas) {
+    new {
+      name = lambda
+      jobs = new { "upload-lambda-nodejs-\(lambda)" }
+    }
+  }
+  pipeline_self_update.payPipelineSelfUpdateGroup
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/upload-lambdas.pkl")
+
+  for (lambda in nodeJsLambdas) {
+    new {
+      name = "upload-lambda-nodejs-\(lambda)"
+      plan = new {
+        new InParallelStep {
+          in_parallel = new Listing<Step> {
+            new GetStep {
+              get = "\(lambda)-git-release"
+              trigger = true
+            }
+            new GetStep { get = "pay-ci" }
+          }
+        }
+        new shared_resources.AssumeConcourseRoleTask {
+          aws_account_name = "deploy"
+          output_name = "assume-role"
+        }
+        shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+        new TaskStep {
+          task = "upload-lambda-nodejs"
+          file = "pay-ci/ci/tasks/upload-lambda-nodejs.yml"
+          input_mapping = new {
+            ["src"] = "\(lambda)-git-release"
+          }
+          params = new {
+            ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+          }
+        }
+      }
+    }
+  }
+}
