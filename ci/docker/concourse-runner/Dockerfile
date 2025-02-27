@@ -1,4 +1,4 @@
-FROM docker:24.0.9-dind
+FROM docker:28.0.0-dind-alpine3.21
 
 ARG FLY_CLI_SHA256SUM=c126f1be24086aea0fa06fecbd4e50956b68aca2b1b920b6fc8e3d0cdbcfa2a2
 ARG PKL_VERSION=0.25.2
