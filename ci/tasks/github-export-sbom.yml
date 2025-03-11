@@ -1,10 +1,9 @@
 ---
 platform: linux
 image_resource:
-  type: docker-image
+  type: registry-image
   source:
-    repository: node
-    tag: current-alpine
+    repository: governmentdigitalservice/pay-concourse-runner
 params:
   GITHUB_TOKEN:
 outputs:
