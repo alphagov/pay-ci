@@ -1,0 +1,17 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: node
+    tag: current-alpine
+params:
+  GITHUB_TOKEN:
+outputs:
+  - name: sbom-data
+run:
+  path: sh
+  args:
+    - -ec
+    - |
+      echo "Hello World"

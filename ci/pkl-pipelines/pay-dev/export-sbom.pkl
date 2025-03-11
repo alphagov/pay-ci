@@ -1,0 +1,24 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/export-sbom.pkl", "master")
+}
+
+jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/export-sbom.pkl")
+  new {
+    name = "github-export-sbom"
+    plan {
+      new TaskStep {
+        task = "github-export-sbom"
+        file = "pay-ci/ci/tasks/github-hw.yml"
+        params {
+          ["GITHUB_TOKEN"] = "((github-access-token))"
+        }
+      }
+    }
+  }
+}
+
