@@ -1,9 +1,21 @@
 amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
 import "../common/pipeline_self_update.pkl"
+import "../common/PayResources.pkl"
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/export-sbom.pkl", "export-sbom")
+  new PayResources.PayGitHubResource {
+    name = "pay-ci"
+    repoName = "pay-ci"
+    source {
+      branch = "export-sbom"
+    }
+  }
+}
+
+local function getStep(name: String): GetStep = new GetStep {
+  get = name
 }
 
 jobs = new {
@@ -11,6 +23,7 @@ jobs = new {
   new {
     name = "github-export-sbom"
     plan {
+      getStep("pay-ci")
       new TaskStep {
         task = "github-export-sbom"
         file = "pay-ci/ci/tasks/github-hw.yml"
