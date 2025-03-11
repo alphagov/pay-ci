@@ -21,11 +21,9 @@ run:
       DATE=$(date -I)
       OWNER="alphagov"
 
-      # shellcheck disable=SC2046 # We specifically want to split in this case
-      read -r -a PAY_REPOS <<< $(gh search repos --archived=false --owner="alphagov" --topic="govuk-pay" --limit=99 --json=name --jq ".[] | .name")
+      set -- $(printf '%s\n' $(gh search repos --archived=false --owner="alphagov" --topic="govuk-pay" --limit=99 --json=name --jq ".[] | .name"))
 
-      for repo in "${PAY_REPOS[@]}";
-      do
+      for repo do
           file=${DATE}_sbom_"${repo}".json
           curl -L \
               -H "Accept: application/vnd.github+json" \
