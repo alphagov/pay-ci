@@ -7,7 +7,7 @@ resources = new {
 }
 
 jobs = new {
-  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/export-sbom.pkl", "export-sbom")
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/export-sbom.pkl")
   new {
     name = "github-export-sbom"
     plan {
