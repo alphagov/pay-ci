@@ -3,7 +3,7 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 
 resources = new {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/export-sbom.pkl", "master")
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/export-sbom.pkl", "export-sbom")
 }
 
 jobs = new {
