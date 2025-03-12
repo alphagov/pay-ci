@@ -17,7 +17,7 @@ run:
   args:
     - -ec
     - |
-      # apk add --no-progress --no-cache git github-cli aws-cli
+      apk add --no-progress --no-cache git github-cli aws-cli
       mkdir -p sbom-data/
 
       DATE=$(date -I)
