@@ -10,8 +10,6 @@ params:
   AWS_SECRET_ACCESS_KEY:
   AWS_SESSION_TOKEN:
   AWS_REGION: eu-west-1
-outputs:
-  - name: sbom-data
 run:
   path: sh
   args:
@@ -26,7 +24,7 @@ run:
       set -- $(printf '%s\n' $(gh search repos --archived=false --owner="alphagov" --topic="govuk-pay" --limit=99 --json=name --jq ".[] | .name"))
 
       for repo do
-          file=${DATE}_sbom_"${repo}".json
+          file=sbom-data/${DATE}_sbom_"${repo}".json
           curl -L \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer $GITHUB__TOKEN" \
