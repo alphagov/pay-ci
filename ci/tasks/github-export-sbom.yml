@@ -31,3 +31,5 @@ run:
               https://api.github.com/repos/${OWNER}/"${repo}"/dependency-graph/sbom \
               --output "${file}"
       done
+
+      aws s3 sync sbom-data/ s3://govuk-pay-sbom-dev/${DATE}_github_sbom
