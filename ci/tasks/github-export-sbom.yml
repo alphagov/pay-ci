@@ -6,6 +6,10 @@ image_resource:
     repository: governmentdigitalservice/pay-concourse-runner
 params:
   GITHUB_TOKEN:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
 outputs:
   - name: sbom-data
 run:
@@ -13,8 +17,7 @@ run:
   args:
     - -ec
     - |
-      apk add --no-progress --no-cache git github-cli
-
+      # apk add --no-progress --no-cache git github-cli aws-cli
       mkdir -p sbom-data/
 
       DATE=$(date -I)
