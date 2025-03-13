@@ -1,6 +1,8 @@
 amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
 import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/PayResources.pkl"
 
 resources = new {
@@ -24,11 +26,17 @@ jobs = new {
     name = "github-export-sbom"
     plan {
       getStep("pay-ci")
+      new shared_resources.AssumeConcourseRoleTask {
+        aws_account_name = "dev"
+        output_name = "assume-role"
+      }
+      shared_resources.loadVarJson("role", "assume-role/assume-role.json")
       new TaskStep {
         task = "github-export-sbom"
         file = "pay-ci/ci/tasks/github-export-sbom.yml"
         params {
           ["GITHUB_TOKEN"] = "((github-access-token))"
+          ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
         }
       }
     }
