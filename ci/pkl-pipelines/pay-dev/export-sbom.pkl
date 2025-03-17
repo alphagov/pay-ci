@@ -3,13 +3,10 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
-import "../common/PayResources.pkl"
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/export-sbom.pkl", "export-sbom")
-  new PayResources.PayGitHubResource {
-    name = "pay-ci"
-    repoName = "pay-ci"
+  (shared_resources.payCiGitHubResource) {
     source {
       branch = "export-sbom"
     }
