@@ -4,6 +4,8 @@ image_resource:
   type: registry-image
   source:
     repository: governmentdigitalservice/pay-concourse-runner
+inputs:
+  - name: pay-ci
 params:
   GITHUB_TOKEN:
   AWS_ACCESS_KEY_ID:
