@@ -89,7 +89,7 @@ jobs {
           output_name = "assume-role"
         }
         shared_resources.loadVarJson("role", "assume-role/assume-role.json")
-        ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/\(account)/logging-pipeline")
+        ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/\(account)/logging_pipeline")
         new TaskStep {
           task = "deploy-logging-pipeline"
           file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
