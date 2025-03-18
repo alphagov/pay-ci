@@ -37,7 +37,7 @@ groups {
 }
 
 jobs {
-  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/deploy-logging-pipeline.pkl")
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/deploy-logging-pipeline.pkl")
 
   for (account in accounts) {
     new {
