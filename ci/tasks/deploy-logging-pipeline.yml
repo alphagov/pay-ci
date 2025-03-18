@@ -13,12 +13,13 @@ params:
   AWS_SESSION_TOKEN:
   AWS_REGION: eu-west-1
   TERRAFORM_ACTION: plan
+  ACCOUNT:
 run:
   path: /bin/sh
   args:
     - -ec
     - |
-      cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/logging-pipeline
+      cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/logging_pipeline
       terraform init
       terraform $TERRAFORM_ACTION \
         -auto-approve

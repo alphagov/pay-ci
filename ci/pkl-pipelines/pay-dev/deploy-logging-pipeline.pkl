@@ -66,6 +66,7 @@ jobs {
           }
           params = new {
             ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+            ["ACCOUNT"] = account
             ["TERRAFORM_ACTION"] = "apply"
           }
         }
@@ -98,6 +99,7 @@ jobs {
           }
           params = new {
             ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+            ["ACCOUNT"] = account
             ["TERRAFORM_ACTION"] = "destroy"
           }
         }
