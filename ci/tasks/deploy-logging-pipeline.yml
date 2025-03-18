@@ -22,4 +22,6 @@ run:
       cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/logging_pipeline
       terraform init
       terraform $TERRAFORM_ACTION \
+        -var "firehose_transformation_lambda_version=0.0.10" \
+        -var "s3_to_firehose_lambda_version=0.0.6" \
         -auto-approve
