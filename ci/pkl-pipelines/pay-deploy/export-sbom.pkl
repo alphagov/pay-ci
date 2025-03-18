@@ -24,7 +24,7 @@ jobs = new {
     plan {
       getStep("pay-ci")
       new shared_resources.AssumeConcourseRoleTask {
-        aws_account_name = "pay_aws_deploy_account_id"
+        aws_account_name = "deploy"
         session_name = "concourse-assumed-role"
         output_name = "assume-role"
       }
