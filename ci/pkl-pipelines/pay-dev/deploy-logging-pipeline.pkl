@@ -11,7 +11,7 @@ local accounts = new Listing<String> {
 }
 
 resources {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/deploy-logging-pipeline.pkl", "pp-13748-logging-pipeline")
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-logging-pipeline.pkl", "pp-13748-logging-pipeline")
   //shared_resources.payCiGitHubResource
   new  PayResources.PayGitHubResource {
     name = "pay-ci"
