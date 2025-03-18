@@ -5,7 +5,7 @@ import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 
 resources = new {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/export-sbom.pkl", "export-sbom")
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/export-sbom.pkl", "export-sbom")
   (shared_resources.payCiGitHubResource) {
     source {
       branch = "export-sbom"
@@ -18,13 +18,13 @@ local function getStep(name: String): GetStep = new GetStep {
 }
 
 jobs = new {
-  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/export-sbom.pkl")
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/export-sbom.pkl")
   new {
     name = "github-export-sbom"
     plan {
       getStep("pay-ci")
       new shared_resources.AssumeConcourseRoleTask {
-        aws_account_name = "dev"
+        aws_account_name = "pay_aws_deploy_account_id"
         session_name = "concourse-assumed-role"
         output_name = "assume-role"
       }
