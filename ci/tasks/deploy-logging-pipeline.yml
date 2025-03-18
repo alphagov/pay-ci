@@ -1,0 +1,24 @@
+---
+platform: linux
+inputs:
+  - name: pay-infra
+image_resource:
+  type: registry-image
+  source:
+    repository: hashicorp/terraform
+    tag: "((.:terraform-version))"
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
+  TERRAFORM_ACTION: plan
+run:
+  path: /bin/sh
+  args:
+    - -ec
+    - |
+      cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/logging-pipeline
+      terraform init
+      terraform $TERRAFORM_ACTION \
+        -auto-approve
