@@ -20,4 +20,4 @@ for repo do
         --output "${file}"
 done
 
-aws s3 cp sbom-data/ s3://govuk-pay-sbom-dev/"${DATE}"_github_sbom --recursive
+aws s3 cp sbom-data/ s3://govuk-pay-sbom/"${DATE}"_github_sbom --recursive
