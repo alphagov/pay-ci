@@ -25,7 +25,8 @@ jobs = new {
       getStep("pay-ci")
       new shared_resources.AssumeConcourseRoleTask {
         aws_account_name = "deploy"
-        session_name = "concourse-assumed-role"
+        role_name = "concourse_sbom_upload_role"
+        session_name = "export-sbom"
         output_name = "assume-role"
       }
       shared_resources.loadVarJson("role", "assume-role/assume-role.json")
