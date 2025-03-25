@@ -6,11 +6,7 @@ import "../common/shared_resources_for_deploy_pipelines.pkl"
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/export-sbom.pkl", "export-sbom")
-  (shared_resources.payCiGitHubResource) {
-    source {
-      branch = "export-sbom"
-    }
-  }
+  shared_resources.payCiGitHubResource
 }
 
 local function getStep(name: String): GetStep = new GetStep {
