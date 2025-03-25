@@ -5,7 +5,7 @@ import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 
 resources = new {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/export-sbom.pkl", "export-sbom")
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/export-sbom.pkl", "master")
   shared_resources.payCiGitHubResource
 }
 
