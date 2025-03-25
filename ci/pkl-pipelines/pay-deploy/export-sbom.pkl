@@ -1,0 +1,40 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_deploy_pipelines.pkl"
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/export-sbom.pkl", "master")
+  shared_resources.payCiGitHubResource
+}
+
+local function getStep(name: String): GetStep = new GetStep {
+  get = name
+}
+
+jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/export-sbom.pkl")
+  new {
+    name = "github-export-sbom"
+    plan {
+      getStep("pay-ci")
+      new shared_resources.AssumeConcourseRoleTask {
+        aws_account_name = "deploy"
+        role_name = "concourse_sbom_upload_role"
+        session_name = "export-sbom"
+        output_name = "assume-role"
+      }
+      shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+      new TaskStep {
+        task = "github-export-sbom"
+        file = "pay-ci/ci/tasks/github-export-sbom.yml"
+        params {
+          ["GITHUB_TOKEN"] = "((github-access-token))"
+          ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+        }
+      }
+    }
+  }
+}
+
