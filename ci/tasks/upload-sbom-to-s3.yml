@@ -1,0 +1,17 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+inputs:
+  - name: sbom-data
+  - name: pay-ci
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_DEFAULT_REGION:
+run:
+  path: /bin/sh
+  args: ["pay-ci/ci/scripts/upload-sbom-to-s3.sh"]
