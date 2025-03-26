@@ -6,4 +6,4 @@
 DATE=$(date -I)
 
 echo "Uploading SBOM files..."
-aws s3 cp sbom-data/ s3://govuk-pay-sbom-dev/"${DATE}"_docker_sbom --recursive
+aws s3 cp sbom-data/ s3://govuk-pay-sbom-deploy/"${DATE}"_docker_sbom --recursive
