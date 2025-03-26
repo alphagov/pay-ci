@@ -11,23 +11,23 @@ local accounts = new Listing<String> {
 }
 
 resources {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-logging-pipeline.pkl", "pp-13748-logging-pipeline")
-  //shared_resources.payCiGitHubResource
-  new  PayResources.PayGitHubResource {
-    name = "pay-ci"
-    repoName = "pay-ci"
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-logging-pipeline.pkl", "master")
+  shared_resources.payCiGitHubResource
+  new PayResources.PayInfraGitHubResource{
     source {
-      branch = "pp-13748-logging-pipeline"
+      paths = new {
+        "provisioning/terraform/modules/pay_logging_pipeline/**"
+        "provisioning/terraform/deployments/**/logging_pipeline/**"
+      }
     }
   }
-  new PayResources.PayInfraGitHubResource{}
 }
 
 groups {
   for (account in accounts) {
     new {
       name = account
-      jobs = new { 
+      jobs = new {
         "deploy-\(account)"
         "destroy-\(account)"
       }
@@ -47,6 +47,7 @@ jobs {
           in_parallel = new Listing<Step> {
             new GetStep {
               get = "pay-infra"
+              trigger = true
             }
             new GetStep { get = "pay-ci" }
           }
@@ -55,6 +56,7 @@ jobs {
           aws_account_name = account
           role_name = "logging-pipeline-concourse"
           output_name = "assume-role"
+          session_name = "deploy-logging-pipeline"
         }
         shared_resources.loadVarJson("role", "assume-role/assume-role.json")
         ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/\(account)/logging_pipeline")
@@ -88,6 +90,7 @@ jobs {
           aws_account_name = account
           role_name = "logging-pipeline-concourse"
           output_name = "assume-role"
+          session_name = "deploy-logging-pipeline"
         }
         shared_resources.loadVarJson("role", "assume-role/assume-role.json")
         ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/\(account)/logging_pipeline")
