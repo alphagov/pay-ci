@@ -2,6 +2,8 @@
 platform: linux
 inputs:
   - name: pay-infra
+  - name: pay-logging-firehose-transformation
+  - name: pay-logging-s3-to-firehose-delivery
 image_resource:
   type: registry-image
   source:
@@ -19,9 +21,11 @@ run:
   args:
     - -ec
     - |
+      FIREHOSE_TRANSFORMATION_VERSION=$(cat pay-logging-firehose-transformation/version)
+      S3_TO_FIREHOSE_VERSION=$(cat pay-logging-s3-to-firehose-delivery/version)
       cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/logging_pipeline
       terraform init
       terraform $TERRAFORM_ACTION \
-        -var "firehose_transformation_lambda_version=0.0.10" \
-        -var "s3_to_firehose_lambda_version=0.0.6" \
+        -var "firehose_transformation_lambda_version=${FIREHOSE_TRANSFORMATION_VERSION}" \
+        -var "s3_to_firehose_lambda_version=${S3_TO_FIREHOSE_VERSION}" \
         -auto-approve

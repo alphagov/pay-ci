@@ -1,5 +1,6 @@
 amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
+import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
@@ -19,6 +20,40 @@ resources {
         "provisioning/terraform/modules/pay_logging_pipeline/**"
         "provisioning/terraform/deployments/**/logging_pipeline/**"
       }
+    }
+  }
+
+  new Pipeline.Resource {
+    name = "pay-logging-firehose-transformation"
+    type = "s3"
+    icon = "lambda"
+
+    source = new {
+      ["access_key_id"] = "((readonly_access_key_id))"
+      ["secret_access_key"] = "((readonly_secret_access_key))"
+      ["session_token"] = "((readonly_session_token))"
+      ["region_name"] = "eu-west-1"
+      ["aws_role_arn"] = "arn:aws:iam::((pay_aws_dev_account_id)):role/concourse"
+      ["bucket"] = "pay-govuk-lambda-deploy"
+      ["regexp"] = "pay-logging-firehose-transformation-v(.*).zip"
+      ["skip_download"] = true
+    }
+  }
+
+  new Pipeline.Resource {
+    name = "pay-logging-s3-to-firehose-delivery"
+    type = "s3"
+    icon = "lambda"
+
+    source = new {
+      ["access_key_id"] = "((readonly_access_key_id))"
+      ["secret_access_key"] = "((readonly_secret_access_key))"
+      ["session_token"] = "((readonly_session_token))"
+      ["region_name"] = "eu-west-1"
+      ["aws_role_arn"] = "arn:aws:iam::((pay_aws_dev_account_id)):role/concourse"
+      ["bucket"] = "pay-govuk-lambda-deploy"
+      ["regexp"] = "pay-logging-s3-to-firehose-delivery-v(.*).zip"
+      ["skip_download"] = true
     }
   }
 }
@@ -50,6 +85,14 @@ jobs {
               trigger = true
             }
             new GetStep { get = "pay-ci" }
+            new GetStep {
+              get = "pay-logging-firehose-transformation"
+              trigger = true
+            }
+            new GetStep {
+              get = "pay-logging-s3-to-firehose-delivery"
+              trigger = true
+            }
           }
         }
         new shared_resources.AssumeConcourseRoleTask {
@@ -65,6 +108,8 @@ jobs {
           file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
           input_mapping = new {
             ["pay-infra"] = "pay-infra"
+            ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
+            ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
           }
           params = new {
             ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
