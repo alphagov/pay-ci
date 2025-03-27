@@ -1,0 +1,112 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_deploy_pipelines.pkl"
+import "../common/shared_resources_for_terraform.pkl"
+import "../common/PayResources.pkl"
+
+local accounts = new Listing<String> {
+  "dev"
+}
+
+resources {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-logging-pipeline.pkl", "master")
+  shared_resources.payCiGitHubResource
+  new PayResources.PayInfraGitHubResource{
+    source {
+      paths = new {
+        "provisioning/terraform/modules/pay_logging_pipeline/**"
+        "provisioning/terraform/deployments/**/logging_pipeline/**"
+      }
+    }
+  }
+}
+
+groups {
+  for (account in accounts) {
+    new {
+      name = account
+      jobs = new {
+        "deploy-\(account)"
+        "destroy-\(account)"
+      }
+    }
+  }
+  pipeline_self_update.payPipelineSelfUpdateGroup
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/deploy-logging-pipeline.pkl")
+
+  for (account in accounts) {
+    new {
+      name = "deploy-\(account)"
+      plan = new {
+        new InParallelStep {
+          in_parallel = new Listing<Step> {
+            new GetStep {
+              get = "pay-infra"
+              trigger = true
+            }
+            new GetStep { get = "pay-ci" }
+          }
+        }
+        new shared_resources.AssumeConcourseRoleTask {
+          aws_account_name = account
+          role_name = "logging-pipeline-concourse"
+          output_name = "assume-role"
+          session_name = "deploy-logging-pipeline"
+        }
+        shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+        ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/\(account)/logging_pipeline")
+        new TaskStep {
+          task = "deploy-logging-pipeline"
+          file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
+          input_mapping = new {
+            ["pay-infra"] = "pay-infra"
+          }
+          params = new {
+            ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+            ["ACCOUNT"] = account
+            ["TERRAFORM_ACTION"] = "apply"
+          }
+        }
+      }
+    }
+
+    new {
+      name = "destroy-\(account)"
+      plan = new {
+        new InParallelStep {
+          in_parallel = new Listing<Step> {
+            new GetStep {
+              get = "pay-infra"
+            }
+            new GetStep { get = "pay-ci" }
+          }
+        }
+        new shared_resources.AssumeConcourseRoleTask {
+          aws_account_name = account
+          role_name = "logging-pipeline-concourse"
+          output_name = "assume-role"
+          session_name = "deploy-logging-pipeline"
+        }
+        shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+        ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/\(account)/logging_pipeline")
+        new TaskStep {
+          task = "deploy-logging-pipeline"
+          file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
+          input_mapping = new {
+            ["pay-infra"] = "pay-infra"
+          }
+          params = new {
+            ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+            ["ACCOUNT"] = account
+            ["TERRAFORM_ACTION"] = "destroy"
+          }
+        }
+      }
+    }
+  }
+}
