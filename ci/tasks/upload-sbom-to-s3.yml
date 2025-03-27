@@ -5,18 +5,13 @@ image_resource:
   source:
     repository: governmentdigitalservice/pay-concourse-runner
 inputs:
-  - name: pay-ci
-outputs:
-  - name: reports
   - name: sbom-data
+  - name: pay-ci
 params:
-  ECR_REGISTRY:
   AWS_ACCESS_KEY_ID:
   AWS_SECRET_ACCESS_KEY:
   AWS_SESSION_TOKEN:
   AWS_DEFAULT_REGION:
-  DOCKERHUB_USERNAME:
-  DOCKERHUB_ACCESS_TOKEN:
 run:
   path: /bin/sh
-  args: ["pay-ci/ci/scripts/run-vulnerability-scan/scan.sh"]
+  args: ["pay-ci/ci/scripts/upload-sbom-to-s3.sh"]
