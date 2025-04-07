@@ -18,7 +18,6 @@ services:
         aliases:
           - publicapi.pymnt.localdomain
           - publicapi.internal.pymnt.localdomain # This is what the pay-endtoend ready.sh wants
-    mem_limit: 1G
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9100/healthcheck"]
       interval: 1m30s
@@ -35,7 +34,6 @@ services:
       pymnt_network:
         aliases:
           - frontend.internal.pymnt.localdomain
-    mem_limit: 1500M
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", 'http://localhost:9200/healthcheck']
       interval: 30s
@@ -61,7 +59,6 @@ services:
       pymnt_network:
         aliases:
           - frontend.pymnt.localdomain
-    mem_limit: 50M
     logging:
       driver: "json-file"
 
@@ -79,7 +76,6 @@ services:
       pymnt_network:
         aliases:
           - localstack.internal.pymnt.localdomain
-    mem_limit: 500M
 
   adminusers:
     image: ${DOCKER_REGISTRY_URI:-}${repo_adminusers:-govukpay/adminusers}:${tag_adminusers:-latest-master}
@@ -95,7 +91,6 @@ services:
         aliases:
           - adminusers.pymnt.localdomain
           - adminusers.internal.pymnt.localdomain
-    mem_limit: 2G
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9700/healthcheck"]
       interval: 1m30s
@@ -115,7 +110,6 @@ services:
       pymnt_network:
         aliases:
           - postgres-adminusers.db.pymnt.localdomain
-    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -131,7 +125,6 @@ services:
       pymnt_network:
         aliases:
           - selfservice.internal.pymnt.localdomain
-    mem_limit: 1G
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9400/healthcheck"]
       interval: 30s
@@ -157,7 +150,6 @@ services:
       pymnt_network:
         aliases:
           - selfservice.pymnt.localdomain
-    mem_limit: 50M
     logging:
       driver: "json-file"
 
@@ -176,7 +168,6 @@ services:
           - connector.pymnt.localdomain
           - notifications.pymnt.localdomain
           - connector.internal.pymnt.localdomain
-    mem_limit: 2G
     depends_on:
       - postgres-connector
       - localstack
@@ -197,7 +188,6 @@ services:
       pymnt_network:
         aliases:
           - postgres-connector.db.pymnt.localdomain
-    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -215,7 +205,6 @@ services:
         aliases:
           - ledger.pymnt.localdomain
           - ledger.internal.pymnt.localdomain
-    mem_limit: 2G
     depends_on:
       - postgres-ledger
       - localstack
@@ -236,7 +225,6 @@ services:
       pymnt_network:
         aliases:
           - postgres-ledger.db.pymnt.localdomain
-    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -254,7 +242,6 @@ services:
         aliases:
           - publicauth.pymnt.localdomain
           - publicauth.internal.pymnt.localdomain
-    mem_limit: 1G
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9600/healthcheck"]
       interval: 1m30s
@@ -274,7 +261,6 @@ services:
       pymnt_network:
         aliases:
           - postgres-publicauth.db.pymnt.localdomain
-    mem_limit: 100M
     logging:
       driver: "json-file"
 
@@ -287,7 +273,6 @@ services:
       pymnt_network:
         aliases:
           - stubs.internal.pymnt.localdomain
-    mem_limit: 1G
     logging:
       driver: "json-file"
 
@@ -307,7 +292,6 @@ services:
       pymnt_network:
         aliases:
           - stubs.pymnt.localdomain
-    mem_limit: 50M
     logging:
       driver: "json-file"
 
@@ -323,7 +307,6 @@ services:
         aliases:
           - cardid.pymnt.localdomain
           - cardid.internal.pymnt.localdomain
-    mem_limit: 2G
     healthcheck:
       test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9800/healthcheck"]
       interval: 30s
@@ -338,7 +321,6 @@ services:
       - MAVEN_OPTS=${END_TO_END_JAVA_OPTS}
     networks:
       - pymnt_network
-    mem_limit: ${END_TO_END_MEM_LIMIT:-1G}
     depends_on:
       selenium:
         condition: service_started
