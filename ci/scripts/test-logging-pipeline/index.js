@@ -32,6 +32,8 @@ function checkAlarms (alarms) {
     log(alarmNames)
     log('----------')
     process.exit(1)
+  } else {
+    log('\nLogging alarms are in OK state')
   }
 }
 
@@ -54,7 +56,7 @@ async function waitBeforeQueryingCloudWatchAlarms () {
 }
 
 async function sendCloudTrailLogs () {
-  console.log('- Sending CloudTrail log events -')
+  log('- Sending CloudTrail log events -')
   const cloudWatchLogsClient = new CloudWatchLogsClient({ region: 'eu-west-1' })
   const cloudwatchLogEvents = getCloudwatchLogEvents()
   const input = {
@@ -64,7 +66,7 @@ async function sendCloudTrailLogs () {
   }
   const command = new PutLogEventsCommand(input)
   await cloudWatchLogsClient.send(command)
-  console.log('Sent CloudTrail log events\n')
+  log('Sent CloudTrail log events\n')
 }
 
 function getCloudwatchLogEvents () {
@@ -118,7 +120,7 @@ function getCloudwatchLogEvents () {
 }
 
 async function sendS3EventNotificationsToSqs () {
-  console.log('- Sending test S3 Event notifications to SQS -')
+  log('- Sending test S3 Event notifications to SQS -')
   const sqsClient = new SQSClient({ region: "eu-west-1" })
   const noOfEventsToGenerate = 10
   const queueUrl = `https://sqs.eu-west-1.amazonaws.com/${AWS_ACCOUNT_ID}/${AWS_ACCOUNT_NAME}-logging-s3-to-firehose-s3`
@@ -159,7 +161,7 @@ async function sendS3EventNotificationsToSqs () {
     await sqsClient.send(command)
   }
 
-  console.log('Sent test S3 Event notifications to SQS\n')
+  log('Sent test S3 Event notifications to SQS\n')
 }
 
 async function sendLogs () {
@@ -198,7 +200,7 @@ async function test_logging () {
   checkAlarms(alarms)
 }
 
-test_logging().then(r => log("\nLogging pipeline test completed"))
+test_logging().then(r => log("\nLogging pipeline test completed successfully"))
     .catch(reason => {
       log(`\nError testing logging pipeline - ${reason}`)
       process.exit(1)

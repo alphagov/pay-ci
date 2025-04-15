@@ -11,10 +11,15 @@ local accounts = new Listing<String> {
   "dev"
 }
 
+local s3ObjectNameForEventNotification = Map (
+  "dev", "2025-04-15-00-00-00-2AD1799A1B3E2A9D",
+  "test", "2025-04-15-00-00-00-0E426FB262FAF646"
+)
+
 resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-logging-pipeline.pkl", "master")
   shared_resources.payCiGitHubResource
-  new PayResources.PayInfraGitHubResource{
+  new PayResources.PayInfraGitHubResource {
     source {
       paths = new {
         "provisioning/terraform/modules/pay_logging_pipeline/**"
@@ -65,6 +70,7 @@ groups {
       jobs = new {
         "deploy-\(account)"
         "destroy-\(account)"
+        "test-logging-pipeline-in-\(account)"
       }
     }
   }
@@ -115,6 +121,68 @@ jobs {
             ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
             ["ACCOUNT"] = account
             ["TERRAFORM_ACTION"] = "apply"
+          }
+        }
+      }
+    }
+
+    new {
+      name = "test-logging-pipeline-in-\(account)"
+      plan = new {
+        new InParallelStep {
+          in_parallel = new Listing<Step> {
+            new GetStep {
+              get = "pay-ci"
+              passed {
+                "deploy-\(account)"
+              }
+              trigger = false
+            }
+            new GetStep {
+              get = "pay-infra"
+              trigger = true
+              passed {
+                "deploy-\(account)"
+              }
+            }
+            new GetStep {
+              get = "pay-logging-firehose-transformation"
+              trigger = true
+              passed {
+                "deploy-\(account)"
+              }
+            }
+            new GetStep {
+              get = "pay-logging-s3-to-firehose-delivery"
+              trigger = true
+              passed {
+                "deploy-\(account)"
+              }
+            }
+
+          }
+        }
+        new shared_resources.AssumeConcourseRoleTask {
+          aws_account_name = account
+          role_name = "logging-pipeline-concourse"
+          output_name = "assume-role"
+          session_name = "test-logging-pipeline"
+        }
+        shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+        new TaskStep {
+          task = "run-logging-pipeline-e2e-test"
+          file = "pay-ci/ci/tasks/run-logging-pipeline-e2e-test.yml"
+          input_mapping = new {
+            ["pay-ci"] = "pay-ci"
+          }
+          params = new {
+            ["AWS_ACCOUNT_ID"] = "((pay_aws_\(account)_account_id))"
+            ["AWS_ACCOUNT_NAME"] = account
+            ["S3_OBJECT_NAME"] = "\(s3ObjectNameForEventNotification.getOrNull(account))"
+            ["AWS_DEFAULT_REGION"] = "eu-west-1"
+            ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+            ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+            ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
           }
         }
       }

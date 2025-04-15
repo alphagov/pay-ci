@@ -1,0 +1,29 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+
+inputs:
+  - name: pay-ci
+
+params:
+  AWS_ACCOUNT_ID:
+  AWS_ACCOUNT_NAME:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION:
+  S3_OBJECT_NAME:
+
+run:
+  path: /bin/sh
+  args:
+    - -eu
+    - -c
+    - |
+      cd pay-ci/ci/scripts/test-logging-pipeline
+      npm install
+      node index.js
