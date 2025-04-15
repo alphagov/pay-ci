@@ -70,7 +70,7 @@ groups {
       jobs = new {
         "deploy-\(account)"
         "destroy-\(account)"
-        "test-logging-pipeline-in-\(account)"
+        "e2e-test-logging-pipeline-in-\(account)"
       }
     }
   }
@@ -127,7 +127,7 @@ jobs {
     }
 
     new {
-      name = "test-logging-pipeline-in-\(account)"
+      name = "e2e-test-logging-pipeline-in-\(account)"
       plan = new {
         new InParallelStep {
           in_parallel = new Listing<Step> {
