@@ -1,0 +1,13 @@
+{
+  "name": "test-logging-pipeline",
+  "version": "1.0.0",
+  "description": "Script to test logging pipeline",
+  "main": "index.js",
+  "author": "GOV.UK Pay",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.782.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.787.0",
+    "@aws-sdk/client-sqs": "^3.787.0"
+  }
+}
