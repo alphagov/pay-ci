@@ -4,6 +4,7 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
+import "../common/shared_resources_for_slack_notifications.pkl" as shared_slack
 import "../common/shared_resources_for_terraform.pkl"
 import "../common/PayResources.pkl"
 
@@ -16,9 +17,14 @@ local s3ObjectNameForEventNotification = Map (
   "test", "2025-04-15-00-00-00-0E426FB262FAF646"
 )
 
+resource_types {
+  shared_slack.slackNotificationResourceType
+}
+
 resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-logging-pipeline.pkl", "master")
   shared_resources.payCiGitHubResource
+  shared_slack.slackNotificationResource
   new PayResources.PayInfraGitHubResource {
     source {
       paths = new {
@@ -186,6 +192,24 @@ jobs {
           }
         }
       }
+      on_success = shared_slack.paySlackNotification(
+        new shared_slack.SlackNotificationConfig {
+          is_a_success = true
+          message = "Logging pipeline e2e test completed successfully in \(account) environment"
+        }
+      )
+      on_failure = shared_slack.paySlackNotification(
+        new shared_slack.SlackNotificationConfig {
+          message = "Logging pipeline e2e test failed in \(account) environment"
+          slack_channel_for_failure = "#govuk-pay-starling"
+        }
+      )
+      on_error = shared_slack.paySlackNotification(
+        new shared_slack.SlackNotificationConfig {
+          message = "Error running logging pipeline e2e test in \(account) environment"
+          slack_channel_for_failure = "#govuk-pay-starling"
+        }
+      )
     }
 
     new {
