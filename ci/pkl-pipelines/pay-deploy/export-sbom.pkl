@@ -3,14 +3,16 @@ amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "../common/pipeline_self_update.pkl"
 import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
+import "../common/shared_resources_for_times.pkl"
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/export-sbom.pkl", "master")
   shared_resources.payCiGitHubResource
-}
-
-local function getStep(name: String): GetStep = new GetStep {
-  get = name
+  shared_resources_for_times.payWeeklyTimeResource(
+    "every-sunday-at-0500",
+    "05:00", "05:10",
+    "Sunday"
+  ) |> shared_resources_for_times.withLocation("UTC")
 }
 
 jobs = new {
@@ -18,7 +20,17 @@ jobs = new {
   new {
     name = "github-export-sbom"
     plan {
-      getStep("pay-ci")
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps {
+            new GetStep { get = "pay-ci" }
+            new GetStep {
+              get = "every-sunday-at-0500"
+              trigger = true
+            }
+          }
+        }
+      }
       new shared_resources.AssumeConcourseRoleTask {
         aws_account_name = "deploy"
         role_name = "concourse_sbom_upload_role"
