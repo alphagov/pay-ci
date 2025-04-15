@@ -1,6 +1,6 @@
 FROM node:18.20.7-alpine3.20@sha256:853c72c7052192499f17190db292afc2340e0a825c40061386525b107bb6a39b
 
-ARG FLY_CLI_SHA256SUM=c126f1be24086aea0fa06fecbd4e50956b68aca2b1b920b6fc8e3d0cdbcfa2a2
+ARG FLY_CLI_SHA256SUM=59689b7cfc9985a115f9542c11d261ff721607911548f560bb83c180d9103cf8
 
 RUN echo "$FLY_CLI_SHA256SUM  /tmp/fly" >> /tmp/fly.sha256 \
   && wget -O /tmp/fly 'https://pay-cd.deploy.payments.service.gov.uk/api/v1/cli?arch=amd64&platform=linux' \
