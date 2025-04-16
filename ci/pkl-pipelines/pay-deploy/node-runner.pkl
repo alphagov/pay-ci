@@ -18,13 +18,6 @@ resources = new {
   }
   shared_resources.payCiGitHubResource
   new PayResources.PayDockerHubResource {
-    name = "node-runner-node18"
-    source {
-      repository = "governmentdigitalservice/pay-node-runner"
-      tag = "node18"
-    }
-  }
-  new PayResources.PayDockerHubResource {
     name = "node-runner-node22"
     source {
       repository = "governmentdigitalservice/pay-node-runner"
@@ -45,53 +38,9 @@ jobs {
         }
       }
       shared_resources.generateDockerCredsConfigStep
-      
+
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new DoStep {
-            do = new Listing<Step> {
-              new TaskStep {
-                task = "build-node-18"
-                privileged = true
-                output_mapping = new {
-                    ["image"] = "node18-image"
-                }
-                params {
-                    ["CONTEXT"] = "node-runner-src/ci/docker/node-runner"
-                    ["DOCKERFILE"] = "node-runner-src/ci/docker/node-runner/Dockerfile.node18"
-                    ["DOCKER_CONFIG"] = "docker_creds"
-                }
-                config = new {
-                    platform = "linux"
-                    image_resource {
-                      type = "registry-image"
-                      source {
-                        ["repository"] = "concourse/oci-build-task"
-                      }
-                    }
-                    run {
-                      path = "build"
-                    }
-                    inputs {
-                      new {name = "node-runner-src"}
-                    }
-                    outputs {
-                      new {name = "image"}
-                    }
-                }
-              }
-              new PutStep {
-                put = "node-runner-node18"
-                params {
-                  ["image"] = "node18-image/image.tar"
-                }
-                get_params {
-                  ["skip_download"] = true
-                }
-              }
-            }
-          }
-
           new DoStep {
             do = new Listing<Step> {
               new TaskStep {
@@ -137,7 +86,7 @@ jobs {
           }
         }
       }
-      
+
     }
   }
 }
