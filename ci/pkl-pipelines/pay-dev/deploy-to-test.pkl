@@ -420,7 +420,7 @@ local function getAdotIntegrationTest(app): Job = new {
           type = "registry-image"
           source {
             ["repository"] = "governmentdigitalservice/pay-node-runner"
-            ["tag"] = "node18"
+            ["tag"] = "node22"
           }
         }
         inputs = new Listing {

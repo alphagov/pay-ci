@@ -4,7 +4,7 @@ image_resource:
   type: registry-image
   source:
     repository: governmentdigitalservice/pay-node-runner
-    tag: node18
+    tag: node22
 inputs:
   - name: pay-ci
 params:
