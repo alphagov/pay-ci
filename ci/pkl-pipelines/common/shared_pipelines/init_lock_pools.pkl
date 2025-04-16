@@ -11,7 +11,6 @@ hidden pools_to_init = new Listing<String> {}
 hidden concourseTeamName = "UPDATE_ME"
 
 resource_types {
-  shared_resources_for_lock_pools.payPoolResourceType
   shared_resources_for_slack_notifications.slackNotificationResourceType
 }
 

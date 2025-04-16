@@ -24,7 +24,6 @@ resource_types {
   shared_resources_for_slack_notifications.slackNotificationResourceType
   shared_resources_for_metrics.prometheusPushgatewayResourceType
   shared_resources_for_annotations.grafanaAnnotationResourceType
-  shared_resources_for_lock_pools.payPoolResourceType
 }
 
 resources = new {
