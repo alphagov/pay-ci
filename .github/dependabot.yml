@@ -9,7 +9,7 @@ updates:
   ignore:
     - dependency-name: "node"
       versions:
-        - ">= 19"
+        - ">= 23"
   open-pull-requests-limit: 10
   labels:
     - dependencies
