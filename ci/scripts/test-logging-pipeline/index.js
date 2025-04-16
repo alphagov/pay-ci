@@ -38,7 +38,7 @@ function checkAlarms (alarms) {
 }
 
 async function waitBeforeQueryingCloudWatchAlarms () {
-  const waitTimeInSeconds = 120
+  const waitTimeInSeconds = 180
   const checkIntervalInSeconds = 5
   let noOfSecondsElapsed = 0
 
