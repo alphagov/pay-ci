@@ -12,7 +12,7 @@ payPoolResourceType = new Pipeline.ResourceType {
 class LockPoolResource extends Pipeline.Resource {
   hidden pool: String
   name = "lock-pool-\(pool)"
-  type = "pay-pool"
+  type = "pool"
   icon = "pool"
   source {
     ["branch"] = "pool"
