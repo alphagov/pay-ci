@@ -348,7 +348,7 @@ local function getRunE2ETestsJob(app): Job = new {
           when (!(app.name == "products-ui" || app.name == "products")) {
             getCodeBuildTaskToRunEndToEndTests("card", true)
           }
-          when (app.name == "cardid" || app.name == "frontend" || app.name == "publicauth" || app.name == "publicapi") {
+          when (app.name == "cardid" || app.name == "frontend" || app.name == "publicauth" || app.name == "publicapi" || app.name == "selfservice") {
             getCodeBuildTaskToRunEndToEndTests("zap", false)
           }
         }
