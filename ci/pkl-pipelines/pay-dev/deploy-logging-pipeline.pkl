@@ -74,6 +74,12 @@ groups {
       "e2e-test-logging-pipeline-in-dev"
     }
   }
+  new {
+    name = "test"
+    jobs = new {
+      "deploy-test"
+    }
+  }
   pipeline_self_update.payPipelineSelfUpdateGroup
 }
 
@@ -237,5 +243,99 @@ jobs {
         }
       }
     }
+  }
+  new {
+    name = "deploy-test"
+    plan = new {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new GetStep {
+            get = "pay-infra"
+            trigger = true
+          }
+          new GetStep { get = "pay-ci" }
+          new GetStep {
+            get = "pay-logging-firehose-transformation"
+            trigger = true
+          }
+          new GetStep {
+            get = "pay-logging-s3-to-firehose-delivery"
+            trigger = true
+          }
+        }
+      }
+      new shared_resources.AssumeConcourseRoleTask {
+        aws_account_name = "test"
+        role_name = "logging-pipeline-concourse"
+        output_name = "assume-role"
+        session_name = "deploy-logging-pipeline"
+      }
+      shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+      ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/test/logging_pipeline")
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new TaskStep {
+            task = "deploy-test-account-logging-pipeline"
+            file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
+            input_mapping = new {
+              ["pay-infra"] = "pay-infra"
+              ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
+              ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
+            }
+            params = new {
+              ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+              ["TERRAFORM_ACTION"] = "apply"
+              ["TERRAFORM_PATH"] = "pay-infra/provisioning/terraform/deployments/test/logging_pipeline"
+            }
+          }
+          new TaskStep {
+            task = "deploy-test-12-logging-pipeline"
+            file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
+            input_mapping = new {
+              ["pay-infra"] = "pay-infra"
+              ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
+              ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
+            }
+            params = new {
+              ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+              ["TERRAFORM_ACTION"] = "apply"
+              ["TERRAFORM_PATH"] = "pay-infra/provisioning/terraform/deployments/test/test-12/management/logging_pipeline"
+            }
+          }
+          new TaskStep {
+            task = "deploy-test-perf-1-logging-pipeline"
+            file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
+            input_mapping = new {
+              ["pay-infra"] = "pay-infra"
+              ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
+              ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
+            }
+            params = new {
+              ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+              ["TERRAFORM_ACTION"] = "apply"
+              ["TERRAFORM_PATH"] = "pay-infra/provisioning/terraform/deployments/test/test-perf-1/management/logging_pipeline"
+            }
+          }
+        }
+      }
+    }
+    on_success = shared_slack.paySlackNotification(
+      new shared_slack.SlackNotificationConfig {
+        is_a_success = true
+        message = "Logging pipeline deployed successfully in test"
+      }
+    )
+    on_failure = shared_slack.paySlackNotification(
+      new shared_slack.SlackNotificationConfig {
+        message = "Logging pipeline deployment failed in test"
+        slack_channel_for_failure = "#govuk-pay-starling"
+      }
+    )
+    on_error = shared_slack.paySlackNotification(
+      new shared_slack.SlackNotificationConfig {
+        message = "Error deploying logging pipeline in test"
+        slack_channel_for_failure = "#govuk-pay-starling"
+      }
+    )
   }
 }
