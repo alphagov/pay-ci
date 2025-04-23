@@ -125,8 +125,8 @@ jobs {
           }
           params = new {
             ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
-            ["ACCOUNT"] = account
             ["TERRAFORM_ACTION"] = "apply"
+            ["TERRAFORM_PATH"] = "pay-infra/provisioning/terraform/deployments/dev/logging_pipeline"
           }
         }
       }
