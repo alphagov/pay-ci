@@ -15,7 +15,7 @@ params:
   AWS_SESSION_TOKEN:
   AWS_REGION: eu-west-1
   TERRAFORM_ACTION: plan
-  ACCOUNT:
+  TERRAFORM_PATH:
 run:
   path: /bin/sh
   args:
@@ -23,7 +23,7 @@ run:
     - |
       FIREHOSE_TRANSFORMATION_VERSION=$(cat pay-logging-firehose-transformation/version)
       S3_TO_FIREHOSE_VERSION=$(cat pay-logging-s3-to-firehose-delivery/version)
-      cd pay-infra/provisioning/terraform/deployments/${ACCOUNT}/logging_pipeline
+      cd "$TERRAFORM_PATH"
       terraform init
       terraform $TERRAFORM_ACTION \
         -var "firehose_transformation_lambda_version=${FIREHOSE_TRANSFORMATION_VERSION}" \
