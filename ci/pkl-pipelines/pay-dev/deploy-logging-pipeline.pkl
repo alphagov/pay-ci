@@ -8,9 +8,9 @@ import "../common/shared_resources_for_slack_notifications.pkl" as shared_slack
 import "../common/shared_resources_for_terraform.pkl"
 import "../common/PayResources.pkl"
 
-local s3ObjectNameForEventNotification = Map (
-  "dev", "2025-04-15-00-00-00-2AD1799A1B3E2A9D",
-  "test", "2025-04-15-00-00-00-0E426FB262FAF646"
+local s3ObjectPathForEventNotification = Map (
+  "dev", "s3/pay-govuk-logs-dev/2025-04-15-00-00-00-2AD1799A1B3E2A9D",
+  "test", "s3-e2e/test-log.txt"
 )
 
 resource_types {
@@ -183,7 +183,7 @@ jobs {
         params = new {
           ["AWS_ACCOUNT_ID"] = "((pay_aws_dev_account_id))"
           ["AWS_ACCOUNT_NAME"] = "dev"
-          ["S3_OBJECT_NAME"] = "\(s3ObjectNameForEventNotification.getOrNull("dev"))"
+          ["S3_OBJECT_PATH"] = "\(s3ObjectPathForEventNotification.getOrNull("dev"))"
           ["AWS_DEFAULT_REGION"] = "eu-west-1"
           ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
           ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"

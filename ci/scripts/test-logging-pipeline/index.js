@@ -59,11 +59,17 @@ async function sendCloudTrailLogs () {
   log('- Sending CloudTrail log events -')
   const cloudWatchLogsClient = new CloudWatchLogsClient({ region: 'eu-west-1' })
   const cloudwatchLogEvents = getCloudwatchLogEvents()
+
+  const logStream = (getEnvironmentOrAccountName().indexOf('e2e') > -1)
+      ? `${getEnvironmentOrAccountName()}_cloudtrail`
+      : `${AWS_ACCOUNT_ID}_CloudTrail_eu-west-1`
+
   const input = {
-    logGroupName: `${AWS_ACCOUNT_NAME}_cloudtrail`,
-    logStreamName: `${AWS_ACCOUNT_ID}_CloudTrail_eu-west-1`,
+    logGroupName: `${getEnvironmentOrAccountName()}_cloudtrail`,
+    logStreamName: logStream,
     logEvents: cloudwatchLogEvents,
   }
+
   const command = new PutLogEventsCommand(input)
   await cloudWatchLogsClient.send(command)
   log('Sent CloudTrail log events\n')
@@ -119,11 +125,19 @@ function getCloudwatchLogEvents () {
   return events
 }
 
+function getEnvironmentOrAccountName () {
+  if (ENVIRONMENT && ENVIRONMENT !== '') {
+    return ENVIRONMENT
+  }
+
+  return AWS_ACCOUNT_NAME
+}
+
 async function sendS3EventNotificationsToSqs () {
   log('- Sending test S3 Event notifications to SQS -')
   const sqsClient = new SQSClient({ region: "eu-west-1" })
   const noOfEventsToGenerate = 10
-  const queueUrl = `https://sqs.eu-west-1.amazonaws.com/${AWS_ACCOUNT_ID}/${AWS_ACCOUNT_NAME}-logging-s3-to-firehose-s3`
+  const queueUrl = `https://sqs.eu-west-1.amazonaws.com/${AWS_ACCOUNT_ID}/${getEnvironmentOrAccountName()}-logging-s3-to-firehose-s3`
 
   for (let i = 0; i < noOfEventsToGenerate; i++) {
     const date = new Date()
@@ -144,7 +158,7 @@ async function sendS3EventNotificationsToSqs () {
           name: `pay-govuk-logs-${AWS_ACCOUNT_NAME}`
         },
         'object': {
-          'key': `s3/pay-govuk-logs-${AWS_ACCOUNT_NAME}/${S3_OBJECT_NAME}`,
+          'key': `${S3_OBJECT_PATH}`,
           'size': 541,
         },
         'request-id': '3G3FXB9GBGEBXXXX',
@@ -169,7 +183,7 @@ async function sendLogs () {
   await sendS3EventNotificationsToSqs()
 }
 
-let AWS_ACCOUNT_ID, AWS_ACCOUNT_NAME, S3_OBJECT_NAME
+let AWS_ACCOUNT_ID, AWS_ACCOUNT_NAME, ENVIRONMENT, S3_OBJECT_PATH
 
 function checkAndGetMandatoryEnvVariables () {
   const AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID
@@ -182,16 +196,21 @@ function checkAndGetMandatoryEnvVariables () {
     throw new Error('Environment variable AWS_ACCOUNT_NAME is missing')
   }
 
-  const S3_OBJECT_NAME = process.env.S3_OBJECT_NAME
-  if (!S3_OBJECT_NAME) {
-    throw new Error('Environment variable S3_OBJECT_NAME is missing')
+  const ENVIRONMENT = process.env.ENVIRONMENT
+  if (AWS_ACCOUNT_NAME !== 'dev' && !ENVIRONMENT) {
+    throw new Error('Environment variable ENVIRONMENT is required for non-dev environments')
   }
 
-  return { AWS_ACCOUNT_ID, AWS_ACCOUNT_NAME, S3_OBJECT_NAME }
+  const S3_OBJECT_PATH = process.env.S3_OBJECT_PATH
+  if (!S3_OBJECT_PATH) {
+    throw new Error('Environment variable S3_OBJECT_PATH is missing')
+  }
+
+  return { AWS_ACCOUNT_ID, AWS_ACCOUNT_NAME, ENVIRONMENT, S3_OBJECT_PATH }
 }
 
 async function test_logging () {
-  ({ AWS_ACCOUNT_ID, AWS_ACCOUNT_NAME, S3_OBJECT_NAME } = checkAndGetMandatoryEnvVariables())
+  ({ AWS_ACCOUNT_ID, AWS_ACCOUNT_NAME, ENVIRONMENT, S3_OBJECT_PATH } = checkAndGetMandatoryEnvVariables())
 
   await sendLogs()
   await waitBeforeQueryingCloudWatchAlarms()
