@@ -11,7 +11,7 @@ function log (message) {
 async function getCloudWatchAlarmsInAlarmState () {
   const client = new CloudWatchClient({ region: 'eu-west-1' })
   const input = {
-    AlarmNamePrefix: "Logging",
+    AlarmNamePrefix: `Logging - ${getEnvironmentOrAccountName()}`,
     AlarmTypes: [
       "MetricAlarm",
     ],
