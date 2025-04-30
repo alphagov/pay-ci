@@ -236,6 +236,9 @@ local function getE2EJob(loggingEnv: LoggingEnv): Job = new {
       params = new {
         ["AWS_ACCOUNT_ID"] = "((pay_aws_\(loggingEnv.account)_account_id))"
         ["AWS_ACCOUNT_NAME"] = loggingEnv.account
+        when (loggingEnv.account != "dev") {
+          ["ENVIRONMENT"] = loggingEnv.environment
+        }
         ["S3_OBJECT_PATH"] = "\(s3ObjectPathForEventNotification.getOrNull(loggingEnv.account))"
         ["AWS_DEFAULT_REGION"] = "eu-west-1"
         ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
@@ -247,18 +250,18 @@ local function getE2EJob(loggingEnv: LoggingEnv): Job = new {
   on_success = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
       is_a_success = true
-      message = "Logging pipeline e2e test completed successfully in \(getEnvironmentOrAccount(loggingEnv)) environment"
+      message = "Logging pipeline - e2e test job completed successfully in \(getEnvironmentOrAccount(loggingEnv)) environment"
     }
   )
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
-      message = "Logging pipeline e2e test failed in \(getEnvironmentOrAccount(loggingEnv)) environment"
+      message = "Logging pipeline - e2e test job failed in \(getEnvironmentOrAccount(loggingEnv)) environment"
       slack_channel_for_failure = "#govuk-pay-starling"
     }
   )
   on_error = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
-      message = "Error running logging pipeline e2e test in \(getEnvironmentOrAccount(loggingEnv)) environment"
+      message = "Logging pipeline - Error running e2e test in \(getEnvironmentOrAccount(loggingEnv)) environment"
       slack_channel_for_failure = "#govuk-pay-starling"
     }
   )
