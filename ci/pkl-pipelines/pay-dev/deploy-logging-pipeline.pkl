@@ -17,6 +17,48 @@ resource_types {
   shared_slack.slackNotificationResourceType
 }
 
+local class LoggingEnv {
+  account: shared_resources.AWSAccountName
+  environment: String = ""
+  run_e2e_test_after_deploy: Boolean = false
+  include_destroy_job: Boolean = false
+  tf_root: String
+  depends_on_job: String = ""
+}
+
+local function getEnvironmentOrAccount(loggingEnv: LoggingEnv): String =
+  if (loggingEnv.environment != "" && loggingEnv.environment.length > 0) loggingEnv.environment
+  else loggingEnv.account.toString()
+
+local loggingEnvironments = new Listing<LoggingEnv> {
+  new LoggingEnv {
+    account = "dev"
+    include_destroy_job = true
+    tf_root = "pay-infra/provisioning/terraform/deployments/dev/logging_pipeline"
+    depends_on_job = "e2e-test-logging-pipeline-in-test-e2e-env"
+  }
+  new LoggingEnv {
+    account = "test"
+    tf_root = "pay-infra/provisioning/terraform/deployments/test/logging_pipeline"
+    depends_on_job = "e2e-test-logging-pipeline-in-test-e2e-env"
+  }
+  new LoggingEnv {
+    account = "test" environment = "test-e2e"
+    run_e2e_test_after_deploy = true
+    tf_root = "pay-infra/provisioning/terraform/deployments/test/e2e_test_logging_pipeline"
+  }
+  new LoggingEnv {
+    account = "test" environment = "test-12"
+    tf_root = "pay-infra/provisioning/terraform/deployments/test/test-12/management/logging_pipeline"
+    depends_on_job = "e2e-test-logging-pipeline-in-test-e2e-env"
+  }
+  new LoggingEnv {
+    account = "test" environment = "test-perf-1"
+    tf_root = "pay-infra/provisioning/terraform/deployments/test/test-perf-1/management/logging_pipeline"
+    depends_on_job = "e2e-test-logging-pipeline-in-test-e2e-env"
+  }
+}
+
 resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-logging-pipeline.pkl", "master")
   shared_resources.payCiGitHubResource
@@ -65,277 +107,169 @@ resources {
   }
 }
 
-groups {
-  new {
-    name = "dev"
-    jobs = new {
-      "deploy-dev"
-      "destroy-dev"
-      "e2e-test-logging-pipeline-in-dev"
-    }
-  }
-  new {
-    name = "test"
-    jobs = new {
-      "deploy-test"
-    }
-  }
-  pipeline_self_update.payPipelineSelfUpdateGroup
-}
-
 jobs {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/deploy-logging-pipeline.pkl")
 
-  new {
-    name = "deploy-dev"
-    plan = new {
-      new InParallelStep {
-        in_parallel = new Listing<Step> {
-          new GetStep {
-            get = "pay-infra"
-            trigger = true
-          }
-          new GetStep { get = "pay-ci" }
-          new GetStep {
-            get = "pay-logging-firehose-transformation"
-            trigger = true
-          }
-          new GetStep {
-            get = "pay-logging-s3-to-firehose-delivery"
-            trigger = true
-          }
-        }
+  for (loggingEnv in loggingEnvironments) {
+    getDeployJob(loggingEnv)
+
+    when (loggingEnv.include_destroy_job) {
+      getDestroyJob(loggingEnv)
+    }
+
+    when (loggingEnv.run_e2e_test_after_deploy) {
+      getE2EJob(loggingEnv)
+    }
+  }
+}
+
+local function getDeployJob(loggingEnv: LoggingEnv): Job = new {
+  name = "deploy-\(getEnvironmentOrAccount(loggingEnv))"
+  plan = new {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        getStep("pay-infra", true, loggingEnv.depends_on_job)
+        getStep("pay-ci", false, "")
+        getStep("pay-logging-firehose-transformation", true, loggingEnv.depends_on_job)
+        getStep("pay-logging-s3-to-firehose-delivery", true, loggingEnv.depends_on_job)
       }
-      new shared_resources.AssumeConcourseRoleTask {
-        aws_account_name = "dev"
-        role_name = "logging-pipeline-concourse"
-        output_name = "assume-role"
-        session_name = "deploy-logging-pipeline"
+    }
+    new shared_resources.AssumeConcourseRoleTask {
+      aws_account_name = loggingEnv.account
+      role_name = "logging-pipeline-concourse"
+      output_name = "assume-role"
+      session_name = "deploy-\(getEnvironmentOrAccount(loggingEnv))-logging-pipeline"
+    }
+    shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+    ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps(loggingEnv.tf_root)
+    new TaskStep {
+      task = "deploy-logging-pipeline"
+      file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
+      input_mapping = new {
+        ["pay-infra"] = "pay-infra"
+        ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
+        ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
       }
-      shared_resources.loadVarJson("role", "assume-role/assume-role.json")
-      ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/dev/logging_pipeline")
-      new TaskStep {
-        task = "deploy-logging-pipeline"
-        file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
-        input_mapping = new {
-          ["pay-infra"] = "pay-infra"
-          ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
-          ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
-        }
-        params = new {
-          ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
-          ["TERRAFORM_ACTION"] = "apply"
-          ["TERRAFORM_PATH"] = "pay-infra/provisioning/terraform/deployments/dev/logging_pipeline"
-        }
+      params = new {
+        ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+        ["TERRAFORM_ACTION"] = "apply"
+        ["TERRAFORM_PATH"] = loggingEnv.tf_root
       }
     }
   }
+  on_success = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      is_a_success = true
+      message = "Logging pipeline deployed successfully in \(getEnvironmentOrAccount(loggingEnv)) env"
+    }
+  )
+  on_failure = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      message = "Logging pipeline deployment failed in \(getEnvironmentOrAccount(loggingEnv)) env"
+      slack_channel_for_failure = "#govuk-pay-starling"
+    }
+  )
+  on_error = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      message = "Error deploying logging pipeline in \(getEnvironmentOrAccount(loggingEnv)) env"
+      slack_channel_for_failure = "#govuk-pay-starling"
+    }
+  )
+}
 
-  new {
-    name = "e2e-test-logging-pipeline-in-dev"
-    plan = new {
-      new InParallelStep {
-        in_parallel = new Listing<Step> {
-          new GetStep {
-            get = "pay-ci"
-            passed {
-              "deploy-dev"
-            }
-            trigger = false
-          }
-          new GetStep {
-            get = "pay-infra"
-            trigger = true
-            passed {
-              "deploy-dev"
-            }
-          }
-          new GetStep {
-            get = "pay-logging-firehose-transformation"
-            trigger = true
-            passed {
-              "deploy-dev"
-            }
-          }
-          new GetStep {
-            get = "pay-logging-s3-to-firehose-delivery"
-            trigger = true
-            passed {
-              "deploy-dev"
-            }
-          }
-
-        }
-      }
-      new shared_resources.AssumeConcourseRoleTask {
-        aws_account_name = "dev"
-        role_name = "logging-pipeline-concourse"
-        output_name = "assume-role"
-        session_name = "test-logging-pipeline"
-      }
-      shared_resources.loadVarJson("role", "assume-role/assume-role.json")
-      new TaskStep {
-        task = "run-logging-pipeline-e2e-test"
-        file = "pay-ci/ci/tasks/run-logging-pipeline-e2e-test.yml"
-        input_mapping = new {
-          ["pay-ci"] = "pay-ci"
-        }
-        params = new {
-          ["AWS_ACCOUNT_ID"] = "((pay_aws_dev_account_id))"
-          ["AWS_ACCOUNT_NAME"] = "dev"
-          ["S3_OBJECT_PATH"] = "\(s3ObjectPathForEventNotification.getOrNull("dev"))"
-          ["AWS_DEFAULT_REGION"] = "eu-west-1"
-          ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
-          ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
-          ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
-        }
+local function getDestroyJob(loggingEnv: LoggingEnv): Job = new {
+  name = "destroy-\(getEnvironmentOrAccount(loggingEnv))"
+  plan = new {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        getStep("pay-infra", false, "")
+        getStep("pay-ci", false, "")
       }
     }
-    on_success = shared_slack.paySlackNotification(
-      new shared_slack.SlackNotificationConfig {
-        is_a_success = true
-        message = "Logging pipeline e2e test completed successfully in dev environment"
+    new shared_resources.AssumeConcourseRoleTask {
+      aws_account_name = loggingEnv.account
+      role_name = "logging-pipeline-concourse"
+      output_name = "assume-role"
+      session_name = "destroy-logging-pipeline"
+    }
+    shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+    ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps(loggingEnv.tf_root)
+    new TaskStep {
+      task = "deploy-logging-pipeline"
+      file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
+      input_mapping = new {
+        ["pay-infra"] = "pay-infra"
       }
-    )
-    on_failure = shared_slack.paySlackNotification(
-      new shared_slack.SlackNotificationConfig {
-        message = "Logging pipeline e2e test failed in dev environment"
-        slack_channel_for_failure = "#govuk-pay-starling"
-      }
-    )
-    on_error = shared_slack.paySlackNotification(
-      new shared_slack.SlackNotificationConfig {
-        message = "Error running logging pipeline e2e test in dev environment"
-        slack_channel_for_failure = "#govuk-pay-starling"
-      }
-    )
-  }
-
-  new {
-    name = "destroy-dev"
-    plan = new {
-      new InParallelStep {
-        in_parallel = new Listing<Step> {
-          new GetStep {
-            get = "pay-infra"
-          }
-          new GetStep { get = "pay-ci" }
-        }
-      }
-      new shared_resources.AssumeConcourseRoleTask {
-        aws_account_name = "dev"
-        role_name = "logging-pipeline-concourse"
-        output_name = "assume-role"
-        session_name = "destroy-logging-pipeline"
-      }
-      shared_resources.loadVarJson("role", "assume-role/assume-role.json")
-      ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/dev/logging_pipeline")
-      new TaskStep {
-        task = "deploy-logging-pipeline"
-        file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
-        input_mapping = new {
-          ["pay-infra"] = "pay-infra"
-        }
-        params = new {
-          ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
-          ["TERRAFORM_ACTION"] = "destroy"
-          ["TERRAFORM_PATH"] = "pay-infra/provisioning/terraform/deployments/dev/logging_pipeline"
-        }
+      params = new {
+        ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+        ["TERRAFORM_ACTION"] = "destroy"
+        ["TERRAFORM_PATH"] = loggingEnv.tf_root
       }
     }
   }
-  new {
-    name = "deploy-test"
-    plan = new {
-      new InParallelStep {
-        in_parallel = new Listing<Step> {
-          new GetStep {
-            get = "pay-infra"
-            trigger = true
-          }
-          new GetStep { get = "pay-ci" }
-          new GetStep {
-            get = "pay-logging-firehose-transformation"
-            trigger = true
-          }
-          new GetStep {
-            get = "pay-logging-s3-to-firehose-delivery"
-            trigger = true
-          }
-        }
-      }
-      new shared_resources.AssumeConcourseRoleTask {
-        aws_account_name = "test"
-        role_name = "logging-pipeline-concourse"
-        output_name = "assume-role"
-        session_name = "deploy-logging-pipeline"
-      }
-      shared_resources.loadVarJson("role", "assume-role/assume-role.json")
-      ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps("pay-infra/provisioning/terraform/deployments/test/logging_pipeline")
-      new InParallelStep {
-        in_parallel = new Listing<Step> {
-          new TaskStep {
-            task = "deploy-test-account-logging-pipeline"
-            file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
-            input_mapping = new {
-              ["pay-infra"] = "pay-infra"
-              ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
-              ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
-            }
-            params = new {
-              ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
-              ["TERRAFORM_ACTION"] = "apply"
-              ["TERRAFORM_PATH"] = "pay-infra/provisioning/terraform/deployments/test/logging_pipeline"
-            }
-          }
-          new TaskStep {
-            task = "deploy-test-12-logging-pipeline"
-            file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
-            input_mapping = new {
-              ["pay-infra"] = "pay-infra"
-              ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
-              ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
-            }
-            params = new {
-              ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
-              ["TERRAFORM_ACTION"] = "apply"
-              ["TERRAFORM_PATH"] = "pay-infra/provisioning/terraform/deployments/test/test-12/management/logging_pipeline"
-            }
-          }
-          new TaskStep {
-            task = "deploy-test-perf-1-logging-pipeline"
-            file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
-            input_mapping = new {
-              ["pay-infra"] = "pay-infra"
-              ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
-              ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
-            }
-            params = new {
-              ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
-              ["TERRAFORM_ACTION"] = "apply"
-              ["TERRAFORM_PATH"] = "pay-infra/provisioning/terraform/deployments/test/test-perf-1/management/logging_pipeline"
-            }
-          }
-        }
+}
+
+local function getE2EJob(loggingEnv: LoggingEnv): Job = new {
+  name = "e2e-test-logging-pipeline-in-\(getEnvironmentOrAccount(loggingEnv))-env"
+  plan = new {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        getStep("pay-ci", false, "deploy-\(getEnvironmentOrAccount(loggingEnv))")
+        getStep("pay-infra", true, "deploy-\(getEnvironmentOrAccount(loggingEnv))")
+        getStep("pay-logging-firehose-transformation", true, "deploy-\(getEnvironmentOrAccount(loggingEnv))")
+        getStep("pay-logging-s3-to-firehose-delivery", true, "deploy-\(getEnvironmentOrAccount(loggingEnv))")
       }
     }
-    on_success = shared_slack.paySlackNotification(
-      new shared_slack.SlackNotificationConfig {
-        is_a_success = true
-        message = "Logging pipeline deployed successfully in test"
+    new shared_resources.AssumeConcourseRoleTask {
+      aws_account_name = loggingEnv.account
+      role_name = "logging-pipeline-concourse"
+      output_name = "assume-role"
+      session_name = "\(getEnvironmentOrAccount(loggingEnv))-logging-pipeline"
+    }
+    shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+    new TaskStep {
+      task = "run-logging-pipeline-e2e-test"
+      file = "pay-ci/ci/tasks/run-logging-pipeline-e2e-test.yml"
+      input_mapping = new {
+        ["pay-ci"] = "pay-ci"
       }
-    )
-    on_failure = shared_slack.paySlackNotification(
-      new shared_slack.SlackNotificationConfig {
-        message = "Logging pipeline deployment failed in test"
-        slack_channel_for_failure = "#govuk-pay-starling"
+      params = new {
+        ["AWS_ACCOUNT_ID"] = "((pay_aws_\(loggingEnv.account)_account_id))"
+        ["AWS_ACCOUNT_NAME"] = loggingEnv.account
+        ["S3_OBJECT_PATH"] = "\(s3ObjectPathForEventNotification.getOrNull(loggingEnv.account))"
+        ["AWS_DEFAULT_REGION"] = "eu-west-1"
+        ["AWS_ACCESS_KEY_ID"] = "((.:role.AWS_ACCESS_KEY_ID))"
+        ["AWS_SECRET_ACCESS_KEY"] = "((.:role.AWS_SECRET_ACCESS_KEY))"
+        ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
       }
-    )
-    on_error = shared_slack.paySlackNotification(
-      new shared_slack.SlackNotificationConfig {
-        message = "Error deploying logging pipeline in test"
-        slack_channel_for_failure = "#govuk-pay-starling"
-      }
-    )
+    }
+  }
+  on_success = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      is_a_success = true
+      message = "Logging pipeline e2e test completed successfully in \(getEnvironmentOrAccount(loggingEnv)) environment"
+    }
+  )
+  on_failure = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      message = "Logging pipeline e2e test failed in \(getEnvironmentOrAccount(loggingEnv)) environment"
+      slack_channel_for_failure = "#govuk-pay-starling"
+    }
+  )
+  on_error = shared_slack.paySlackNotification(
+    new shared_slack.SlackNotificationConfig {
+      message = "Error running logging pipeline e2e test in \(getEnvironmentOrAccount(loggingEnv)) environment"
+      slack_channel_for_failure = "#govuk-pay-starling"
+    }
+  )
+}
+
+local function getStep(name: String, shouldTriggerJob: Boolean, dependsOnJob: String) = new GetStep {
+  get = name
+  trigger = shouldTriggerJob
+  when (dependsOnJob != null && dependsOnJob.length > 0) {
+    passed {
+      dependsOnJob
+    }
   }
 }
