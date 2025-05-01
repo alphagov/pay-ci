@@ -6,6 +6,7 @@ import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/shared_resources_for_slack_notifications.pkl" as shared_slack
 import "../common/shared_resources_for_terraform.pkl"
+import "../common/shared_resources_for_annotations.pkl" as shared_annotations
 import "../common/PayResources.pkl"
 
 local s3ObjectPathForEventNotification = Map (
@@ -15,6 +16,7 @@ local s3ObjectPathForEventNotification = Map (
 
 resource_types {
   shared_slack.slackNotificationResourceType
+  shared_annotations.grafanaAnnotationResourceType
 }
 
 local class LoggingEnv {
@@ -63,6 +65,7 @@ resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-logging-pipeline.pkl", "master")
   shared_resources.payCiGitHubResource
   shared_slack.slackNotificationResource
+  shared_annotations.grafanaAnnotationResource
   new PayResources.PayInfraGitHubResource {
     source {
       paths = new {
@@ -140,7 +143,13 @@ local function getDeployJob(loggingEnv: LoggingEnv): Job = new {
       output_name = "assume-role"
       session_name = "deploy-\(getEnvironmentOrAccount(loggingEnv))-logging-pipeline"
     }
-    shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+        shared_resources.loadVar("firehose-transformation-version", "pay-logging-firehose-transformation/version")
+        shared_resources.loadVar("s3-to-firehose-version", "pay-logging-s3-to-firehose-delivery/version")
+      }
+    }
     ...shared_resources_for_terraform.LoadTerraformVersionForTFRootSteps(loggingEnv.tf_root)
     new TaskStep {
       task = "deploy-logging-pipeline"
@@ -157,12 +166,24 @@ local function getDeployJob(loggingEnv: LoggingEnv): Job = new {
       }
     }
   }
-  on_success = shared_slack.paySlackNotification(
-    new shared_slack.SlackNotificationConfig {
-      is_a_success = true
-      message = "Logging pipeline deployed successfully in \(getEnvironmentOrAccount(loggingEnv)) env"
+  on_success = new InParallelStep {
+    in_parallel = new Listing<Step> {
+      shared_slack.paySlackNotification(
+        new shared_slack.SlackNotificationConfig {
+          is_a_success = true
+          message = "Logging pipeline deployed successfully in \(getEnvironmentOrAccount(loggingEnv)) env with s3-to-firehose-v((.:s3-to-firehose-version)) firehose-transformation-v((.:firehose-transformation-version))"
+        }
+      )
+      new Pipeline.PutStep {
+        put = "grafana-annotation"
+        attempts = 3
+        params = new {
+          ["tags"] = new Listing<String> { "logging-release" loggingEnv.account loggingEnv.environment }
+          ["template"] = "released ${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME} logging-release s3-to-firehose-v((.:s3-to-firehose-version)) firehose-transformation-v((.:firehose-transformation-version)) (build ${BUILD_ID})"
+        }
+      }
     }
-  )
+  }
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
       message = "Logging pipeline deployment failed in \(getEnvironmentOrAccount(loggingEnv)) env"
