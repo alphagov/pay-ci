@@ -9,6 +9,8 @@ import "../common/shared_resources_for_terraform.pkl"
 import "../common/shared_resources_for_annotations.pkl" as shared_annotations
 import "../common/PayResources.pkl"
 
+local concourse_team_name: String = "pay-dev"
+
 local s3ObjectPathForEventNotification = Map (
   "dev", "s3/pay-govuk-logs-dev/2025-04-15-00-00-00-2AD1799A1B3E2A9D",
   "test", "s3-e2e/test-log.txt"
@@ -123,6 +125,10 @@ jobs {
     when (loggingEnv.run_e2e_test_after_deploy) {
       getE2EJob(loggingEnv)
     }
+  }
+
+  when (concourse_team_name == "pay-dev") {
+    getPromoteLoggingLambdasToProdJob()
   }
 }
 
@@ -286,6 +292,55 @@ local function getE2EJob(loggingEnv: LoggingEnv): Job = new {
       slack_channel_for_failure = "#govuk-pay-starling"
     }
   )
+}
+
+local function getPromoteLoggingLambdasToProdJob(): Job = new {
+  name = "promote-logging-lambdas-to-prod"
+  plan = new {
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        getStep("pay-ci", false, "")
+        new GetStep {
+          get = "pay-logging-firehose-transformation"
+          trigger = true
+          passed {
+            "deploy-test"
+            "deploy-test-12"
+          }
+        }
+        new GetStep {
+          get = "pay-logging-s3-to-firehose-delivery"
+          trigger = true
+          passed {
+            "deploy-test"
+            "deploy-test-12"
+          }
+        }
+      }
+    }
+    new shared_resources.AssumeConcourseRoleTask {
+      aws_account_name = "test"
+      role_name = "concourse"
+      output_name = "assume-role"
+      session_name = "promote-logging-lambdas"
+    }
+    new InParallelStep {
+      in_parallel = new Listing<Step> {
+        shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+        shared_resources.loadVar("firehose-transformation-version", "pay-logging-firehose-transformation/version")
+        shared_resources.loadVar("s3-to-firehose-version", "pay-logging-s3-to-firehose-delivery/version")
+      }
+    }
+    new TaskStep {
+      task = "promote-logging-lambdas-to-prod"
+      file = "pay-ci/ci/tasks/promote-logging-lambdas.yml"
+      params = new {
+        ["FIREHOSE_TRANSFORMATION_VERSION"] = "((.:firehose-transformation-version))"
+        ["S3_TO_FIREHOSE_VERSION"] = "((.:s3-to-firehose-version))"
+        ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
+      }
+    }
+  }
 }
 
 local function getStep(name: String, shouldTriggerJob: Boolean, dependsOnJob: String) = new GetStep {

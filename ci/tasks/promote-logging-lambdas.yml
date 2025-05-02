@@ -1,0 +1,25 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: governmentdigitalservice/pay-concourse-runner
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_SESSION_TOKEN:
+  AWS_REGION: eu-west-1
+  FIREHOSE_TRANSFORMATION_VERSION:
+  S3_TO_FIREHOSE_VERSION:
+run:
+  path: /bin/sh
+  args:
+    - -ec
+    - |
+      echo "Promoting Firehose transformation lambda [version - ${FIREHOSE_TRANSFORMATION_VERSION}] to prod..."
+      aws s3 cp s3://pay-govuk-lambda-deploy/pay-logging-firehose-transformation-v${FIREHOSE_TRANSFORMATION_VERSION}.zip \
+                s3://pay-govuk-lambda-deploy/prod/pay-logging-firehose-transformation-v${FIREHOSE_TRANSFORMATION_VERSION}.zip
+
+      echo "Promoting S3 to Firehose delivery lambda [version - ${S3_TO_FIREHOSE_VERSION}] to prod..."
+      aws s3 cp s3://pay-govuk-lambda-deploy/pay-logging-s3-to-firehose-delivery-v${S3_TO_FIREHOSE_VERSION}.zip \
+                s3://pay-govuk-lambda-deploy/prod/pay-logging-s3-to-firehose-delivery-v${S3_TO_FIREHOSE_VERSION}.zip
