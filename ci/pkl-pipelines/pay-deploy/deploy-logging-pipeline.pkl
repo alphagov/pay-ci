@@ -1,0 +1,16 @@
+amends "../common/shared_pipelines/deploy-logging-pipeline.pkl"
+
+concourse_team_name = "pay-deploy"
+
+loggingEnvironments = new Listing<LoggingEnv> {
+
+  new LoggingEnv {
+    account = "deploy"
+    tf_root = "pay-infra/provisioning/terraform/deployments/deploy/logging_pipeline"
+  }
+  new LoggingEnv {
+    account = "deploy" environment = "deploy-tooling"
+    tf_root = "pay-infra/provisioning/terraform/deployments/deploy/deploy-tooling/management/logging_pipeline"
+  }
+
+}
