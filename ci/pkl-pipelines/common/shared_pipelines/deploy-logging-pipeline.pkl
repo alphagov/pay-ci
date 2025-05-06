@@ -34,13 +34,18 @@ local function getRegexForS3ToFirehoseDelivery(): String =
   if (concourse_team_name == "pay-deploy") "prod/pay-logging-s3-to-firehose-delivery-v(.*).zip"
   else "pay-logging-s3-to-firehose-delivery-v(.*).zip"
 
+local function getAWSAccountIdVar(): String =
+  if (concourse_team_name == "pay-deploy") "pay_aws_deploy_account_id"
+  else "pay_aws_dev_account_id"
+
+
 resource_types {
   shared_slack.slackNotificationResourceType
   shared_annotations.grafanaAnnotationResourceType
 }
 
 resources {
-  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/deploy-logging-pipeline.pkl", "master")
+  pipeline_self_update.PayPipelineSelfUpdateResource("\(concourse_team_name)/deploy-logging-pipeline.pkl", "master")
   shared_resources.payCiGitHubResource
   shared_slack.slackNotificationResource
   shared_annotations.grafanaAnnotationResource
@@ -63,7 +68,7 @@ resources {
       ["secret_access_key"] = "((readonly_secret_access_key))"
       ["session_token"] = "((readonly_session_token))"
       ["region_name"] = "eu-west-1"
-      ["aws_role_arn"] = "arn:aws:iam::((pay_aws_dev_account_id)):role/concourse"
+      ["aws_role_arn"] = "arn:aws:iam::((\(getAWSAccountIdVar()))):role/concourse"
       ["bucket"] = "pay-govuk-lambda-deploy"
       ["regexp"] = getRegexForFirehoseTransformation()
       ["skip_download"] = true
@@ -80,7 +85,7 @@ resources {
       ["secret_access_key"] = "((readonly_secret_access_key))"
       ["session_token"] = "((readonly_session_token))"
       ["region_name"] = "eu-west-1"
-      ["aws_role_arn"] = "arn:aws:iam::((pay_aws_dev_account_id)):role/concourse"
+      ["aws_role_arn"] = "arn:aws:iam::((\(getAWSAccountIdVar()))):role/concourse"
       ["bucket"] = "pay-govuk-lambda-deploy"
       ["regexp"] = getRegexForS3ToFirehoseDelivery()
       ["skip_download"] = true
@@ -89,7 +94,7 @@ resources {
 }
 
 jobs {
-  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/deploy-logging-pipeline.pkl")
+  pipeline_self_update.PayPipelineSelfUpdateJob("\(concourse_team_name)/deploy-logging-pipeline.pkl")
 
   for (loggingEnv in loggingEnvironments) {
     getDeployJob(loggingEnv)
