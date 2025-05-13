@@ -12,5 +12,9 @@ loggingEnvironments = new Listing<LoggingEnv> {
     account = "deploy" environment = "deploy-tooling"
     tf_root = "pay-infra/provisioning/terraform/deployments/deploy/deploy-tooling/management/logging_pipeline"
   }
+  new LoggingEnv {
+    account = "deploy" environment = "deploy-pay-cd"
+    tf_root = "pay-infra/provisioning/terraform/deployments/deploy/deploy-pay-cd/management/logging_pipeline"
+  }
 
 }
