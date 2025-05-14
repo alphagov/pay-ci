@@ -29,4 +29,14 @@ loggingEnvironments = new Listing<LoggingEnv> {
     tf_root = "pay-infra/provisioning/terraform/deployments/staging/staging-2/management/logging_pipeline"
   }
 
+  new LoggingEnv {
+    account = "production"
+    tf_root = "pay-infra/provisioning/terraform/deployments/production/logging_pipeline"
+  }
+  new LoggingEnv {
+    account = "production"
+    environment = "production-2"
+    tf_root = "pay-infra/provisioning/terraform/deployments/production/production-2/management/logging_pipeline"
+  }
+
 }
