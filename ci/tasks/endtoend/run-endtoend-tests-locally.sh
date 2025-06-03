@@ -47,6 +47,8 @@ export repo_stubs=governmentdigitalservice/pay-stubs
 export repo_reverse_proxy=governmentdigitalservice/pay-reverse-proxy
 export repo_cardid=governmentdigitalservice/pay-cardid
 export repo_endtoend=governmentdigitalservice/pay-endtoend
+export repo_products=governmentdigitalservice/pay-products
+export repo_productsui=governmentdigitalservice/pay-products-ui
 
 if [ "$(uname -p)" == "arm" ]; then
   # Overrides the default (AMD64 only) version of selenium
@@ -56,7 +58,7 @@ fi
 echo "|========================================================================="
 echo "| Running docker compose up"
 echo "|========================================================================="
-docker-compose -f "${END_TO_END_TEST_SUITE}/docker-compose.yml" up -d --quiet-pull --no-recreate
+docker compose -f "${END_TO_END_TEST_SUITE}/docker-compose.yml" up -d --quiet-pull --no-recreate
 
 echo "|========================================================================="
 echo "| Sleeping for 10 seconds to allow everything to come to life"
@@ -69,7 +71,7 @@ echo
 echo "|========================================================================="
 echo "| Displaying running docker containers"
 echo "|========================================================================="
-docker-compose -f "${END_TO_END_TEST_SUITE}/docker-compose.yml" ps
+docker compose -f "${END_TO_END_TEST_SUITE}/docker-compose.yml" ps
 
 echo "|========================================================================="
 echo "| Getting endtoend container id"
