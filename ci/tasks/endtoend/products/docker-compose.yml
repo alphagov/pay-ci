@@ -35,7 +35,7 @@ services:
         aliases:
           - frontend.internal.pymnt.localdomain
     healthcheck:
-      test: ["CMD", "wget", "-O", "/dev/null", 'http://localhost:9200/healthcheck']
+      test: ["CMD", "wget", "-O", "/dev/null", 'http://frontend.internal.pymnt.localdomain:9200/healthcheck']
       interval: 30s
       timeout: 10s
     logging:
@@ -125,7 +125,7 @@ services:
         aliases:
           - selfservice.internal.pymnt.localdomain
     healthcheck:
-      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:9400/healthcheck"]
+      test: ["CMD", "wget", "-O", "/dev/null", "http://selfservice.internal.pymnt.localdomain:9400/healthcheck"]
       interval: 30s
       timeout: 10s
     logging:
@@ -363,7 +363,7 @@ services:
           - productsui.pymnt.localdomain
           - productsui.internal.pymnt.localdomain
     healthcheck:
-      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:10100/healthcheck"]
+      test: ["CMD", "wget", "-O", "/dev/null", "http://productsui.internal.pymnt.localdomain:10100/healthcheck"]
       interval: 30s
       timeout: 10s
     logging:
