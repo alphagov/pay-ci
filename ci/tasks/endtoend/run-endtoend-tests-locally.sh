@@ -47,6 +47,8 @@ export repo_stubs=governmentdigitalservice/pay-stubs
 export repo_reverse_proxy=governmentdigitalservice/pay-reverse-proxy
 export repo_cardid=governmentdigitalservice/pay-cardid
 export repo_endtoend=governmentdigitalservice/pay-endtoend
+export repo_products=governmentdigitalservice/pay-products
+export repo_productsui=governmentdigitalservice/pay-products-ui
 
 if [ "$(uname -p)" == "arm" ]; then
   # Overrides the default (AMD64 only) version of selenium
