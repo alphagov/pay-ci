@@ -58,7 +58,7 @@ fi
 echo "|========================================================================="
 echo "| Running docker compose up"
 echo "|========================================================================="
-docker-compose -f "${END_TO_END_TEST_SUITE}/docker-compose.yml" up -d --quiet-pull --no-recreate
+docker compose -f "${END_TO_END_TEST_SUITE}/docker-compose.yml" up -d --quiet-pull --no-recreate
 
 echo "|========================================================================="
 echo "| Sleeping for 10 seconds to allow everything to come to life"
@@ -71,7 +71,7 @@ echo
 echo "|========================================================================="
 echo "| Displaying running docker containers"
 echo "|========================================================================="
-docker-compose -f "${END_TO_END_TEST_SUITE}/docker-compose.yml" ps
+docker compose -f "${END_TO_END_TEST_SUITE}/docker-compose.yml" ps
 
 echo "|========================================================================="
 echo "| Getting endtoend container id"
