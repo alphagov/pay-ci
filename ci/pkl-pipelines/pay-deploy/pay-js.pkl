@@ -31,6 +31,12 @@ local payJsLibraries: Listing<PayJsLibraryPipeline> = new {
     source_branch = "main"
   }
   new {
+    name = "pay-logging-cloudtrail-canary"
+    short_name = "logging-cloudtrail-canary"
+    really_short_name = "cloudtrail-canary"
+    source_branch = "main"
+  }
+  new {
     name = "pay-logging-s3-to-firehose-delivery"
     short_name = "logging-s3-to-firehose-delivery"
     really_short_name = "s3-to-firehose"
