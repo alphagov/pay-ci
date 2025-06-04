@@ -42,6 +42,15 @@ resources = new {
     }
   }
 
+  new PayResources.PayGitHubResource {
+    name = "endtoend-zap-git-release"
+    repoName = "pay-endtoend-zap"
+    source {
+      branch = "main"
+      tag_regex = "alpha_release-(.*)"
+    }
+  }
+
   for (image_to_build in images_to_multi_arch_build) {
     new shared_resources_for_multi_arch_builds.MultiArchBuildGithubSourceResource { image = image_to_build }
   }
@@ -50,12 +59,24 @@ resources = new {
     "endtoend-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id"
   ) |> withTag("latest")
 
+  shared_resources.payECRResource(
+    "endtoend-zap-ecr-registry-test", "govukpay/endtoend-zap", "pay_aws_test_account_id"
+  ) |> withTag("latest")
+
   shared_resources.payECRResourceWithVariant(
     "endtoend-candidate-ecr-registry-test", "govukpay/endtoend", "pay_aws_test_account_id", "candidate"
   )
 
+  shared_resources.payECRResourceWithVariant(
+    "endtoend-zap-candidate-ecr-registry-test", "govukpay/endtoend-zap", "pay_aws_test_account_id", "candidate"
+  )
+
   shared_resources.payDockerHubResource(
     "endtoend-dockerhub", "governmentdigitalservice/pay-endtoend", "latest-master"
+  )
+
+  shared_resources.payDockerHubResource(
+    "endtoend-zap-dockerhub", "governmentdigitalservice/pay-endtoend-zap", "latest-master"
   )
 
   for (image_to_build in images_to_multi_arch_build) {
@@ -86,7 +107,9 @@ groups {
     name = "end-to-end"
     jobs {
       "build-and-push-endtoend-candidate"
+      "build-and-push-endtoend-zap-candidate"
       "endtoend-e2e"
+      "endtoend-zap-e2e"
     }
   }
   for (image in images_to_multi_arch_build) {
@@ -135,6 +158,32 @@ jobs = new {
   }
 
   new {
+    name = "build-and-push-endtoend-zap-candidate"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          shared_test.getStep("endtoend-zap-git-release", true, false)
+          shared_test.getPayCi
+        }
+      }
+
+      shared_resources.generateDockerCredsConfigStep
+      new shared_resources.ParseGithubAlphaReleaseTagTask { gitRelease = "endtoend-zap-git-release" }
+      shared_test.loadVar("release_number_tag", "tags/release-number")
+      buildImage("build-endtoend-zap-image", "endtoend-zap-git-release")
+      putCandidateImage("endtoend-zap-candidate-ecr-registry-test")
+    }
+
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "Failed to build and push pay-endtoend-zap candidate image"
+        slack_channel_for_failure = "#govuk-pay-starling" }
+    )
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "Built and pushed pay-endtoend-zap candidate image" }
+    )
+  }
+
+  new {
     name = "endtoend-e2e"
     plan {
       new InParallelStep {
@@ -166,7 +215,6 @@ jobs = new {
         in_parallel = new Listing {
           shared_test.runCodeBuild("run-codebuild-card", "card.json", 3)
           shared_test.runCodeBuild("run-codebuild-products", "products.json", 1)
-          shared_test.runCodeBuild("run-codebuild-zap", "zap.json", 1)
         }
       }
 
@@ -193,6 +241,66 @@ jobs = new {
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "pay-endtoend passed post-merge e2e tests and was pushed as a final release" }
+    )
+  }
+
+  new {
+    name = "endtoend-zap-e2e"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing {
+          new GetStep {
+            get = "endtoend-zap-candidate-ecr-registry-test"
+            trigger = true
+            passed = new Listing { "build-and-push-endtoend-zap-candidate" }
+            params { ["format"] = "oci" }
+          }
+          shared_test.getPayCi
+        }
+      }
+
+      new shared_resources.ParseECRCandidateTagTask { ecr_repo = "endtoend-zap-candidate-ecr-registry-test" }
+      shared_test.loadVar("candidate_number_tag", "parse-candidate-tag/release-number")
+      shared_test.assumeCodeBuildRole("executor", "e2e-test-assume-role")
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          shared_test.loadVar("candidate-image-tag", "endtoend-zap-candidate-ecr-registry-test/tag")
+          shared_test.loadAssumeRoleVar
+        }
+      }
+
+      shared_test.prepareCodeBuild("endtoend", "prepare-e2e-codebuild.yml", "((.:candidate-image-tag))")
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          shared_test.runCodeBuild("run-codebuild-zap", "zap.json", 1)
+        }
+      }
+
+      new InParallelStep {
+        in_parallel = new Listing {
+          putStep(
+            "endtoend-zap-ecr-registry-test",
+            "endtoend-zap-candidate-ecr-registry-test/image.tar",
+            "parse-candidate-tag/release-tag",
+            true
+          )
+          putStep(
+            "endtoend-zap-dockerhub",
+            "endtoend-zap-candidate-ecr-registry-test/image.tar",
+            "",
+            true
+          )
+        }
+      }
+    }
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "pay-endtoend-zap failed post-merge e2e tests"
+        slack_channel_for_failure = "#govuk-pay-starling" }
+    )
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "pay-endtoend-zap passed post-merge e2e tests and was pushed as a final release" }
     )
   }
 
