@@ -58,6 +58,7 @@ resources {
       paths = new {
         "provisioning/terraform/modules/pay_logging_pipeline/**"
         "provisioning/terraform/deployments/**/logging_pipeline/**"
+        "provisioning/terraform/deployments/test/e2e_test_logging_pipeline/**"
       }
     }
   }
