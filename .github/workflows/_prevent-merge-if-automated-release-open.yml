@@ -1,0 +1,32 @@
+name: Check for unmerged release PR
+
+on:
+  workflow_call:
+
+permissions:
+  pull-requests: read
+
+jobs:
+  check_merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for unmerged release
+        id: check_pr
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          THIS_PR_NUMBER: ${{ github.event.pull_request.number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const THIS_PR_NUMBER = Number(process.env.THIS_PR_NUMBER)
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open'
+            })
+
+            const openRelease = prs.data.find(pr => pr.user.login === 'alphagov-pay-ci-concourse' && pr.state === 'open' && pr.number !== THIS_PR_NUMBER)
+
+            if (openRelease) {
+              core.setFailed(`There is an unmerged release PR, please merge it before merging this PR. \n PR Link: ${openRelease.html_url}`)
+            }
