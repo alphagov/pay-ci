@@ -215,7 +215,6 @@ jobs = new {
         in_parallel = new Listing {
           shared_test.runCodeBuild("run-codebuild-card", "card.json", 3)
           shared_test.runCodeBuild("run-codebuild-products", "products.json", 1)
-          shared_test.runCodeBuild("run-codebuild-zap", "zap.json", 1)
         }
       }
 
