@@ -9,6 +9,7 @@ params:
   AWS_SECRET_ACCESS_KEY:
   AWS_SESSION_TOKEN:
   AWS_REGION: eu-west-1
+  CLOUDTRAIL_CANARY_VERSION:
   FIREHOSE_TRANSFORMATION_VERSION:
   S3_TO_FIREHOSE_VERSION:
 run:
@@ -16,6 +17,10 @@ run:
   args:
     - -ec
     - |
+      echo "Promoting Cloudtrail Canary lambda [version - ${CLOUDTRAIL_CANARY_VERSION}] to prod..."
+      aws s3 cp s3://pay-govuk-lambda-deploy/pay-logging-cloudtrail-canary-v${CLOUDTRAIL_CANARY_VERSION}.zip \
+                s3://pay-govuk-lambda-deploy/prod/pay-logging-cloudtrail-canary-v${CLOUDTRAIL_CANARY_VERSION}.zip
+
       echo "Promoting Firehose transformation lambda [version - ${FIREHOSE_TRANSFORMATION_VERSION}] to prod..."
       aws s3 cp s3://pay-govuk-lambda-deploy/pay-logging-firehose-transformation-v${FIREHOSE_TRANSFORMATION_VERSION}.zip \
                 s3://pay-govuk-lambda-deploy/prod/pay-logging-firehose-transformation-v${FIREHOSE_TRANSFORMATION_VERSION}.zip

@@ -6,6 +6,7 @@ import "../common/shared_resources_for_deploy_pipelines.pkl"
 import "../common/PayResources.pkl"
 
 local nodeJsLambdas = new Listing<String> {
+  "pay-logging-cloudtrail-canary"
   "pay-logging-firehose-transformation"
   "pay-logging-s3-to-firehose-delivery"
 }

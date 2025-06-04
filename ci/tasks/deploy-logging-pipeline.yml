@@ -2,6 +2,7 @@
 platform: linux
 inputs:
   - name: pay-infra
+  - name: pay-logging-cloudtrail-canary
   - name: pay-logging-firehose-transformation
   - name: pay-logging-s3-to-firehose-delivery
 image_resource:
@@ -21,11 +22,13 @@ run:
   args:
     - -ec
     - |
+      CLOUDTRAIL_CANARY_VERSION=$(cat pay-logging-cloudtrail-canary/version)
       FIREHOSE_TRANSFORMATION_VERSION=$(cat pay-logging-firehose-transformation/version)
       S3_TO_FIREHOSE_VERSION=$(cat pay-logging-s3-to-firehose-delivery/version)
       cd "$TERRAFORM_PATH"
       terraform init
       terraform $TERRAFORM_ACTION \
+        -var "cloudtrail_canary_lambda_version=${CLOUDTRAIL_CANARY_VERSION}" \
         -var "firehose_transformation_lambda_version=${FIREHOSE_TRANSFORMATION_VERSION}" \
         -var "s3_to_firehose_lambda_version=${S3_TO_FIREHOSE_VERSION}" \
         -auto-approve

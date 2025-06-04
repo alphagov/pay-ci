@@ -26,6 +26,10 @@ local function getEnvironmentOrAccount(loggingEnv: LoggingEnv): String =
   if (loggingEnv.environment != "" && loggingEnv.environment.length > 0) loggingEnv.environment
   else loggingEnv.account.toString()
 
+local function getRegexForCloudtrailCanary(): String =
+  if (concourse_team_name == "pay-deploy") "prod/pay-logging-cloudtrail-canary-v(.*).zip"
+  else "pay-logging-cloudtrail-canary-v(.*).zip"
+
 local function getRegexForFirehoseTransformation(): String =
   if (concourse_team_name == "pay-deploy") "prod/pay-logging-firehose-transformation-v(.*).zip"
   else "pay-logging-firehose-transformation-v(.*).zip"
@@ -55,6 +59,23 @@ resources {
         "provisioning/terraform/modules/pay_logging_pipeline/**"
         "provisioning/terraform/deployments/**/logging_pipeline/**"
       }
+    }
+  }
+
+  new Pipeline.Resource {
+    name = "pay-logging-cloudtrail-canary"
+    type = "s3"
+    icon = "lambda"
+
+    source = new {
+      ["access_key_id"] = "((readonly_access_key_id))"
+      ["secret_access_key"] = "((readonly_secret_access_key))"
+      ["session_token"] = "((readonly_session_token))"
+      ["region_name"] = "eu-west-1"
+      ["aws_role_arn"] = "arn:aws:iam::((\(getAWSAccountIdVar()))):role/concourse"
+      ["bucket"] = "pay-govuk-lambda-deploy"
+      ["regexp"] = getRegexForCloudtrailCanary()
+      ["skip_download"] = true
     }
   }
 
@@ -120,6 +141,7 @@ local function getDeployJob(loggingEnv: LoggingEnv): Job = new {
       in_parallel = new Listing<Step> {
         getStep("pay-infra", true, loggingEnv.depends_on_job)
         getStep("pay-ci", false, "")
+        getStep("pay-logging-cloudtrail-canary", true, loggingEnv.depends_on_job)
         getStep("pay-logging-firehose-transformation", true, loggingEnv.depends_on_job)
         getStep("pay-logging-s3-to-firehose-delivery", true, loggingEnv.depends_on_job)
       }
@@ -133,6 +155,7 @@ local function getDeployJob(loggingEnv: LoggingEnv): Job = new {
     new InParallelStep {
       in_parallel = new Listing<Step> {
         shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+        shared_resources.loadVar("cloudtrail-canary-version", "pay-logging-cloudtrail-canary/version")
         shared_resources.loadVar("firehose-transformation-version", "pay-logging-firehose-transformation/version")
         shared_resources.loadVar("s3-to-firehose-version", "pay-logging-s3-to-firehose-delivery/version")
       }
@@ -143,6 +166,7 @@ local function getDeployJob(loggingEnv: LoggingEnv): Job = new {
       file = "pay-ci/ci/tasks/deploy-logging-pipeline.yml"
       input_mapping = new {
         ["pay-infra"] = "pay-infra"
+        ["pay-logging-cloudtrail-canary"] = "pay-logging-cloudtrail-canary"
         ["pay-logging-firehose-transformation"] = "pay-logging-firehose-transformation"
         ["pay-logging-s3-to-firehose-delivery"] = "pay-logging-s3-to-firehose-delivery"
       }
@@ -224,6 +248,7 @@ local function getE2EJob(loggingEnv: LoggingEnv): Job = new {
       in_parallel = new Listing<Step> {
         getStep("pay-ci", false, "deploy-\(getEnvironmentOrAccount(loggingEnv))")
         getStep("pay-infra", true, "deploy-\(getEnvironmentOrAccount(loggingEnv))")
+        getStep("pay-logging-cloudtrail-canary", true, "deploy-\(getEnvironmentOrAccount(loggingEnv))")
         getStep("pay-logging-firehose-transformation", true, "deploy-\(getEnvironmentOrAccount(loggingEnv))")
         getStep("pay-logging-s3-to-firehose-delivery", true, "deploy-\(getEnvironmentOrAccount(loggingEnv))")
       }
@@ -282,6 +307,14 @@ local function getPromoteLoggingLambdasToProdJob(): Job = new {
       in_parallel = new Listing<Step> {
         getStep("pay-ci", false, "")
         new GetStep {
+          get = "pay-logging-cloudtrail-canary"
+          trigger = true
+          passed {
+            "deploy-test"
+            "deploy-test-12"
+          }
+        }
+        new GetStep {
           get = "pay-logging-firehose-transformation"
           trigger = true
           passed {
@@ -308,6 +341,7 @@ local function getPromoteLoggingLambdasToProdJob(): Job = new {
     new InParallelStep {
       in_parallel = new Listing<Step> {
         shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+        shared_resources.loadVar("cloudtrail-canary-version", "pay-logging-cloudtrail-canary/version")
         shared_resources.loadVar("firehose-transformation-version", "pay-logging-firehose-transformation/version")
         shared_resources.loadVar("s3-to-firehose-version", "pay-logging-s3-to-firehose-delivery/version")
       }
@@ -316,6 +350,7 @@ local function getPromoteLoggingLambdasToProdJob(): Job = new {
       task = "promote-logging-lambdas-to-prod"
       file = "pay-ci/ci/tasks/promote-logging-lambdas.yml"
       params = new {
+        ["CLOUDTRAIL_CANARY_VERSION"] = "((.:cloudtrail-canary-version))"
         ["FIREHOSE_TRANSFORMATION_VERSION"] = "((.:firehose-transformation-version))"
         ["S3_TO_FIREHOSE_VERSION"] = "((.:s3-to-firehose-version))"
         ...shared_resources_for_deploy_pipelines.getAWSAssumeRoleCreds()
