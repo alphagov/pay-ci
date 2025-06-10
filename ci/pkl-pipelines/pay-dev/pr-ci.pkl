@@ -13,7 +13,8 @@ local e2e_test_apps = new Mapping<String, AppConfig> {
   ["aws-bastion"] = new { tests = new {} }
   ["cardid"] = new { tests = new { "card" "zap" } }
   ["connector"] = new { tests = new {"card" }; migrate_from = "card-connector" }
-  ["endtoend"] = new { tests = new {"card" "products" "zap"} }
+  ["endtoend"] = new { tests = new {"card" "products"} }
+  ["endtoend-zap"] = new { tests = new {"zap"} }
   ["frontend"] = new { tests = new {"card" "products" "zap"}; migrate_from = "card-frontend" }
   ["ledger"] = new { tests = new { "card" } }
   ["products"] = new { tests = new { "products" } }
@@ -29,6 +30,7 @@ local groupMap = new Mapping <String, Listing<String>> {
   ["cardid"] = new { "cardid-e2e" }
   ["connector"] = new { "connector-e2e" }
   ["end_to_end"] = new { "endtoend-e2e" "pay-ci-endtoend-config" }
+  ["end_to_end-zap"] = new { "endtoend-zap-e2e" "pay-ci-endtoend-config" }
   ["frontend"] = new { "frontend-e2e" }
   ["ledger"] = new { "ledger-e2e" }
   ["products"] = new { "products-e2e" }
