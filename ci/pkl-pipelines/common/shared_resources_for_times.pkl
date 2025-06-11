@@ -48,8 +48,8 @@ class PayCronResource extends Pipeline.Resource {
 quarterlyCronResource: Pipeline.Resource = new PayCronResource {
   name = "quarterly"
   source {
-    // At 00:00 on 1st of the month in March, June, September, and December.
-    ["expression"] = "0 0 1 MAR,JUN,SEP,DEC *"
+    // At 00:00 on 1st of the month in Feb, May, Aug, and Nov.
+    ["expression"] = "0 0 1 FEB,MAY,AUG,NOV *"
   }
 }
 
@@ -61,8 +61,8 @@ getQuarterlyCronTrigger: Pipeline.GetStep = new {
 twiceYearlyCronResource: Pipeline.Resource = new PayCronResource {
   name = "twice-yearly"
   source {
-    // At 00:00 on 1st of the month in June, and December.
-    ["expression"] = "0 0 1 JUN,DEC *"
+    // At 00:00 on 1st of the month in May, and November.
+    ["expression"] = "0 0 1 MAY,NOV *"
   }
 }
 
