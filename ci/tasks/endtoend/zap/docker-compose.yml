@@ -314,7 +314,7 @@ services:
       driver: "json-file"
 
   endtoend:
-    image: ${DOCKER_REGISTRY_URI:-}govukpay/endtoend-zap:latest
+    image: ${DOCKER_REGISTRY_URI:-}${repo_endtoendzap:-govukpay/endtoend-zap}:${tag_endtoendzap:-latest}
     env_file: ../docker-config/endtoend.env
     environment:
       - MAVEN_OPTS=${END_TO_END_JAVA_OPTS}
