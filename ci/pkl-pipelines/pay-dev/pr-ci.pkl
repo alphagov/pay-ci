@@ -21,7 +21,7 @@ local e2e_test_apps = new Mapping<String, AppConfig> {
   ["products-ui"] = new { tests = new { "products" }; node_build = true }
   ["publicapi"] = new { tests = new {"card" "products" "zap"} }
   ["publicauth"] = new { tests = new { "card" "zap" } }
-  ["selfservice"] = new { tests = new { "card" }; node_build = true }
+  ["selfservice"] = new { tests = new { "card" "products" }; node_build = true }
 } // pay-ci-endtoend-config is different enough to break out
 
 local groupMap = new Mapping <String, Listing<String>> {
