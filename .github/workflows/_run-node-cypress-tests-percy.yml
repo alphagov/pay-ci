@@ -1,0 +1,54 @@
+name: Github Actions for NodeJS apps - run cypress tests
+
+on:
+  workflow_call:
+    inputs:
+      LIBGL_ALWAYS_SOFTWARE:
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  cypress-tests:
+    runs-on: ubuntu-latest
+    name: Cypress tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - name: Setup
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
+        with:
+          node-version-file: ".nvmrc"
+      - name: Cache build directories
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        with:
+          path: |
+            node_modules
+            govuk_modules
+            public
+            dist
+          key: ${{ runner.os }}-build-id-${{ github.head_ref }}-${{ github.sha }}
+      - name: Parse Cypress version
+        id: parse-cypress-version
+        run: echo "CYPRESS_VERSION=$(jq -r '.devDependencies.cypress' package.json)" >> $GITHUB_OUTPUT
+      - name: Cache Cypress
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ steps.parse-cypress-version.outputs.CYPRESS_VERSION }}
+      - name: Run cypress tests
+        env:
+          LIBGL_ALWAYS_SOFTWARE: ${{ inputs.LIBGL_ALWAYS_SOFTWARE }}
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+        run: |
+          if [ -z "${{ secrets.percy_token }}" ]; then
+            echo "Secret PERCY_TOKEN does not exist or is empty"
+          else
+            echo "Secret PERCY_TOKEN is set"
+          fi
+          npm run cypress:server > /dev/null 2>&1 &
+          sleep 3
+          npm run cypress:test-percy
