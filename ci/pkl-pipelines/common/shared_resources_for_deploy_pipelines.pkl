@@ -70,7 +70,6 @@ local payApps: Listing<PayApplication> = new Listing<PayApplication> {
 local payHelpers: Listing<PayApplication> = new Listing<PayApplication> {
   new { name = "adot"; smoke_test = false; }
   new { name = "alpine"; smoke_test = false; override_app_to_deploy = "scheduled-tasks"; override_github_repo = "pay-infra"; push_to_docker_hub = false }
-  new { name = "nginx-forward-proxy"; smoke_test = false; override_app_to_deploy = "frontend"; push_to_docker_hub = false }
   new { name = "nginx-proxy"; smoke_test = false; override_ecr_repo = "docker-nginx-proxy"
     override_app_to_deploy = "toolbox" }
   new { name = "stream-s3-sqs"; smoke_test = false; override_app_to_deploy = "scheduled-tasks"; push_to_docker_hub = false}

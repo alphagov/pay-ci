@@ -50,7 +50,6 @@ local testEnvConfigForApps: Mapping<Identifier, AdditionalAppConfigForTestEnv> =
   ["egress"] = new { github_branch = "main"; build_job_name_to_override = "build-and-push-egress-candidate" }
   ["frontend"] = new { run_e2e_tests = true }
   ["ledger"] = new { run_e2e_tests = true }
-  ["nginx-forward-proxy"] = new { smoke_test = true; github_branch = "main" }
   ["nginx-proxy"] = new { smoke_test = true }
   ["notifications"] = new {}
   ["products"] = new { run_e2e_tests = true }
@@ -142,7 +141,7 @@ groups {
         }
 
         when (app.smoke_test || getTestEnvConfig(app.name).smoke_test) {
-          when (app.name == "nginx-forward-proxy" || app.name == "nginx-proxy") {
+          when (app.name == "nginx-proxy") {
             "smoke-test-frontend"
 
             when (app.name == "nginx-proxy") {
@@ -588,14 +587,11 @@ local function getJobToPushImageToStaging(app): Job = new {
             }
             trigger = true
             passed {
-              when (app.name == "nginx-forward-proxy") {
-                "smoke-test-frontend"
-              }
               when (app.name == "nginx-proxy") {
                 "smoke-test-frontend"
                 "smoke-test-products-ui"
               }
-              when (!(app.name == "adot" || app.name == "nginx-forward-proxy" || app.name == "nginx-proxy")) {
+              when (!(app.name == "adot" || app.name == "nginx-proxy")) {
                 when (app.pact_tag) {
                   "\(app.name)-pact-tag"
                 } else {
