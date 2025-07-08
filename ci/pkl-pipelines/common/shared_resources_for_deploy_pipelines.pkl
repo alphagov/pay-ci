@@ -127,9 +127,7 @@ function waitForDeployTask(app: PayApplication, environment: String) = new Pipel
       ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
       ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
     }
-    when (app.name == "frontend") {
-      ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
-    }
+
     ...getAWSAssumeRoleCreds()
   }
 }
@@ -182,9 +180,6 @@ function deployApplicationTask(app: PayApplication, awsEnvVars: Map,
     }
     ["ACCOUNT"] = awsEnvVars["account"]
     ["ENVIRONMENT"] = awsEnvVars["environment"]
-    when (app.name == "frontend") {
-      ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
-    }
     when (app.is_a_java_or_node_app == true) {
       ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
       ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"

@@ -10,7 +10,6 @@ const {
   APP_NAME: appName,
   APPLICATION_IMAGE_TAG: appVersion,
   NGINX_IMAGE_TAG: nginxProxyVersion,
-  NGINX_FORWARD_PROXY_IMAGE_TAG: nginxForwardProxyVersion,
   ADOT_IMAGE_TAG: adotVersion,
   ENVIRONMENT: env
 } = process.env
@@ -61,9 +60,6 @@ async function run () {
       }
       if (adotVersion) {
         deploymentDetails.adotVersion = adotVersion
-      }
-      if (nginxForwardProxyVersion) {
-        deploymentDetails.nginxForwardProxyVersion = nginxForwardProxyVersion
       }
       if (rolloutState === 'FAILED') {
         console.log(

@@ -14,7 +14,6 @@ params:
   AWS_REGION: eu-west-1
   APPLICATION_IMAGE_TAG:
   NGINX_IMAGE_TAG:
-  NGINX_FORWARD_PROXY_IMAGE_TAG:
   ADOT_IMAGE_TAG:
   APP_NAME:
   ACCOUNT:
@@ -28,7 +27,6 @@ run:
       terraform init
       terraform apply \
         -var application_image_tag=${APPLICATION_IMAGE_TAG} \
-        -var forward_proxy_image_tag=${NGINX_FORWARD_PROXY_IMAGE_TAG} \
         -var nginx_image_tag=${NGINX_IMAGE_TAG} \
         -var adot_image_tag=${ADOT_IMAGE_TAG} \
         -auto-approve

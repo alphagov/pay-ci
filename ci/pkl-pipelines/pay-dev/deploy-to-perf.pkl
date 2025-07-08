@@ -164,10 +164,6 @@ local function getResourcesToDeployApp(app: PayApp): Listing<Step> = new Listing
     getStep("\(app.name)-db-ecr-registry-perf", true)
   }
 
-  when (app.name == "frontend") {
-    getStep("nginx-forward-proxy-ecr-registry-perf", true)
-  }
-
   when (app.is_a_java_or_node_app) {
     getStep("nginx-proxy-ecr-registry-perf", true)
     getStep("adot-ecr-registry-perf", true)
@@ -189,10 +185,6 @@ local function loadVariablesToDeployApp(app: PayApp): Listing<Step> = new Listin
     loadVar("nginx_release_number", "nginx-release-info/release-number")
   }
 
-  when (app.name == "frontend") {
-    loadVar("nginx_forward_proxy_release_number", "nginx-forward-proxy-release-info/release-number")
-    loadVar("nginx_forward_proxy_image_tag", "nginx-forward-proxy-ecr-registry-perf/tag")
-  }
 }
 
 local function parseReleaseTag(appName: String, includeOutputMapping: Boolean) = new TaskStep {
@@ -217,9 +209,6 @@ local function parseReleaseTagsToDeployApp(app: PayApp): Listing<Step> = new Lis
     parseReleaseTag("nginx-proxy", true)
   }
 
-  when (app.name == "frontend") {
-    parseReleaseTag("nginx-forward-proxy", true)
-  }
 }
 
 local function startDatabase(app: PayApp) = new TaskStep {
@@ -257,9 +246,6 @@ local function sendSlackNoticationAndPutMetrics(app: PayApp, isASuccess: Boolean
       when (app.is_a_java_or_node_app == true) {
         shared_resources_for_metrics.paySendNginxReleaseMetric(isASuccess, "test-perf-1")
         shared_resources_for_metrics.paySendAdotReleaseMetric(isASuccess, "test-perf-1")
-      }
-      when (app.name == "frontend") {
-        shared_resources_for_metrics.paySendNginxForwardProxyReleaseMetric(isASuccess, "test-perf-1")
       }
     }
   }

@@ -510,9 +510,6 @@ local function getJobToSmokeTestApp(app): Job = new {
       in_parallel = new InParallelConfig {
         steps = new Listing<Step> {
           getStepWithTriggerAndPassed("\(app.name)-ecr-registry-test", "deploy-\(app.name)")
-          when (app.name == "frontend") {
-            getStepWithTriggerAndPassed("nginx-forward-proxy-ecr-registry-test", "deploy-\(app.name)")
-          }
           when (app.name == "frontend" || app.name == "products-ui") {
             getStepWithTriggerAndPassed("nginx-proxy-ecr-registry-test", "deploy-\(app.name)")
           }
@@ -713,9 +710,6 @@ local function getResourcesToDeployApp(app: PayApp): InParallelStep = new InPara
         getStep("adot-ecr-registry-test", true)
       }
       getStep("nginx-proxy-ecr-registry-test", true)
-      when (app.name == "frontend") {
-        getStep("nginx-forward-proxy-ecr-registry-test", true)
-      }
     }
 
     getStep("pay-infra", false)
@@ -739,9 +733,6 @@ local function createNotificationSnippets(app: PayApp, action: String) = new Tas
     when (app.is_a_java_or_node_app && action == "Deployment") {
       ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
       ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
-      when (app.name == "frontend") {
-        ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
-      }
     }
   }
 }
@@ -757,9 +748,6 @@ local function loadVariablesToDeployApp(app: PayApp): InParallelStep = new InPar
         loadVar("adot_image_tag", "adot-ecr-registry-test/tag")
       }
       loadVar("nginx_image_tag", "nginx-proxy-ecr-registry-test/tag")
-      when (app.name == "frontend") {
-        loadVar("nginx_forward_proxy_image_tag", "nginx-forward-proxy-ecr-registry-test/tag")
-      }
     }
   }
 }
@@ -772,9 +760,6 @@ local function loadNotificationSnippetVariables(app: PayApp, isDeployJob: Boolea
     when (app.is_a_java_or_node_app == true && isDeployJob) {
       loadVar("adot_release_number", "snippet/adot_release_number")
       loadVar("nginx_release_number", "snippet/nginx_release_number")
-      when (app.name == "frontend") {
-        loadVar("nginx_forward_proxy_release_number", "snippet/nginx_forward_proxy_release_number")
-      }
     }
     loadVar("success_snippet", "snippet/success")
     loadVar("failure_snippet", "snippet/failure")
@@ -849,9 +834,6 @@ local function checkReleaseVersions(app): TaskStep = new TaskStep {
       ["ADOT_IMAGE_TAG"] = "((.:adot_image_tag))"
       ["NGINX_IMAGE_TAG"] = "((.:nginx_image_tag))"
     }
-    when (app.name == "frontend") {
-      ["NGINX_FORWARD_PROXY_IMAGE_TAG"] = "((.:nginx_forward_proxy_image_tag))"
-    }
     ["APP_NAME"] = app.name
   }
 }
@@ -920,9 +902,6 @@ local function sendMetrics(app: PayApp, metricsConfig: MetricsConfig) = new {
   shared_resources_for_metrics.paySendAppReleaseMetric(metricsConfig.is_a_success, "test-12")
   when (app.is_a_java_or_node_app == true && metricsConfig.put_sidecar_metrics) {
     shared_resources_for_metrics.paySendNginxReleaseMetric(metricsConfig.is_a_success, "test-12")
-    when (app.name == "frontend") {
-      shared_resources_for_metrics.paySendNginxForwardProxyReleaseMetric(metricsConfig.is_a_success, "test-12")
-    }
     shared_resources_for_metrics.paySendAdotReleaseMetric(metricsConfig.is_a_success, "test-12")
   }
 }
