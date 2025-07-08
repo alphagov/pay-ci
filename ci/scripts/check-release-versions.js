@@ -169,7 +169,6 @@ async function run () {
     APPLICATION_IMAGE_TAG,
     ADOT_IMAGE_TAG,
     NGINX_IMAGE_TAG,
-    NGINX_FORWARD_PROXY_IMAGE_TAG,
   } = process.env
 
   try {
@@ -195,9 +194,6 @@ async function run () {
       await checkReleaseVersion('nginx', NGINX_IMAGE_TAG, containerDefinitions)
     }
 
-    if (NGINX_FORWARD_PROXY_IMAGE_TAG) {
-      await checkReleaseVersion('nginx-forward-proxy', NGINX_FORWARD_PROXY_IMAGE_TAG, containerDefinitions)
-    }
   } catch (err) {
     console.log(err.message)
     process.exit(1)
