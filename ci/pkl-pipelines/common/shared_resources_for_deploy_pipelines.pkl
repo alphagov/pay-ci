@@ -53,7 +53,7 @@ local payApps: Listing<PayApplication> = new Listing<PayApplication> {
   new { name = "cardid"; pact_tag = true; is_a_java_or_node_app = true }
   new { name = "connector"; has_db = true; pact_tag = true; is_a_java_or_node_app = true }
   new { name = "egress"; use_app_specific_deploy_task = true }
-  new { name = "frontend"; use_app_specific_deploy_task = true; pact_tag = true;is_a_java_or_node_app = true }
+  new { name = "frontend"; pact_tag = true;is_a_java_or_node_app = true }
   new { name = "ledger"; has_db = true; pact_tag = true ; is_a_java_or_node_app = true }
   new { name = "notifications"; push_to_docker_hub = false }
   new { name = "products"; has_db = true; pact_tag = true ; is_a_java_or_node_app = true }
@@ -158,11 +158,7 @@ function deployApplicationTask(app: PayApplication, awsEnvVars: Map,
   task = taskName
 
   when (app.use_app_specific_deploy_task) {
-    when (app.name == "frontend") {
-      file = "pay-ci/ci/tasks/deploy-\(app.name)-with-adot.yml"
-    } else {
-      file = "pay-ci/ci/tasks/deploy-\(app.name).yml"
-    }
+    file = "pay-ci/ci/tasks/deploy-\(app.name).yml"
   } else {
     when (app.name != "notifications") {
       file = "pay-ci/ci/tasks/deploy-app-with-adot.yml"
