@@ -1,0 +1,13 @@
+name: Check Pact broker image
+
+on:
+  pull_request:
+    paths:
+      - 'ci/docker/pact-broker'
+
+permissions:
+  contents: read
+
+jobs:
+  check-docker-base-images-are-manifests:
+    uses: alphagov/pay-ci/.github/workflows/_validate_docker_image_is_manifest.yml@master
