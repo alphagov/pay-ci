@@ -3,7 +3,7 @@ name: Check Pact broker image
 on:
   pull_request:
     paths:
-      - 'ci/docker/pact-broker'
+      - 'ci/docker/pact-broker/**'
 
 permissions:
   contents: read

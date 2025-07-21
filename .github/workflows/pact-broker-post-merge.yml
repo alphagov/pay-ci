@@ -15,4 +15,4 @@ jobs:
       contents: write
     uses: alphagov/pay-ci/.github/workflows/_create-alpha-release-tag.yml@master
     with:
-      tag_prefix: pact-broker_
+      tag_prefix: pactbroker_
