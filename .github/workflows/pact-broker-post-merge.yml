@@ -1,0 +1,18 @@
+name: Pact broker post-merge
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'ci/docker/pact-broker/**'
+
+concurrency: pact-broker-post-merge
+
+jobs:
+  tag-release:
+    permissions:
+      contents: write
+    uses: alphagov/pay-ci/.github/workflows/_create-alpha-release-tag.yml@master
+    with:
+      tag_prefix: pact-broker_
