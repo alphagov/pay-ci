@@ -16,17 +16,10 @@ resource_types {
 
 resources {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/pact-broker.pkl", "master")
-  new PayResources.PayGitHubResource {
-    name = "pact-broker-src"
-    repoName = "pay-ci"
-    source {
-      branch = "master"
-      paths = new {"ci/docker/pact-broker/*"}
-    }
-  }
   shared_resources.payCiGitHubResource
   new PayResources.PayInfraGitHubResource {}
-  shared_resources.payECRResource("pact-broker-ecr-registry-deploy", "govukpay/pact-broker", "pay_aws_deploy_account_id")
+  shared_resources.payECRResourceWithVariant("pact-broker-ecr-registry-deploy",
+    "govukpay/pact-broker", "pay_aws_deploy_account_id", "release")
   shared_resources.slackNotificationResource
 }
 
@@ -38,7 +31,6 @@ jobs {
       getStep("pay-ci")
       getStep("pay-infra")
       (getStep("pact-broker-ecr-registry-deploy")) {
-        passed = new Listing<Identifier> { "build-and-push-pact-broker" }
         trigger = true
       }
       new TaskStep {
@@ -83,73 +75,6 @@ jobs {
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "Deployed pay-pact-broker image" }
-    )
-  }
-  new {
-    name = "build-and-push-pact-broker"
-    plan {
-      new InParallelStep {
-        in_parallel = new Listing<Step> {
-          (getStep("pact-broker-src")) { trigger = true }
-          getStep("pay-ci")
-        }
-      }
-      shared_resources.generateDockerCredsConfigStep
-      new TaskStep {
-        task = "get-pact-broker-image-tag"
-        file = "pay-ci/ci/tasks/get-image-tag-from-dockerfile.yml"
-        input_mapping {
-          ["src"] = "pact-broker-src"
-        }
-        params {
-          ["DOCKERFILE"] = "ci/docker/pact-broker/Dockerfile"
-        }
-      }
-      new TaskStep {
-        task = "build-pact-broker-image"
-        privileged = true
-        params {
-          ["CONTEXT"] = "pact-broker-src/ci/docker/pact-broker"
-          ["DOCKER_CONFIG"] = "docker_creds"
-          ["UNPACK_ROOTFS"] = "true"
-        }
-        config {
-          platform = "linux"
-          image_resource {
-            type = "registry-image"
-            source {
-              ["repository"] = "concourse/oci-build-task"
-            }
-          }
-          inputs = new Listing {
-            new TaskConfig.Input { name = "pact-broker-src" }
-            new TaskConfig.Input { name = "docker_creds" }
-          }
-          outputs = new Listing {
-            new TaskConfig.Output { name = "image" }
-          }
-          run {
-            path = "build"
-          }
-        }
-      }
-      new PutStep {
-        put = "pact-broker-ecr-registry-deploy"
-        params {
-          ["image"] = "image/image.tar"
-          ["additional_tags"] = "tags/tag"
-        }
-        get_params {
-          ["skip_download"] = true
-        }
-      }
-    }
-    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
-      new SlackNotificationConfig { message = "Failed to build and push pay-pact-broker image"
-        slack_channel_for_failure = "#govuk-pay-starling" }
-    )
-    on_success = shared_resources_for_slack_notifications.paySlackNotification(
-      new SlackNotificationConfig { is_a_success = true; message = "Built and pushed pay-pact-broker image" }
     )
   }
 }

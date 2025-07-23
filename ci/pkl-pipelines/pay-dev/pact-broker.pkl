@@ -1,0 +1,192 @@
+amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_slack_notifications.pkl"
+import "../common/shared_resources_for_multi_arch_builds.pkl" as shared_multiarch_build
+import "../common/PayResources.pkl"
+
+local typealias SlackNotificationConfig = shared_resources_for_slack_notifications.SlackNotificationConfig
+
+resource_types {
+  shared_resources.slackNotificationResourceType
+}
+
+resources {
+  pipeline_self_update.PayPipelineSelfUpdateResource("pay-dev/pact-broker.pkl", "master")
+  new PayResources.PayGitHubResource {
+    name = "pact-broker-git-release"
+    repoName = "pay-ci"
+    source {
+      branch = "master"
+      tag_regex = "pactbroker_alpha_release-(.*)"
+    }
+  }
+
+  shared_resources.payCiGitHubResource
+  shared_resources.payECRResourceWithVariant("pact-broker-candidate", "govukpay/pact-broker", "pay_aws_test_account_id", "candidate")
+  shared_resources.slackNotificationResource
+}
+
+jobs {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-dev/pact-broker.pkl")
+
+  new {
+    name = "build-and-push-pactbroker-candidate"
+    plan {
+      (getStep("pact-broker-git-release")) { trigger = true }
+      getStep("pay-ci")
+
+      getParseReleaseTagStep()
+
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps = new Listing<Step> {
+            new shared_resources.AssumeConcourseRoleTask {
+              output_name = "assume-role"
+              session_name = "codebuild-assume-role"
+              role_name = "pay-cd-pay-dev-codebuild-builder-test-12"
+            }
+            loadVar("app_name", "tags/app_name")
+            loadVar("app_release_number", "tags/release-number")
+            loadVar("release-number", "tags/release-number")
+            loadVar("release-name", "pact-broker-git-release/.git/ref")
+            loadVar("release-sha", "tags/release-sha")
+            loadVar("candidate-image-tag", "tags/candidate-tag")
+            loadVar("date", "tags/date")
+
+            shared_resources.generateDockerCredsConfigStep
+          }
+        }
+      }
+      shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+
+      ...shared_multiarch_build.multiArchCandidateBuild(
+        new shared_multiarch_build.ImageToMultiArchBuild {
+          name = "pact-broker"
+          ecr_repo = "govukpay/pact-broker"
+          push_to_docker_hub = false
+        }
+      )
+    }
+
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "Failed to build pact-broker candidate image"
+        slack_channel_for_failure = "#govuk-pay-starling" }
+    )
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "pact-broker candidate image built successfully" }
+    )
+  }
+
+  new {
+    name = "retag-image-as-latest-and-copy-to-ecr-deploy"
+
+    plan {
+      getStep("pay-ci")
+      getStep("pact-broker-git-release")
+      new GetStep {
+        get = "pact-broker-candidate"
+        trigger = true
+        params {
+          ["format"] = "oci"
+        }
+      }
+      getParseReleaseTagStep()
+
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps = new Listing<Step> {
+            loadVar("release_number", "tags/release-number")
+            loadVar("candidate-image-tag", "pact-broker-candidate/tag")
+            shared_resources.generateDockerCredsConfigStep
+            new TaskStep {
+              task = "parse-candidate-tag"
+              file = "pay-ci/ci/tasks/parse-candidate-tag.yml"
+              input_mapping = new {
+                ["ecr-repo"] = "pact-broker-candidate"
+              }
+            }
+          }
+        }
+      }
+
+      loadVar("release-tag", "parse-candidate-tag/release-tag")
+
+      new shared_multiarch_build.AssumeRetagRoleStep {}
+      shared_multiarch_build.LoadAssumedRetagRoleVar
+      new InParallelStep {
+        in_parallel = new InParallelConfig {
+          steps = new Listing<Step> {
+            new shared_multiarch_build.RetagMultiArchImageInECR { repo = "govukpay/pact-broker" newTag = "((.:release-tag))" }
+            new shared_multiarch_build.RetagMultiArchImageInECR { repo = "govukpay/pact-broker" newTag = "latest" }
+          }
+        }
+      }
+
+      new TaskStep {
+        task = "assume-write-to-deploy-role"
+        file = "pay-ci/ci/tasks/assume-role.yml"
+        output_mapping = new {
+          ["assume-role"] = "assume-write-to-deploy-role"
+        }
+        params = new {
+          ["AWS_ROLE_ARN"] = "arn:aws:iam::((pay_aws_deploy_account_id)):role/concourse_dev_worker_ecr_access"
+          ["AWS_ROLE_SESSION_NAME"] = "write-ecr-to-deploy"
+        }
+      }
+
+      new LoadVarStep {
+        load_var = "write-to-deploy-role"
+        file = "assume-write-to-deploy-role/assume-role.json"
+        format = "json"
+      }
+
+      new TaskStep {
+        task = "copy-images-to-pact-broker-ecr-registry-deploy"
+        file = "pay-ci/ci/tasks/copy-multiarch-image-to-other-account.yml"
+        privileged = true
+        params = new {
+          ["DESTINATION_AWS_ACCESS_KEY_ID"] = "((.:write-to-deploy-role.AWS_ACCESS_KEY_ID))"
+          ["DESTINATION_AWS_SECRET_ACCESS_KEY"] = "((.:write-to-deploy-role.AWS_SECRET_ACCESS_KEY))"
+          ["DESTINATION_AWS_SESSION_TOKEN"] = "((.:write-to-deploy-role.AWS_SESSION_TOKEN))"
+          ["DESTINATION_ECR_REGISTRY"] = "((pay_aws_deploy_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+          ["ECR_REPO_NAME"] = "govukpay/pact-broker"
+          ["RELEASE_NUMBER"] = "((.:release_number))"
+          ["SOURCE_AWS_ACCESS_KEY_ID"] = "((.:retag-role.AWS_ACCESS_KEY_ID))"
+          ["SOURCE_AWS_SECRET_ACCESS_KEY"] = "((.:retag-role.AWS_SECRET_ACCESS_KEY))"
+          ["SOURCE_AWS_SESSION_TOKEN"] = "((.:retag-role.AWS_SESSION_TOKEN))"
+          ["SOURCE_ECR_REGISTRY"] = "((pay_aws_test_account_id)).dkr.ecr.eu-west-1.amazonaws.com"
+        }
+      }
+    }
+
+    on_failure = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { message = "Failed to copy pact-broker image to deploy ECR"
+        slack_channel_for_failure = "#govuk-pay-starling" }
+    )
+    on_success = shared_resources_for_slack_notifications.paySlackNotification(
+      new SlackNotificationConfig { is_a_success = true; message = "Copied pact-broker image to deploy ECR" }
+    )
+  }
+}
+
+local function getParseReleaseTagStep(): TaskStep = new TaskStep {
+  task = "parse-release-tag"
+  file = "pay-ci/ci/tasks/parse-release-tag.yml"
+  input_mapping = new {
+    ["git-release"] = "pact-broker-git-release"
+  }
+  params {
+    ["APP_NAME"] = "pact-broker"
+  }
+}
+
+local function loadVar(variable: String, fileName: String): LoadVarStep = new LoadVarStep {
+  load_var = variable
+  file = fileName
+}
+
+local function getStep(name: String): GetStep = new GetStep {
+  get = name
+}
