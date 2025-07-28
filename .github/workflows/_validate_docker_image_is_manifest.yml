@@ -39,7 +39,7 @@ jobs:
 
           while read -r BASE_CONTAINER_DEFINITION; do
             # Only check images which refer to a remote repository, not another layer in the same manifest
-            if [[ "$BASE_CONTAINER_DEFINITION" =~ ^[A-Za-z0-9_-]+(:[A-Za-z0-9_.-]+)?@.* ]]; then
+            if [[ "$BASE_CONTAINER_DEFINITION" =~ ^[A-Za-z0-9./_-]+(:[A-Za-z0-9_.-]+)?@.*$ ]]; then
               echo "Checking base container definition: $BASE_CONTAINER_DEFINITION"
             else
               echo "FROM $BASE_CONTAINER_DEFINITION is not a reference to an image in a remote registry, not checking"
