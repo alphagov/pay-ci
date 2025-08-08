@@ -541,7 +541,7 @@ local function runSmokeTestsForApp(): InParallelStep = new InParallelStep {
       runSmokeTest("run_create_card_payment_worldpay_with_3ds2_exemption-production",
         "card_wpay_3ds2ex_prod", true)
       runSmokeTest("run_create_card_payment_worldpay_without_3ds-production", "card_wpay_prod", true)
-      // runSmokeTest("run_recurring_card_payment_worldpay-production", "reccard_worldpay_prod", true)
+      runSmokeTest("run_recurring_card_payment_worldpay-production", "reccard_worldpay_prod", true)
       runSmokeTest("run_cancel_card_payment_sandbox-production", "cancel_sandbox_prod", false)
       runSmokeTest("run_use_payment_link_sandbox-production", "pymntlnk_sandbox_prod", false)
       runSmokeTest("run_create_card_payment_stripe-production", "card_stripe_prod", false)
