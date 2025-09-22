@@ -10,14 +10,13 @@ OWNER="alphagov"
 set -- $(printf '%s\n' $(gh search repos --archived=false --owner="alphagov" --topic="govuk-pay" --limit=99 --json=name --jq ".[] | .name"))
 
 for repo do
-    file=sbom-data/${DATE}_sbom_"${repo}".json
+    file=sbom-data/"${DATE}"_sbom_"${repo}".json
     curl -L \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer $GITHUB_TOKEN" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
-        https://api.github.com/repos/${OWNER}/"${repo}"/dependency-graph/sbom \
-        --silent \
-        --output "${file}"
+        https://api.github.com/repos/"${OWNER}"/"${repo}"/dependency-graph/sbom \
+        --silent | jq ".sbom" > "$file"
 done
 
 aws s3 cp sbom-data/ s3://govuk-pay-sbom-deploy/"${DATE}"_github_sbom --recursive
