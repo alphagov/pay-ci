@@ -6,9 +6,6 @@ on:
       LIBGL_ALWAYS_SOFTWARE:
         required: false
         type: string
-    secrets:
-      percy_token:
-        required: true
 
 permissions:
   contents: read
@@ -45,7 +42,6 @@ jobs:
       - name: Run cypress tests
         env:
           LIBGL_ALWAYS_SOFTWARE: ${{ inputs.LIBGL_ALWAYS_SOFTWARE }}
-          PERCY_TOKEN: ${{ secrets.percy_token }}
         run: |
           if [ -z "$PERCY_TOKEN" ]; then
             echo "2 - Secret PERCY_TOKEN does not exist or is empty"
