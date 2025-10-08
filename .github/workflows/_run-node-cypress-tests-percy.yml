@@ -44,10 +44,10 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: ${{ inputs.LIBGL_ALWAYS_SOFTWARE }}
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
         run: |
-          if [ -z "${{ secrets.percy_token }}" ]; then
-            echo "Secret PERCY_TOKEN does not exist or is empty"
+          if [ -z "$PERCY_TOKEN" ]; then
+            echo "2 - Secret PERCY_TOKEN does not exist or is empty"
           else
-            echo "Secret PERCY_TOKEN is set"
+            echo "2 - Secret PERCY_TOKEN is set"
           fi
           npm run cypress:server > /dev/null 2>&1 &
           sleep 3
