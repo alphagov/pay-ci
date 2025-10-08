@@ -6,6 +6,9 @@ on:
       LIBGL_ALWAYS_SOFTWARE:
         required: false
         type: string
+    secrets:
+      percy_token:
+        required: true
 
 permissions:
   contents: read
