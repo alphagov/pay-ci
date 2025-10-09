@@ -57,6 +57,8 @@ jobs:
             echo "3 - Secret PERCY_TARGET_BRANCH does not exist or is empty"
           else
             echo "3 - Secret PERCY_TARGET_BRANCH is set"
+            echo "Value is: "
+            echo $PERCY_TARGET_BRANCH
           fi
           npm run cypress:server > /dev/null 2>&1 &
           sleep 3
