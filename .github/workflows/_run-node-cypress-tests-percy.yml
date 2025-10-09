@@ -46,6 +46,7 @@ jobs:
         env:
           LIBGL_ALWAYS_SOFTWARE: ${{ inputs.LIBGL_ALWAYS_SOFTWARE }}
           PERCY_TOKEN: ${{ secrets.percy_token }}
+          PERCY_TARGET_BRANCH: "main"
         run: |
           if [ -z "$PERCY_TOKEN" ]; then
             echo "2 - Secret PERCY_TOKEN does not exist or is empty"
