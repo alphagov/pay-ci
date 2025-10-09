@@ -53,6 +53,11 @@ jobs:
           else
             echo "2 - Secret PERCY_TOKEN is set"
           fi
+          if [ -z "$PERCY_TARGET_BRANCH" ]; then
+            echo "3 - Secret PERCY_TARGET_BRANCH does not exist or is empty"
+          else
+            echo "3 - Secret PERCY_TARGET_BRANCH is set"
+          fi
           npm run cypress:server > /dev/null 2>&1 &
           sleep 3
           npm run cypress:test-percy
