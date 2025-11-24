@@ -73,7 +73,7 @@ class MultiArchCandidateBuildJob extends Pipeline.Job {
   }
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig { message = "Failed to build and push \(image.name)"
-      slack_channel_for_failure = "#govuk-pay-starling" }
+      slack_channel_for_failure = "#govuk-pay-owl" }
   )
   on_success = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig { is_a_success = true; message = "Built and pushed \(image.name)" }
@@ -166,7 +166,7 @@ open class MultiArchEndToEndTest extends Pipeline.Job {
   }
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig { message = "\(image.name) failed post-merge e2e tests"
-      slack_channel_for_failure = "#govuk-pay-starling" }
+      slack_channel_for_failure = "#govuk-pay-owl" }
   )
   on_success = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig { is_a_success = true; message = "\(image.name) passed post-merge e2e tests and was pushed as a final release" }

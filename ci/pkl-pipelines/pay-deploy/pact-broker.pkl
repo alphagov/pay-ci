@@ -71,7 +71,7 @@ jobs {
     }
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "Failed to deploy pay-pact-broker image"
-        slack_channel_for_failure = "#govuk-pay-starling" }
+        slack_channel_for_failure = "#govuk-pay-owl" }
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "Deployed pay-pact-broker image" }

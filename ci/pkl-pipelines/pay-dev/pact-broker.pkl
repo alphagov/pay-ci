@@ -72,7 +72,7 @@ jobs {
 
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "Failed to build pact-broker candidate image"
-        slack_channel_for_failure = "#govuk-pay-starling" }
+        slack_channel_for_failure = "#govuk-pay-owl" }
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "pact-broker candidate image built successfully" }
@@ -163,7 +163,7 @@ jobs {
 
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "Failed to copy pact-broker image to deploy ECR"
-        slack_channel_for_failure = "#govuk-pay-starling" }
+        slack_channel_for_failure = "#govuk-pay-owl" }
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "Copied pact-broker image to deploy ECR" }

@@ -119,7 +119,7 @@ local function deploy_bastion_image_in_account_job(bastion_env: BastionEnv) = ne
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
       message = "Failed to deploy bastion image to \(bastion_env.account)"
-      slack_channel_for_failure = "#govuk-pay-starling"
+      slack_channel_for_failure = "#govuk-pay-owl"
     }
   )
   on_success = shared_slack.paySlackNotification(
@@ -195,7 +195,7 @@ local function push_bastion_image_to_account_job(bastion_env: BastionEnv, accoun
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
       message = "Failed to push bastion image from \(bastion_env.account) to \(account_to_push_to)"
-      slack_channel_for_failure = "#govuk-pay-starling"
+      slack_channel_for_failure = "#govuk-pay-owl"
     }
   )
 }
@@ -205,7 +205,7 @@ local function run_bastion_e2e_test_and_retag_image_as_release_job() = new Job {
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
       message = "Failed to run bastion E2E test for candidate ((.:candidate-image-tag)) and retag-image as release"
-      slack_channel_for_failure = "#govuk-pay-starling"
+      slack_channel_for_failure = "#govuk-pay-owl"
     }
   )
   on_success = shared_slack.paySlackNotification(
