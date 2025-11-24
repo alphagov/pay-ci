@@ -63,7 +63,7 @@ jobs = new {
     }
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "Failed copying pushgateway:v1.6.0 image from Docker Hub to ECR"
-        slack_channel_for_failure = "#govuk-pay-starling" }
+        slack_channel_for_failure = "#govuk-pay-owl" }
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "Copied pushgateway:v1.6.0 image from Docker Hub to ECR" }

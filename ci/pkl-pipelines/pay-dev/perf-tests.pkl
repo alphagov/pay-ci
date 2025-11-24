@@ -761,7 +761,7 @@ local function perfTestExecutionErrorNotification(): PutStep = new {
   params {
     // This one failure goes to starling since it's the daily performance test run and this is a notification that the actual execution of
     // those tests is failing (as opposed to bad results from the performance test itself)
-    ["channel"] = "#govuk-pay-starling"
+    ["channel"] = "#govuk-pay-owl"
     ["silent"] = true
     ["text"] = ":red-circle: Failed to execute performance test - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
     ["icon_emoji"] = ":concourse:"

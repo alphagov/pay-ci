@@ -85,12 +85,12 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {
         message = "Terraform drift detected for $BUILD_JOB_NAME."
-        slack_channel_for_failure = "#govuk-pay-starling"
+        slack_channel_for_failure = "#govuk-pay-owl"
       })
     on_error = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {
         message = "Pipeline to detect Terraform drift for $BUILD_JOB_NAME failed to run."
-        slack_channel_for_failure = "#govuk-pay-starling"
+        slack_channel_for_failure = "#govuk-pay-owl"
       })
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig{
@@ -145,7 +145,7 @@ for (env, time in Map("test-12", "every-morning-at-five", "test-perf-1", "every-
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {
         message = "SNS subscription check: An SNS topic subscriber is unsubscribed, or has an incorrect subscriber in \(env) - $BUILD_JOB_NAME."
-        slack_channel_for_failure = "#govuk-pay-starling"
+        slack_channel_for_failure = "#govuk-pay-owl"
       })
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig {

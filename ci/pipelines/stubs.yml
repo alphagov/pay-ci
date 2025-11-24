@@ -102,7 +102,7 @@ jobs:
       put: slack-notification
       attempts: 10
       params:
-        channel: "#govuk-pay-starling"
+        channel: "#govuk-pay-owl"
         silent: true
         text: ":red-circle: Failed to deploy stubs image - <https://pay-cd.deploy.payments.service.gov.uk/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|Concourse build #$BUILD_NAME>"
         icon_emoji: ":concourse:"

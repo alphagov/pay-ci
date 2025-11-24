@@ -150,7 +150,7 @@ jobs = new {
 
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "Failed to build and push pay-endtoend candidate image"
-        slack_channel_for_failure = "#govuk-pay-starling" }
+        slack_channel_for_failure = "#govuk-pay-owl" }
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "Built and pushed pay-endtoend candidate image" }
@@ -176,7 +176,7 @@ jobs = new {
 
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "Failed to build and push pay-endtoend-zap candidate image"
-        slack_channel_for_failure = "#govuk-pay-starling" }
+        slack_channel_for_failure = "#govuk-pay-owl" }
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "Built and pushed pay-endtoend-zap candidate image" }
@@ -237,7 +237,7 @@ jobs = new {
     }
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "pay-endtoend failed post-merge e2e tests"
-        slack_channel_for_failure = "#govuk-pay-starling" }
+        slack_channel_for_failure = "#govuk-pay-owl" }
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "pay-endtoend passed post-merge e2e tests and was pushed as a final release" }
@@ -297,7 +297,7 @@ jobs = new {
     }
     on_failure = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { message = "pay-endtoend-zap failed post-merge e2e tests"
-        slack_channel_for_failure = "#govuk-pay-starling" }
+        slack_channel_for_failure = "#govuk-pay-owl" }
     )
     on_success = shared_resources_for_slack_notifications.paySlackNotification(
       new SlackNotificationConfig { is_a_success = true; message = "pay-endtoend-zap passed post-merge e2e tests and was pushed as a final release" }
@@ -352,7 +352,7 @@ local function copyImageToEcr(image: String, displayName: String): Job = new {
   }
   on_failure = shared_resources_for_slack_notifications.paySlackNotification(
     new SlackNotificationConfig { message = "Failed copying \(displayName) image from Docker Hub to ECR"
-      slack_channel_for_failure = "#govuk-pay-starling" }
+      slack_channel_for_failure = "#govuk-pay-owl" }
   )
   on_success = shared_resources_for_slack_notifications.paySlackNotification(
     new SlackNotificationConfig { is_a_success = true; message = "Copied \(displayName) image from Docker Hub to ECR" }

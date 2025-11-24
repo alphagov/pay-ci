@@ -212,7 +212,7 @@ jobs {
                   put = "slack-notification"
                   attempts = 10
                   params = new Mapping {
-                    ["channel"] = "#govuk-pay-starling"
+                    ["channel"] = "#govuk-pay-owl"
                     ["silent"] = true
                     ["icon_emoji"] = ":concourse:"
                     ["username"] = "pay-concourse"
@@ -282,7 +282,7 @@ jobs {
                       put = "slack-notification"
                       attempts = 10
                       params = new Mapping {
-                        ["channel"] = "#govuk-pay-starling"
+                        ["channel"] = "#govuk-pay-owl"
                         ["silent"] = true
                         ["icon_emoji"] = ":concourse:"
                         ["username"] = "pay-concourse"
@@ -359,7 +359,7 @@ jobs {
                       put = "slack-notification"
                       attempts = 10
                       params = new Mapping {
-                        ["channel"] = "#govuk-pay-starling"
+                        ["channel"] = "#govuk-pay-owl"
                         ["silent"] = true
                         ["icon_emoji"] = ":concourse:"
                         ["username"] = "pay-concourse"

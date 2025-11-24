@@ -199,13 +199,13 @@ local function getDeployJob(loggingEnv: LoggingEnv): Job = new {
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
       message = "Logging pipeline deployment failed in \(getEnvironmentOrAccount(loggingEnv)) env"
-      slack_channel_for_failure = "#govuk-pay-starling"
+      slack_channel_for_failure = "#govuk-pay-owl"
     }
   )
   on_error = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
       message = "Error deploying logging pipeline in \(getEnvironmentOrAccount(loggingEnv)) env"
-      slack_channel_for_failure = "#govuk-pay-starling"
+      slack_channel_for_failure = "#govuk-pay-owl"
     }
   )
 }
@@ -290,13 +290,13 @@ local function getE2EJob(loggingEnv: LoggingEnv): Job = new {
   on_failure = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
       message = "Logging pipeline - e2e test job failed in \(getEnvironmentOrAccount(loggingEnv)) environment"
-      slack_channel_for_failure = "#govuk-pay-starling"
+      slack_channel_for_failure = "#govuk-pay-owl"
     }
   )
   on_error = shared_slack.paySlackNotification(
     new shared_slack.SlackNotificationConfig {
       message = "Logging pipeline - Error running e2e test in \(getEnvironmentOrAccount(loggingEnv)) environment"
-      slack_channel_for_failure = "#govuk-pay-starling"
+      slack_channel_for_failure = "#govuk-pay-owl"
     }
   )
 }
