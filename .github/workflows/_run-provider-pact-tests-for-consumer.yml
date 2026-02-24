@@ -14,7 +14,7 @@ on:
       java_version:
         type: string
         required: false
-        default: 21
+        default: 25
     secrets:
       pact_broker_username:
         required: true

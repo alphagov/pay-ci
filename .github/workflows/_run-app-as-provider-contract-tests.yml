@@ -9,8 +9,8 @@ on:
       java_version:
         type: string
         required: false
-        default: 21
-        description: JDK version to setup and run tests. Defaults to 11
+        default: 25
+        description: JDK version to setup and run tests. Defaults to 25
     secrets:
       pact_broker_username:
         required: true
