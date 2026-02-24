@@ -1,4 +1,4 @@
-FROM docker:29.2.1-dind-alpine3.23
+FROM docker:28.0.0-dind-alpine3.21
 
 ARG FLY_CLI_SHA256SUM=59689b7cfc9985a115f9542c11d261ff721607911548f560bb83c180d9103cf8
 ARG PKL_VERSION=0.25.2
@@ -16,7 +16,7 @@ RUN apk add --no-cache \
   python3 \
   ca-certificates \
   jq \
-  openjdk25 \
+  openjdk21 \
   npm \
   maven \
   tini \
