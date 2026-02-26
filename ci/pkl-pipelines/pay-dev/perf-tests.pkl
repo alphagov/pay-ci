@@ -759,7 +759,7 @@ local function perfTestExecutionErrorNotification(): PutStep = new {
   put = "slack-notification"
   attempts = 10
   params {
-    // This one failure goes to starling since it's the daily performance test run and this is a notification that the actual execution of
+    // This one failure goes to owl since it's the daily performance test run and this is a notification that the actual execution of
     // those tests is failing (as opposed to bad results from the performance test itself)
     ["channel"] = "#govuk-pay-owl"
     ["silent"] = true
@@ -785,7 +785,7 @@ local function perfTestExecutionSuccessNotification(): PutStep = new {
   put = "slack-notification"
   attempts = 10
   params {
-    // This one failure goes to starling since it's the daily performance test run and this is a notification that the actual execution of
+    // This one failure goes to owl since it's the daily performance test run and this is a notification that the actual execution of
     // those tests is failing (as opposed to bad results from the performance test itself)
     ["channel"] = "#govuk-pay-activity"
     ["silent"] = true
