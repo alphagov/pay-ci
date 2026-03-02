@@ -8,11 +8,11 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@aws-sdk/client-ecs": "^3.623.0",
-    "@aws-sdk/client-sns": "^3.623.0",
-    "@aws-sdk/client-ssm": "^3.623.0",
-    "@aws-sdk/client-sts": "^3.623.0",
-    "@aws-sdk/client-synthetics": "^3.623.0"
+    "@aws-sdk/client-ecs": "^3.995.0",
+    "@aws-sdk/client-sns": "^3.995.0",
+    "@aws-sdk/client-ssm": "^3.995.0",
+    "@aws-sdk/client-sts": "^3.995.0",
+    "@aws-sdk/client-synthetics": "^3.995.0"
   },
   "devDependencies": {
     "standard": "^16.0.3"
