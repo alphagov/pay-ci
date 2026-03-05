@@ -43,7 +43,7 @@ jobs:
         uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
         with:
           java-version: ${{ inputs.java_version }}
-          distribution: 'adopt'
+          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
