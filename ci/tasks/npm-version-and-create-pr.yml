@@ -24,9 +24,11 @@ run:
       git config --local user.name "alphagov-pay-ci-concourse"
       
       npm ci
-      RELEASE_VERSION="$(npm version patch -m "[automated release] %s")"
+      RELEASE_VERSION="$(npm version patch --no-git-tag-version)"
+      git add package.json package-lock.json
+      git commit -m "[automated release] $RELEASE_VERSION"
       
       git checkout -b "release-$RELEASE_VERSION"
-      git push --follow-tags --set-upstream origin "release-$RELEASE_VERSION"
+      git push --set-upstream origin "release-$RELEASE_VERSION"
       
       gh pr create --base "$BASE" --title "[automated release] $RELEASE_VERSION" --body "🤖 automated PR, merge to trigger release"
