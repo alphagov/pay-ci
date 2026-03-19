@@ -16,6 +16,7 @@ class LockPoolResource extends Pipeline.Resource {
 class AcquireLockStep extends Pipeline.PutStep {
   hidden pool: String
   put = "claim-\(pool)-lock"
+  inputs = "all"
   timeout = "10m"
   attempts = 10
   resource = "lock-pool-\(pool)"
@@ -27,6 +28,7 @@ class AcquireLockStep extends Pipeline.PutStep {
 class ReleaseLockStep extends Pipeline.PutStep {
   hidden pool: String
   put = "release-\(pool)-lock"
+  inputs = "all"
   attempts = 3
   resource = "lock-pool-\(pool)"
   params {
