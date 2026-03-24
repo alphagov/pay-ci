@@ -5,7 +5,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: public.ecr.aws/docker/library/node
+    repository: node
     tag: 18-bullseye-slim
 inputs:
   - name: src

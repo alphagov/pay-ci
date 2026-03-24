@@ -2,7 +2,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: public.ecr.aws/docker/library/node
+    repository: node
     tag: current-alpine
 params:
   REPO:
