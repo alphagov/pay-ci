@@ -26,7 +26,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: alpine
+    repository: public.ecr.aws/docker/library/alpine
     tag: latest
 
 outputs:
