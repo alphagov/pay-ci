@@ -107,7 +107,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: hashicorp/terraform
+              repository: public.ecr.aws/hashicorp/terraform
               tag: "((.:terraform-version))"
           params:
             ENVIRONMENT: test
@@ -164,7 +164,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: hashicorp/terraform
+              repository: public.ecr.aws/hashicorp/terraform
               tag: "((.:terraform-version))"
           params:
             ENVIRONMENT: staging
@@ -222,7 +222,7 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: hashicorp/terraform
+              repository: public.ecr.aws/hashicorp/terraform
               tag: "((.:terraform-version))"
           params:
             ENVIRONMENT: production

@@ -140,7 +140,7 @@ function getAdditionalConfigForNotifications() = new TaskConfig {
   image_resource {
     type = "registry-image"
     source {
-      ["repository"] = "hashicorp/terraform"
+      ["repository"] = "public.ecr.aws/hashicorp/terraform"
       ["tag"] = "((.:terraform-version))"
     }
   }
@@ -205,7 +205,7 @@ open class TerraformInitStep extends Pipeline.TaskStep {
     image_resource {
       type = "registry-image"
       source {
-        ["repository"] = "hashicorp/terraform"
+        ["repository"] = "public.ecr.aws/hashicorp/terraform"
         ["tag"] = "((.:terraform-version))"
       }
     }
@@ -244,7 +244,7 @@ open class TerraformApplyStep extends Pipeline.TaskStep {
     image_resource {
       type = "registry-image"
       source {
-        ["repository"] = "hashicorp/terraform"
+        ["repository"] = "public.ecr.aws/hashicorp/terraform"
         ["tag"] = "((.:terraform-version))"
       }
     }

@@ -3,7 +3,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: golang
+    repository: public.ecr.aws/docker/library/golang
     tag: 1.20-alpine
 inputs:
   - name: pay-ci

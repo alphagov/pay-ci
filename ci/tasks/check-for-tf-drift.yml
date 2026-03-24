@@ -9,7 +9,7 @@ inputs:
 image_resource:
   type: registry-image
   source:
-    repository: hashicorp/terraform
+    repository: public.ecr.aws/hashicorp/terraform
     tag: "((.:terraform-version))"
 params:
   AWS_ACCESS_KEY_ID:
