@@ -3,7 +3,7 @@
 # responsible for putting it where it needs to go.
 platform: linux
 image_resource:
-  type: docker-image
+  type: registry-image
   source:
     repository: public.ecr.aws/docker/library/node
     tag: 18-bullseye-slim

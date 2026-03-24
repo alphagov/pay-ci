@@ -73,7 +73,7 @@ slackNotificationResource = new Pipeline.Resource{
 
 slackNotificationResourceType = new Pipeline.ResourceType{
   name = "slack-notification"
-  type = "docker-image"
+  type = "registry-image"
   source = new {
     ["repository"] = "cfcommunity/slack-notification-resource"
     ["tag"] = "latest"
