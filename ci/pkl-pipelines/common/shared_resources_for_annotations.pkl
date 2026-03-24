@@ -2,7 +2,7 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 
 grafanaAnnotationResourceType = new Pipeline.ResourceType {
 	name = "grafana-annotation"
-	type = "docker-image"
+	type = "registry-image"
 	source = new {
 		["repository"] = "governmentdigitalservice/pay-grafana-annotation-resource"
 		["tag"] = "latest"
