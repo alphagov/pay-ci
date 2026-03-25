@@ -15,6 +15,6 @@
     "@aws-sdk/client-synthetics": "^3.623.0"
   },
   "devDependencies": {
-    "standard": "^16.0.3"
+    "standard": "^16.0.4"
   }
 }
