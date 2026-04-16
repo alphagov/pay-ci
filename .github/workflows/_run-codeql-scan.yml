@@ -27,6 +27,7 @@ on:
 permissions:
   # required for CodeQL to raise security issues on the repo
   security-events: write
+  contents: read
 
 jobs:
   run-codeql-scan:
