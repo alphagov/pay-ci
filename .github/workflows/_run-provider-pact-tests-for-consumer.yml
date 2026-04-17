@@ -20,6 +20,8 @@ on:
         required: true
       pact_broker_password:
         required: true
+      repos_readonly_token:
+        required: true
 
 permissions:
   contents: read
@@ -33,6 +35,7 @@ jobs:
         with:
           repository: alphagov/pay-${{ inputs.provider }}
           path: pay-${{ inputs.provider }}
+          token: '${{ secrets.repos_readonly_token }}'
       - name: Get Provider SHA
         id: get-provider-sha
         run: |
