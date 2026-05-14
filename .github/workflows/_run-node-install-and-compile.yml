@@ -45,7 +45,7 @@ jobs:
             fi
           fi
       - name: Setup
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: ".nvmrc"
       - name: Cache build directories
