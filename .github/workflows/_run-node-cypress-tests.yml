@@ -23,7 +23,7 @@ jobs:
         with:
           node-version-file: ".nvmrc"
       - name: Cache build directories
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
         with:
           path: |
             node_modules
@@ -38,7 +38,7 @@ jobs:
         id: install-cypress-binary
         run: npx cypress install
       - name: Cache Cypress
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
         with:
           path: ~/.cache/Cypress
           key: ${{ runner.os }}-cypress-${{ steps.parse-cypress-version.outputs.CYPRESS_VERSION }}
