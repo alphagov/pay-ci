@@ -12,5 +12,5 @@ outputs:
   version:
     description: 'semantic version value of the next release'
 runs:
-  using: 'node16'
+  using: 'node24'
   main: 'dist/index.js'
