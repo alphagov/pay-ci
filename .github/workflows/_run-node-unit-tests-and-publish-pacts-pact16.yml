@@ -102,7 +102,7 @@ jobs:
           echo "Setting Consumer tag to ${CONSUMER_TAG}"
           echo "pact-consumer-tag=${CONSUMER_TAG}" >> $GITHUB_OUTPUT
       - name: Publish and tag consumer pacts
-        uses: pact-foundation/pact-broker-cli@0.7.1
+        uses: pact-foundation/pact-broker-cli@4a45a072f9a366ba691175390da357ccfa36dcd4
         env:
           PACT_BROKER_URL: https://pact-broker.deploy.payments.service.gov.uk
           PACT_BROKER_USERNAME: ${{ secrets.pact_broker_username }}
