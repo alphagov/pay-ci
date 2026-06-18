@@ -28,7 +28,7 @@ print_and_write_lock_status() {
 
   # Commit message format:
   # <claiming|unclaiming>: <lock_name>-lock Build URL: <build_url>
-  local BUILD_URL=$(echo "$COMMIT_MESSAGE" | cut -f 5 -d " ")
+  local BUILD_URL=$(echo "$COMMIT_MESSAGE" | cut -f 3 -d " ")
   local BUILD_URL=${BUILD_URL:8} # strip https://
 
   echo "$BUILD_URL"
