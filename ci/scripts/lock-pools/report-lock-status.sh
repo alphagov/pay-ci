@@ -25,12 +25,13 @@ print_and_write_lock_status() {
   local COMMIT_MESSAGE=$(git log -n 1 "$LOCK_FILE_PATH" | tail -n 1 | sed -E 's/^\s+//')
 
   # Commit message format:
-  # <team>/<pipeline>/<job> build <build_number> <claiming|unclaiming>: <lock_name>-lock
-  local FULL_CLAIMANT_INFO=$(echo "$COMMIT_MESSAGE" | cut -f 1 -d " ")
-  local CONCOURSE_TEAM=$(echo "$FULL_CLAIMANT_INFO" | cut -f 1 -d "/")
-  local CONCOURSE_PIPELINE=$(echo "$FULL_CLAIMANT_INFO" | cut -f 2 -d "/")
-  local CONCOURSE_JOB=$(echo "$FULL_CLAIMANT_INFO" | cut -f 3 -d "/")
-  local BUILD_NUMBER=$(echo "$COMMIT_MESSAGE" | sed -E 's/.* build ([0-9.]+) (un)?claiming: .*/\1/')
+  # <claiming|unclaiming>: <lock_name>-lock Build URL: <build_url>
+  local BUILD_URL=$(echo "$COMMIT_MESSAGE" | cut -f 5 -d " ")
+  local BUILD_URL=${BUILD_URL:8} # strip https://
+  local CONCOURSE_TEAM=$(echo "$BUILD_URL" | cut -f 3 -d "/")
+  local CONCOURSE_PIPELINE=$(echo "$BUILD_URL" | cut -f 5 -d "/")
+  local CONCOURSE_JOB=$(echo "$BUILD_URL" | cut -f 7 -d "/")
+  local BUILD_NUMBER=$(echo "$BUILD_URL" | cut -f 9 -d "/")
 
   echo
   if [ "$LOCK_STATUS" = "claimed" ]; then
