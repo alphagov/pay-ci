@@ -20,11 +20,13 @@ fly -t "${LOCK_TEAM}" login \
   -c "https://pay-cd.deploy.payments.service.gov.uk/" \
   -u "${LOCK_TEAM}" \
   -p "${FLY_PASSWORD}" \
-  -n "${LOCK_TEAM}" >> /dev/null 2>&1
+  -n "${LOCK_TEAM}"
 
 BUILD_DETAILS_TMPFILE=$(mktemp)
 
 fly -t "${LOCK_TEAM}" builds --job "${LOCK_PIPELINE}/${LOCK_JOB}" --json > "$BUILD_DETAILS_TMPFILE"
+
+cat "$BUILD_DETAILS_TMPFILE"
 
 BUILD_STATUS=$(jq -r ".[] | select(.name == \"${LOCK_BUILD_NUMBER}\") | .status" <"$BUILD_DETAILS_TMPFILE")
 
