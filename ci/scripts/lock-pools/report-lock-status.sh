@@ -24,10 +24,15 @@ print_and_write_lock_status() {
   local COMMIT_TIMESTAMP=$(git log --date raw -n 1 "$LOCK_FILE_PATH" | grep "^Date:" | sed -E 's/^Date:\s+([0-9]+) .*/\1/')
   local COMMIT_MESSAGE=$(git log -n 1 "$LOCK_FILE_PATH" | tail -n 1 | awk '{$1=$1};1')
 
+  echo "$COMMIT_MESSAGE"
+
   # Commit message format:
   # <claiming|unclaiming>: <lock_name>-lock Build URL: <build_url>
   local BUILD_URL=$(echo "$COMMIT_MESSAGE" | cut -f 5 -d " ")
   local BUILD_URL=${BUILD_URL:8} # strip https://
+
+  echo "$BUILD_URL"
+  
   local CONCOURSE_TEAM=$(echo "$BUILD_URL" | cut -f 3 -d "/")
   local CONCOURSE_PIPELINE=$(echo "$BUILD_URL" | cut -f 5 -d "/")
   local CONCOURSE_JOB=$(echo "$BUILD_URL" | cut -f 7 -d "/")
