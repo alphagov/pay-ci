@@ -22,7 +22,7 @@ print_and_write_lock_status() {
   
   local COMMIT_DATE=$(git log -n 1 "$LOCK_FILE_PATH" | grep "^Date:" | sed -E 's/^Date:\s+//')
   local COMMIT_TIMESTAMP=$(git log --date raw -n 1 "$LOCK_FILE_PATH" | grep "^Date:" | sed -E 's/^Date:\s+([0-9]+) .*/\1/')
-  local COMMIT_MESSAGE=$(git log -n 1 "$LOCK_FILE_PATH" | tail -n 1 | sed -E 's/^\s+//')
+  local COMMIT_MESSAGE=$(git log -n 1 "$LOCK_FILE_PATH" | tail -n 1 | awk '{$1=$1};1')
 
   # Commit message format:
   # <claiming|unclaiming>: <lock_name>-lock Build URL: <build_url>
