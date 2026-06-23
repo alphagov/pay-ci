@@ -51,7 +51,7 @@ jobs:
      - get: configuration-repo
        trigger: true
      - get: pay-access-control
-       trigger: true                       # rebuild when access-control config changes
+       trigger: true                       
      - get: pay-ci
 
 
