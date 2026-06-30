@@ -13,6 +13,7 @@ inputs:
 params:
   ECR_REPO:
   IMAGE_TAG:
+  AWS_REGION: "eu-west-1"
   AWS_DEFAULT_REGION: "eu-west-1"
   AWS_ACCESS_KEY_ID:
   AWS_SECRET_ACCESS_KEY:
