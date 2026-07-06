@@ -1,0 +1,155 @@
+amends
+  "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+import
+  "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
+
+import "../common/PayResources.pkl"
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_deploy_pipelines.pkl"
+import "../common/shared_resources_for_terraform.pkl"
+
+local tf_root: String = "configuration/teams"
+local commonTerraformObjects = new {
+  config {
+    inputs = new Listing<TaskConfig.Input> {
+      new {
+        name = "configuration"
+      }
+    }
+  }
+  params {
+    ["GITHUB_OWNER"] = "govuk-pay"
+    ["GITHUB_APP_ID"] = "((github-app-id))"
+    ["GITHUB_APP_INSTALLATION_ID"] = "((github-app-installation-id))"
+    ["GITHUB_APP_PEM_FILE"] = "((github-app-pem))"
+  }
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource(
+    "pay-deploy/github-user-management.pkl",
+    "master",
+  )
+  shared_resources.payCiGitHubResource
+  new PayResources.PayGitHubResource {
+    name = "configuration"
+    orgName = "govuk-pay"
+    repoName = "configuration"
+    source {
+      branch = "main"
+    }
+  }
+  new PayResources.PayGitHubResource {
+    name = "pay-access-control"
+    repoName = "pay-access-control"
+    source {
+      branch = "main"
+    }
+  }
+}
+
+jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/github-user-management.pkl")
+  new {
+    name = "apply-github-org-terraform"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new GetStep {
+            get = "configuration"
+            trigger = true
+          }
+          new GetStep {
+            get = "pay-access-control"
+            trigger = true
+          }
+          new GetStep {
+            get = "pay-ci"
+          }
+        }
+      }
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new DoStep {
+            do {
+              new shared_resources.AssumeConcourseRoleTask {
+                aws_account_name = "deploy"
+                session_name = "github-user-management"
+                output_name = "assume-role"
+              }
+              shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+            }
+          }
+          new DoStep {
+            do {
+              new shared_resources_for_terraform.FindTerraformVersionForTFRootStep {
+                // Map the config repo to the expected `pay-infra` input.
+                terraform_root = "pay-infra/teams"
+                input_mapping {
+                  ["pay-infra"] = "configuration"
+                }
+              }
+              shared_resources_for_terraform.LoadTerraformVersionStep
+            }
+          }
+          new TaskStep {
+            task = "generate-csvs"
+            config {
+              platform = "linux"
+              image_resource = shared_resources.anonymousConcourseRunnerResource
+              inputs {
+                new {
+                  name = "configuration"
+                }
+                new {
+                  name = "pay-access-control"
+                }
+              }
+              outputs {
+                new {
+                  name = "csvs"
+                }
+              }
+              params {
+                ["CSV_OUTPUT_PATH"] = "csvs"
+              }
+              run {
+                path = "pay-ci/ci/scripts/generate-github-acl-csvs.sh"
+              }
+            }
+          }
+        }
+      }
+      new shared_resources_for_deploy_pipelines.TerraformInitStep {
+        terraform_root = tf_root
+        config {
+          ...commonTerraformObjects.config
+          outputs = new {
+            new {
+              name = "configuration"
+            }
+          }
+        }
+        params {
+          ...commonTerraformObjects.params
+        }
+      }
+      new shared_resources_for_deploy_pipelines.TerraformApplyStep {
+        terraform_root = tf_root
+        config {
+          inputs = new {
+            ...commonTerraformObjects.config.inputs
+            new {
+              name = "csvs"
+            }
+          }
+        }
+        params {
+          ...commonTerraformObjects.params
+          ["TF_VAR_csv_path"] = "../../csvs"
+        }
+      }
+    }
+  }
+}
