@@ -196,10 +196,12 @@ const function getAWSAssumeRoleCreds() = new Mapping<String, String> {
   ["AWS_SESSION_TOKEN"] = "((.:role.AWS_SESSION_TOKEN))"
 }
 
-open class TerraformInitStep extends Pipeline.TaskStep {
+open class TerraformCommandStep extends Pipeline.TaskStep {
   hidden terraform_root: String
+  hidden command: String
+  hidden arguments: Listing<String>?
 
-  task = "terraform-init"
+  task = "terraform-\(command)"
   config {
     platform = "linux"
     image_resource {
@@ -212,9 +214,6 @@ open class TerraformInitStep extends Pipeline.TaskStep {
     inputs = new {
       new { name = "pay-infra" }
     }
-    outputs = new {
-      new { name = "pay-infra" }
-    }
     params = new {
       ...getAWSAssumeRoleCreds()
       ["AWS_REGION"] = "eu-west-1"
@@ -223,8 +222,18 @@ open class TerraformInitStep extends Pipeline.TaskStep {
       dir = terraform_root
       path = "terraform"
       args {
-        "init"
+        command
+        ...?arguments
       }
+    }
+  }
+}
+
+open class TerraformInitStep extends TerraformCommandStep {
+  command = "init"
+  config {
+    outputs = new {
+      new { name = "pay-infra" }
     }
   }
 }
@@ -234,36 +243,17 @@ open class TerraformApplyVariable {
   value: String
 }
 
-open class TerraformApplyStep extends Pipeline.TaskStep {
-  hidden terraform_root: String
+open class TerraformApplyStep extends TerraformCommandStep {
   hidden terraform_variables: Listing<TerraformApplyVariable>
 
-  task = "terraform-apply"
+  command = "apply"
+  arguments {
+    "-auto-approve"
+  }
   config {
-    platform = "linux"
-    image_resource {
-      type = "registry-image"
-      source {
-        ["repository"] = "hashicorp/terraform"
-        ["tag"] = "((.:terraform-version))"
-      }
-    }
-    inputs = new {
-      new { name = "pay-infra" }
-    }
-    params = new {
-      ...getAWSAssumeRoleCreds()
-      ["AWS_REGION"] = "eu-west-1"
+    params {
       for (var in terraform_variables) {
         ["TF_VAR_\(var.name)"] = var.value
-      }
-    }
-    run {
-      dir = terraform_root
-      path = "terraform"
-      args {
-        "apply"
-        "-auto-approve"
       }
     }
   }
