@@ -105,6 +105,9 @@ jobs = new {
                 new {
                   name = "pay-access-control"
                 }
+                new {
+                  name = "pay-ci"
+                }
               }
               outputs {
                 new {
