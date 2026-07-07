@@ -2,9 +2,10 @@ import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pk
 import "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Resources.pkl"
 
 open class PayGitHubResource extends Resources.GitResource {
+  hidden orgName: String = "alphagov"
   hidden repoName: String
   source = new {
-    uri = "https://github.com/alphagov/\(repoName)"
+    uri = "https://github.com/\(orgName)/\(repoName)"
     username = "alphagov-pay-ci-concourse"
     password = "((github-access-token))"
   }
