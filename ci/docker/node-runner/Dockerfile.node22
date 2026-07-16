@@ -12,7 +12,7 @@ RUN echo "$FLY_CLI_SHA256SUM  /tmp/fly" >> /tmp/fly.sha256 \
 WORKDIR /node-runner
 
 RUN npm install -g aws4@^1.x.x
-RUN npm install -g @octokit/rest@^18.x.x
+RUN npm install -g @octokit/rest@^22.x.x
 RUN npm install -g @aws-sdk/client-sts@^3.x.x
 RUN npm install -g @aws-sdk/client-ecs@^3.x.x
 RUN npm install -g @aws-sdk/client-synthetics@^3.x.x
