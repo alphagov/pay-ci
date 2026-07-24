@@ -59,6 +59,7 @@ jobs {
       shared_resources.putPRTestPendingStatus("node-runner-pr", "node-runner-tests")
       shared_resources.generateDockerCredsConfigStep
       new BuildNodeRunnerImageStep {
+        input_path = "node-runner-pr"
         params {
           ["UNPACK_ROOTFS"] = "true"
         }
@@ -107,6 +108,7 @@ jobs {
           new DoStep {
             do = new Listing<Step> {
               new BuildNodeRunnerImageStep {
+                input_path = "node-runner-src"
                 output_mapping = new {
                   ["image"] = "node22-image"
                 }
@@ -134,11 +136,12 @@ jobs {
 }
 
 local class BuildNodeRunnerImageStep extends TaskStep {
+  hidden input_path: String
   task = "build-node-22"
   privileged = true
   params {
-    ["CONTEXT"] = "node-runner-src/ci/docker/node-runner"
-    ["DOCKERFILE"] = "node-runner-src/ci/docker/node-runner/Dockerfile.node22"
+    ["CONTEXT"] = "\(input_path)/ci/docker/node-runner"
+    ["DOCKERFILE"] = "\(input_path)/ci/docker/node-runner/Dockerfile.node22"
     ["DOCKER_CONFIG"] = "docker_creds"
   }
   config = new {
