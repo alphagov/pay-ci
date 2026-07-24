@@ -7,7 +7,7 @@ RUN echo "$FLY_CLI_SHA256SUM  /tmp/fly" >> /tmp/fly.sha256 \
   && sha256sum -c /tmp/fly.sha256 \
   && mv /tmp/fly /usr/local/bin/ \
   && chmod 555 /usr/local/bin/fly
-# As of node 15 the docker container fails to npm install without either a WORKDIR or -g
+# As of node 15 the docker container fails to npm install without either a  WORKDIR or -g
 
 WORKDIR /node-runner
 
