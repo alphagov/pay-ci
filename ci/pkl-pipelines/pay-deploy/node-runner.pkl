@@ -1,8 +1,13 @@
-amends "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+amends
+  "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
 
 import "../common/PayResources.pkl"
-import "../common/shared_resources.pkl"
 import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+
+resource_types {
+  shared_resources.pullRequestResourceType
+}
 
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource("pay-deploy/node-runner.pkl", "master")
@@ -24,17 +29,75 @@ resources = new {
       tag = "node22"
     }
   }
+  new PayResources.PayGitHubPullRequestResource {
+    name = "node-runner-pr"
+    repo = "pay-ci"
+    paths {
+      "ci/docker/node-runner/**"
+      "ci/pipelines/node-runner.yml"
+    }
+  }
 }
 
 jobs {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/node-runner.pkl")
+
+  new {
+    name = "node-runner-pr"
+    plan {
+      new InParallelStep {
+        in_parallel = new Listing<Step> {
+          new GetStep {
+            get = "node-runner-pr"
+            trigger = true
+          }
+          new GetStep {
+            get = "pay-ci"
+          }
+        }
+      }
+      shared_resources.putPRTestPendingStatus("node-runner-pr", "node-runner-tests")
+      shared_resources.generateDockerCredsConfigStep
+      new BuildNodeRunnerImageStep {
+        params {
+          ["UNPACK_ROOTFS"] = "true"
+        }
+        config {
+          inputs {
+            new { name = "node-runner-pr" }
+          }
+        }
+      }
+      new TaskStep {
+        image = "image"
+        task = "test-node-runner"
+        config {
+          platform = "linux"
+          inputs {
+            new {
+              name = "pay-ci"
+            }
+          }
+          run {
+            path = "node"
+            args {
+              "pay-ci/ci/scripts/test-octokit-repo-tag-download.js"
+            }
+          }
+        }
+      }
+      shared_resources.putPRTestSuccessStatus("node-runner-pr", "node-runner-tests")
+    }
+    on_failure = shared_resources.putPRTestFailedStatus("node-runner-pr", "node-runner-tests")
+    on_error = shared_resources.putPRTestFailedStatus("node-runner-pr", "node-runner-tests")
+  }
   new {
     name = "build-and-push"
     plan {
       new InParallelStep {
         in_parallel = new Listing<Step> {
-          new GetStep {get = "node-runner-src" trigger = true}
-          new GetStep {get = "pay-ci"}
+          new GetStep { get = "node-runner-src"; trigger = true }
+          new GetStep { get = "pay-ci" }
         }
       }
       shared_resources.generateDockerCredsConfigStep
@@ -43,34 +106,14 @@ jobs {
         in_parallel = new Listing<Step> {
           new DoStep {
             do = new Listing<Step> {
-              new TaskStep {
-                task = "build-node-22"
-                privileged = true
+              new BuildNodeRunnerImageStep {
                 output_mapping = new {
-                    ["image"] = "node22-image"
+                  ["image"] = "node22-image"
                 }
-                params {
-                    ["CONTEXT"] = "node-runner-src/ci/docker/node-runner"
-                    ["DOCKERFILE"] = "node-runner-src/ci/docker/node-runner/Dockerfile.node22"
-                    ["DOCKER_CONFIG"] = "docker_creds"
-                }
-                config = new {
-                    platform = "linux"
-                    image_resource {
-                      type = "registry-image"
-                      source {
-                        ["repository"] = "concourse/oci-build-task"
-                      }
-                    }
-                    run {
-                      path = "build"
-                    }
-                    inputs {
-                      new {name = "node-runner-src"}
-                    }
-                    outputs {
-                      new {name = "image"}
-                    }
+                config {
+                  inputs {
+                    new { name = "node-runner-src" }
+                  }
                 }
               }
               new PutStep {
@@ -86,7 +129,31 @@ jobs {
           }
         }
       }
+    }
+  }
+}
 
+local class BuildNodeRunnerImageStep extends TaskStep {
+  task = "build-node-22"
+  privileged = true
+  params {
+    ["CONTEXT"] = "node-runner-src/ci/docker/node-runner"
+    ["DOCKERFILE"] = "node-runner-src/ci/docker/node-runner/Dockerfile.node22"
+    ["DOCKER_CONFIG"] = "docker_creds"
+  }
+  config = new {
+    platform = "linux"
+    image_resource {
+      type = "registry-image"
+      source {
+        ["repository"] = "concourse/oci-build-task"
+      }
+    }
+    run {
+      path = "build"
+    }
+    outputs {
+      new { name = "image" }
     }
   }
 }
