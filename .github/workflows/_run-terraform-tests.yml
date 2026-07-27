@@ -1,0 +1,73 @@
+name: Terraform Tests
+
+on:
+  workflow_call:
+  
+jobs:
+  terraform-fmt:
+    name: Terraform format check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: "0"
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: tfutils/tfenv
+          path: .tfenv
+      - name: Install all TF versions in repo
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          export PATH="${GITHUB_WORKSPACE}/.tfenv/bin:$PATH"
+
+          find . -name '.terraform-version' | xargs cat | sort | uniq | while read -r TF_VERSION; do
+            TFENV_CURL_OUTPUT=0 tfenv install ${TF_VERSION}
+          done
+      - name: Terraform fmt check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          function help_with_failure {
+            echo
+            echo
+            echo
+            echo "==================================================================================================="
+            echo "A file failed checking with terraform fmt"
+            echo
+            echo "This should have been checked by the pre-commit checks we have in place, please ensure your"
+            echo "pre-commit setup is correct. See the following manual page which will help you set it up"
+            echo
+            echo "https://manual.payments.service.gov.uk/manual/how-to/prevent-accidently-commiting-secrets.html"
+            echo
+            exit 1
+          }
+
+          export PATH="${GITHUB_WORKSPACE}/.tfenv/bin:$PATH"
+          export CHECKPOINT_DISABLE=true # Stop TF showing "your version is out of date" warnings
+
+          trap help_with_failure ERR
+
+          git diff --name-only origin/master provisioning/**/*.tf | while read -r TF_FILE_PATH; do
+            if [ ! -f "$TF_FILE_PATH" ]; then
+              echo "$TF_FILE_PATH was deleted, not checking"
+              continue
+            fi
+
+            DIRECTORY=$(dirname "$TF_FILE_PATH")
+            FILE_NAME=$(basename "$TF_FILE_PATH")
+
+            pushd "$DIRECTORY" >>/dev/null 2>&1
+
+            echo -n "Checking $TF_FILE_PATH with "
+            terraform version | tr '\n' ' '
+            echo
+
+            # Fail on error, don't write an update, do show the diff to make it valid
+            terraform fmt -check=true -diff=true -write=false "$FILE_NAME"
+
+            popd >>/dev/null 2>&1
+          done
