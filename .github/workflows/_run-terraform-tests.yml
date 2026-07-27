@@ -2,6 +2,17 @@ name: Terraform Tests
 
 on:
   workflow_call:
+    inputs:
+      branch:
+        description: The remote branch to compare against to check for changed files. Defaults to main
+        default: main
+        required: false
+        type: string
+      terraform_folder:
+        description: The folder to check for terraform files. Defaults to the root of the repository
+        default: ""
+        required: false
+        type: string
   
 jobs:
   terraform-fmt:
@@ -51,7 +62,13 @@ jobs:
 
           trap help_with_failure ERR
 
-          git diff --name-only origin/master provisioning/**/*.tf | while read -r TF_FILE_PATH; do
+          TERRAFORM_PATH=""
+
+          if [ "${{inputs.terraform_folder}}" != "" ]; then
+            TERRAFORM_PATH = "${{inputs.terraform_folder}}/"
+          fi
+
+          git diff --name-only origin/${{inputs.branch}} "$TERRAFORM_PATH"**/*.tf | while read -r TF_FILE_PATH; do
             if [ ! -f "$TF_FILE_PATH" ]; then
               echo "$TF_FILE_PATH was deleted, not checking"
               continue
