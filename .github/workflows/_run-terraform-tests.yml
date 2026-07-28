@@ -68,7 +68,7 @@ jobs:
             TERRAFORM_PATH="${{inputs.terraform_folder}}/"
           fi
 
-          git diff --name-only origin/${{inputs.branch}} "$TERRAFORM_PATH"{**,.}/*.tf | while read -r TF_FILE_PATH; do
+          git diff --name-only origin/${{inputs.branch}} "$TERRAFORM_PATH*.tf" | while read -r TF_FILE_PATH; do
             if [ ! -f "$TF_FILE_PATH" ]; then
               echo "$TF_FILE_PATH was deleted, not checking"
               continue
