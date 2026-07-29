@@ -14,6 +14,7 @@ RUN apk add --no-cache \
   gcompat \
   git \
   python3 \
+  py3-yaml \
   ca-certificates \
   jq \
   openjdk25 \
