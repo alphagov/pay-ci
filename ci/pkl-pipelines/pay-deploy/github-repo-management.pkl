@@ -1,0 +1,73 @@
+amends
+  "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+
+import "../common/pipeline_self_update.pkl"
+import "../common/shared_resources.pkl"
+import "../common/shared_resources_for_github_management.pkl"
+
+local terraform_subpath: String = "repos"
+local pull_request_paths: Listing<String> = new {
+  "modules/repository/"
+  "repos/"
+}
+
+local function sharedSteps(configuration_path: String) = new Listing<Step> {
+  new InParallelStep {
+    in_parallel = new Listing<Step> {
+      shared_resources_for_github_management.doAssumeRole("github-user-management")
+      shared_resources_for_github_management.doLoadTerraformVersion(configuration_path, "repos")
+    }
+  }
+  shared_resources_for_github_management.terraformInit(configuration_path, terraform_subpath)
+}
+
+resource_types {
+  shared_resources.pullRequestResourceType
+}
+
+resources = new {
+  pipeline_self_update.PayPipelineSelfUpdateResource(
+    "pay-deploy/github-repo-management.pkl",
+    "master",
+  )
+  shared_resources.payCiGitHubResource
+  shared_resources_for_github_management.configurationGitHubResource
+  shared_resources_for_github_management.configurationPullRequestResource(pull_request_paths)
+}
+
+jobs = new {
+  pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/github-repo-management.pkl")
+
+  new {
+    name = "plan-github-org-terraform-pr"
+    plan {
+      new shared_resources_for_github_management.GetResourcesInParallel {
+        resources = new {
+          shared_resources_for_github_management.getConfigurationPullRequestResource
+        }
+      }
+      shared_resources.putPRTestPendingStatus("configuration-pr", "configuration-plan")
+      ...sharedSteps("configuration-pr")
+      shared_resources_for_github_management.terraformPlan("configuration-pr", terraform_subpath)
+      shared_resources_for_github_management.putPRPlanSuccessStatus
+    }
+    on_failure = shared_resources.putPRTestFailedStatus("configuration-pr", "configuration-plan")
+    on_error = shared_resources.putPRTestFailedStatus("configuration-pr", "configuration-plan")
+  }
+
+  new {
+    name = "apply-github-org-terraform"
+    plan {
+      new shared_resources_for_github_management.GetResourcesInParallel {
+        resources = new {
+          new {
+            get = "configuration"
+            trigger = true
+          }
+        }
+      }
+      ...sharedSteps("configuration")
+      shared_resources_for_github_management.terraformApply("configuration", terraform_subpath)
+    }
+  }
+}

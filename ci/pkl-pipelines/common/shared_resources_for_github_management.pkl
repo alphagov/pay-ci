@@ -26,6 +26,24 @@ configurationGitHubResource: PayResources.PayGitHubResource = new {
   }
 }
 
+function configurationPullRequestResource(
+  _paths: Listing<String>,
+): PayResources.PayGitHubPullRequestResource = new {
+  name = "configuration-pr"
+  org = "govuk-pay"
+  repo = "configuration"
+  paths = _paths
+}
+
+getConfigurationPullRequestResource: Pipeline.GetStep = new {
+  get = "configuration-pr"
+  trigger = true
+  version = "every"
+  params {
+    ["integration_tool"] = "checkout"
+  }
+}
+
 open class GetResourcesInParallel extends Pipeline.InParallelStep {
   hidden resources: Listing<Pipeline.GetStep>
   in_parallel = new Listing<Pipeline.GetStep> {
@@ -80,6 +98,38 @@ function terraformInit(configuration_path: String, terraform_subpath: String) =
     }
   } |> commonTerraformParams
 
+function terraformPlan(configuration_path: String, terraform_subpath: String) =
+  new shared_resources_for_deploy_pipelines.TerraformCommandStep {
+    terraform_root = "\(configuration_path)/\(terraform_subpath)"
+    command = "plan"
+    config {
+      inputs = new Listing<TaskConfig.Input> {
+        new {
+          name = configuration_path
+        }
+      }
+      outputs {
+        new {
+          name = "plan"
+        }
+      }
+      run {
+        dir = "."
+        path = "/bin/sh"
+        args = new {
+          "-ce"
+          """
+          echo 'Terraform plan succeeded with:
+          ``` terraform' > plan/output
+          terraform -chdir="\(terraform_root)" plan -out="${PWD}/plan/tfplan"
+          terraform -chdir="\(terraform_root)" show -no-color "${PWD}/plan/tfplan" >> plan/output
+          echo '```' >> plan/output
+          """
+        }
+      }
+    }
+  } |> commonTerraformParams
+
 function terraformApply(configuration_path: String, terraform_subpath: String) = new shared_resources_for_deploy_pipelines
   .TerraformApplyStep {
   terraform_root = "\(configuration_path)/\(terraform_subpath)"
@@ -91,3 +141,17 @@ function terraformApply(configuration_path: String, terraform_subpath: String) =
     }
   }
 } |> commonTerraformParams
+
+putPRPlanSuccessStatus: Pipeline.PutStep = new {
+  put = "configuration-pr"
+  get_params {
+    ["skip_download"] = true
+  }
+  params {
+    ["path"] = "configuration-pr"
+    ["comment_file"] = "plan/output"
+    ["delete_previous_comments"] = true
+    ["status"] = "success"
+    ["context"] = "configuration-plan"
+  }
+}
