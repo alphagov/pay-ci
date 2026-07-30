@@ -1,0 +1,93 @@
+import
+  "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/Pipeline.pkl"
+import
+  "package://pkg.pkl-lang.org/github.com/alphagov/pkl-concourse-pipeline/pkl-concourse-pipeline@0.0.4#/TaskConfig.pkl"
+
+import "PayResources.pkl"
+import "shared_resources.pkl"
+import "shared_resources_for_deploy_pipelines.pkl"
+import "shared_resources_for_terraform.pkl"
+
+const commonTerraformParams = new Mixin {
+  params {
+    ["GITHUB_OWNER"] = "govuk-pay"
+    ["GITHUB_APP_ID"] = "((github-app-id))"
+    ["GITHUB_APP_INSTALLATION_ID"] = "((github-app-installation-id))"
+    ["GITHUB_APP_PEM_FILE"] = "((github-app-pem))"
+  }
+}
+
+configurationGitHubResource: PayResources.PayGitHubResource = new {
+  name = "configuration"
+  orgName = "govuk-pay"
+  repoName = "configuration"
+  source {
+    branch = "main"
+  }
+}
+
+open class GetResourcesInParallel extends Pipeline.InParallelStep {
+  hidden resources: Listing<Pipeline.GetStep>
+  in_parallel = new Listing<Pipeline.GetStep> {
+    ...resources
+    new {
+      get = "pay-ci"
+    }
+  }
+}
+
+function doAssumeRole(_session_name: String): Pipeline.DoStep = new {
+  do {
+    new shared_resources.AssumeConcourseRoleTask {
+      aws_account_name = "deploy"
+      session_name = _session_name
+      output_name = "assume-role"
+    }
+    shared_resources.loadVarJson("role", "assume-role/assume-role.json")
+  }
+}
+
+function doLoadTerraformVersion(
+  configuration_path: String,
+  terraform_subpath: String,
+): Pipeline.DoStep = new {
+  do {
+    new shared_resources_for_terraform.FindTerraformVersionForTFRootStep {
+      // Map the config repo to the expected `pay-infra` input.
+      terraform_root = "pay-infra/\(terraform_subpath)"
+      input_mapping {
+        ["pay-infra"] = configuration_path
+      }
+    }
+    shared_resources_for_terraform.LoadTerraformVersionStep
+  }
+}
+
+function terraformInit(configuration_path: String, terraform_subpath: String) =
+  new shared_resources_for_deploy_pipelines.TerraformInitStep {
+    terraform_root = "\(configuration_path)/\(terraform_subpath)"
+    config {
+      inputs = new Listing<TaskConfig.Input> {
+        new {
+          name = configuration_path
+        }
+      }
+      outputs = new {
+        new {
+          name = configuration_path
+        }
+      }
+    }
+  } |> commonTerraformParams
+
+function terraformApply(configuration_path: String, terraform_subpath: String) = new shared_resources_for_deploy_pipelines
+  .TerraformApplyStep {
+  terraform_root = "\(configuration_path)/\(terraform_subpath)"
+  config {
+    inputs = new Listing<TaskConfig.Input> {
+      new {
+        name = configuration_path
+      }
+    }
+  }
+} |> commonTerraformParams
