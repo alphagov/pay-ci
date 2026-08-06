@@ -8,6 +8,45 @@ import "../common/shared_resources_for_github_management.pkl"
 
 local terraform_subpath: String = "teams"
 
+local function sharedSteps(configuration_path: String) = new Listing<Step> {
+  new InParallelStep {
+    in_parallel = new Listing<Step> {
+      shared_resources_for_github_management.doAssumeRole("github-user-management")
+      shared_resources_for_github_management.doLoadTerraformVersion(configuration_path, "repos")
+      new TaskStep {
+        task = "generate-csvs"
+        config {
+          platform = "linux"
+          image_resource = shared_resources.anonymousConcourseRunnerResource
+          inputs {
+            new {
+              name = configuration_path
+            }
+            new {
+              name = "pay-access-control"
+            }
+            new {
+              name = "pay-ci"
+            }
+          }
+          outputs {
+            new {
+              name = "csvs"
+            }
+          }
+          params {
+            ["CSV_OUTPUT_PATH"] = "csvs"
+          }
+          run {
+            path = "pay-ci/ci/scripts/generate-github-acl-csvs.sh"
+          }
+        }
+      }
+    }
+  }
+  shared_resources_for_github_management.terraformInit(configuration_path, terraform_subpath)
+}
+
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource(
     "pay-deploy/github-user-management.pkl",
@@ -28,6 +67,26 @@ jobs = new {
   pipeline_self_update.PayPipelineSelfUpdateJob("pay-deploy/github-user-management.pkl")
 
   new {
+    name = "plan-github-org-terraform-pr"
+    plan {
+      new shared_resources_for_github_management.GetResourcesInParallel {
+        resources = new {
+          shared_resources_for_github_management.getConfigurationPullRequestResource
+          new {
+            get = "pay-access-control"
+          }
+        }
+      }
+      shared_resources.putPRTestPendingStatus("configuration-pr", "configuration-plan")
+      ...sharedSteps("configuration-pr")
+      shared_resources_for_github_management.terraformPlan("configuration-pr", terraform_subpath)
+      shared_resources_for_github_management.putPRPlanSuccessStatus
+    }
+    on_failure = shared_resources.putPRTestFailedStatus("configuration-pr", "configuration-plan")
+    on_error = shared_resources.putPRTestFailedStatus("configuration-pr", "configuration-plan")
+  }
+
+  new {
     name = "apply-github-org-terraform"
     plan {
       new shared_resources_for_github_management.GetResourcesInParallel {
@@ -42,42 +101,7 @@ jobs = new {
           }
         }
       }
-      new InParallelStep {
-        in_parallel = new Listing<Step> {
-          shared_resources_for_github_management.doAssumeRole("github-user-management")
-          shared_resources_for_github_management.doLoadTerraformVersion("configuration", "teams")
-          new TaskStep {
-            task = "generate-csvs"
-            config {
-              platform = "linux"
-              image_resource = shared_resources.anonymousConcourseRunnerResource
-              inputs {
-                new {
-                  name = "configuration"
-                }
-                new {
-                  name = "pay-access-control"
-                }
-                new {
-                  name = "pay-ci"
-                }
-              }
-              outputs {
-                new {
-                  name = "csvs"
-                }
-              }
-              params {
-                ["CSV_OUTPUT_PATH"] = "csvs"
-              }
-              run {
-                path = "pay-ci/ci/scripts/generate-github-acl-csvs.sh"
-              }
-            }
-          }
-        }
-      }
-      shared_resources_for_github_management.terraformInit("configuration", terraform_subpath)
+      ...sharedSteps("configuration")
       shared_resources_for_github_management.terraformApply("configuration", terraform_subpath)
         |> new Mixin {
           config {
