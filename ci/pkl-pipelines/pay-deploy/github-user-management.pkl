@@ -7,12 +7,15 @@ import "../common/shared_resources.pkl"
 import "../common/shared_resources_for_github_management.pkl"
 
 local terraform_subpath: String = "teams"
+local pull_request_paths: Listing<String> = new {
+  "\(terraform_subpath)/"
+}
 
 local function sharedSteps(configuration_path: String) = new Listing<Step> {
   new InParallelStep {
     in_parallel = new Listing<Step> {
       shared_resources_for_github_management.doAssumeRole("github-user-management")
-      shared_resources_for_github_management.doLoadTerraformVersion(configuration_path, "repos")
+      shared_resources_for_github_management.doLoadTerraformVersion(configuration_path, terraform_subpath)
       new TaskStep {
         task = "generate-csvs"
         config {
@@ -47,6 +50,10 @@ local function sharedSteps(configuration_path: String) = new Listing<Step> {
   shared_resources_for_github_management.terraformInit(configuration_path, terraform_subpath)
 }
 
+resource_types {
+  shared_resources.pullRequestResourceType
+}
+
 resources = new {
   pipeline_self_update.PayPipelineSelfUpdateResource(
     "pay-deploy/github-user-management.pkl",
@@ -61,6 +68,7 @@ resources = new {
       branch = "main"
     }
   }
+  shared_resources_for_github_management.configurationPullRequestResource(pull_request_paths)
 }
 
 jobs = new {
