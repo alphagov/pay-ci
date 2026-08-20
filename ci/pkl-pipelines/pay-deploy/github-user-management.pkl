@@ -50,6 +50,19 @@ local function sharedSteps(configuration_path: String) = new Listing<Step> {
   shared_resources_for_github_management.terraformInit(configuration_path, terraform_subpath)
 }
 
+local shared_mixin = new Mixin {
+  config {
+    inputs {
+      new {
+        name = "csvs"
+      }
+    }
+  }
+  params {
+    ["TF_VAR_csv_path"] = "../../csvs"
+  }
+}
+
 resource_types {
   shared_resources.pullRequestResourceType
 }
@@ -88,6 +101,7 @@ jobs = new {
       shared_resources.putPRTestPendingStatus("configuration-pr", "configuration-plan")
       ...sharedSteps("configuration-pr")
       shared_resources_for_github_management.terraformPlan("configuration-pr", terraform_subpath)
+        |> shared_mixin
       shared_resources_for_github_management.putPRPlanSuccessStatus
     }
     on_failure = shared_resources.putPRTestFailedStatus("configuration-pr", "configuration-plan")
@@ -111,18 +125,7 @@ jobs = new {
       }
       ...sharedSteps("configuration")
       shared_resources_for_github_management.terraformApply("configuration", terraform_subpath)
-        |> new Mixin {
-          config {
-            inputs {
-              new {
-                name = "csvs"
-              }
-            }
-          }
-          params {
-            ["TF_VAR_csv_path"] = "../../csvs"
-          }
-        }
+        |> shared_mixin
     }
   }
 }
