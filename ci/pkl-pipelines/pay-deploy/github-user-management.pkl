@@ -41,7 +41,7 @@ local function sharedSteps(configuration_path: String) = new Listing<Step> {
             ["CSV_OUTPUT_PATH"] = "csvs"
           }
           run {
-            path = "pay-ci/ci/scripts/generate-github-acl-csvs.sh"
+            path = "\(configuration_path)/scripts/generate_csvs.sh"
           }
         }
       }
